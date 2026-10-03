@@ -17,6 +17,6 @@ return RectorConfig::configure()
     ->withPhpSets(php84: true)
     ->withPreparedSets(deadCode: true, codeQuality: true, typeDeclarations: true, earlyReturn: true)
     ->withSkip([
-        // Laravel inspects policy method parameters (e.g. guest handling), so keep their signatures.
-        RemoveUnusedPublicMethodParameterRector::class => [__DIR__.'/app/Policies'],
+        // Laravel inspects policy signatures (e.g. guest handling) and calls middleware with fixed arguments.
+        RemoveUnusedPublicMethodParameterRector::class => [__DIR__.'/app/Policies', __DIR__.'/app/Http/Middleware'],
     ]);
