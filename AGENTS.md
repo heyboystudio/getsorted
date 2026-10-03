@@ -1,6 +1,4 @@
-# CLAUDE.md — Sortd
-
-> Laravel Boost generates the `<laravel-boost-guidelines>
+<laravel-boost-guidelines>
 === .ai/sortd-domain rules ===
 
 # Sortd — domain rules

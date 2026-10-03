@@ -28,8 +28,8 @@ yarn-error.log
 /.vscode
 /.zed
 
-# Other AI tools' generated files. Claude Code files (CLAUDE.md, .claude/,
-# boost.json, .mcp.json) are deliberately committed so cloud sessions have them.
+# Other AI tools' generated files. Boost-managed files (CLAUDE.md, AGENTS.md,
+# .claude/, .codex/, .agents/, boost.json, .mcp.json) are deliberately committed.
 /.amp
 /.cursor
 /.factory
@@ -37,6 +37,5 @@ yarn-error.log
 /.junie
 /.kiro
 /.pi
-/AGENTS.md
 /opencode.json
 /opencode.jsonc
