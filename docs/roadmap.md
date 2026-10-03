@@ -24,7 +24,7 @@ Do these in order, one PR each where sensible. Stop and ask the founder where ma
 2. [x] Create Laravel 13 app with the **Livewire starter kit** in this repo (keep `docs/`, `.ai/`, `.claude/`, `CLAUDE.md`).  Done 2026-10-03; [notes](engineering/phase-0-scaffold.md).
 3. [x] Configure Postgres + PostGIS as the only database (queue, cache, session on database). Done 2026-10-03; [notes](engineering/phase-0-database.md).
 4. [x] Install **Laravel Boost** (`composer require laravel/boost --dev`, `php artisan boost:install`), select Claude Code. Verify the regenerated `CLAUDE.md` includes everything from `.ai/guidelines/`. Add the Boost MCP server for Claude Code. Done 2026-10-03; decision 018.
-5. [ ] Install and configure quality tools: Pest (+ arch tests from testing.md), Larastan (level 6), Pint, Rector. Add `composer check` script running Pint (test mode), Larastan, Pest, `composer audit`.
+5. [x] Install and configure quality tools: Pest (+ arch tests from testing.md), Larastan (level 6), Pint, Rector. Add `composer check` script running Pint (test mode), Larastan, Pest, `composer audit`. Done 2026-10-03; decision 019.
 6. [ ] GitHub repo, branch protection on `main`, GitHub Actions CI (PHP 8.4 + Postgres/PostGIS service) running `composer check` and `npm audit`, Dependabot.
 7. [ ] Install Filament 5; create `admin` panel at `/admin` with MFA required; create `pro` panel at `/pro` (empty, locked).
 8. [ ] Install `spatie/laravel-permission`, seed roles; super-admin user via artisan command (never in a seeder with a real password).

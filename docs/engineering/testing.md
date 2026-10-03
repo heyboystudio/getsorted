@@ -39,6 +39,12 @@ arch('no debugging leftovers')
 arch('strict types')->expect('App')->toUseStrictTypes();
 ```
 
+## Running the checks
+
+- `composer check` — the quality gate: Pint (test mode), Larastan level 6, all Pest suites, `composer audit`. Must pass before any task is reported done.
+- `composer test` — Pest only. Arch tests live in `tests/Arch/`.
+- `composer lint` — fix formatting. `composer rector:check` / `composer rector` — preview/apply automated refactors.
+
 ## Conventions
 
 - Test-first for Actions: write the failing test from the spec's acceptance criteria, then implement.

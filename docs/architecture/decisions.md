@@ -22,6 +22,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 016 | Local foundation tools and rootless Docker | Accepted | 2026-10-03 |
 | 017 | Official Livewire scaffold with closed account routes | Accepted | 2026-10-03 |
 | 018 | Laravel Boost for AI guidelines and MCP | Accepted | 2026-10-03 |
+| 019 | Quality gate: Pint, Larastan, Pest arch tests, Rector | Accepted | 2026-10-03 |
 
 ---
 
@@ -98,3 +99,12 @@ Short architecture decision records. **Add an entry for every significant choice
 **Transitive dependencies (all MIT):** `laravel/mcp` 1.0.1, `laravel/roster` 1.0.0, `composer/semver` 3.5.0, `symfony/yaml` 8.1.8.
 
 **Consequences:** After editing `.ai/guidelines/*.md`, run `php artisan boost:update` and commit `CLAUDE.md`/`AGENTS.md`. `boost:install --no-interaction` did not record the selected agents, so `agents` was added to `boost.json` by hand; without it `boost:update` refuses to run. Boost is not loaded in production because it is a dev dependency. Re-enable the Cloud guidance only if decision 014 picks Laravel Cloud.
+
+## 019 · Quality gate: Pint, Larastan, Pest arch tests, Rector
+**Context:** Roadmap step 5. The founder relies on automated checks, so one command must prove a change is safe to merge.
+
+**Decision:** `composer check` runs, in order: Pint in test mode, Larastan (level 6, `phpstan.neon`), the Pest suite (Unit, Feature and the new Arch suite from `docs/engineering/testing.md`) and `composer audit`. It fails on the first problem. Rector (`rector.php`, PHP 8.4 set plus dead-code, code-quality, type-declaration and early-return sets) is available as `composer rector` / `composer rector:check` but is not part of the gate, because its suggestions are improvements, not defects. Rector skips removing "unused" parameters in `app/Policies`, because Laravel inspects policy signatures (e.g. guest handling).
+
+**Dependencies (dev only, all MIT):** `larastan/larastan` 3.12.2 (Illuminate `^13` supported; brings `phpstan/phpstan` 2.2.16, `iamcal/sql-parser` 0.7) and `rector/rector` 2.6.7 (PHP ≥7.4; shares PHPStan 2.2). Pest's `arch()` is built into Pest 4, so no plugin is needed. `driftingly/rector-laravel` was tried and removed: it pulls in the abandoned `symplify/rule-doc-generator-contracts`, which makes `composer audit` (and therefore the gate) fail.
+
+**Consequences:** Rector's first run added return types to closures in the framework migrations, `bootstrap/app.php` and `routes/console.php` (no schema changes; these migrations have only run locally). Larastan stays at level 6 for now; raising it is a later choice.
