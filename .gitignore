@@ -11,6 +11,10 @@
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
+# Filament assets, republished by `php artisan filament:upgrade` on composer install
+/public/css/filament
+/public/js/filament
+/public/fonts/filament
 /storage/*.key
 /storage/pail
 .phpactor.json

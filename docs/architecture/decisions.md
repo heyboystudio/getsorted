@@ -24,6 +24,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 018 | Laravel Boost for AI guidelines and MCP | Accepted | 2026-10-03 |
 | 019 | Quality gate: Pint, Larastan, Pest arch tests, Rector | Accepted | 2026-10-03 |
 | 020 | CI workflow paused; free GitHub plan without branch protection | Accepted (temporary) | 2026-10-03 |
+| 021 | Filament 5 admin panel with mandatory MFA; pro panel locked | Accepted | 2026-10-03 |
 
 ---
 
@@ -116,3 +117,12 @@ Short architecture decision records. **Add an entry for every significant choice
 **Decision:** The founder chose to stay on the free plan and not change billing for now. `.github/workflows/ci.yml` is committed and complete (PHP 8.4, Node from `.nvmrc`, PostGIS 17 service, `composer check`, `npm audit --audit-level=high`, actions pinned to commit SHAs), but runs only on manual dispatch until billing is cleared. Until then Claude runs `composer check` and `npm audit` locally before every merge and records the result in the PR. `main` is not technically protected; merges happen only after those checks pass and the founder approves. Making the repo public was rejected (exposes code, specs and security design). Dependabot is configured weekly for Composer, npm and Actions; its runs may also be blocked by the billing flag.
 
 **Consequences:** Phase 0's "CI green" exit criterion is not met yet. To complete it: clear the billing flag in GitHub settings, restore the `pull_request`/`push` triggers, confirm a green run. Revisit branch protection if the plan changes.
+
+## 021 · Filament 5 admin panel with mandatory MFA; pro panel locked
+**Context:** Roadmap step 7 and the security baseline: admins use email + strong password + mandatory app-based MFA; access is default-deny; the pro portal uses phone + OTP later.
+
+**Decision:** Install `filament/filament` ^5.9 (5.9.0, MIT; requires Laravel `^11.28|^12|^13` and Livewire `^4.4.2`, so compatible with Laravel 13.34 / Livewire 4.4.7). The **admin** panel (`/admin`) has Filament's login, a profile page, and app-based (TOTP) MFA with recovery codes, set as **required**: an admin without MFA is sent to set it up before reaching anything else. Secrets and recovery codes are encrypted columns on `users` and hidden from serialisation. `User::canAccessPanel()` returns false for every panel until roles exist (step 8), so no one can sign in yet. The **pro** panel (`/pro`) is registered with no login, and `PanelNotYetOpen` middleware returns 404 for all its routes until pro phone login ships. Panel code lives under `app/Filament/Admin` and `app/Filament/Pro`. Filament's published assets are not committed; `php artisan filament:upgrade` republishes them after every `composer install`.
+
+**Dependencies:** Filament's own packages (actions, forms, infolists, notifications, query-builder, schemas, support, tables, widgets) and their dependencies, including `pragmarx/google2fa` (TOTP), `chillerlan/php-qrcode` (MIT/Apache-2.0), `blade-ui-kit/blade-heroicons`, `league/csv`, `openspout/openspout`, `ueberdosis/tiptap-php`, `spatie/laravel-package-tools`, `kirschbaum-development/eloquent-power-joins`, `nette/php-generator` (BSD-3-Clause option of its BSD/GPL dual licence). `composer audit` found no advisories.
+
+**Consequences:** "Log in as admin with MFA" (Phase 0 exit criterion) becomes possible in step 8, once a super-admin role and the creation command exist. The 2-hour admin idle timeout from the security baseline is not set yet; it belongs with session hardening (step 11). Email-based password reset is not enabled because there is no mail provider yet.
