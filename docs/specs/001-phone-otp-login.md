@@ -1,6 +1,6 @@
 # Spec 001 · Phone + OTP login and consent
 
-Status: Approved · Phase: 1 · Owner: founder
+Status: Done (awaiting merge) · Phase: 1 · Owner: founder
 
 ## Goal
 Customers sign up and log in with their South African mobile number and a 6-digit one-time code, and new customers accept the terms and privacy notice (POPIA consent recorded). This is the front door for every customer feature that follows.
@@ -87,3 +87,6 @@ Update `docs/architecture/data-model.md` in the same PR.
 ## Progress
 - 2026-10-03: Drafted for founder review.
 - 2026-10-03: Approved by the founder with the proposed answers.
+- 2026-10-04: Built on `feat/001-phone-otp-login`. Every AC has tests (`tests/Feature/Auth/PhoneLoginTest.php`). Reviewer agents (spec, code, security) found admin-number enumeration, a crash for deleted accounts, AC11 wording for used codes, email enumeration and an MFA gap for later-promoted admins — all fixed with tests. Decision 026 records the implementation choices.
+- Small deviations: "Keep me logged in" sits on the code step (so returning customers get it too); a verified number must finish sign-up within 15 minutes; an email already used by another account is silently not stored, so the form never reveals it.
+- Follow-ups (not in this spec): trusted-proxy settings with hosting (step 12), OTP-send spike alerts with Sentry/monitoring, email verification, "Join as a pro" spec.

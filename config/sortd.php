@@ -19,6 +19,13 @@ return [
         'retention_days' => 90,
         // How long a verified phone stays valid for finishing sign-up.
         'verified_phone_ttl_minutes' => 15,
+        // Rate limits (security baseline §1). The daily cap per number blunts
+        // slow guessing from rotating IP addresses.
+        'send_per_phone' => ['max' => 3, 'minutes' => 15],
+        'send_per_phone_daily' => ['max' => 10, 'minutes' => 24 * 60],
+        'send_per_ip' => ['max' => 10, 'minutes' => 60],
+        'verify_per_ip' => ['max' => 10, 'minutes' => 15],
+        'register_per_ip' => ['max' => 5, 'minutes' => 15],
     ],
 
     'auth' => [

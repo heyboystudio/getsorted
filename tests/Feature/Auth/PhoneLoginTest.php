@@ -7,8 +7,10 @@ use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
 use App\Domain\Accounts\Actions\VerifyLoginCode;
 use App\Domain\Accounts\Enums\ConsentType;
+use App\Domain\Accounts\Enums\LoginStep;
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Accounts\Exceptions\LoginCodeRejected;
+use App\Domain\Accounts\Support\LoginThrottle;
 use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Livewire\Auth\Login;
 use App\Models\Consent;
@@ -56,14 +58,14 @@ it('shows the login page to guests', function (): void {
 });
 
 it('normalises SA mobile numbers to E.164 and sends a code (AC1)', function (string $input): void {
-    requestCode($input)->assertHasNoErrors()->assertSet('step', 'code');
+    requestCode($input)->assertHasNoErrors()->assertSet('step', LoginStep::Code);
 
     messaging()->assertSent('otp_code', fn (OutgoingMessage $message): bool => $message->phoneE164 === PHONE);
     expect(PhoneOtp::query()->sole()->phone_e164)->toBe(PHONE);
 })->with(['082 123 4567', '+27 82 123 4567', '27821234567', '0821234567']);
 
 it('rejects invalid and non-mobile numbers without sending (AC2)', function (string $input): void {
-    requestCode($input)->assertHasErrors(['phone'])->assertSet('step', 'phone');
+    requestCode($input)->assertHasErrors(['phone'])->assertSet('step', LoginStep::Phone);
 
     messaging()->assertNothingSent();
 })->with(['12345', '011 123 4567', '+44 7700 900123', '', 'abc', '+', '++27', str_repeat('9', 40)]);
@@ -197,7 +199,12 @@ it('rejects a code that was already used (AC11)', function (): void {
 
     expect($verify->handle(PHONE, $code))->toBeInstanceOf(User::class);
 
-    expect(fn () => $verify->handle(PHONE, $code))->toThrow(LoginCodeRejected::class);
+    try {
+        $verify->handle(PHONE, $code);
+        $this->fail('A used code was accepted twice.');
+    } catch (LoginCodeRejected $rejected) {
+        expect($rejected->reason)->toBe(LoginCodeRejected::EXPIRED);
+    }
 });
 
 it('limits code checks to 10 per IP per 15 minutes (AC12)', function (): void {
@@ -216,7 +223,7 @@ it('limits code checks to 10 per IP per 15 minutes (AC12)', function (): void {
 
 it('asks new customers for their details after a valid code (AC13)', function (): void {
     requestCode()->set('code', lastCode())->call('verifyCode')
-        ->assertSet('step', 'profile')
+        ->assertSet('step', LoginStep::Profile)
         ->assertSee('Tell us about you');
 
     $this->assertGuest();
@@ -245,7 +252,9 @@ it('creates the customer with role and consent records (AC14)', function (): voi
     expect($consent->version)->toBe('2026-10-draft')
         ->and($consent->ip)->toBe('127.0.0.1')
         ->and($consent->granted_at)->not->toBeNull()
-        ->and(Activity::query()->where('description', 'account created')->exists())->toBeTrue();
+        ->and($consent->user_agent)->toBe('Symfony')
+        ->and(Activity::query()->where('description', 'account created')->exists())->toBeTrue()
+        ->and(Activity::query()->where('description', 'consent granted')->count())->toBe(2);
 });
 
 it('records marketing consent only when ticked (AC14)', function (): void {
@@ -267,12 +276,12 @@ it('requires names and both legal consents (AC13)', function (): void {
 });
 
 it('cannot register once the verified phone has lapsed', function (): void {
-    $component = requestCode()->set('code', lastCode())->call('verifyCode')->assertSet('step', 'profile');
+    $component = requestCode()->set('code', lastCode())->call('verifyCode')->assertSet('step', LoginStep::Profile);
 
     $this->travel(16)->minutes();
 
     $component->set('firstName', 'Thandi')->set('lastName', 'Nkosi')->set('acceptTerms', true)->set('acceptPrivacy', true)
-        ->call('register')->assertHasErrors(['phone'])->assertSet('step', 'phone');
+        ->call('register')->assertHasErrors(['phone'])->assertSet('step', LoginStep::Phone);
 
     expect(User::query()->count())->toBe(0);
     $this->assertGuest();
@@ -315,15 +324,124 @@ it('sends logged-in customers from /login to their account home', function (): v
 
 // --- Safety -------------------------------------------------------------------
 
-it('refuses phone login for admin accounts like an unknown failure (AC18)', function (): void {
+it('refuses phone login for admin accounts exactly like any other number (AC18)', function (): void {
     $admin = User::factory()->create(['phone_e164' => PHONE, 'phone_verified_at' => now()]);
     $admin->assignRole(Role::AdminSupport->value);
+    $wrong = fn (Testable $component): string => $component->set('code', '000000')->call('verifyCode')->errors()->first('code');
 
-    $component = requestCode()->assertSet('step', 'code')->assertSee('We sent a code to');
+    $adminComponent = requestCode()->assertSet('step', LoginStep::Code)->assertSee('We sent a code to');
+    messaging()->assertNothingSent();
+    $customerComponent = requestCode('083 123 4567');
+
+    foreach (range(1, 6) as $ignored) {
+        expect($wrong($adminComponent))->toBe($wrong($customerComponent));
+    }
+
+    $this->assertGuest();
+});
+
+it('refuses deleted accounts politely, like any other number', function (): void {
+    customer()->delete();
+
+    $component = requestCode()->assertSet('step', LoginStep::Code);
     messaging()->assertNothingSent();
 
     $component->set('code', '123456')->call('verifyCode')->assertHasErrors(['code'])->assertSee('That code is incorrect');
     $this->assertGuest();
+});
+
+it('turns a second sign-up for the same number away politely', function (): void {
+    $component = requestCode()->set('code', lastCode())->call('verifyCode');
+    customer();
+
+    $component->set('firstName', 'Thandi')->set('lastName', 'Nkosi')->set('acceptTerms', true)->set('acceptPrivacy', true)
+        ->call('register')->assertHasErrors(['phone'])->assertSee('already has an account')->assertSet('step', LoginStep::Phone);
+
+    expect(User::query()->count())->toBe(1);
+});
+
+it('lower-cases emails and never reveals that an email is taken', function (): void {
+    User::factory()->create(['email' => 'taken@example.com']);
+    $register = function (string $phone, string $email): void {
+        requestCode($phone)->set('code', lastCode())->call('verifyCode')
+            ->set('firstName', 'Thandi')->set('lastName', 'Nkosi')->set('email', $email)
+            ->set('acceptTerms', true)->set('acceptPrivacy', true)
+            ->call('register')->assertHasNoErrors()->assertRedirect('/app');
+        auth()->logout();
+    };
+
+    $register('082 123 4567', '  Thandi@Example.COM ');
+    $register('083 123 4567', 'Taken@example.com');
+
+    expect(User::query()->where('phone_e164', PHONE)->value('email'))->toBe('thandi@example.com')
+        ->and(User::query()->where('phone_e164', '+27831234567')->value('email'))->toBeNull();
+});
+
+it('limits sign-up attempts per IP', function (): void {
+    $component = requestCode()->set('code', lastCode())->call('verifyCode');
+
+    foreach (range(1, 5) as $ignored) {
+        $component->set('firstName', '')->call('register');
+    }
+
+    $component->set('firstName', 'Thandi')->set('lastName', 'Nkosi')->set('acceptTerms', true)->set('acceptPrivacy', true)
+        ->call('register')->assertSee('Too many attempts');
+    expect(User::query()->count())->toBe(0);
+});
+
+it('counts SMS codes toward the rate limit (AC6, AC7)', function (): void {
+    $this->freezeTime();
+    $component = requestCode();
+
+    foreach (range(1, 2) as $ignored) {
+        $this->travel(31)->seconds();
+        $component->call('sendBySms')->assertHasNoErrors();
+    }
+
+    $this->travel(31)->seconds();
+    $component->call('sendBySms')->assertHasErrors(['code'])->assertSee('Too many codes requested');
+    messaging()->assertSent('otp_code', times: 3);
+});
+
+it('includes a daily per-number cap in the send limits', function (): void {
+    $limits = LoginThrottle::sendLimits(PHONE, '10.0.0.1');
+
+    expect($limits)->toHaveCount(3)
+        ->and(collect($limits)->map(fn ($limit): array => [$limit->maxAttempts, $limit->decaySeconds])->all())
+        ->toBe([[3, 15 * 60], [10, 24 * 60 * 60], [10, 60 * 60]])
+        ->and(collect($limits)->pluck('key')->implode(' '))->not->toContain('821234567')
+        ->and($limits[0]->key)->not->toContain(hash('sha256', PHONE));
+});
+
+it('discards the code and says so when the message cannot be sent', function (): void {
+    messaging()->failNextSend();
+
+    requestCode()->assertHasErrors(['phone'])->assertSee("We couldn't send your code")->assertSet('step', LoginStep::Phone);
+
+    expect(PhoneOtp::query()->count())->toBe(0);
+});
+
+it('keeps a brand-new customer logged in when asked (AC16)', function (): void {
+    requestCode()->set('code', lastCode())->set('remember', true)->call('verifyCode')
+        ->set('firstName', 'Thandi')->set('lastName', 'Nkosi')->set('acceptTerms', true)->set('acceptPrivacy', true)
+        ->call('register');
+
+    expect(Cookie::hasQueued(auth()->guard('web')->getRecallerName()))->toBeTrue();
+});
+
+it('sends logged-in admins from /login to the admin panel', function (): void {
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::AdminSuper->value);
+
+    $this->actingAs($admin)->get('/login')->assertRedirect('/admin');
+});
+
+it('stops a login form left open from acting after logging in elsewhere', function (): void {
+    $component = Livewire::test(Login::class)->set('phone', '082 123 4567');
+    $this->actingAs(customer(['phone_e164' => '+27831234567']));
+
+    $component->call('sendCode')->assertRedirect('/app');
+    messaging()->assertNothingSent();
 });
 
 it('never writes codes or full phone numbers to the logs (AC19)', function (): void {

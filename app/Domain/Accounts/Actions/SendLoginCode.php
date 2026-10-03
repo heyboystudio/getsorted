@@ -24,20 +24,16 @@ final readonly class SendLoginCode
     ) {}
 
     /**
-     * Sends a fresh 6-digit login code, replacing any earlier one. Admin numbers
-     * get the same response but no code, because phone login must never bypass
-     * admin MFA (spec 001, AC18). Rate limits are applied by the caller.
+     * Sends a fresh 6-digit login code, replacing any earlier one. Numbers that
+     * may not use phone login (admins, deleted accounts) get an identical,
+     * stored but unsent code, so neither the response nor later wrong-code
+     * messages reveal them (spec 001, AC3 and AC18). Rate limits are applied by the caller.
      *
      * @throws CouldNotSendLoginCode
      */
     public function handle(string $phoneE164, MessageChannel $channel, ?string $ip): SentLoginCodeData
     {
         $sentAt = now();
-
-        if ($this->belongsToAdmin($phoneE164)) {
-            return new SentLoginCodeData($phoneE164, $channel, $sentAt, null);
-        }
-
         $code = $this->generateCode();
 
         $otp = DB::transaction(function () use ($phoneE164, $channel, $ip, $code): PhoneOtp {
@@ -58,6 +54,10 @@ final readonly class SendLoginCode
                 'ip' => $ip,
             ]);
         });
+
+        if (self::isBlockedFromPhoneLogin($phoneE164)) {
+            return new SentLoginCodeData($phoneE164, $channel, $sentAt, null);
+        }
 
         // Sent synchronously after commit: the customer is waiting for it, and a
         // failure must be reported on screen rather than retried silently.
@@ -86,10 +86,11 @@ final readonly class SendLoginCode
         return str_pad((string) random_int(0, (10 ** $length) - 1), $length, '0', STR_PAD_LEFT);
     }
 
-    private function belongsToAdmin(string $phoneE164): bool
+    /** Admin accounts must use /admin with MFA; deleted accounts may not log in at all. */
+    public static function isBlockedFromPhoneLogin(string $phoneE164): bool
     {
-        $user = User::query()->where('phone_e164', $phoneE164)->first();
+        $user = User::withTrashed()->where('phone_e164', $phoneE164)->first();
 
-        return $user instanceof User && $user->isAdmin();
+        return $user instanceof User && ($user->trashed() || $user->isAdmin());
     }
 }

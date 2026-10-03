@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Domain\Accounts\Support\LoginThrottle;
-use App\Domain\Accounts\Support\PhoneNumbers;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\SessionGuard;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -80,18 +78,11 @@ final class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Named limits from the security baseline §1. Phone numbers are hashed in
-     * keys so they never land in the cache table in plain text.
+     * Named limits for routes. OTP and sign-up limits are enforced inside the
+     * login component via App\Domain\Accounts\Support\LoginThrottle.
      */
     private function configureRateLimiting(): void
     {
-        RateLimiter::for('otp-send', fn (Request $request): array => LoginThrottle::sendLimits(
-            PhoneNumbers::normaliseSaMobile((string) $request->input('phone')) ?? (string) $request->input('phone'),
-            $request->ip(),
-        ));
-
-        RateLimiter::for('otp-verify', fn (Request $request): Limit => LoginThrottle::verifyLimit($request->ip()));
-
         RateLimiter::for('webhooks', fn (Request $request): Limit => Limit::perMinute(120)->by('webhooks:ip:'.$request->ip()));
     }
 }

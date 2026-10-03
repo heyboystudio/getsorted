@@ -29,6 +29,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 023 | Supporting packages: audit log, settings, media, money, phone, PostGIS | Accepted | 2026-10-03 |
 | 024 | Integration contracts and Fakes; no fallback to Fakes outside local/testing | Accepted | 2026-10-03 |
 | 025 | Security hardening baseline (headers, HTTPS, sessions, rate limits, strict models) | Accepted | 2026-10-03 |
+| 026 | Phone + OTP login implementation (spec 001) | Accepted | 2026-10-04 |
 
 ---
 
@@ -95,7 +96,7 @@ Short architecture decision records. **Add an entry for every significant choice
 
 **Dependencies and alternatives:** Unused starter packages (Fortify, Chisel, Pail, Pao, Sail, Larastan) were removed before locking; Larastan returns with the quality tools in step 5. Retained direct packages, from the resolved lock: Laravel framework 13.34.0, Tinker 3.0.2, Livewire 4.4.7, Blaze 1.0.19, Pint 1.32.1, Pest 4.7.8, Pest Laravel plugin 4.1.0, Collision 8.9.5, Faker 1.24.1 (all MIT), Mockery 1.6.15 (BSD-3-Clause) and **Flux 2.20.1 (free edition, proprietary licence)**. Flux is currently only imported by `resources/css/app.css`; no view uses it yet. The founder approved keeping Flux despite its proprietary licence (2026-10-03). Pest replaces direct PHPUnit (BSD-3-Clause), which remains transitive. Tailwind, its Vite plugin, Vite, Laravel Vite plugin and concurrently (MIT) provide the build toolchain. Starting from Laravel's bare skeleton was rejected because the roadmap explicitly selects the official Livewire kit. The paid Flux Pro edition is not used.
 
-**Consequences:** Scaffold defaults do not activate any customer/admin authentication. User schema and factory remain bootstrap infrastructure, not a completed accounts feature. Quality tools already supplied by the starter may be used for validation; the full configured quality gate still belongs to step 5.
+**Consequences:** Scaffold defaults do not activate any customer/admin authentication. *(2026-10-04: `/login` and `/logout` are now Sortd's own phone login, spec 001 / decision 026; the starter's email/password routes stay closed.)* User schema and factory remain bootstrap infrastructure, not a completed accounts feature. Quality tools already supplied by the starter may be used for validation; the full configured quality gate still belongs to step 5.
 
 ## 018 · Laravel Boost for AI guidelines and MCP
 **Context:** Roadmap step 4. Claude Code (and Codex, which the founder has also used) need the Sortd rules plus version-accurate Laravel guidance, and a way to search docs and inspect the app.
@@ -193,3 +194,17 @@ Short architecture decision records. **Add an entry for every significant choice
 **Decision:** The founder chose **Sentry**, starting on the free plan with the **EU data region**. `sentry/sentry-laravel` is installed (after a compatibility check) together with the first hosted environment; it is not needed locally. Configure it to send no request bodies, cookies or user PII (`send_default_pii=false`) and to scrub phone numbers, emails and addresses.
 
 **Consequences:** Error data leaves South Africa (EU), so Sentry is listed as an operator in the POPIA checklist and privacy notice, with the cross-border basis documented.
+
+## 026 · Phone + OTP login implementation (spec 001)
+**Context:** Spec 001 and security baseline §1. Customer and admin logins share the `web` guard.
+
+**Decision:**
+- **Codes:** 6 digits from `random_int`, stored as HMAC-SHA256 with the app key (a leaked table cannot be brute-forced offline), compared with `hash_equals`; 10-minute expiry, 5 attempts counted under `lockForUpdate`, single use; a new code expires earlier ones. Values live in `config/sortd.php`.
+- **Rate limits** are enforced in the login component via `LoginThrottle` (Livewire actions are not routes): 3 sends per number per 15 min, **10 per number per day** (blunts slow guessing from rotating IPs), 10 sends per IP per hour, 10 code checks per IP per 15 min, 5 sign-up attempts per IP per 15 min. Hits are recorded before comparing, so parallel requests cannot slip past. Phone keys are HMAC'd so the cache never holds a reversible number.
+- **No enumeration:** admin and deleted accounts get a stored but unsent decoy code, so every number sees identical screens and wrong-code messages; an email already used by another account is silently not stored instead of "already in use".
+- **Admin MFA cannot be bypassed:** phone login refuses admin accounts, and the admin panel only accepts sessions started on its own login page (`EnsureAdminSignedInThroughPanel`), so a phone session or remember-me cookie of a user later given an admin role is signed out and sent to password + MFA.
+- **Sending** is synchronous after the code is saved (the customer is waiting, failures show on screen); a failed send deletes the code.
+- **Sessions:** "Keep me logged in" (30 days) is on the code step so returning customers get it too; the verified number is held in the server session for 15 minutes to finish sign-up; Livewire state that matters is `#[Locked]`.
+- **Records:** consents per type with version `2026-10-draft`, time, IP and user agent; audit-log entries "account created" and "consent granted"; OTP rows pruned after 90 days.
+
+**Deferred:** trusted-proxy configuration (needs the hosting choice; until then all users behind one proxy would share IP limits), OTP-send spike alerts (with Sentry/monitoring), equalising response time between decoy and real sends once a real messaging provider exists, email verification, re-collecting consent when the lawyer-reviewed legal text replaces the drafts.

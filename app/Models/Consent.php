@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 final class Consent extends Model
 {
     /** @var list<string> */
-    protected $fillable = ['user_id', 'type', 'version', 'granted_at', 'withdrawn_at', 'ip', 'user_agent'];
+    protected $fillable = ['type', 'version', 'granted_at', 'withdrawn_at', 'ip', 'user_agent'];
 
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo

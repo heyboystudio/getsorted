@@ -8,8 +8,10 @@ use App\Contracts\Data\MessageChannel;
 use App\Domain\Accounts\Actions\RegisterCustomer;
 use App\Domain\Accounts\Actions\SendLoginCode;
 use App\Domain\Accounts\Actions\VerifyLoginCode;
+use App\Domain\Accounts\Enums\LoginStep;
 use App\Domain\Accounts\Exceptions\CouldNotSendLoginCode;
 use App\Domain\Accounts\Exceptions\LoginCodeRejected;
+use App\Domain\Accounts\Exceptions\PhoneAlreadyRegistered;
 use App\Domain\Accounts\Support\LoginThrottle;
 use App\Domain\Accounts\Support\PhoneNumbers;
 use App\Models\User;
@@ -31,7 +33,8 @@ final class Login extends Component
 {
     private const string VERIFIED_PHONE_KEY = 'login.verified_phone';
 
-    public string $step = 'phone';
+    #[Locked]
+    public LoginStep $step = LoginStep::Phone;
 
     public string $phone = '';
 
@@ -42,7 +45,7 @@ final class Login extends Component
     public ?int $codeSentAt = null;
 
     #[Locked]
-    public string $channel = 'whatsapp';
+    public MessageChannel $channel = MessageChannel::WhatsApp;
 
     #[Locked]
     public ?string $developmentCode = null;
@@ -65,12 +68,16 @@ final class Login extends Component
 
     public function sendCode(SendLoginCode $sendLoginCode): void
     {
+        if ($this->redirectIfLoggedIn()) {
+            return;
+        }
+
         $this->resetErrorBag();
 
         $phoneE164 = PhoneNumbers::normaliseSaMobile($this->phone);
 
         if ($phoneE164 === null) {
-            throw ValidationException::withMessages(['phone' => 'Enter a valid South African mobile number.']);
+            throw ValidationException::withMessages(['phone' => __('Enter a valid South African mobile number.')]);
         }
 
         $this->deliver($sendLoginCode, $phoneE164, MessageChannel::WhatsApp, 'phone');
@@ -78,16 +85,20 @@ final class Login extends Component
 
     public function sendBySms(SendLoginCode $sendLoginCode): void
     {
+        if ($this->redirectIfLoggedIn()) {
+            return;
+        }
+
         $this->resetErrorBag();
 
         if ($this->phoneE164 === null || $this->codeSentAt === null) {
-            $this->step = 'phone';
+            $this->step = LoginStep::Phone;
 
             return;
         }
 
         if (now()->getTimestamp() - $this->codeSentAt < (int) config('sortd.otp.sms_fallback_after_seconds')) {
-            throw ValidationException::withMessages(['code' => 'Please wait a moment before asking for an SMS.']);
+            throw ValidationException::withMessages(['code' => __('Please wait a moment before asking for an SMS.')]);
         }
 
         $this->deliver($sendLoginCode, $this->phoneE164, MessageChannel::Sms, 'code');
@@ -95,23 +106,27 @@ final class Login extends Component
 
     public function verifyCode(VerifyLoginCode $verifyLoginCode): void
     {
+        if ($this->redirectIfLoggedIn()) {
+            return;
+        }
+
         $this->resetErrorBag();
 
         if ($this->phoneE164 === null) {
-            $this->step = 'phone';
+            $this->step = LoginStep::Phone;
 
             return;
         }
 
         $this->validate(['code' => ['required', 'digits:'.config('sortd.otp.length')]], [
-            'code.required' => 'Enter the 6-digit code.',
-            'code.digits' => 'Enter the 6-digit code.',
+            'code.required' => __('Enter the :digits-digit code.', ['digits' => config('sortd.otp.length')]),
+            'code.digits' => __('Enter the :digits-digit code.', ['digits' => config('sortd.otp.length')]),
         ]);
 
         $waitSeconds = LoginThrottle::attempt([LoginThrottle::verifyLimit(request()->ip())]);
 
         if ($waitSeconds !== null) {
-            throw ValidationException::withMessages(['code' => 'Too many attempts. Try again in '.$this->minutes($waitSeconds).'.']);
+            throw ValidationException::withMessages(['code' => __('Too many attempts. Try again in :time.', ['time' => $this->minutes($waitSeconds)])]);
         }
 
         try {
@@ -128,11 +143,15 @@ final class Login extends Component
 
         session()->put(self::VERIFIED_PHONE_KEY, ['phone' => $this->phoneE164, 'at' => now()->getTimestamp()]);
         $this->developmentCode = null;
-        $this->step = 'profile';
+        $this->step = LoginStep::Profile;
     }
 
     public function register(RegisterCustomer $registerCustomer): void
     {
+        if ($this->redirectIfLoggedIn()) {
+            return;
+        }
+
         $this->resetErrorBag();
 
         $phoneE164 = $this->verifiedPhone();
@@ -140,34 +159,48 @@ final class Login extends Component
         if ($phoneE164 === null || $phoneE164 !== $this->phoneE164) {
             $this->reset();
 
-            throw ValidationException::withMessages(['phone' => 'Please verify your number again.']);
+            throw ValidationException::withMessages(['phone' => __('Please verify your number again.')]);
         }
+
+        $waitSeconds = LoginThrottle::attempt([LoginThrottle::registerLimit(request()->ip())]);
+
+        if ($waitSeconds !== null) {
+            throw ValidationException::withMessages(['firstName' => __('Too many attempts. Try again in :time.', ['time' => $this->minutes($waitSeconds)])]);
+        }
+
+        $this->email = mb_strtolower(trim($this->email));
 
         $validated = $this->validate([
             'firstName' => ['required', 'string', 'max:100'],
             'lastName' => ['required', 'string', 'max:100'],
-            'email' => ['nullable', 'string', 'lowercase', 'email:strict', 'max:255', 'unique:users,email'],
+            'email' => ['nullable', 'string', 'email:strict', 'max:255'],
             'acceptTerms' => ['accepted'],
             'acceptPrivacy' => ['accepted'],
             'marketing' => ['boolean'],
         ], [
-            'firstName.required' => 'Enter your first name.',
-            'lastName.required' => 'Enter your surname.',
-            'email.email' => 'Enter a valid email address, or leave it empty.',
-            'email.unique' => 'That email address is already in use.',
-            'acceptTerms.accepted' => 'Please accept the terms of service.',
-            'acceptPrivacy.accepted' => 'Please accept the privacy notice.',
+            'firstName.required' => __('Enter your first name.'),
+            'lastName.required' => __('Enter your surname.'),
+            'email.email' => __('Enter a valid email address, or leave it empty.'),
+            'acceptTerms.accepted' => __('Please accept the terms of service.'),
+            'acceptPrivacy.accepted' => __('Please accept the privacy notice.'),
         ]);
 
-        $user = $registerCustomer->handle(
-            $phoneE164,
-            trim($validated['firstName']),
-            trim($validated['lastName']),
-            $validated['email'] === '' ? null : $validated['email'],
-            (bool) $validated['marketing'],
-            request()->ip(),
-            request()->userAgent(),
-        );
+        try {
+            $user = $registerCustomer->handle(
+                $phoneE164,
+                trim($validated['firstName']),
+                trim($validated['lastName']),
+                $validated['email'] === '' ? null : $validated['email'],
+                (bool) $validated['marketing'],
+                request()->ip(),
+                request()->userAgent(),
+            );
+        } catch (PhoneAlreadyRegistered) {
+            session()->forget(self::VERIFIED_PHONE_KEY);
+            $this->reset();
+
+            throw ValidationException::withMessages(['phone' => __('This number already has an account. Log in to continue.')]);
+        }
 
         session()->forget(self::VERIFIED_PHONE_KEY);
         $this->logIn($user);
@@ -202,21 +235,21 @@ final class Login extends Component
         $waitSeconds = LoginThrottle::attempt(LoginThrottle::sendLimits($phoneE164, request()->ip()));
 
         if ($waitSeconds !== null) {
-            throw ValidationException::withMessages([$errorField => 'Too many codes requested. Try again in '.$this->minutes($waitSeconds).'.']);
+            throw ValidationException::withMessages([$errorField => __('Too many codes requested. Try again in :time.', ['time' => $this->minutes($waitSeconds)])]);
         }
 
         try {
             $sent = $sendLoginCode->handle($phoneE164, $channel, request()->ip());
         } catch (CouldNotSendLoginCode) {
-            throw ValidationException::withMessages([$errorField => "We couldn't send your code. Try SMS or try again shortly."]);
+            throw ValidationException::withMessages([$errorField => __("We couldn't send your code. Try SMS or try again shortly.")]);
         }
 
         $this->phoneE164 = $sent->phoneE164;
-        $this->channel = $sent->channel->value;
+        $this->channel = $sent->channel;
         $this->codeSentAt = $sent->sentAt->getTimestamp();
         $this->developmentCode = $sent->developmentCode;
         $this->code = '';
-        $this->step = 'code';
+        $this->step = LoginStep::Code;
     }
 
     private function logIn(User $user): void
@@ -243,20 +276,30 @@ final class Login extends Component
     private function rejectionMessage(LoginCodeRejected $rejected): string
     {
         if ($rejected->reason === LoginCodeRejected::EXPIRED || $rejected->attemptsLeft === 0) {
-            return 'This code has expired. Request a new one.';
+            return __('This code has expired. Request a new one.');
         }
 
         if ($rejected->attemptsLeft === null) {
-            return 'That code is incorrect.';
+            return __('That code is incorrect.');
         }
 
-        return 'That code is incorrect. '.$rejected->attemptsLeft.' '.($rejected->attemptsLeft === 1 ? 'attempt' : 'attempts').' left.';
+        return __('That code is incorrect.').' '.trans_choice(':count attempt left.|:count attempts left.', $rejected->attemptsLeft);
     }
 
     private function minutes(int $seconds): string
     {
-        $minutes = (int) ceil($seconds / 60);
+        return trans_choice(':count minute|:count minutes', (int) ceil($seconds / 60));
+    }
 
-        return $minutes.' '.($minutes === 1 ? 'minute' : 'minutes');
+    /** `guest` middleware only runs on page load, so actions re-check it. */
+    private function redirectIfLoggedIn(): bool
+    {
+        if (! auth()->check()) {
+            return false;
+        }
+
+        $this->redirectRoute('account.home');
+
+        return true;
     }
 }

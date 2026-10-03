@@ -11,6 +11,7 @@ use App\Domain\Accounts\Support\PhoneNumbers;
 use Closure;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Assert;
+use RuntimeException;
 
 /**
  * Records messages instead of sending them. In local development it also logs
@@ -21,8 +22,24 @@ final class FakeMessagingChannel implements MessagingChannel
     /** @var list<OutgoingMessage> */
     private array $sent = [];
 
+    private bool $failNext = false;
+
+    /** Makes the next send throw, to test what happens when the provider is down. */
+    public function failNextSend(): self
+    {
+        $this->failNext = true;
+
+        return $this;
+    }
+
     public function send(OutgoingMessage $message): MessageReceipt
     {
+        if ($this->failNext) {
+            $this->failNext = false;
+
+            throw new RuntimeException('Fake messaging provider is unavailable.');
+        }
+
         $this->sent[] = $message;
 
         if (app()->environment('local')) {

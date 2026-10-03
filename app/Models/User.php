@@ -38,7 +38,7 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
     use HasFactory, HasRoles, HasUlids, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, Notifiable, SoftDeletes;
 
     /** @var list<string> */
-    protected $fillable = ['first_name', 'last_name', 'email', 'password', 'phone_e164', 'phone_verified_at', 'locale'];
+    protected $fillable = ['first_name', 'last_name', 'email', 'locale'];
 
     /** @var list<string> */
     protected $hidden = ['password', 'remember_token'];

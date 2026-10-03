@@ -15,7 +15,7 @@ final class VerifyLoginCode
     /**
      * Checks a login code: unexpired, under the attempt limit, single use,
      * compared in constant time. Returns the existing customer, or null for a
-     * new number. Admin accounts are rejected like a wrong code (AC18).
+     * new number. Admin and deleted accounts are rejected like a wrong code (AC18).
      *
      * @throws LoginCodeRejected
      */
@@ -35,7 +35,14 @@ final class VerifyLoginCode
                 ->first();
 
             if (! $otp instanceof PhoneOtp) {
-                return LoginCodeRejected::INCORRECT;
+                // A number whose latest code was already used gets "expired", not "incorrect" (AC11).
+                $hasUsedCode = PhoneOtp::query()
+                    ->where('phone_e164', $phoneE164)
+                    ->where('purpose', OtpPurpose::Login)
+                    ->whereNotNull('consumed_at')
+                    ->exists();
+
+                return $hasUsedCode ? LoginCodeRejected::EXPIRED : LoginCodeRejected::INCORRECT;
             }
 
             if ($otp->expires_at->isPast() || $otp->attempts >= $maxAttempts) {
@@ -61,11 +68,12 @@ final class VerifyLoginCode
             throw new LoginCodeRejected($outcome);
         }
 
-        $user = User::query()->where('phone_e164', $phoneE164)->first();
-
-        if ($user instanceof User && $user->isAdmin()) {
+        // Blocked numbers only ever hold unsent codes, so this is defence in depth.
+        if (SendLoginCode::isBlockedFromPhoneLogin($phoneE164)) {
             throw new LoginCodeRejected(LoginCodeRejected::INCORRECT);
         }
+
+        $user = User::query()->where('phone_e164', $phoneE164)->first();
 
         if ($user instanceof User && $user->phone_verified_at === null) {
             $user->forceFill(['phone_verified_at' => now()])->save();

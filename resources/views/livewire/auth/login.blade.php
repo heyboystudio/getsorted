@@ -2,7 +2,7 @@
     <section class="w-full max-w-sm">
         <a href="{{ route('home') }}" class="mb-10 inline-block text-2xl font-semibold tracking-tight">{{ __('Sortd') }}<span aria-hidden="true" class="text-emerald-700">.</span></a>
 
-        @if ($step === 'phone')
+        @if ($step === \App\Domain\Accounts\Enums\LoginStep::Phone)
             <h1 class="text-2xl font-semibold tracking-tight">{{ __('Log in or sign up') }}</h1>
             <p class="mt-2 text-zinc-600">{{ __("We'll send a 6-digit code to your phone on WhatsApp.") }}</p>
 
@@ -20,10 +20,10 @@
                     <span wire:loading wire:target="sendCode">{{ __('Sending…') }}</span>
                 </button>
             </form>
-        @elseif ($step === 'code')
+        @elseif ($step === \App\Domain\Accounts\Enums\LoginStep::Code)
             <h1 class="text-2xl font-semibold tracking-tight">{{ __('Enter your code') }}</h1>
             <p class="mt-2 text-zinc-600">
-                {{ __('We sent a code to :phone on :channel.', ['phone' => $this->maskedPhone(), 'channel' => $channel === 'sms' ? 'SMS' : 'WhatsApp']) }}
+                {{ __('We sent a code to :phone on :channel.', ['phone' => $this->maskedPhone(), 'channel' => $channel === \App\Contracts\Data\MessageChannel::Sms ? 'SMS' : 'WhatsApp']) }}
             </p>
 
             @if ($developmentCode !== null)
@@ -70,16 +70,18 @@
                     <div>
                         <label for="{{ $field }}" class="block text-sm font-medium">{{ $label }}</label>
                         <input id="{{ $field }}" type="text" autocomplete="{{ $field === 'firstName' ? 'given-name' : 'family-name' }}" wire:model="{{ $field }}"
-                            @class(['mt-1 block w-full rounded-lg border bg-white px-3 py-3 outline-none focus:ring-2 focus:ring-emerald-600', 'border-red-500' => $errors->has($field), 'border-zinc-300' => ! $errors->has($field)])>
-                        @error($field) <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                            @class(['mt-1 block w-full rounded-lg border bg-white px-3 py-3 outline-none focus:ring-2 focus:ring-emerald-600', 'border-red-500' => $errors->has($field), 'border-zinc-300' => ! $errors->has($field)])
+                            aria-describedby="{{ $field }}-error" @error($field) aria-invalid="true" @enderror>
+                        @error($field) <p id="{{ $field }}-error" class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                     </div>
                 @endforeach
 
                 <div>
                     <label for="email" class="block text-sm font-medium">{{ __('Email') }} <span class="font-normal text-zinc-500">({{ __('optional') }})</span></label>
                     <input id="email" type="email" autocomplete="email" wire:model="email"
-                        @class(['mt-1 block w-full rounded-lg border bg-white px-3 py-3 outline-none focus:ring-2 focus:ring-emerald-600', 'border-red-500' => $errors->has('email'), 'border-zinc-300' => ! $errors->has('email')])>
-                    @error('email') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                        @class(['mt-1 block w-full rounded-lg border bg-white px-3 py-3 outline-none focus:ring-2 focus:ring-emerald-600', 'border-red-500' => $errors->has('email'), 'border-zinc-300' => ! $errors->has('email')])
+                        aria-describedby="email-error" @error('email') aria-invalid="true" @enderror>
+                    @error('email') <p id="email-error" class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="space-y-3 pt-2 text-sm">
