@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Domain\Accounts\Enums\Role;
+use App\Domain\Accounts\Support\PhoneNumbers;
 use App\Filament\Admin\Pages\Auth\Login;
-use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Model;
@@ -83,5 +83,6 @@ it('blocks tests from reaching the internet', function (): void {
 })->throws(RuntimeException::class);
 
 it('masks phone numbers in fake messaging logs', function (): void {
-    expect(FakeMessagingChannel::maskPhone('+27821234567'))->toBe('+278******67');
+    expect(PhoneNumbers::maskForLogs('+27821234567'))->toBe('+278******67')
+        ->and(PhoneNumbers::maskForDisplay('+27821234567'))->toBe('+27 82 *** 4567');
 });

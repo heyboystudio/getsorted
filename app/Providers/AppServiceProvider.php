@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Accounts\Support\LoginThrottle;
+use App\Domain\Accounts\Support\PhoneNumbers;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\SessionGuard;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
@@ -66,6 +70,13 @@ final class AppServiceProvider extends ServiceProvider
         Model::shouldBeStrict(! app()->isProduction());
 
         URL::forceHttps(! app()->environment(['local', 'testing']));
+
+        // "Keep me logged in" lasts 30 days (security baseline §1); admins never get the option.
+        $guard = Auth::guard('web');
+
+        if ($guard instanceof SessionGuard) {
+            $guard->setRememberDuration((int) config('sortd.auth.remember_days') * 24 * 60);
+        }
     }
 
     /**
@@ -74,12 +85,12 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function configureRateLimiting(): void
     {
-        RateLimiter::for('otp-send', fn (Request $request): array => [
-            Limit::perMinutes(15, 3)->by('otp-send:phone:'.hash('sha256', (string) $request->input('phone'))),
-            Limit::perHour(10)->by('otp-send:ip:'.$request->ip()),
-        ]);
+        RateLimiter::for('otp-send', fn (Request $request): array => LoginThrottle::sendLimits(
+            PhoneNumbers::normaliseSaMobile((string) $request->input('phone')) ?? (string) $request->input('phone'),
+            $request->ip(),
+        ));
 
-        RateLimiter::for('otp-verify', fn (Request $request): Limit => Limit::perMinutes(15, 10)->by('otp-verify:ip:'.$request->ip()));
+        RateLimiter::for('otp-verify', fn (Request $request): Limit => LoginThrottle::verifyLimit($request->ip()));
 
         RateLimiter::for('webhooks', fn (Request $request): Limit => Limit::perMinute(120)->by('webhooks:ip:'.$request->ip()));
     }

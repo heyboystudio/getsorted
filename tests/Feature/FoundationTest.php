@@ -26,7 +26,7 @@ it('does not expose starter account pages', function (string $path): void {
 
     $this->get($path)->assertNotFound();
 })->with([
-    '/login', '/register', '/forgot-password', '/reset-password/example',
+    '/register', '/forgot-password', '/reset-password/example',
     '/email/verify', '/two-factor-challenge', '/user/confirm-password',
     '/dashboard', '/settings/profile', '/settings/security', '/settings/appearance',
 ]);
@@ -34,9 +34,13 @@ it('does not expose starter account pages', function (string $path): void {
 it('does not accept starter account mutations', function (string $path): void {
     $this->post($path, [])->assertNotFound();
 })->with([
-    '/login', '/register', '/forgot-password', '/reset-password',
-    '/two-factor-challenge', '/user/confirm-password', '/logout',
+    '/register', '/forgot-password', '/reset-password',
+    '/two-factor-challenge', '/user/confirm-password',
 ]);
+
+it('has no password login form behind the phone login page', function (): void {
+    $this->post('/login', ['email' => 'a@b.test', 'password' => 'secret'])->assertMethodNotAllowed();
+});
 
 it('denies user management until an account policy is implemented', function (): void {
     $user = new User;
