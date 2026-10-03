@@ -1,6 +1,6 @@
 # Spec 001 · Phone + OTP login and consent
 
-Status: Draft · Phase: 1 · Owner: founder
+Status: Approved · Phase: 1 · Owner: founder
 
 ## Goal
 Customers sign up and log in with their South African mobile number and a 6-digit one-time code, and new customers accept the terms and privacy notice (POPIA consent recorded). This is the front door for every customer feature that follows.
@@ -78,11 +78,12 @@ Update `docs/architecture/data-model.md` in the same PR.
 - Editing profile, changing phone/email, deleting the account (C6 account spec).
 - Final legal wording of the terms and privacy notice.
 
-## Open questions
-1. **Terms and privacy notice text.** No legal text exists yet. Proposal: placeholder pages marked "Draft — not yet in force", versioned `2026-10-draft`, so consent records work now; replace with lawyer-reviewed text before launch (POPIA checklist). OK?
-2. **Local testing of codes (AC 20).** Showing the code on screen in local development only. OK, or would you prefer a fixed code like `000000` locally?
-3. **Pros in Phase 1.** The roadmap's Phase 1 exit says "customer **and pro** can sign up with OTP". Proposal: this spec covers customers; a small follow-up adds a "Join as a pro" entry that uses the same login and gives the `pro` role, with the pro panel staying locked until the application/vetting work (spec 008). OK?
-4. **Q5 — WhatsApp provider.** Not needed to build this spec (fake channel), but needed before staging. No answer required yet.
+## Decisions (founder, 2026-10-03)
+1. **Terms and privacy text:** placeholder pages marked "Draft — not yet in force", version `2026-10-draft`; lawyer-reviewed text before launch.
+2. **Local testing:** show the code on the code-entry screen in local development only (AC 20).
+3. **Pros:** this spec covers customers; a follow-up adds "Join as a pro" on the same login, pro panel locked until spec 008.
+4. **Q5 (WhatsApp provider):** still open; not needed to build this spec.
 
 ## Progress
 - 2026-10-03: Drafted for founder review.
+- 2026-10-03: Approved by the founder with the proposed answers.
