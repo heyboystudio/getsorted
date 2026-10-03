@@ -40,6 +40,18 @@ return [
             'report' => false,
         ],
 
+        // Private uploads (job photos, pro documents). Never publicly reachable:
+        // served only through short-lived signed URLs (security baseline §3).
+        'media' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/media'),
+            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/files/media',
+            'visibility' => 'private',
+            'serve' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

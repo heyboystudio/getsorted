@@ -100,9 +100,9 @@ erDiagram
 ### Platform
 | Table | Key columns |
 |---|---|
-| `media` | `spatie/laravel-medialibrary` (job photos, pro documents, invoice PDFs) — private disk |
-| `activity_log` | `spatie/laravel-activitylog` — admin and sensitive actions |
-| `settings` | `spatie/laravel-settings` — timers, commission, deposit cap |
+| `media` | `spatie/laravel-medialibrary` (job photos, pro documents, invoice PDFs) — private `media` disk — **in place** |
+| `activity_log` | `spatie/laravel-activitylog` — admin and sensitive actions; append-only, never cleaned — **in place** |
+| `settings` | `spatie/laravel-settings` — timers, commission, deposit cap — **table in place**; settings classes arrive with their features |
 | `ai_interactions` | user_id, service_job_id, purpose, model, input_tokens, output_tokens, latency_ms, outcome (no raw customer text kept beyond 30 days) |
 | `notifications` | Laravel database notifications |
 | Queue/cache/session | Laravel defaults on Postgres (`jobs`, `failed_jobs`, `cache`, `sessions`) |

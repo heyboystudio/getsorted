@@ -26,6 +26,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 020 | CI workflow paused; free GitHub plan without branch protection | Accepted (temporary) | 2026-10-03 |
 | 021 | Filament 5 admin panel with mandatory MFA; pro panel locked | Accepted | 2026-10-03 |
 | 022 | Roles via spatie/laravel-permission; super-admin by console command | Accepted | 2026-10-03 |
+| 023 | Supporting packages: audit log, settings, media, money, phone, PostGIS | Accepted | 2026-10-03 |
 
 ---
 
@@ -136,3 +137,23 @@ Short architecture decision records. **Add an entry for every significant choice
 **Alternatives:** Filament Shield was not added; it is unnecessary until there are resources to guard and would be another dependency to vet. A role column on `users` was rejected because the data model and tech stack specify this package.
 
 **Consequences:** The founder runs the command once per environment to create their own account. Fine-grained permissions (e.g. second-admin approval for large refunds) come with the features that need them.
+
+## 023 · Supporting packages: audit log, settings, media, money, phone, PostGIS
+**Context:** Roadmap step 9 installs the packages named in `tech-stack.md`, each after a compatibility check against Laravel 13.34 / Filament 5.9 / Livewire 4.4 / PHP 8.4.
+
+**Decision and compatibility (all MIT):**
+| Package | Version | Supports | Setup |
+|---|---|---|---|
+| `spatie/laravel-activitylog` | 5.1.1 | PHP ^8.4, Illuminate ^12\|^13 | `activity_log` table. Audit rows are append-only, so `activitylog:clean` must never be scheduled |
+| `spatie/laravel-settings` | 3.9.0 | Illuminate ^11\|^12\|^13 | `settings` table; settings classes arrive with their features (Q1 commission etc. still open) |
+| `spatie/laravel-medialibrary` | 11.23.8 | Illuminate ^10–^13 | `media` table on a new private `media` disk (`storage/app/private/media`), served only through short-lived signed URLs at `/files/media` (unsigned requests get 403, tested). Pro-edition setting nulled |
+| `filament/spatie-laravel-media-library-plugin` | 5.9.0 | Filament 5.9 | Upload fields for admin/pro panels later |
+| `brick/money` | 0.15.2 | PHP ^8.2 (`brick/math` already present) | `App\Casts\MoneyCast`: `*_cents` integer ↔ `Money` (ZAR by default); refuses floats, ints, strings and other currencies |
+| `propaganistas/laravel-phone` | 6.1.0 | Illuminate ^11\|^12\|^13 | `phone:ZA` validation and E.164 formatting |
+| `clickbar/laravel-magellan` | 2.2.0 | Illuminate ^11\|^12\|^13 | Geography columns + PostGIS functions; our own migration already enables PostGIS, so Magellan's is not published |
+
+**Transitive:** `spatie/image` 3.9.7, `spatie/image-optimizer` 1.10.0, `maennchen/zipstream-php` 3.2.2, `spatie/temporary-directory` 2.4.0, `phpdocumentor/type-resolver` 2.1.0 (all MIT) and `giggsey/libphonenumber-for-php-lite` 9.0.40 (**Apache-2.0**, permissive; Google's phone-number data). `composer audit`: no advisories.
+
+**Not added:** Filament's settings plugin (no settings page yet) and `spatie/laravel-data` (the settings `DataCast` entry was removed from config). `brick/money` is pre-1.0, so it is pinned to `^0.15` (0.x minor releases can break).
+
+**Consequences:** Upload rules from the security baseline (MIME allow-list, re-encoding, EXIF stripping) are applied per collection when the first upload feature is built.

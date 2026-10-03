@@ -28,7 +28,7 @@ Do these in order, one PR each where sensible. Stop and ask the founder where ma
 6. [ ] GitHub repo, branch protection on `main`, GitHub Actions CI (PHP 8.4 + Postgres/PostGIS service) running `composer check` and `npm audit`, Dependabot. **Partly done 2026-10-03:** workflow + Dependabot committed; CI paused and no branch protection on the free plan (decision 020).
 7. [x] Install Filament 5; create `admin` panel at `/admin` with MFA required; create `pro` panel at `/pro` (empty, locked). Done 2026-10-03; decision 021.
 8. [x] Install `spatie/laravel-permission`, seed roles; super-admin user via artisan command (never in a seeder with a real password). Done 2026-10-03; decision 022.
-9. [ ] Install activity log, settings, media library (private disk), `brick/money` + `MoneyCast`, phone, PostGIS package — each after a compatibility check.
+9. [x] Install activity log, settings, media library (private disk), `brick/money` + `MoneyCast`, phone, PostGIS package — each after a compatibility check. Done 2026-10-03; decision 023.
 10. [ ] Create `app/Domain`, `app/Contracts`, `app/Integrations` skeletons; contracts + Fakes for PaymentGateway, MessagingChannel, ScopingAssistant, Geocoder; bind Fakes in local/testing.
 11. [ ] Security headers middleware, HTTPS/HSTS, rate limiter definitions, `Http::preventStrayRequests()` in tests, `Model::shouldBeStrict()` in non-production.
 12. [ ] **[decide]** Hosting provider + region (decision 014) and error tracking (decision 015). Deploy staging from `main` via CI; production environment created but empty.
