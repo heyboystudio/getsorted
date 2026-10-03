@@ -2,7 +2,7 @@
 
 Durban's marketplace for vetted tradespeople: describe the problem, get up to 3 quotes from vetted local pros, pay safely on-platform, track everything in one place.
 
-**Status:** pre-build. This repo currently holds the specs, architecture, rules and AI configuration. The Laravel app is created in Phase 0.
+**Status:** Phase 0 (foundations). The Laravel app, admin panel with MFA, roles, quality gate and security baseline are in place; customer features start in Phase 1. See `docs/roadmap.md`.
 
 ## Stack
 Laravel 13 · PHP 8.4 · PostgreSQL + PostGIS · Filament 5 (admin + pro portals) · Livewire 4 + Tailwind 4 (customer app) · Pest · Laravel Boost for AI-assisted development. Details: `docs/architecture/tech-stack.md`.
@@ -29,4 +29,42 @@ Laravel 13 · PHP 8.4 · PostgreSQL + PostGIS · Filament 5 (admin + pro portals
 5. Any time: `/phase-check` to see where things stand.
 
 ## Running locally
-The application is not scaffolded yet. Phase 0 tool setup and verification are documented in [the local preflight report](docs/engineering/phase-0-preflight.md). Run `bash scripts/check-tools.sh` to verify the development tools and a disposable local PostGIS database. Full application instructions are added during Phase 0, task 13.
+
+Verified from a clean clone on 2026-10-03 (Zorin/Ubuntu 24.04).
+
+### You need
+- PHP 8.4 with the `pdo_pgsql`, `pgsql`, `intl`, `bcmath`, `gd`, `zip`, `mbstring`, `curl` and `xml` extensions
+- Composer 2
+- Node 24 (see `.nvmrc`)
+- Docker with Compose (runs Postgres 17 + PostGIS)
+
+`bash scripts/check-tools.sh` checks all of these (details in [the preflight report](docs/engineering/phase-0-preflight.md)).
+
+### First time
+```bash
+git clone https://github.com/heyboystudio/sortd.git
+cd sortd
+composer setup                 # installs PHP + JS packages, creates .env and an app key, builds assets
+docker compose up -d --wait    # starts the local database (only reachable from this computer)
+php artisan migrate            # creates the tables, PostGIS and the roles
+php artisan sortd:create-super-admin   # your admin account; type the password at the hidden prompt
+```
+
+### Every day
+```bash
+docker compose up -d --wait    # if the database is not already running
+composer dev                   # app at http://localhost:8000, admin at http://localhost:8000/admin
+```
+Stop the app with Ctrl+C. `docker compose stop` stops the database; your data is kept.
+
+### Checks
+```bash
+composer check                 # formatting, Larastan, all tests, composer audit — must pass before any merge
+npm audit --audit-level=high
+```
+
+### Notes
+- `.env.example` sets `DB_PASSWORD=sortd_local`, which only works for the local Docker database. Never put real secrets in `.env.example`.
+- Tests use a separate `sortd_testing` database, created automatically the first time the database container starts.
+- Outside services (payments, WhatsApp/SMS, AI, address lookup) are fakes locally; nothing is sent or charged.
+- If port 5432 or 8000 is taken, set `DB_PORT` in `.env` or run `php artisan serve --port=8001`.

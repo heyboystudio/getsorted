@@ -17,8 +17,8 @@ Short architecture decision records. **Add an entry for every significant choice
 | 011 | ULID `public_id` in URLs; never expose numeric IDs | Accepted | 2026-10-03 |
 | 012 | Payment provider | Open (Phase 3) | — |
 | 013 | WhatsApp provider | Open (Phase 1) | — |
-| 014 | Hosting provider and region | Open (Phase 0) | — |
-| 015 | Error tracking: Sentry vs Nightwatch | Open (Phase 0) | — |
+| 014 | Hosting: a South African provider; deployment deferred | Accepted (provider TBD) | 2026-10-03 |
+| 015 | Error tracking: Sentry (EU data region) | Accepted | 2026-10-03 |
 | 016 | Local foundation tools and rootless Docker | Accepted | 2026-10-03 |
 | 017 | Official Livewire scaffold with closed account routes | Accepted | 2026-10-03 |
 | 018 | Laravel Boost for AI guidelines and MCP | Accepted | 2026-10-03 |
@@ -179,3 +179,17 @@ Short architecture decision records. **Add an entry for every significant choice
 - **Logs:** the fake messaging channel now masks phone numbers and never logs message parameters (no OTP codes in logs). Fixes an oversight from step 10.
 
 **Consequences:** Strict models surfaced a factory gap (MFA columns missing on new users); factories now mirror the full schema.
+
+## 014 · Hosting: a South African provider; deployment deferred
+**Context:** Roadmap step 12. Requirements (`tech-stack.md`): PHP 8.4 or Docker with separate web/queue/scheduler processes, managed Postgres with PostGIS, daily backups and point-in-time recovery, encryption at rest, TLS, staging and production separated; an SA region preferred for latency and POPIA. Options compared: Laravel Forge + AWS Cape Town, Laravel Cloud (no Africa region; nearest Frankfurt/Ireland), a local SA hosting provider.
+
+**Decision:** The founder chose **hosting with a South African provider** (option C) and to **keep developing locally for now**. The specific provider is chosen when the first hosted environment is needed (expected early Phase 1, when real OTP messages need a public URL). Before choosing, compare SA providers against the requirements above; if none offers managed Postgres with PostGIS and point-in-time recovery, bring the fallback (self-managed Postgres with WAL archiving/pgBackRest and tested restores) back to the founder as a decision.
+
+**Consequences:** Phase 0's "staging live" exit criterion stays open until then. Data stays in South Africa, which simplifies the POPIA position. HTTP→HTTPS redirect and trusted proxy settings (decision 025) are configured with the provider.
+
+## 015 · Error tracking: Sentry (EU data region)
+**Context:** Roadmap step 12. Options: Sentry (free developer plan, Team ~$26/month; EU data residency; built-in PII scrubbing) or Laravel Nightwatch (free tier 300k events, Pro $20/month; data location not confirmed).
+
+**Decision:** The founder chose **Sentry**, starting on the free plan with the **EU data region**. `sentry/sentry-laravel` is installed (after a compatibility check) together with the first hosted environment; it is not needed locally. Configure it to send no request bodies, cookies or user PII (`send_default_pii=false`) and to scrub phone numbers, emails and addresses.
+
+**Consequences:** Error data leaves South Africa (EU), so Sentry is listed as an operator in the POPIA checklist and privacy notice, with the cross-border basis documented.
