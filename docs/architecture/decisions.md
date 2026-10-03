@@ -19,6 +19,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 013 | WhatsApp provider | Open (Phase 1) | — |
 | 014 | Hosting provider and region | Open (Phase 0) | — |
 | 015 | Error tracking: Sentry vs Nightwatch | Open (Phase 0) | — |
+| 016 | Local foundation tools and rootless Docker | Accepted | 2026-10-03 |
 
 ---
 
@@ -64,3 +65,14 @@ Short architecture decision records. **Add an entry for every significant choice
 
 ## 011 · Public IDs
 **Decision:** ULID `public_id` for every entity addressable by URL; route model binding uses it.
+
+## 016 · Local foundation tools and rootless Docker
+**Context:** The initial Zorin workstation lacked PHP, Composer and Docker, and supplied Node 18. Phase 0 requires PHP 8.4, Node LTS and PostgreSQL 17 with PostGIS. The founder authorized local installation and enters administrator credentials directly in a desktop terminal.
+
+**Decision:** Install PHP 8.4 CLI and required extensions from [Ondřej Surý's Ubuntu PHP PPA](https://launchpad.net/~ondrej/+archive/ubuntu/php), using its maintained noble packages. Use the official Composer installer with its SHA-384 verification and official Node 24 LTS binaries with SHA-256 verification. Install Docker from its signed apt repository and use its rootless user context for development. Verify PostgreSQL/PostGIS in a disposable `postgis/postgis:17-3.5-alpine` container from the PostGIS project, with no networking or published ports. GitHub CLI uses browser authentication and the desktop keyring.
+
+**Alternatives:** The downloaded Herd Lite PHP 8.4 binary reported 8.4.1 and was not installed; the PPA supplied 8.4.26. Native PostgreSQL is unnecessary when Docker can supply the required database. Rootless Docker avoids adding the user to the root-equivalent Docker group.
+
+**Consequences:** The local OS trusts the added PHP and Docker package repositories. Docker's Ubuntu packages are used on Zorin's noble base; upstream does not officially support Ubuntu derivatives. Tool patch versions must stay updated. Composer/Node/GitHub CLI are user-local; new shells prepend `~/.local/bin`. Rootless Docker starts with the user's session. The system Docker service installed by the package also remains present; development checks use the rootless context. No application packages are introduced in this step, so Laravel/Filament/Livewire package compatibility checks remain part of subsequent steps.
+
+**Sources and maintenance:** [PHP supported versions](https://www.php.net/supported-versions.php), [Composer download/verification](https://getcomposer.org/download/), [Node releases](https://nodejs.org/en/download), [Docker installation](https://docs.docker.com/engine/install/ubuntu/), [rootless Docker](https://docs.docker.com/engine/security/rootless/), [PostGIS image](https://github.com/postgis/docker-postgis). These are actively maintained language/runtime or project distribution channels, checked during installation. PHP uses the PHP License, Composer and Node MIT, Docker Engine Apache-2.0, PostgreSQL the PostgreSQL License, and PostGIS GPL-2.0-or-later; bundled operating-system packages retain their respective licenses.
