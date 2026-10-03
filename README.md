@@ -29,4 +29,4 @@ Laravel 13 · PHP 8.4 · PostgreSQL + PostGIS · Filament 5 (admin + pro portals
 5. Any time: `/phase-check` to see where things stand.
 
 ## Running locally
-Filled in during Phase 0, task 13.
+The application is not scaffolded yet. Phase 0 tool setup and verification are documented in [the local preflight report](docs/engineering/phase-0-preflight.md). Run `bash scripts/check-tools.sh` to verify the development tools and a disposable local PostGIS database. Full application instructions are added during Phase 0, task 13.

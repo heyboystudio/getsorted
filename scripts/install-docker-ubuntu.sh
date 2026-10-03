@@ -44,12 +44,13 @@ fi
 apt-get update
 apt-get install -y ca-certificates curl
 install -m 0755 -d /etc/apt/keyrings
-curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+    --connect-timeout 15 --proto '=https' --tlsv1.2 \
     https://download.docker.com/linux/ubuntu/gpg -o "$sortd_tmp/docker.asc"
 install -m 0644 "$sortd_tmp/docker.asc" /etc/apt/keyrings/docker.asc
 install -m 0644 "$sortd_tmp/docker.sources" /etc/apt/sources.list.d/docker.sources
 apt-get update
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
 systemctl start docker
 docker version
 docker compose version
