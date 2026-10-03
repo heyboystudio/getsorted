@@ -1,6 +1,42 @@
-# Local credentials and generated dependencies; merge Laravel entries at step 2.
+# Local credentials and generated dependencies.
 .env
 .env.*
 !.env.example
 /vendor/
 /node_modules/
+
+# Laravel defaults
+/.phpunit.cache
+/public/build
+/public/fonts-manifest.dev.json
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+.phpactor.json
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/auth.json
+
+# Editor folders
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+
+# Other AI tools' generated files. Claude Code files (CLAUDE.md, .claude/,
+# boost.json, .mcp.json) are deliberately committed so cloud sessions have them.
+/.amp
+/.cursor
+/.factory
+/.grok
+/.junie
+/.kiro
+/.pi
+/AGENTS.md
+/opencode.json
+/opencode.jsonc
