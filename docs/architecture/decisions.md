@@ -21,6 +21,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 015 | Error tracking: Sentry vs Nightwatch | Open (Phase 0) | — |
 | 016 | Local foundation tools and rootless Docker | Accepted | 2026-10-03 |
 | 017 | Official Livewire scaffold with closed account routes | Accepted | 2026-10-03 |
+| 018 | Laravel Boost for AI guidelines and MCP | Accepted | 2026-10-03 |
 
 ---
 
@@ -88,3 +89,12 @@ Short architecture decision records. **Add an entry for every significant choice
 **Dependencies and alternatives:** Unused starter packages (Fortify, Chisel, Pail, Pao, Sail, Larastan) were removed before locking; Larastan returns with the quality tools in step 5. Retained direct packages, from the resolved lock: Laravel framework 13.34.0, Tinker 3.0.2, Livewire 4.4.7, Blaze 1.0.19, Pint 1.32.1, Pest 4.7.8, Pest Laravel plugin 4.1.0, Collision 8.9.5, Faker 1.24.1 (all MIT), Mockery 1.6.15 (BSD-3-Clause) and **Flux 2.20.1 (free edition, proprietary licence)**. Flux is currently only imported by `resources/css/app.css`; no view uses it yet. The founder approved keeping Flux despite its proprietary licence (2026-10-03). Pest replaces direct PHPUnit (BSD-3-Clause), which remains transitive. Tailwind, its Vite plugin, Vite, Laravel Vite plugin and concurrently (MIT) provide the build toolchain. Starting from Laravel's bare skeleton was rejected because the roadmap explicitly selects the official Livewire kit. The paid Flux Pro edition is not used.
 
 **Consequences:** Scaffold defaults do not activate any customer/admin authentication. User schema and factory remain bootstrap infrastructure, not a completed accounts feature. Quality tools already supplied by the starter may be used for validation; the full configured quality gate still belongs to step 5.
+
+## 018 · Laravel Boost for AI guidelines and MCP
+**Context:** Roadmap step 4. Claude Code (and Codex, which the founder has also used) need the Sortd rules plus version-accurate Laravel guidance, and a way to search docs and inspect the app.
+
+**Decision:** Install `laravel/boost` ^2.10 as a **dev-only** dependency (2.10.1, MIT; requires PHP ^8.2 and Illuminate ^13.0 among others, so it supports Laravel 13). Configure it for Claude Code and Codex: guidelines (`CLAUDE.md`, `AGENTS.md`), skills (`.claude/skills`, `.agents/skills`) and the `laravel-boost` MCP server (`.mcp.json`, `.codex/config.toml`). All generated files are committed so cloud sessions have them. Our `.ai/guidelines/*.md` are the source for the Sortd section; a precedence line in `sortd-project.md` makes Sortd rules win over generic Boost guidance. `config/boost.php` excludes the `deployments` guideline and `boost.json` disables Cloud, because both recommend Laravel Cloud while hosting is still open (decision 014).
+
+**Transitive dependencies (all MIT):** `laravel/mcp` 1.0.1, `laravel/roster` 1.0.0, `composer/semver` 3.5.0, `symfony/yaml` 8.1.8.
+
+**Consequences:** After editing `.ai/guidelines/*.md`, run `php artisan boost:update` and commit `CLAUDE.md`/`AGENTS.md`. `boost:install --no-interaction` did not record the selected agents, so `agents` was added to `boost.json` by hand; without it `boost:update` refuses to run. Boost is not loaded in production because it is a dev dependency. Re-enable the Cloud guidance only if decision 014 picks Laravel Cloud.
