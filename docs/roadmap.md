@@ -21,7 +21,7 @@ After launch: public SEO pages per suburb × trade, pro performance dashboards, 
 Do these in order, one PR each where sensible. Stop and ask the founder where marked **[decide]**.
 
 1. [x] Confirm tools: PHP 8.4, Composer, Node LTS, Docker, Postgres 17 + PostGIS locally (via Docker/Sail). Verified 2026-10-03; [results and repeatable checks](engineering/phase-0-preflight.md).
-2. [ ] Create Laravel 13 app with the **Livewire starter kit** in this repo (keep `docs/`, `.ai/`, `.claude/`, `CLAUDE.md`).
+2. [x] Create Laravel 13 app with the **Livewire starter kit** in this repo (keep `docs/`, `.ai/`, `.claude/`, `CLAUDE.md`).  Done 2026-10-03; [notes](engineering/phase-0-scaffold.md).
 3. [ ] Configure Postgres + PostGIS as the only database (queue, cache, session on database).
 4. [ ] Install **Laravel Boost** (`composer require laravel/boost --dev`, `php artisan boost:install`), select Claude Code. Verify the regenerated `CLAUDE.md` includes everything from `.ai/guidelines/`. Add the Boost MCP server for Claude Code.
 5. [ ] Install and configure quality tools: Pest (+ arch tests from testing.md), Larastan (level 6), Pint, Rector. Add `composer check` script running Pint (test mode), Larastan, Pest, `composer audit`.

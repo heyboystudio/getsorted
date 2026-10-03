@@ -1,0 +1,88 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "heyboystudio/sortd",
+    "type": "project",
+    "description": "Sortd home services marketplace.",
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
+    "license": "proprietary",
+    "require": {
+        "laravel/framework": "^13.17",
+        "laravel/tinker": "^3.0",
+        "livewire/blaze": "^1.0",
+        "livewire/flux": "^2.13.1",
+        "livewire/livewire": "^4.1",
+        "php": "~8.4.0"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.24",
+        "laravel/pint": "^1.27",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.9.3",
+        "pestphp/pest": "^4.7",
+        "pestphp/pest-plugin-laravel": "^4.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "setup": [
+            "composer install",
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php artisan key:generate --ansi",
+            "npm ci",
+            "npm run build"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently --kill-others \"php artisan serve --host=127.0.0.1\" \"npm run dev\""
+        ],
+        "lint": [
+            "pint"
+        ],
+        "lint:check": [
+            "pint --test"
+        ],
+        "test": [
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/pest"
+        ],
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "pre-package-uninstall": [
+            "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

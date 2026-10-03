@@ -20,6 +20,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 014 | Hosting provider and region | Open (Phase 0) | — |
 | 015 | Error tracking: Sentry vs Nightwatch | Open (Phase 0) | — |
 | 016 | Local foundation tools and rootless Docker | Accepted | 2026-10-03 |
+| 017 | Official Livewire scaffold with closed account routes | Accepted | 2026-10-03 |
 
 ---
 
@@ -76,3 +77,14 @@ Short architecture decision records. **Add an entry for every significant choice
 **Consequences:** The local OS trusts the added PHP and Docker package repositories. Docker's Ubuntu packages are used on Zorin's noble base; upstream does not officially support Ubuntu derivatives. Tool patch versions must stay updated. Composer/Node/GitHub CLI are user-local; new shells prepend `~/.local/bin`. Rootless Docker starts with the user's session. The system Docker service installed by the package also remains present; development checks use the rootless context. No application packages are introduced in this step, so Laravel/Filament/Livewire package compatibility checks remain part of subsequent steps.
 
 **Sources and maintenance:** [PHP supported versions](https://www.php.net/supported-versions.php), [Composer download/verification](https://getcomposer.org/download/), [Node releases](https://nodejs.org/en/download), [Docker installation](https://docs.docker.com/engine/install/ubuntu/), [rootless Docker](https://docs.docker.com/engine/security/rootless/), [PostGIS image](https://github.com/postgis/docker-postgis). These are actively maintained language/runtime or project distribution channels, checked during installation. PHP uses the PHP License, Composer and Node MIT, Docker Engine Apache-2.0, PostgreSQL the PostgreSQL License, and PostGIS GPL-2.0-or-later; bundled operating-system packages retain their respective licenses.
+
+## 017 · Official Livewire scaffold with closed account routes
+**Context:** Step 2 needs Laravel 13, Livewire 4 and Pest on PHP 8.4. The existing architecture excludes starter email/password accounts from the customer experience.
+
+**Decision:** Adapt the official [Livewire starter](https://github.com/laravel/livewire-starter-kit) at commit `0f62a26c4e4b401c1300930f47d72a497add8cce`. Keep Laravel, Livewire, free Flux and Tailwind; close the account surface until the dedicated authentication tasks. Use Pest 4 rather than upstream PHPUnit syntax. Use Vite directly for local asset builds, with no remote font dependency. Existing Sortd rules and documentation take precedence over generated defaults.
+
+**Compatibility evidence before installation:** Upstream Composer dry-run on PHP 8.4.26 resolves Laravel 13.34.0, Livewire 4.4.7 and Flux 2.20.1. Packagist metadata for Pest Laravel plugin 4.1.0 permits Laravel `^13.0` and Pest `^4.4.1`; Pest 4.7 permits PHP `^8.3`. npm metadata for Vite 8 and Laravel Vite plugin 3.1 permits Node 24. Composer resolution and audits will verify the final lock. Filament is not installed until step 7; the planned Filament 5 requirement for Livewire 4 is retained.
+
+**Dependencies and alternatives:** Unused starter packages (Fortify, Chisel, Pail, Pao, Sail, Larastan) were removed before locking; Larastan returns with the quality tools in step 5. Retained direct packages, from the resolved lock: Laravel framework 13.34.0, Tinker 3.0.2, Livewire 4.4.7, Blaze 1.0.19, Pint 1.32.1, Pest 4.7.8, Pest Laravel plugin 4.1.0, Collision 8.9.5, Faker 1.24.1 (all MIT), Mockery 1.6.15 (BSD-3-Clause) and **Flux 2.20.1 (free edition, proprietary licence)**. Flux is currently only imported by `resources/css/app.css`; no view uses it yet. The founder approved keeping Flux despite its proprietary licence (2026-10-03). Pest replaces direct PHPUnit (BSD-3-Clause), which remains transitive. Tailwind, its Vite plugin, Vite, Laravel Vite plugin and concurrently (MIT) provide the build toolchain. Starting from Laravel's bare skeleton was rejected because the roadmap explicitly selects the official Livewire kit. The paid Flux Pro edition is not used.
+
+**Consequences:** Scaffold defaults do not activate any customer/admin authentication. User schema and factory remain bootstrap infrastructure, not a completed accounts feature. Quality tools already supplied by the starter may be used for validation; the full configured quality gate still belongs to step 5.
