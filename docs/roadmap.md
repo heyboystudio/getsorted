@@ -33,4 +33,4 @@ Do these in order, one PR each where sensible. Stop and ask the founder where ma
 11. [x] Security headers middleware, HTTPS/HSTS, rate limiter definitions, `Http::preventStrayRequests()` in tests, `Model::shouldBeStrict()` in non-production. Done 2026-10-03; decision 025 (HTTP→HTTPS redirect and proxy trust follow hosting, step 12).
 12. [ ] **[decide]** Hosting provider + region (decision 014) and error tracking (decision 015). Deploy staging from `main` via CI; production environment created but empty. **Decided 2026-10-03:** SA hosting provider (TBD) and Sentry EU (decisions 014, 015); staging/production deployment **deferred** until a hosted environment is needed (early Phase 1).
 13. [x] README "how to run locally" verified from a clean clone. Done 2026-10-03 (fresh clone: setup, migrate, `composer check`, pages load).
-14. [ ] `/phase-check` reports Phase 0 complete; founder signs off.
+14. [x] `/phase-check` reports Phase 0 complete; founder signs off. **Signed off by the founder 2026-10-03:** Phase 0 complete except CI (paused, decision 020) and staging (deferred, decision 014), both deliberately deferred.
