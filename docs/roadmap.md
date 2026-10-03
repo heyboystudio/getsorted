@@ -30,7 +30,7 @@ Do these in order, one PR each where sensible. Stop and ask the founder where ma
 8. [x] Install `spatie/laravel-permission`, seed roles; super-admin user via artisan command (never in a seeder with a real password). Done 2026-10-03; decision 022.
 9. [x] Install activity log, settings, media library (private disk), `brick/money` + `MoneyCast`, phone, PostGIS package — each after a compatibility check. Done 2026-10-03; decision 023.
 10. [x] Create `app/Domain`, `app/Contracts`, `app/Integrations` skeletons; contracts + Fakes for PaymentGateway, MessagingChannel, ScopingAssistant, Geocoder; bind Fakes in local/testing. Done 2026-10-03; decision 024.
-11. [ ] Security headers middleware, HTTPS/HSTS, rate limiter definitions, `Http::preventStrayRequests()` in tests, `Model::shouldBeStrict()` in non-production.
+11. [x] Security headers middleware, HTTPS/HSTS, rate limiter definitions, `Http::preventStrayRequests()` in tests, `Model::shouldBeStrict()` in non-production. Done 2026-10-03; decision 025 (HTTP→HTTPS redirect and proxy trust follow hosting, step 12).
 12. [ ] **[decide]** Hosting provider + region (decision 014) and error tracking (decision 015). Deploy staging from `main` via CI; production environment created but empty.
 13. [ ] README "how to run locally" verified from a clean clone.
 14. [ ] `/phase-check` reports Phase 0 complete; founder signs off.

@@ -28,6 +28,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 022 | Roles via spatie/laravel-permission; super-admin by console command | Accepted | 2026-10-03 |
 | 023 | Supporting packages: audit log, settings, media, money, phone, PostGIS | Accepted | 2026-10-03 |
 | 024 | Integration contracts and Fakes; no fallback to Fakes outside local/testing | Accepted | 2026-10-03 |
+| 025 | Security hardening baseline (headers, HTTPS, sessions, rate limits, strict models) | Accepted | 2026-10-03 |
 
 ---
 
@@ -165,3 +166,16 @@ Short architecture decision records. **Add an entry for every significant choice
 **Decision:** Four provisional contracts with small, provider-neutral surfaces and immutable data objects (`App\Contracts\Data`): `PaymentGateway` (hosted checkout, signed-webhook verification, refund, payout; every instruction carries an idempotency key), `MessagingChannel` (template messages, WhatsApp or SMS), `ScopingAssistant` (suggest a service, summarise; it only suggests), `Geocoder` (autocomplete, resolve). Fakes live in `App\Integrations\Fakes`, record calls and offer assertions (e.g. `assertRefunded`, `assertSent`); the fake gateway dedupes by idempotency key and verifies HMAC-signed webhooks; the fake messaging channel logs messages (including OTP codes) locally. `IntegrationServiceProvider` binds the Fakes as singletons **only** in `local` and `testing`. In staging and production nothing is bound until real providers are added, so a missing provider fails loudly instead of silently faking payments or messages. Domain module folders (`app/Domain/*`) are created empty.
 
 **Consequences:** Each provider decision (messaging Phase 1, payments Phase 4, AI and geocoding when built) adds an implementation under `app/Integrations/<Provider>` and its binding, and may refine the contract. Arch tests enforce that contracts are interfaces, data objects are final and readonly, and integrations are only used from providers and tests. Fakes use PHPUnit assertions, which is fine because they are never loaded in production.
+
+## 025 · Security hardening baseline (headers, HTTPS, sessions, rate limits, strict models)
+**Context:** Roadmap step 11 and security baseline §1 and §6.
+
+**Decision:**
+- **Headers** (global `SecurityHeaders` middleware, so Filament panels get them too): `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, a restrictive `Permissions-Policy`, `Cross-Origin-Opener-Policy: same-origin`, and a CSP with `default-src 'self'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`. Scripts and styles still allow `'unsafe-inline'` and `'unsafe-eval'` because Livewire, Alpine and Filament need them; a nonce-based CSP is a later hardening task. Locally the Vite dev server is allowed. `form-action` must be widened if the payment provider's hosted checkout uses a form post (Phase 4).
+- **HTTPS:** `Strict-Transport-Security: max-age=31536000; includeSubDomains` on HTTPS responses; `URL::forceHttps()` outside local/testing; session cookies are `Secure` by default outside local/testing, HTTP-only and SameSite=Lax. Redirecting plain HTTP and trusting the host's proxy headers depend on the hosting choice (step 12).
+- **Sessions:** 120-minute idle lifetime (the admin limit). The admin login is a custom Filament page without "remember me", so admins cannot get long-lived cookies. Customer/pro 30-day remember-me comes with phone login.
+- **Rate limiters** (named, for later routes): `otp-send` (3 per phone per 15 min + 10 per IP per hour; phone hashed in the key), `otp-verify` (10 per IP per 15 min), `webhooks` (120 per IP per minute). Filament's own login throttling stays on.
+- **Development safety:** `Model::shouldBeStrict()` outside production; tests already block stray HTTP requests.
+- **Logs:** the fake messaging channel now masks phone numbers and never logs message parameters (no OTP codes in logs). Fixes an oversight from step 10.
+
+**Consequences:** Strict models surfaced a factory gap (MFA columns missing on new users); factories now mirror the full schema.

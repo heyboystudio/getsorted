@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers\Filament;
 
+use App\Filament\Admin\Pages\Auth\Login;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -30,7 +31,7 @@ final class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->brandName('Sortd Admin')
-            ->login()
+            ->login(Login::class)
             ->profile(isSimple: false)
             ->multiFactorAuthentication(
                 [AppAuthentication::make()->recoverable()->brandName('Sortd')],
