@@ -13,7 +13,7 @@ Decisions the founder still needs to make. Claude Code must **not** decide these
 | Q7 | Cancellation fees for late customer cancellation? | Call-out fee only | Refunds |
 | Q8 | Guarantee terms: what does Sortd promise, and up to what amount? | Rework or refund decided by admin, 30-day window | Disputes, marketing copy |
 | Q9 | Launch suburbs: which 2–3 regions first? | Berea/central + North | Matching seed data |
-| Q10 | Hosting provider and region | Decided in Phase 0 (see decisions log) | Deployment |
+| Q10 | Hosting provider and region | **Decided:** a South African provider, specific host chosen when first needed (decision 014) | Deployment |
 | Q11 | Brand: name "Sortd" cleared (CIPC, trademark, domain)? | Working name | Public site |
 | Q12 | Will pros pay anything to join (vetting fee)? | Free | Onboarding |
 | Q13 | Business hours for support and SLA for disputes? | Weekdays 08:00–17:00, 2 business days | Admin |
