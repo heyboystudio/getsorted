@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Accounts\Enums\Role;
 use Database\Factories\UserFactory;
 use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
 use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthenticationRecovery;
@@ -14,11 +15,12 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 final class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, Notifiable;
+    use HasFactory, HasRoles, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, Notifiable;
 
     /** @var list<string> */
     protected $fillable = ['name', 'email', 'password'];
@@ -27,12 +29,15 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
     protected $hidden = ['password', 'remember_token'];
 
     /**
-     * Default deny. Admin access is granted by role in roadmap step 8;
-     * the pro panel opens with pro phone login.
+     * Default deny. The admin panel needs an admin role (MFA is enforced by
+     * the panel itself); the pro panel stays closed until pro phone login.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return false;
+        return match ($panel->getId()) {
+            'admin' => $this->hasAnyRole(array_map(fn (Role $role): string => $role->value, Role::adminRoles())),
+            default => false,
+        };
     }
 
     /** @return array<string, string> */
