@@ -23,6 +23,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 017 | Official Livewire scaffold with closed account routes | Accepted | 2026-10-03 |
 | 018 | Laravel Boost for AI guidelines and MCP | Accepted | 2026-10-03 |
 | 019 | Quality gate: Pint, Larastan, Pest arch tests, Rector | Accepted | 2026-10-03 |
+| 020 | CI workflow paused; free GitHub plan without branch protection | Accepted (temporary) | 2026-10-03 |
 
 ---
 
@@ -108,3 +109,10 @@ Short architecture decision records. **Add an entry for every significant choice
 **Dependencies (dev only, all MIT):** `larastan/larastan` 3.12.2 (Illuminate `^13` supported; brings `phpstan/phpstan` 2.2.16, `iamcal/sql-parser` 0.7) and `rector/rector` 2.6.7 (PHP ≥7.4; shares PHPStan 2.2). Pest's `arch()` is built into Pest 4, so no plugin is needed. `driftingly/rector-laravel` was tried and removed: it pulls in the abandoned `symplify/rule-doc-generator-contracts`, which makes `composer audit` (and therefore the gate) fail.
 
 **Consequences:** Rector's first run added return types to closures in the framework migrations, `bootstrap/app.php` and `routes/console.php` (no schema changes; these migrations have only run locally). Larastan stays at level 6 for now; raising it is a later choice.
+
+## 020 · CI workflow paused; free GitHub plan without branch protection
+**Context:** Roadmap step 6. The repository is private on a free personal GitHub account. Branch protection and rulesets need GitHub Pro for private repos (API: "Upgrade to GitHub Pro or make this repository public"). GitHub also refused to start Actions jobs: "recent account payments have failed or your spending limit needs to be increased".
+
+**Decision:** The founder chose to stay on the free plan and not change billing for now. `.github/workflows/ci.yml` is committed and complete (PHP 8.4, Node from `.nvmrc`, PostGIS 17 service, `composer check`, `npm audit --audit-level=high`, actions pinned to commit SHAs), but runs only on manual dispatch until billing is cleared. Until then Claude runs `composer check` and `npm audit` locally before every merge and records the result in the PR. `main` is not technically protected; merges happen only after those checks pass and the founder approves. Making the repo public was rejected (exposes code, specs and security design). Dependabot is configured weekly for Composer, npm and Actions; its runs may also be blocked by the billing flag.
+
+**Consequences:** Phase 0's "CI green" exit criterion is not met yet. To complete it: clear the billing flag in GitHub settings, restore the `pull_request`/`push` triggers, confirm a green run. Revisit branch protection if the plan changes.

@@ -1,0 +1,88 @@
+name: CI
+
+# Paused (decision 020): GitHub will not start jobs until the account's billing
+# flag is cleared. To re-enable, restore these triggers:
+#   pull_request:
+#   push:
+#     branches: [main]
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: composer check + npm audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    services:
+      pgsql:
+        image: postgis/postgis:17-3.5-alpine
+        env:
+          POSTGRES_DB: sortd_testing
+          POSTGRES_USER: sortd
+          POSTGRES_PASSWORD: sortd_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sortd -d sortd_testing"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: sortd_testing
+      DB_USERNAME: sortd
+      DB_PASSWORD: sortd_ci
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, intl, pdo_pgsql, pgsql
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Cache Composer packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      - name: Build front-end assets
+        run: npm run build
+
+      - name: Quality gate (Pint, Larastan, Pest, composer audit)
+        run: composer check
+
+      - name: npm audit (high and critical block merging)
+        run: npm audit --audit-level=high

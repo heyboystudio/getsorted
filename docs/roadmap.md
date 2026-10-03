@@ -25,7 +25,7 @@ Do these in order, one PR each where sensible. Stop and ask the founder where ma
 3. [x] Configure Postgres + PostGIS as the only database (queue, cache, session on database). Done 2026-10-03; [notes](engineering/phase-0-database.md).
 4. [x] Install **Laravel Boost** (`composer require laravel/boost --dev`, `php artisan boost:install`), select Claude Code. Verify the regenerated `CLAUDE.md` includes everything from `.ai/guidelines/`. Add the Boost MCP server for Claude Code. Done 2026-10-03; decision 018.
 5. [x] Install and configure quality tools: Pest (+ arch tests from testing.md), Larastan (level 6), Pint, Rector. Add `composer check` script running Pint (test mode), Larastan, Pest, `composer audit`. Done 2026-10-03; decision 019.
-6. [ ] GitHub repo, branch protection on `main`, GitHub Actions CI (PHP 8.4 + Postgres/PostGIS service) running `composer check` and `npm audit`, Dependabot.
+6. [ ] GitHub repo, branch protection on `main`, GitHub Actions CI (PHP 8.4 + Postgres/PostGIS service) running `composer check` and `npm audit`, Dependabot. **Partly done 2026-10-03:** workflow + Dependabot committed; CI paused and no branch protection on the free plan (decision 020).
 7. [ ] Install Filament 5; create `admin` panel at `/admin` with MFA required; create `pro` panel at `/pro` (empty, locked).
 8. [ ] Install `spatie/laravel-permission`, seed roles; super-admin user via artisan command (never in a seeder with a real password).
 9. [ ] Install activity log, settings, media library (private disk), `brick/money` + `MoneyCast`, phone, PostGIS package — each after a compatibility check.
