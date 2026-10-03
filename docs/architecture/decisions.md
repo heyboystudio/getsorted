@@ -27,6 +27,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 021 | Filament 5 admin panel with mandatory MFA; pro panel locked | Accepted | 2026-10-03 |
 | 022 | Roles via spatie/laravel-permission; super-admin by console command | Accepted | 2026-10-03 |
 | 023 | Supporting packages: audit log, settings, media, money, phone, PostGIS | Accepted | 2026-10-03 |
+| 024 | Integration contracts and Fakes; no fallback to Fakes outside local/testing | Accepted | 2026-10-03 |
 
 ---
 
@@ -157,3 +158,10 @@ Short architecture decision records. **Add an entry for every significant choice
 **Not added:** Filament's settings plugin (no settings page yet) and `spatie/laravel-data` (the settings `DataCast` entry was removed from config). `brick/money` is pre-1.0, so it is pinned to `^0.15` (0.x minor releases can break).
 
 **Consequences:** Upload rules from the security baseline (MIME allow-list, re-encoding, EXIF stripping) are applied per collection when the first upload feature is built.
+
+## 024 · Integration contracts and Fakes; no fallback to Fakes outside local/testing
+**Context:** Roadmap step 10. Third parties are reached only through `app/Contracts`; tests and local development must never hit the network or move money; providers are not chosen yet.
+
+**Decision:** Four provisional contracts with small, provider-neutral surfaces and immutable data objects (`App\Contracts\Data`): `PaymentGateway` (hosted checkout, signed-webhook verification, refund, payout; every instruction carries an idempotency key), `MessagingChannel` (template messages, WhatsApp or SMS), `ScopingAssistant` (suggest a service, summarise; it only suggests), `Geocoder` (autocomplete, resolve). Fakes live in `App\Integrations\Fakes`, record calls and offer assertions (e.g. `assertRefunded`, `assertSent`); the fake gateway dedupes by idempotency key and verifies HMAC-signed webhooks; the fake messaging channel logs messages (including OTP codes) locally. `IntegrationServiceProvider` binds the Fakes as singletons **only** in `local` and `testing`. In staging and production nothing is bound until real providers are added, so a missing provider fails loudly instead of silently faking payments or messages. Domain module folders (`app/Domain/*`) are created empty.
+
+**Consequences:** Each provider decision (messaging Phase 1, payments Phase 4, AI and geocoding when built) adds an implementation under `app/Integrations/<Provider>` and its binding, and may refine the contract. Arch tests enforce that contracts are interfaces, data objects are final and readonly, and integrations are only used from providers and tests. Fakes use PHPUnit assertions, which is fine because they are never loaded in production.

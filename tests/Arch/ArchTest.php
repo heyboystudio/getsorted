@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use App\Contracts\Data\MessageChannel;
+use App\Contracts\Data\PaymentEventType;
 
 arch('domain does not depend on UI')
     ->expect('App\Domain')
@@ -15,3 +17,20 @@ arch('no debugging leftovers')
     ->not->toBeUsed();
 
 arch('strict types')->expect('App')->toUseStrictTypes();
+
+arch('contracts are interfaces')
+    ->expect('App\Contracts')
+    ->toBeInterfaces()
+    ->ignoring(['App\Contracts\Data', 'App\Contracts\Exceptions']);
+
+arch('contract data objects are immutable')
+    ->expect('App\Contracts\Data')
+    ->classes()
+    ->toBeReadonly()
+    ->toBeFinal()
+    ->ignoring([PaymentEventType::class, MessageChannel::class]);
+
+arch('fakes implement a contract')
+    ->expect('App\Integrations\Fakes')
+    ->toBeFinal()
+    ->toHavePrefix('Fake');
