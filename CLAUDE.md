@@ -1,6 +1,32 @@
 # CLAUDE.md — Sortd
 
-> Laravel Boost generates the `<laravel-boost-guidelines>
+> The Laravel Boost section at the end of this file is generated from Laravel's guidelines plus our project rules in `.ai/guidelines/`. To change those rules, edit `.ai/guidelines/*.md` (never the generated section), run `php artisan boost:update`, and commit `CLAUDE.md` and `AGENTS.md` so cloud sessions have them. Everything above the generated section is kept by Boost and is edited here directly.
+
+## Read first, every session
+1. `.ai/guidelines/sortd-project.md` — how to work and hard rules (also included below)
+2. `.ai/guidelines/sortd-domain.md` — domain vocabulary and rules (also included below)
+3. `docs/roadmap.md` — current phase and next tasks
+4. The spec you are working on in `docs/specs/` (create it with `/spec` if missing)
+
+## The founder
+- Does not write code. Expects you to do the engineering and explain results in plain language.
+- Approves specs and plans, clicks through previews, and makes product/money/privacy decisions.
+- Ask before deciding anything listed in `docs/product/open-questions.md`.
+
+## Current phase: 0 — Foundations
+Follow the numbered tasks in `docs/roadmap.md` → "Phase 0"; the roadmap shows which are done.
+- Verify every package version against Laravel 13 / Filament 5 / Livewire 4 before installing (Boost's `search-docs` helps).
+
+## Commands
+- `/spec <idea>` · `/build-feature <spec>` · `/review` · `/adr <decision>` · `/phase-check`
+- Agents: `code-reviewer`, `security-reviewer`, `spec-checker`
+
+## Quality gate
+`composer check` must pass before any task is reported done. While GitHub CI is paused (decision 020), also run `npm audit --audit-level=high` locally before every merge and record both results in the PR.
+
+===
+
+<laravel-boost-guidelines>
 === .ai/sortd-domain rules ===
 
 # Sortd — domain rules
