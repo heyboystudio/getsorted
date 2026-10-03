@@ -23,7 +23,7 @@ Versions checked 2026-10-03. **Before installing any package, Claude Code must c
 | Tests | Pest 4 (+ Pest browser testing if needed) | All new code test-first |
 | Static analysis | Larastan (PHPStan) | Level 6 at start, raise to 8 by launch |
 | Code style | Laravel Pint | Run on every change |
-| Automated refactors | Rector + `driftingly/rector-laravel` | Used for upgrades |
+| Automated refactors | Rector | Used for upgrades (`driftingly/rector-laravel` dropped: abandoned dependency, decision 019) |
 | Roles/permissions | `spatie/laravel-permission` | Plus a Filament integration if compatible |
 | Audit log | `spatie/laravel-activitylog` | Admin + sensitive actions |
 | Files | `spatie/laravel-medialibrary` + Filament media plugin | Private disk, signed URLs |
