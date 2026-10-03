@@ -1,0 +1,80 @@
+trade: plumbing
+name: Plumbing
+status: demo
+services:
+  - key: leak_repair
+    name: Leak repair
+    description: Fix a visible leak from a tap, pipe, toilet or fitting.
+    requires_registration: null
+    emergency_capable: true
+    questions:
+      - key: leak_location
+        prompt: Where is the leak coming from?
+        type: single_choice
+        options: [Tap, Pipe, Toilet, Geyser, Not sure]
+        required: true
+      - key: severity
+        prompt: How bad is it?
+        type: single_choice
+        options: [Dripping, Steady flow, Flooding]
+        required: true
+        flags:
+          urgent_if: [Flooding]
+    safety_advice:
+      - If water is flooding, close the main stopcock first.
+
+  - key: blocked_drain
+    name: Blocked drain
+    description: Unblock a sink, shower, toilet or outside drain.
+    requires_registration: null
+    emergency_capable: true
+    questions:
+      - key: drain_location
+        prompt: Which drain is blocked?
+        type: single_choice
+        options: [Kitchen sink, Shower or bath, Toilet, Outside drain, Not sure]
+        required: true
+      - key: overflowing
+        prompt: Is it overflowing?
+        type: yes_no
+        required: true
+        flags:
+          urgent_if: ["yes"]
+
+  - key: geyser
+    name: Geyser repair or replacement
+    description: No hot water, leaking or burst geyser.
+    requires_registration: pirb
+    emergency_capable: true
+    questions:
+      - key: geyser_problem
+        prompt: What's happening with your geyser?
+        type: single_choice
+        options: [No hot water, Leaking, Burst, Making noise, Want a new geyser]
+        required: true
+        flags:
+          urgent_if: [Burst]
+      - key: geyser_type
+        prompt: What type of geyser is it?
+        type: single_choice
+        options: [Electric, Gas, Solar, Heat pump, Not sure]
+        required: true
+    safety_advice:
+      - If the geyser has burst, switch off its breaker at the DB board and close the main water supply.
+
+  - key: water_tank_pump
+    name: Water tank and pump
+    description: Install or repair a JoJo tank, booster pump or backup water system (useful during outages).
+    requires_registration: null
+    emergency_capable: false
+    questions:
+      - key: tank_job
+        prompt: What do you need?
+        type: single_choice
+        options: [New tank and pump install, Pump repair, Tank repair or move, Connect tank to house supply]
+        required: true
+      - key: tank_size
+        prompt: Roughly what tank size?
+        type: single_choice
+        options: [Under 1000 L, 1000–2500 L, Over 2500 L, Not sure]
+        required: false
