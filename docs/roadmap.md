@@ -27,7 +27,7 @@ Do these in order, one PR each where sensible. Stop and ask the founder where ma
 5. [x] Install and configure quality tools: Pest (+ arch tests from testing.md), Larastan (level 6), Pint, Rector. Add `composer check` script running Pint (test mode), Larastan, Pest, `composer audit`. Done 2026-10-03; decision 019.
 6. [ ] GitHub repo, branch protection on `main`, GitHub Actions CI (PHP 8.4 + Postgres/PostGIS service) running `composer check` and `npm audit`, Dependabot. **Partly done 2026-10-03:** workflow + Dependabot committed; CI paused and no branch protection on the free plan (decision 020).
 7. [x] Install Filament 5; create `admin` panel at `/admin` with MFA required; create `pro` panel at `/pro` (empty, locked). Done 2026-10-03; decision 021.
-8. [ ] Install `spatie/laravel-permission`, seed roles; super-admin user via artisan command (never in a seeder with a real password).
+8. [x] Install `spatie/laravel-permission`, seed roles; super-admin user via artisan command (never in a seeder with a real password). Done 2026-10-03; decision 022.
 9. [ ] Install activity log, settings, media library (private disk), `brick/money` + `MoneyCast`, phone, PostGIS package — each after a compatibility check.
 10. [ ] Create `app/Domain`, `app/Contracts`, `app/Integrations` skeletons; contracts + Fakes for PaymentGateway, MessagingChannel, ScopingAssistant, Geocoder; bind Fakes in local/testing.
 11. [ ] Security headers middleware, HTTPS/HSTS, rate limiter definitions, `Http::preventStrayRequests()` in tests, `Model::shouldBeStrict()` in non-production.

@@ -25,6 +25,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 019 | Quality gate: Pint, Larastan, Pest arch tests, Rector | Accepted | 2026-10-03 |
 | 020 | CI workflow paused; free GitHub plan without branch protection | Accepted (temporary) | 2026-10-03 |
 | 021 | Filament 5 admin panel with mandatory MFA; pro panel locked | Accepted | 2026-10-03 |
+| 022 | Roles via spatie/laravel-permission; super-admin by console command | Accepted | 2026-10-03 |
 
 ---
 
@@ -126,3 +127,12 @@ Short architecture decision records. **Add an entry for every significant choice
 **Dependencies:** Filament's own packages (actions, forms, infolists, notifications, query-builder, schemas, support, tables, widgets) and their dependencies, including `pragmarx/google2fa` (TOTP), `chillerlan/php-qrcode` (MIT/Apache-2.0), `blade-ui-kit/blade-heroicons`, `league/csv`, `openspout/openspout`, `ueberdosis/tiptap-php`, `spatie/laravel-package-tools`, `kirschbaum-development/eloquent-power-joins`, `nette/php-generator` (BSD-3-Clause option of its BSD/GPL dual licence). `composer audit` found no advisories.
 
 **Consequences:** "Log in as admin with MFA" (Phase 0 exit criterion) becomes possible in step 8, once a super-admin role and the creation command exist. The 2-hour admin idle timeout from the security baseline is not set yet; it belongs with session hardening (step 11). Email-based password reset is not enabled because there is no mail provider yet.
+
+## 022 · Roles via spatie/laravel-permission; super-admin by console command
+**Context:** Roadmap step 8. The data model defines six roles; the security baseline needs least-privilege admin roles, and the super-admin must never come from a seeder with a real password.
+
+**Decision:** Install `spatie/laravel-permission` ^8.3 (8.3.0, MIT; requires PHP ^8.3 and Illuminate `^12|^13`; no extra dependencies beyond `spatie/laravel-package-tools`, already present). Teams are off. Roles (`customer`, `pro`, `admin_super`, `admin_support`, `admin_vetting`, `admin_finance`, guard `web`) are reference data, so a migration inserts them idempotently and they exist in every environment; the `Role` enum in `App\Domain\Accounts\Enums` mirrors them. `User::canAccessPanel()` lets any admin role into `/admin` (Filament then forces MFA set-up) and keeps `/pro` closed. `php artisan sortd:create-super-admin` creates a super-admin via the `CreateSuperAdmin` Action: it only runs interactively, the password is typed at a hidden prompt (never an argument, so it stays out of shell history), must be 12+ characters with mixed case, numbers and symbols, and is checked against Have I Been Pwned's k-anonymity API (only the first 5 characters of the hash leave the machine). No permissions are defined yet; they arrive with the first admin resources.
+
+**Alternatives:** Filament Shield was not added; it is unnecessary until there are resources to guard and would be another dependency to vet. A role column on `users` was rejected because the data model and tech stack specify this package.
+
+**Consequences:** The founder runs the command once per environment to create their own account. Fine-grained permissions (e.g. second-admin approval for large refunds) come with the features that need them.
