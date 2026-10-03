@@ -22,5 +22,5 @@ Verified 2026-10-03: Pest 21 passed (32 assertions), `pint --test` passed, `npm 
 
 Known follow-ups:
 - `.env.example` still uses file sessions/cache and sync queue; step 3 moves them to the database.
-- Leftover starter files to delete: empty `tests/Feature/Auth/`, `tests/Feature/Settings/`, and unused icon overrides in `resources/views/flux/`.
-- Flux (free, proprietary licence) is imported in CSS but unused; founder to confirm keeping it (decision 017).
+- Founder decided 2026-10-03 to keep the starter's empty `tests/Feature/Auth/`, `tests/Feature/Settings/` folders and the icon overrides in `resources/views/flux/`.
+- Founder decided 2026-10-03 to keep Flux (free edition, proprietary licence) for future screens (decision 017).
