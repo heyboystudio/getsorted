@@ -1,9 +1,12 @@
 name: CI
 
+# Paused (decision 020): GitHub will not start jobs until the account's billing
+# flag is cleared. To re-enable, restore these triggers:
+#   pull_request:
+#   push:
+#     branches: [main]
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
