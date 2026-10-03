@@ -103,8 +103,8 @@ Production data is never copied to local or staging.
 
 | Contract | Purpose | v1 implementation |
 |---|---|---|
-| `PaymentGateway` | Checkout, webhooks, refunds, payouts | Decided in Phase 3 (shortlist in money-flow.md); `FakePaymentGateway` until then |
-| `MessagingChannel` | WhatsApp templates, SMS fallback, OTP delivery | Decided in Phase 1; `LogMessagingChannel` in dev |
+| `PaymentGateway` | Checkout, webhooks, refunds, payouts | Decided in Phase 4 (shortlist in money-flow.md); `FakePaymentGateway` until then |
+| `MessagingChannel` | WhatsApp templates, SMS fallback, OTP delivery | Decided in Phase 1; `FakeMessagingChannel` in dev/tests (writes messages, incl. OTP codes, to the log locally) |
 | `ScopingAssistant` | Free text → trade/service + summary | Laravel AI SDK with an Anthropic model; `FakeScopingAssistant` in tests |
 | `Geocoder` | Address autocomplete, coordinates | Google Places; `FakeGeocoder` in tests |
 | Mail | Receipts, statements | Laravel mail (provider via config) |
