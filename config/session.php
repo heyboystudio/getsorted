@@ -34,6 +34,7 @@ return [
     |
     */
 
+    // Idle timeout in minutes; 120 is the admin limit in the security baseline.
     'lifetime' => (int) env('SESSION_LIFETIME', 120),
 
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
@@ -171,7 +172,8 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // HTTPS-only cookies everywhere except local development and tests (security baseline §1).
+    'secure' => (bool) env('SESSION_SECURE_COOKIE', ! in_array(env('APP_ENV'), ['local', 'testing'], true)),
 
     /*
     |--------------------------------------------------------------------------
