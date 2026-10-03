@@ -4,6 +4,8 @@ Postgres 17+ with PostGIS. This is the target shape; migrations are the source o
 
 ## Conventions
 
+- PostGIS is enabled by migration `2026_10_03_000000_enable_postgis_extension`. Framework tables in place: `users` (bootstrap only), `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`.
+
 - Primary keys: `bigint` identity (`id`) for joins. Every table exposed in a URL also has a `public_id` **ULID** (unique). **Never put `id` in a URL or API response.**
 - Money: `*_cents bigint not null`, currency fixed to ZAR (column `currency char(3) default 'ZAR'` only where amounts can be shown to users).
 - Time: `timestamptz`, stored UTC, shown in `Africa/Johannesburg`.
