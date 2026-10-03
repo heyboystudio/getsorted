@@ -1,0 +1,6 @@
+# Local credentials and generated dependencies; merge Laravel entries at step 2.
+.env
+.env.*
+!.env.example
+/vendor/
+/node_modules/
