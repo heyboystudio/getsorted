@@ -1,6 +1,6 @@
 # Spec 011 · Join as a pro (sign-up entry)
 
-Status: Draft · Phase: 1 · Owner: founder
+Status: Approved · Phase: 1 · Owner: founder
 
 ## Goal
 Tradespeople can sign up as a pro with the same phone + code login customers use (spec 001), so Phase 1's exit criterion "customer **and pro** can sign up with OTP" is met. The full application wizard and vetting stay in spec 008; the pro panel stays locked until then.
@@ -51,11 +51,12 @@ States as in spec 001 (loading, double-submit protection, friendly errors).
 - Opening the `/pro` panel, pro phone login inside Filament.
 - Emails or WhatsApp messages to pros about their application.
 
-## Open questions
-1. **Can one person be both a customer and a pro on the same account?** Proposal: yes — one phone number, one account, both roles (a plumber may also book an electrician). The alternative is separate accounts, which would need separate phone numbers.
-2. **Pro agreement text.** Proposal: a placeholder `/pros/agreement` page marked "Draft — not yet in force", like the terms and privacy notice; lawyer-reviewed before launch (POPIA checklist mentions the pro agreement).
-3. **Business name now or later?** Proposal: later, in the application wizard (spec 008), to keep sign-up as short as possible.
-4. **Q12 — do pros pay to join?** The page will say "Free to join" (the current default in open-questions.md). Confirm or change.
+## Decisions (founder, 2026-10-04)
+1. One account can be both customer and pro (one phone number, both roles).
+2. Pro agreement: placeholder page "Draft — not yet in force", version `2026-10-draft`; lawyer-reviewed before launch.
+3. Business name is collected later, in the application wizard (spec 008).
+4. Q12: pros join free ("Free to join").
 
 ## Progress
 - 2026-10-04: Drafted for founder review.
+- 2026-10-04: Approved as proposed.
