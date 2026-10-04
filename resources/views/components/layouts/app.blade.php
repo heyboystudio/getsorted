@@ -10,6 +10,9 @@
         @livewireStyles
     </head>
     <body class="bg-stone-50 font-sans text-zinc-900 antialiased">
+        @if (\App\Support\AppMode::isPreview())
+            <p class="bg-amber-300 px-4 py-2 text-center text-sm font-medium text-amber-950" role="note">{{ __('Test site: fake data only. Please don\'t enter real personal details.') }}</p>
+        @endif
         {{ $slot }}
         @livewireScripts
     </body>

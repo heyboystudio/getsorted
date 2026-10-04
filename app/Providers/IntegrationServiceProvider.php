@@ -13,11 +13,12 @@ use App\Integrations\Fakes\FakeGeocoder;
 use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Integrations\Fakes\FakePaymentGateway;
 use App\Integrations\Fakes\FakeScopingAssistant;
+use App\Support\AppMode;
 use Illuminate\Support\ServiceProvider;
 
 /**
- * Binds third-party contracts to implementations. Local development and tests
- * always use Fakes. Staging and production bind real providers here once they
+ * Binds third-party contracts to implementations. Local development, tests and
+ * the private preview site (decision 037) always use Fakes. Staging and production bind real providers here once they
  * are chosen and configured; until then resolving a contract there fails loudly
  * rather than silently using a fake.
  */
@@ -33,7 +34,7 @@ final class IntegrationServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        if (! $this->app->environment(['local', 'testing'])) {
+        if (! AppMode::usesFakeIntegrations()) {
             $this->registerRealProviders();
 
             return;

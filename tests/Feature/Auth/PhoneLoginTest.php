@@ -479,7 +479,7 @@ it('never writes codes or full phone numbers to the logs (AC19)', function (): v
     }
 });
 
-it('shows the code on screen in local development only (AC20)', function (string $environment, bool $shown): void {
+it('shows the code on screen in local development and on the private test site only (AC20, decision 037)', function (string $environment, bool $shown): void {
     app()->detectEnvironment(fn (): string => $environment);
 
     $component = requestCode();
@@ -487,6 +487,7 @@ it('shows the code on screen in local development only (AC20)', function (string
     expect(str_contains($component->html(), 'Development: your code is '.lastCode()))->toBe($shown);
 })->with([
     'local' => ['local', true],
+    'preview' => ['preview', true],
     'testing' => ['testing', false],
     'staging' => ['staging', false],
     'production' => ['production', false],
