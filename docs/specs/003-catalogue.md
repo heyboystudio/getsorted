@@ -1,6 +1,6 @@
 # Spec 003 · Catalogue seeded from scoping YAML + admin editing
 
-Status: Draft · Phase: 1 · Owner: founder
+Status: Approved · Phase: 1 · Owner: founder
 
 ## Goal
 The trades, services and scoping questions in `docs/product/scoping/*.yaml` are loaded into the database and can be viewed and edited by admins in `/admin`, so the booking flow (Phase 2) and pro services (spec 008) have a real catalogue to use.
@@ -60,10 +60,11 @@ Update `docs/architecture/data-model.md`:
 - Importing YAML changes into an already-edited catalogue beyond adding new keys.
 - Translations of catalogue text (isiZulu is post-launch).
 
-## Open questions
-1. **YAML vs admin as the source of truth.** Proposal: YAML seeds the first version; after that the admin panel wins and re-running the seeder only adds new keys (AC3). OK?
-2. **Who may edit the catalogue?** Proposal: **super-admin and support** can edit; **vetting and finance** can view only. OK, or super-admin only?
-3. **Delete vs switch off.** Proposal: never delete trades/services, only switch them off (AC8). OK?
+## Decisions (founder, 2026-10-04)
+1. YAML seeds the first version; afterwards the admin panel is the source of truth and re-seeding only adds new keys.
+2. Super-admin and support can edit the catalogue; vetting and finance can view only.
+3. Trades and services are never deleted, only switched off.
 
 ## Progress
 - 2026-10-04: Drafted for founder review.
+- 2026-10-04: Approved as proposed.
