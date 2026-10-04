@@ -1,6 +1,6 @@
 # Spec 010 · Quote builder, comparison and acceptance
 
-Status: Draft · Phase: 3 · Owner: founder
+Status: Approved · Phase: 3 · Owner: founder
 
 ## Goal
 An invited pro can send an itemised quote from their phone. The customer compares up to three quotes side by side and accepts one. The job is then booked with that pro, who gets the customer's contact details and address. This completes Phase 3. Paying deposits and final invoices is Phase 4.
@@ -90,10 +90,11 @@ An invited pro can send an itemised quote from their phone. The customer compare
 - Starting work, completing work, disputes and cancelling after acceptance (later specs).
 - PDF quote documents (with payments).
 
-## Open questions
-1. **Deposits before payments exist.** Payments come in Phase 4. Recommended: pros can already set a deposit, and accepting a quote with a deposit moves the job to "Awaiting deposit", showing "Payment opens soon". The 48-hour "release if unpaid" timer starts only once payments exist. That way Phase 4 only adds the payment step. The alternative is no deposits until Phase 4. Approve the recommendation?
-2. **VAT.** Recommended: pros who gave a VAT number add 15% VAT to the quote, and pros without one add none. Amounts are shown VAT-inclusive with a VAT line. This still needs confirming with an accountant before launch (money-flow.md). Approve as the working rule?
-3. **Commission shown to pros.** Recommended: show the pro an *estimated* payout using the current defaults, 12% of labour and call-out and none on materials (Q1/Q2 are still open, and the rate stays an admin setting). Labelled "estimate". Approve showing it?
+## Decisions (founder, 2026-10-04)
+1. **Deposits before payments:** pros may set a deposit now; accepting a quote with a deposit moves the job to "Awaiting deposit" with "Payment opens soon". The 48-hour release timer starts once payments exist (Phase 4).
+2. **VAT:** pros with a VAT number add 15% VAT; others add none. Confirm with an accountant before launch.
+3. **Estimated payout:** pros see an estimate using 12% commission on labour and call-out, none on materials (Q1/Q2 defaults, admin setting), labelled as an estimate.
 
 ## Progress
 - 2026-10-04: Drafted after spec 009 merged in PR #32 and the docs refresh in PR #33. Awaiting founder approval and the three decisions above.
+- 2026-10-04: Founder approved the spec with all three recommended defaults.
