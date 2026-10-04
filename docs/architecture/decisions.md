@@ -32,6 +32,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 026 | Phone + OTP login implementation (spec 001) | Accepted | 2026-10-04 |
 | 027 | One account for customer and pro; pro sign-up (spec 011) | Accepted | 2026-10-04 |
 | 028 | Catalogue: YAML seeds, admin panel is the source of truth (spec 003) | Accepted | 2026-10-04 |
+| 029 | Suburbs and properties; location = suburb centre for now (spec 004) | Accepted | 2026-10-04 |
 
 ---
 
@@ -225,3 +226,12 @@ Short architecture decision records. **Add an entry for every significant choice
 - Keys are fixed after creation (form + model guard + unique indexes) and used in admin URLs instead of numeric ids (service URLs are scoped to their trade).
 - Permissions `catalogue.view` (all admin roles) and `catalogue.edit` (super-admin, support), created by migration and enforced by policies; trades and services are never deleted, only switched off; questions may be deleted until Phase 2 stores answers.
 - Every change is audit-logged with before/after via activitylog; Filament's bulk reorder fires no model events, so reorders are logged explicitly ("reordered …" with the new order). New items are appended to the end of their list.
+
+## 029 · Suburbs and properties; location = suburb centre for now (spec 004)
+**Context:** Spec 004 and Q9 (launch with Berea/central + North).
+
+**Decision:**
+- `SuburbSeeder` loads the 12 launch-area suburbs with approximate centre points (≈1 km); only Berea/central and North are active. Like the catalogue, the admin panel is the source of truth: re-seeding skips existing slugs and names. Slugs are fixed and used in admin URLs. Suburbs use the catalogue permissions and are never deleted; centre moves are audit-logged explicitly (geometry isn't captured by the model audit options).
+- Properties belong to one customer, are reached only by `public_id` through the owner (404 otherwise), soft-delete, and are capped at 10 per customer (`config/sortd.php`, owner row locked to make the cap race-safe). The street address is encrypted with the app key, hidden from serialisation, not on any admin screen, and never in logs or the audit log (audit entries hold only the suburb).
+- No geocoding yet (founder decision): customers pick a suburb from Sortd's list and type their street; `properties.location` is the suburb centroid, enough for suburb-level matching. A map pin/street autocomplete comes with a geocoding provider.
+- `/app` routes require the customer role (`EnsureCustomer`); pro-only accounts are redirected to the pro area.

@@ -51,8 +51,8 @@ erDiagram
 ### Places
 | Table | Key columns |
 |---|---|
-| `suburbs` | name, region, municipality, centroid (geography Point 4326), boundary (geography MultiPolygon, nullable), is_active |
-| `properties` | public_id, user_id, label, street_address (encrypted), suburb_id, location (geography Point), postal_code, property_type, deleted_at |
+| `suburbs` | slug (unique; URL key), name (unique per municipality), region (berea_central/north/west/south), municipality, centroid (geography Point 4326), boundary (geography MultiPolygon, nullable), is_active — **in place** (`2026_10_04_000003`) |
+| `properties` | public_id, user_id, label, street_address (encrypted, hidden), suburb_id, location (geography Point; suburb centre until a geocoder exists), postal_code, property_type (house/flat/townhouse/business/other), deleted_at — **in place** |
 | `waitlist_entries` | phone_e164, first_name, suburb_text, service_id, created_at |
 
 ### Catalogue (seeded from `docs/product/scoping/*.yaml`)

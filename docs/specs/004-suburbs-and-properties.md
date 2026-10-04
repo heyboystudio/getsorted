@@ -1,6 +1,6 @@
 # Spec 004 · Suburbs and properties
 
-Status: Approved · Phase: 1 · Owner: founder
+Status: Done (awaiting merge) · Phase: 1 · Owner: founder
 
 ## Goal
 Sortd knows its launch suburbs (with map coordinates) and customers can save the properties where work will be done, each linked to a suburb. This completes Phase 1 ("properties with suburb lookup") and is what the coverage check, booking and matching build on in Phases 2–3.
@@ -60,8 +60,10 @@ Mobile first (360 px), same style as the account home.
 1. **Q9:** launch with **Berea/central** (Morningside, Musgrave, Berea, Glenwood) and **North** (Durban North, Umhlanga, La Lucia); West and South are seeded but inactive.
 2. No map pin or street autocomplete yet: suburb from Sortd's list + typed street; location = suburb centre point. Revisit when a geocoding provider is chosen.
 3. Property types: House, Flat/apartment, Townhouse/complex, Business premises, Other.
-4. Seed approximate suburb centre points (≈1 km); admins can correct them.
+4. Seed approximate suburb centre points (≈1 km) for the 12 launch-area suburbs; admins can correct them.
 
 ## Progress
 - 2026-10-04: Drafted for founder review.
 - 2026-10-04: Approved as proposed.
+- 2026-10-04: Built on `feat/004-suburbs-properties`; tests in `tests/Feature/Places/`. Review found no privacy holes; fixed: duplicate suburb names now give a form error, the seeder skips name clashes, suburb centre moves are audit-logged, tamper tests added, audit entries no longer include the free-text label.
+- Deviations/extras: `EnsureCustomer` middleware now guards all of `/app` (pro-only accounts go to the pro area); the pro welcome heading became "Welcome to Sortd Pro" so the greeting isn't repeated; the launch area has 12 suburbs (not 14).
