@@ -31,10 +31,16 @@ services:
   queue:
     <<: *app
     command: ["php", "artisan", "queue:work", "--tries=3", "--max-time=3600"]
+    # The image's health check probes Caddy, which only the web container runs.
+    healthcheck:
+      disable: true
 
   scheduler:
     <<: *app
     command: ["php", "artisan", "schedule:work"]
+    # The image's health check probes Caddy, which only the web container runs.
+    healthcheck:
+      disable: true
 
   pgsql:
     image: postgis/postgis:17-3.5-alpine
