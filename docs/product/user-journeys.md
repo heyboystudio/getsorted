@@ -38,7 +38,7 @@ Each journey is a list of screens/steps. Feature specs in `docs/specs/` break th
 ### C6 · Account
 Profile, saved properties (add/edit/delete), job history, notification preferences, download my data, delete my account (soft-delete + anonymise per retention policy).
 
-## Pro (`/pro`, Filament panel, mobile friendly)
+## Pro (`/pros/...`, mobile web pages)
 
 ### P1 · Apply and get vetted
 1. Public "Join as a pro" page → phone verification → application wizard: business details, trades & services, service suburbs, ID upload, registrations (PIRB number / electrical registration), proof of address, 2 references, bank details, profile photo, short bio.
@@ -46,7 +46,7 @@ Profile, saved properties (add/edit/delete), job history, notification preferenc
 3. Admin approves → WhatsApp + email "you're live".
 
 ### P2 · Receive and quote
-1. Invite arrives (WhatsApp template with link + in-panel notification).
+1. Invite arrives (WhatsApp template with a link to the pro job page).
 2. Invite page: job details (no street address), quotes received so far, time left.
 3. Decline (reason) or build quote: line items (labour / materials / call-out), deposit %, earliest start date, validity, notes. Preview as customer sees it → Submit.
 4. Edit/withdraw while job still open.

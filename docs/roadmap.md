@@ -14,6 +14,10 @@ Phases are done when their **exit criteria** pass, not when a date arrives. Timi
 
 After launch: public SEO pages per suburb × trade, pro performance dashboards, more trades, isiZulu, native app via API.
 
+## Current position (2026-10-04)
+
+Phases 1 (accounts and catalogue) and 2 (booking) are built. Phase 3 has pro application, vetting and invite waves; quote building, customer comparison and acceptance remain. Specs 001–009, 011 and 012 have merged; spec 010 is next. Phases 4–6 have not started. Phase 0's CI and staging exit criteria remain deferred under decisions 020 and 014, so launch readiness still depends on hosting, live providers and operational checks.
+
 ---
 
 ## Phase 0 — Foundations (detailed)

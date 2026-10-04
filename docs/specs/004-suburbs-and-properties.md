@@ -1,6 +1,6 @@
 # Spec 004 · Suburbs and properties
 
-Status: Done (awaiting merge) · Phase: 1 · Owner: founder
+Status: Done (merged in PR #21) · Phase: 1 · Owner: founder
 
 ## Goal
 Sortd knows its launch suburbs (with map coordinates) and customers can save the properties where work will be done, each linked to a suburb. This completes Phase 1 ("properties with suburb lookup") and is what the coverage check, booking and matching build on in Phases 2–3.
