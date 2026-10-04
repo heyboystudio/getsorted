@@ -32,10 +32,10 @@ final class ServiceJobInfolist
                 ]),
                 Section::make(__('Answers'))->schema([
                     TextEntry::make('answers')->hiddenLabel()
-                        ->state(fn (ServiceJob $record): array => array_values(array_map(
+                        ->state(fn (ServiceJob $record): array => array_map(
                             fn (array $answer): string => $answer['prompt'].' — '.(is_array($answer['answer']) ? implode(', ', $answer['answer']) : (string) $answer['answer']),
                             $record->orderedAnswers(),
-                        )))
+                        ))
                         ->listWithLineBreaks()->placeholder(__('No answers yet')),
                     TextEntry::make('customer_notes')->label(__('Customer notes'))->placeholder('—'),
                 ]),
