@@ -8,6 +8,7 @@ use App\Domain\Properties\Actions\SaveProperty;
 use App\Domain\Properties\Enums\PropertyType;
 use App\Domain\Properties\Exceptions\PropertyLimitReached;
 use App\Domain\Properties\Queries\SuburbSearchQuery;
+use App\Domain\ServiceJobs\Support\BookingReturn;
 use App\Models\Property;
 use App\Models\Suburb;
 use App\Models\User;
@@ -40,8 +41,13 @@ final class Form extends Component
 
     public string $propertyType = '';
 
+    #[Locked]
+    public ?string $returnTo = null;
+
     public function mount(?Property $property = null): void
     {
+        $this->returnTo = BookingReturn::sanitise(request()->query('return'));
+
         if (! $property instanceof Property || ! $property->exists) {
             return;
         }
@@ -129,7 +135,7 @@ final class Form extends Component
             throw ValidationException::withMessages(['label' => __('You can save up to :count properties. Delete one to add another.', ['count' => config('sortd.properties.max_per_customer')])]);
         }
 
-        $this->redirectRoute('properties.index');
+        $this->returnTo === null ? $this->redirectRoute('properties.index') : $this->redirect($this->returnTo);
     }
 
     public function render(): View

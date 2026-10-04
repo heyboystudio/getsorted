@@ -12,7 +12,7 @@ it('serves the Sortd holding page without offering accounts', function (): void 
     $this->get('/')
         ->assertOk()
         ->assertSeeText('Sortd')
-        ->assertSeeText("We're getting things ready.")
+        ->assertSeeText('What do you need help with?')
         ->assertDontSee('href="/login"', false)
         ->assertDontSee('href="/register"', false);
 });

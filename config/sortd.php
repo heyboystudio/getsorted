@@ -9,6 +9,9 @@ declare(strict_types=1);
 
 return [
 
+    // Customers' local time for "today" and booking dates; storage stays UTC.
+    'timezone' => 'Africa/Johannesburg',
+
     'otp' => [
         // Security baseline §1: 6 digits, 10-minute expiry, 5 attempts, single use.
         'length' => 6,
@@ -43,6 +46,15 @@ return [
     'properties' => [
         // Saved properties per customer; prevents abuse of the address book.
         'max_per_customer' => 10,
+    ],
+
+    'jobs' => [
+        // Abuse protection for the booking flow (spec 005).
+        'max_drafts' => 5,
+        'posts_per_day' => 10,
+        // How far ahead customers may book.
+        'booking_days_ahead' => 30,
+        'notes_max_length' => 1000,
     ],
 
     'legal' => [

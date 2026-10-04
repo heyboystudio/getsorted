@@ -77,8 +77,10 @@ Enums: `TradeStatus`, `QuestionType`, `RegistrationType` (`App\Domain\Catalogue\
 ### Jobs
 | Table | Key columns |
 |---|---|
-| `service_jobs` | public_id, customer_id, property_id, service_id, status, urgency (normal/urgent), preferred_date, time_window, scoping_answers jsonb, customer_notes, ai_summary, quotes_count, accepted_quote_id, posted_at, quote_window_ends_at, scheduled_for, started_at, completed_at, cancelled_at, cancelled_by_type/id, cancel_reason |
-| `service_job_events` | service_job_id, from_status, to_status, event_type, actor_type, actor_id, payload jsonb, created_at (append-only) |
+| `service_jobs` | public_id, customer_id, property_id, service_id, status, urgency (normal/urgent), preferred_date, time_window (morning/afternoon/flexible/today), scoping_answers jsonb (`{key: {prompt, type, answer}}` as asked), customer_notes, ai_summary, quotes_count, accepted_quote_id, posted_at, quote_window_ends_at, scheduled_for, started_at, completed_at, cancelled_at, cancelled_by_type/id, cancel_reason — **in place** (`2026_10_04_000004`) except quotes_count, accepted_quote_id, scheduled_for, started_at, completed_at, cancelled_by_type/id (added with their specs) |
+| `service_job_events` | service_job_id, from_status, to_status, event_type, actor_type, actor_id, payload jsonb, created_at (append-only; model refuses updates/deletes) — **in place** |
+
+Settings: `job_timers.quote_window_hours` (72), `job_timers.draft_expiry_days` (7) via `App\Settings\JobTimers`.
 | `service_job_invites` | service_job_id, pro_id, wave, status, invited_at, viewed_at, responded_at, expires_at, decline_reason (unique job+pro) |
 | `quotes` | public_id, service_job_id, pro_id, version, status, labour_cents, materials_cents, callout_cents, vat_cents, total_cents, deposit_cents, earliest_start_date, valid_until, notes, submitted_at, accepted_at, supersedes_quote_id |
 | `quote_lines` | quote_id, kind (labour/materials/callout), description, quantity (decimal 10,2), unit_price_cents, line_total_cents, sort |
