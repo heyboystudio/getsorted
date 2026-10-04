@@ -15,11 +15,11 @@ enum QuestionType: string
     public function label(): string
     {
         return match ($this) {
-            self::SingleChoice => 'Pick one',
-            self::MultiChoice => 'Pick several',
-            self::YesNo => 'Yes / no',
-            self::Number => 'Number',
-            self::Text => 'Free text',
+            self::SingleChoice => __('Pick one'),
+            self::MultiChoice => __('Pick several'),
+            self::YesNo => __('Yes / no'),
+            self::Number => __('Number'),
+            self::Text => __('Free text'),
         };
     }
 

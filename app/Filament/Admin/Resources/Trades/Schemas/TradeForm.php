@@ -22,7 +22,7 @@ final class TradeForm
                 CatalogueFields::key(fn () => Trade::query()),
                 Select::make('status')
                     ->label(__('Status'))
-                    ->options([TradeStatus::Demo->value => __('Demo'), TradeStatus::Live->value => __('Live')])
+                    ->options(collect(TradeStatus::cases())->mapWithKeys(fn (TradeStatus $status): array => [$status->value => $status->label()])->all())
                     ->default(TradeStatus::Demo->value)
                     ->required(),
                 Toggle::make('is_active')->label(__('Active'))->default(true)

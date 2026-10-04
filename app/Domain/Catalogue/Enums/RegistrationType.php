@@ -13,8 +13,8 @@ enum RegistrationType: string
     public function label(): string
     {
         return match ($this) {
-            self::Pirb => 'PIRB plumber',
-            self::ElectricalRegisteredPerson => 'Registered electrician',
+            self::Pirb => __('PIRB plumber'),
+            self::ElectricalRegisteredPerson => __('Registered electrician'),
         };
     }
 }

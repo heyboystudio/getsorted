@@ -31,6 +31,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 025 | Security hardening baseline (headers, HTTPS, sessions, rate limits, strict models) | Accepted | 2026-10-03 |
 | 026 | Phone + OTP login implementation (spec 001) | Accepted | 2026-10-04 |
 | 027 | One account for customer and pro; pro sign-up (spec 011) | Accepted | 2026-10-04 |
+| 028 | Catalogue: YAML seeds, admin panel is the source of truth (spec 003) | Accepted | 2026-10-04 |
 
 ---
 
@@ -104,7 +105,7 @@ Short architecture decision records. **Add an entry for every significant choice
 
 **Decision:** Install `laravel/boost` ^2.10 as a **dev-only** dependency (2.10.1, MIT; requires PHP ^8.2 and Illuminate ^13.0 among others, so it supports Laravel 13). Configure it for Claude Code and Codex: guidelines (`CLAUDE.md`, `AGENTS.md`), skills (`.claude/skills`, `.agents/skills`) and the `laravel-boost` MCP server (`.mcp.json`, `.codex/config.toml`). All generated files are committed so cloud sessions have them. Our `.ai/guidelines/*.md` are the source for the Sortd section; a precedence line in `sortd-project.md` makes Sortd rules win over generic Boost guidance. `config/boost.php` excludes the `deployments` guideline and `boost.json` disables Cloud, because both recommend Laravel Cloud while hosting is still open (decision 014).
 
-**Transitive dependencies (all MIT):** `laravel/mcp` 1.0.1, `laravel/roster` 1.0.0, `composer/semver` 3.5.0, `symfony/yaml` 8.1.8.
+**Transitive dependencies (all MIT):** `laravel/mcp` 1.0.1, `laravel/roster` 1.0.0, `composer/semver` 3.5.0, `symfony/yaml` 8.1.8 *(now a direct production dependency — decision 028)*.
 
 **Consequences:** After editing `.ai/guidelines/*.md`, run `php artisan boost:update` and commit `CLAUDE.md`/`AGENTS.md`. `boost:install --no-interaction` did not record the selected agents, so `agents` was added to `boost.json` by hand; without it `boost:update` refuses to run. Boost is not loaded in production because it is a dev dependency. Re-enable the Cloud guidance only if decision 014 picks Laravel Cloud.
 
@@ -214,3 +215,13 @@ Short architecture decision records. **Add an entry for every significant choice
 **Context:** Phase 1 requires pros to sign up with OTP; the application wizard and vetting come in spec 008.
 
 **Decision:** The founder chose one account per phone number that can hold both the `customer` and `pro` roles. Pros sign up through `/login?as=pro` (spec 001's flow and protections unchanged) and accept a draft pro agreement (`pro_agreement` consent, version `2026-10-draft`); existing customers add the role on `/pros/become`, with the user row locked so a double submit records the agreement once. `User::homeRoute()` is the single landing rule: any pro → `/pros/welcome` (which links to `/app` if they are also a customer); joining-as-pro non-pros → `/pros/become`; others → `/app`. Pro-only accounts are kept out of `/app`. `RecordConsent` is the one place consents and their audit entries are written; audit entries now include "pro role granted". Pros join free (Q12). Business details wait for spec 008; the `/pro` panel stays closed.
+
+## 028 · Catalogue: YAML seeds, admin panel is the source of truth (spec 003)
+**Context:** Spec 003 loads `docs/product/scoping/*.yaml` and lets admins edit trades, services and questions.
+
+**Decision:**
+- `CatalogueSeeder` validates every file first (types, keys, required fields, options, `urgent_if`), then `ImportCatalogue` adds only trades, services and questions whose keys are new, in one transaction. After the first seed the admin panel is the source of truth; re-seeding never overwrites edits. The seeder runs with `db:seed` and is safe in production.
+- **`symfony/yaml` ^8.1 is now a direct production dependency** (same 8.1.8 already locked through Boost; MIT; Symfony-maintained) so the seeder can read YAML on servers.
+- Keys are fixed after creation (form + model guard + unique indexes) and used in admin URLs instead of numeric ids (service URLs are scoped to their trade).
+- Permissions `catalogue.view` (all admin roles) and `catalogue.edit` (super-admin, support), created by migration and enforced by policies; trades and services are never deleted, only switched off; questions may be deleted until Phase 2 stores answers.
+- Every change is audit-logged with before/after via activitylog; Filament's bulk reorder fires no model events, so reorders are logged explicitly ("reordered …" with the new order). New items are appended to the end of their list.

@@ -6,6 +6,7 @@ namespace App\Filament\Admin\Resources\Trades\Resources\Services;
 
 use App\Filament\Admin\Resources\Trades\Resources\Services\Pages\CreateService;
 use App\Filament\Admin\Resources\Trades\Resources\Services\Pages\EditService;
+use App\Filament\Admin\Resources\Trades\Resources\Services\Pages\ViewService;
 use App\Filament\Admin\Resources\Trades\Resources\Services\RelationManagers\QuestionsRelationManager;
 use App\Filament\Admin\Resources\Trades\Resources\Services\Schemas\ServiceForm;
 use App\Filament\Admin\Resources\Trades\Resources\Services\Tables\ServicesTable;
@@ -48,6 +49,7 @@ final class ServiceResource extends Resource
     {
         return [
             'create' => CreateService::route('/create'),
+            'view' => ViewService::route('/{record}'),
             'edit' => EditService::route('/{record}/edit'),
         ];
     }

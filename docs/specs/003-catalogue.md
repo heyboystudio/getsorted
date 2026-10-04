@@ -1,6 +1,6 @@
 # Spec 003 · Catalogue seeded from scoping YAML + admin editing
 
-Status: Approved · Phase: 1 · Owner: founder
+Status: Done (awaiting merge) · Phase: 1 · Owner: founder
 
 ## Goal
 The trades, services and scoping questions in `docs/product/scoping/*.yaml` are loaded into the database and can be viewed and edited by admins in `/admin`, so the booking flow (Phase 2) and pro services (spec 008) have a real catalogue to use.
@@ -68,3 +68,6 @@ Update `docs/architecture/data-model.md`:
 ## Progress
 - 2026-10-04: Drafted for founder review.
 - 2026-10-04: Approved as proposed.
+- 2026-10-04: Built on `feat/003-catalogue`; tests in `tests/Feature/Catalogue/`. Reviewer agents found: editing a question reset its position, reordering wasn't audit-logged, and view-only admins could not open trades/services — all fixed with tests (read-only View pages added). New items are added at the end of their lists.
+- Deviations: `symfony/yaml` became a production dependency so the seeder works on servers (decision 028); the services list shows "active" as an icon (edit the service to switch it) rather than an inline toggle; admins can also create new trades.
+- Next: when Phase 2 stores job answers, question deletion must be blocked (policy note in `ScopingQuestionPolicy`).

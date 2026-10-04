@@ -9,9 +9,11 @@ use App\Domain\Catalogue\Enums\TradeStatus;
 use App\Filament\Admin\Resources\Trades\Pages\CreateTrade;
 use App\Filament\Admin\Resources\Trades\Pages\EditTrade;
 use App\Filament\Admin\Resources\Trades\Pages\ListTrades;
+use App\Filament\Admin\Resources\Trades\Pages\ViewTrade;
 use App\Filament\Admin\Resources\Trades\RelationManagers\ServicesRelationManager;
 use App\Filament\Admin\Resources\Trades\Resources\Services\Pages\CreateService;
 use App\Filament\Admin\Resources\Trades\Resources\Services\Pages\EditService;
+use App\Filament\Admin\Resources\Trades\Resources\Services\Pages\ViewService;
 use App\Filament\Admin\Resources\Trades\Resources\Services\RelationManagers\QuestionsRelationManager;
 use App\Models\ScopingQuestion;
 use App\Models\Service;
@@ -248,4 +250,67 @@ it('keeps customers and pros out of the catalogue (AC13)', function (string $sta
 it('uses keys, not numeric ids, in admin URLs', function (): void {
     expect(EditTrade::getUrl(['record' => plumbing()]))->toEndWith('/admin/trades/plumbing/edit')
         ->and(EditService::getUrl(['record' => leakRepair(), 'trade' => plumbing()]))->toEndWith('/admin/trades/plumbing/services/leak_repair/edit');
+});
+
+it('keeps a question in place when it is edited (AC10)', function (): void {
+    catalogueAdmin();
+    $service = Service::query()->where('key', 'geyser')->sole();
+    $before = $service->questions()->pluck('key')->all();
+    $first = $service->questions()->get()->last();
+
+    Livewire::test(QuestionsRelationManager::class, ['ownerRecord' => $service, 'pageClass' => EditService::class])
+        ->callAction(TestAction::make('edit')->table($first), data: ['prompt' => 'Edited?', 'type' => $first->type->value, 'options' => $first->options, 'required' => true])
+        ->assertHasNoFormErrors();
+
+    expect($service->questions()->pluck('key')->all())->toBe($before);
+});
+
+it('adds new trades, services and questions at the end of their lists', function (): void {
+    catalogueAdmin();
+
+    Livewire::test(CreateService::class, ['parentRecord' => plumbing()])
+        ->fillForm(['name' => 'Taps', 'key' => 'taps', 'is_active' => true])->call('create')->assertHasNoFormErrors();
+
+    Livewire::test(QuestionsRelationManager::class, ['ownerRecord' => leakRepair(), 'pageClass' => EditService::class])
+        ->callAction(TestAction::make('create')->table(), data: ['prompt' => 'Photos?', 'key' => 'photos', 'type' => 'yes_no', 'required' => false]);
+
+    expect(plumbing()->services()->pluck('key')->last())->toBe('taps')
+        ->and(leakRepair()->questions()->pluck('key')->last())->toBe('photos');
+});
+
+it('reorders services and questions and writes it to the audit log (AC10, AC11)', function (): void {
+    $admin = catalogueAdmin();
+    $questions = leakRepair()->questions()->get();
+    $reversed = $questions->reverse()->map(fn (ScopingQuestion $question): string => (string) $question->getKey())->values()->all();
+
+    Livewire::test(QuestionsRelationManager::class, ['ownerRecord' => leakRepair(), 'pageClass' => EditService::class])
+        ->call('reorderTable', $reversed);
+
+    expect(leakRepair()->questions()->pluck('key')->all())->toBe($questions->reverse()->pluck('key')->values()->all());
+
+    $entry = Activity::query()->where('event', 'reordered')->sole();
+    expect($entry->causer_id)->toBe($admin->id)->and($entry->subject_id)->toBe(leakRepair()->id);
+});
+
+it('does not let view-only admins reorder', function (): void {
+    catalogueAdmin(Role::AdminVetting);
+    $before = leakRepair()->questions()->pluck('key')->all();
+
+    Livewire::test(QuestionsRelationManager::class, ['ownerRecord' => leakRepair(), 'pageClass' => ViewService::class])
+        ->call('reorderTable', array_reverse(leakRepair()->questions()->pluck('id')->map(fn ($id): string => (string) $id)->all()));
+
+    expect(leakRepair()->questions()->pluck('key')->all())->toBe($before)
+        ->and(Activity::query()->where('event', 'reordered')->exists())->toBeFalse();
+});
+
+it('lets view-only admins open trades and services and see their contents (AC12)', function (): void {
+    catalogueAdmin(Role::AdminFinance);
+
+    Livewire::test(ViewTrade::class, ['record' => 'plumbing'])->assertOk()->assertActionHidden('edit');
+    Livewire::test(ServicesRelationManager::class, ['ownerRecord' => plumbing(), 'pageClass' => ViewTrade::class])
+        ->assertCanSeeTableRecords(plumbing()->services);
+    Livewire::test(ViewService::class, ['record' => 'leak_repair', 'parentRecord' => plumbing()])->assertOk();
+    Livewire::test(QuestionsRelationManager::class, ['ownerRecord' => leakRepair(), 'pageClass' => ViewService::class])
+        ->assertCanSeeTableRecords(leakRepair()->questions)
+        ->assertActionHidden(TestAction::make('create')->table());
 });

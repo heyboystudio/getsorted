@@ -8,4 +8,12 @@ enum TradeStatus: string
 {
     case Demo = 'demo';
     case Live = 'live';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Demo => __('Demo'),
+            self::Live => __('Live'),
+        };
+    }
 }

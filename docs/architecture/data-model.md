@@ -58,9 +58,11 @@ erDiagram
 ### Catalogue (seeded from `docs/product/scoping/*.yaml`)
 | Table | Key columns |
 |---|---|
-| `trades` | key (unique), name, status, sort |
-| `services` | trade_id, key (unique within trade), name, description, requires_registration, emergency_capable, is_active, sort |
-| `scoping_questions` | service_id, key, prompt, type, options jsonb, required, flags jsonb, sort |
+| `trades` | key (unique; URL key), name, status (demo/live), is_active, sort — **in place** |
+| `services` | trade_id (restrict delete), key (unique within trade; URL key), name, description, requires_registration (pirb / electrical_registered_person), emergency_capable, safety_advice jsonb, is_active, sort — **in place** |
+| `scoping_questions` | service_id, key (unique within service), prompt, type (single_choice/multi_choice/yes_no/number/text), options jsonb, required, flags jsonb (`urgent_if`), sort — **in place** |
+
+Enums: `TradeStatus`, `QuestionType`, `RegistrationType` (`App\Domain\Catalogue\Enums`). Keys never change. Permissions `catalogue.view` (all admin roles) and `catalogue.edit` (super, support).
 
 ### Pros
 | Table | Key columns |

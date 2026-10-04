@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Resources\Trades;
 use App\Filament\Admin\Resources\Trades\Pages\CreateTrade;
 use App\Filament\Admin\Resources\Trades\Pages\EditTrade;
 use App\Filament\Admin\Resources\Trades\Pages\ListTrades;
+use App\Filament\Admin\Resources\Trades\Pages\ViewTrade;
 use App\Filament\Admin\Resources\Trades\RelationManagers\ServicesRelationManager;
 use App\Filament\Admin\Resources\Trades\Schemas\TradeForm;
 use App\Filament\Admin\Resources\Trades\Tables\TradesTable;
@@ -16,7 +17,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use UnitEnum;
 
 final class TradeResource extends Resource
 {
@@ -24,9 +24,12 @@ final class TradeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Catalogue';
-
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getNavigationGroup(): string
+    {
+        return __('Catalogue');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -50,6 +53,7 @@ final class TradeResource extends Resource
         return [
             'index' => ListTrades::route('/'),
             'create' => CreateTrade::route('/create'),
+            'view' => ViewTrade::route('/{record}'),
             'edit' => EditTrade::route('/{record}/edit'),
         ];
     }

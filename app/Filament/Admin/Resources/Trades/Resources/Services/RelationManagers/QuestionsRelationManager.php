@@ -6,6 +6,7 @@ namespace App\Filament\Admin\Resources\Trades\Resources\Services\RelationManager
 
 use App\Domain\Catalogue\Enums\QuestionType;
 use App\Domain\Catalogue\Support\CatalogueDefinitionValidator;
+use App\Filament\Admin\Support\CatalogueAudit;
 use App\Filament\Admin\Support\CatalogueFields;
 use App\Models\ScopingQuestion;
 use Closure;
@@ -22,12 +23,16 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 final class QuestionsRelationManager extends RelationManager
 {
     protected static string $relationship = 'questions';
 
-    protected static ?string $title = 'Scoping questions';
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('Scoping questions');
+    }
 
     public function form(Schema $schema): Schema
     {
@@ -76,6 +81,7 @@ final class QuestionsRelationManager extends RelationManager
             ->recordTitleAttribute('prompt')
             ->defaultSort('sort')
             ->reorderable('sort')
+            ->afterReordering(CatalogueAudit::reordered(ScopingQuestion::class, $this->getOwnerRecord()))
             ->columns([
                 TextColumn::make('prompt')->label(__('Question'))->wrap(),
                 TextColumn::make('key')->label(__('Key'))->fontFamily('mono')->color('gray'),
@@ -83,7 +89,10 @@ final class QuestionsRelationManager extends RelationManager
                 IconColumn::make('required')->label(__('Required'))->boolean(),
             ])
             ->headerActions([
-                CreateAction::make()->mutateDataUsing(fn (array $data): array => $this->normalise($data)),
+                CreateAction::make()->mutateDataUsing(fn (array $data): array => [
+                    ...$this->normalise($data),
+                    'sort' => CatalogueAudit::nextSort(ScopingQuestion::class, ['service_id' => $this->getOwnerRecord()->getKey()]),
+                ]),
             ])
             ->recordActions([
                 EditAction::make()->mutateDataUsing(fn (array $data): array => $this->normalise($data)),
@@ -111,7 +120,8 @@ final class QuestionsRelationManager extends RelationManager
         $urgentIf = array_values($data['flags']['urgent_if'] ?? []);
         $data['flags'] = $urgentIf === [] ? [] : ['urgent_if' => $urgentIf];
 
-        $data['sort'] ??= 0;
+        // Position is only changed by reordering; editing must not move a question.
+        unset($data['sort']);
 
         return $data;
     }
