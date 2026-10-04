@@ -248,3 +248,10 @@ Short architecture decision records. **Add an entry for every significant choice
 - Guests answer questions without an account; their answers are kept in the session through login (`url.intended`, server-built paths only). "Add property" returns to the booking only for whitelisted booking paths (no open redirect).
 - Admins see jobs read-only with suburb but never street address or customer contact details.
 - Timers live in `spatie/laravel-settings` (`JobTimers`), not code.
+
+## 031 · Job photos and iPhone HEIC (spec 012)
+**Context:** The founder delegated the iPhone photo-format decision after spec 005 split photos into a separate feature.
+
+**Decision:** Accept JPEG, PNG, WebP and HEIC source images, up to five per job and 10 MB each. Process accepted images into WebP and discard the source bytes and metadata before storing them on the private `media` disk. Serve each photo through a five-minute signed URL with job authorization. A cancelled draft deletes its photos. Repeated upload requests for the same processed content reuse the existing photo.
+
+**Deployment requirement:** HEIC decoding requires PHP Imagick with a working HEIC codec. The current local PHP runtime does not have Imagick, so local HEIC uploads show a clear fallback message; the chosen South African host must provide and verify the codec before this feature is deployed.

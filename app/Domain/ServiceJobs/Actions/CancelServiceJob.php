@@ -23,7 +23,7 @@ final readonly class CancelServiceJob
      */
     public function handle(ServiceJob $job, ActorType $actor, ?int $actorId, string $reason, ?CarbonImmutable $onlyIfUntouchedSince = null): ?ServiceJob
     {
-        return DB::transaction(function () use ($job, $actor, $actorId, $reason, $onlyIfUntouchedSince): ?ServiceJob {
+        $cancelled = DB::transaction(function () use ($job, $actor, $actorId, $reason, $onlyIfUntouchedSince): ?ServiceJob {
             $job = ServiceJob::query()->lockForUpdate()->findOrFail($job->id);
 
             // The customer may have resumed the draft since it was picked for expiry.
@@ -38,5 +38,11 @@ final readonly class CancelServiceJob
 
             return $job;
         });
+
+        if ($cancelled instanceof ServiceJob) {
+            $cancelled->clearMediaCollection(ServiceJob::PHOTO_COLLECTION);
+        }
+
+        return $cancelled;
     }
 }

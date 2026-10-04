@@ -63,6 +63,32 @@
             <textarea rows="5" maxlength="{{ config('sortd.jobs.notes_max_length') }}" wire:model="notes" aria-label="{{ __('Notes for your pro') }}" class="mt-6 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3"></textarea>
             @error('notes') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
             <button type="button" wire:click="next" wire:loading.attr="disabled" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Next') }}</button>
+        @elseif ($step === 'photos')
+            <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('Add photos of the problem') }}</h1>
+            <p class="mt-1 text-sm text-zinc-500">{{ __('Optional. Up to 5 photos, 10 MB each. JPEG, PNG, WebP or HEIC.') }}</p>
+            @if ($isGuest)
+                <p class="mt-5 text-zinc-600">{{ __('Log in to add photos. Your answers will be kept.') }}</p>
+                <button type="button" wire:click="logInToContinue" class="mt-4 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white">{{ __('Log in to add photos') }}</button>
+            @elseif ($isCustomer)
+                @if ($photos->isNotEmpty())
+                    <div class="mt-5 grid grid-cols-2 gap-3">
+                        @foreach ($photos as $photo)
+                            <div wire:key="photo-{{ $photo->uuid }}" class="overflow-hidden rounded-xl border border-zinc-200">
+                                <img src="{{ $photoUrls[$photo->uuid] }}" alt="{{ __('Job photo :number', ['number' => $loop->iteration]) }}" class="aspect-square w-full object-cover">
+                                <button type="button" wire:click="removePhoto('{{ $photo->uuid }}')" class="w-full px-3 py-2 text-sm text-red-700 underline">{{ __('Remove photo') }}</button>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+                @if ($photos->count() < config('sortd.job_photos.max_count'))
+                    <label for="job-photo" class="mt-5 block text-sm font-medium">{{ __('Choose a photo') }}</label>
+                    <input id="job-photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" wire:model="photoUpload" class="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3 text-sm">
+                    @error('photoUpload') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                    <button type="button" wire:click="addPhoto" wire:loading.attr="disabled" wire:target="photoUpload,addPhoto" class="mt-3 rounded-lg border border-emerald-700 px-4 py-2 font-medium text-emerald-800 disabled:opacity-60">{{ __('Add photo') }}</button>
+                    <p wire:loading wire:target="photoUpload,addPhoto" class="mt-2 text-sm text-zinc-500">{{ __('Uploading photo…') }}</p>
+                @endif
+            @endif
+            <button type="button" wire:click="next" wire:loading.attr="disabled" wire:target="photoUpload,addPhoto,next" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Next') }}</button>
         @elseif ($step === 'property')
             <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('Where is the work?') }}</h1>
             @if ($isGuest)
@@ -118,6 +144,16 @@
                     <div class="p-4">
                         <div class="flex justify-between"><dt class="font-medium">{{ __('Notes') }}</dt><button type="button" wire:click="change('notes')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>
                         <dd class="mt-2 whitespace-pre-line text-sm text-zinc-700">{{ $notes }}</dd>
+                    </div>
+                @endif
+                @if ($photos->isNotEmpty())
+                    <div class="p-4">
+                        <div class="flex justify-between"><dt class="font-medium">{{ __('Photos') }}</dt><button type="button" wire:click="change('photos')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>
+                        <dd class="mt-3 grid grid-cols-3 gap-2">
+                            @foreach ($photos as $photo)
+                                <img wire:key="review-photo-{{ $photo->uuid }}" src="{{ $photoUrls[$photo->uuid] }}" alt="{{ __('Job photo :number', ['number' => $loop->iteration]) }}" class="aspect-square w-full rounded-lg object-cover">
+                            @endforeach
+                        </dd>
                     </div>
                 @endif
                 <div class="p-4">

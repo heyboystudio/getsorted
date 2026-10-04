@@ -7,7 +7,9 @@ namespace App\Livewire\Booking;
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Catalogue\Enums\QuestionType;
 use App\Domain\ServiceJobs\Actions\PostServiceJob;
+use App\Domain\ServiceJobs\Actions\RemoveJobPhoto;
 use App\Domain\ServiceJobs\Actions\SaveBookingDraft;
+use App\Domain\ServiceJobs\Actions\StoreJobPhoto;
 use App\Domain\ServiceJobs\Data\BookingData;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
@@ -27,17 +29,21 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 use Throwable;
 
 /**
- * Booking wizard (spec 005): questions one per screen → notes → property →
+ * Booking wizard: questions one per screen → notes → photos → property →
  * when → review → post. Guests answer questions, then log in at the property
  * step; logged-in customers autosave a draft at every step.
  */
 #[Layout('components.layouts.app')]
 final class Wizard extends Component
 {
-    public const array STEPS = ['questions', 'notes', 'property', 'when', 'review'];
+    use WithFileUploads;
+
+    public const array STEPS = ['questions', 'notes', 'photos', 'property', 'when', 'review'];
 
     private const string RESUME_KEY = 'booking.resume';
 
@@ -58,6 +64,8 @@ final class Wizard extends Component
 
     public string $notes = '';
 
+    public ?TemporaryUploadedFile $photoUpload = null;
+
     public ?string $propertyPublicId = null;
 
     public string $preferredDate = '';
@@ -75,13 +83,13 @@ final class Wizard extends Component
         abort_unless($trade instanceof Trade && $service instanceof Service && $service->trade_id === $trade->id && $service->is_active && $trade->is_active, 404);
         $this->serviceId = $service->id;
 
-        /** @var array{service_id?: int, answers?: array<string, mixed>, notes?: string}|null $resume */
+        /** @var array{service_id?: int, answers?: array<string, mixed>, notes?: string, step?: string}|null $resume */
         $resume = session()->pull(self::RESUME_KEY);
 
         if (is_array($resume) && ($resume['service_id'] ?? null) === $service->id) {
             $this->answers = $resume['answers'] ?? [];
             $this->notes = $resume['notes'] ?? '';
-            $this->step = 'property';
+            $this->step = in_array($resume['step'] ?? '', ['photos', 'property'], true) ? $resume['step'] : 'property';
         }
 
         // Continue an existing draft for this service instead of starting another (drafts are capped).
@@ -135,6 +143,7 @@ final class Wizard extends Component
         match ($this->step) {
             'questions' => $this->nextQuestion(),
             'notes' => $this->leaveNotes(),
+            'photos' => $this->leavePhotos(),
             'property' => $this->leaveProperty(),
             'when' => $this->leaveWhen(),
             default => null,
@@ -181,10 +190,31 @@ final class Wizard extends Component
     /** Guests keep their answers across the login (AC2). */
     public function logInToContinue(): void
     {
-        session()->put(self::RESUME_KEY, ['service_id' => $this->serviceId, 'answers' => $this->answers, 'notes' => $this->notes]);
+        session()->put(self::RESUME_KEY, ['service_id' => $this->serviceId, 'answers' => $this->answers, 'notes' => $this->notes, 'step' => $this->step]);
         session()->put('url.intended', $this->bookingUrl());
 
         $this->redirectRoute('login');
+    }
+
+    public function addPhoto(StoreJobPhoto $storeJobPhoto): void
+    {
+        $user = $this->user();
+        abort_unless($user instanceof User && $this->isCustomer(), 403);
+
+        $this->validate(['photoUpload' => ['required', 'file', 'max:'.config('sortd.job_photos.max_kilobytes')]]);
+        $job = $this->autosave();
+        $storeJobPhoto->handle($user, $job, $this->photoUpload);
+        $this->photoUpload->delete();
+        $this->photoUpload = null;
+        $this->resetErrorBag('photoUpload');
+    }
+
+    public function removePhoto(string $uuid, RemoveJobPhoto $removeJobPhoto): void
+    {
+        $user = $this->user();
+        abort_unless($user instanceof User && $this->isCustomer() && $this->jobPublicId !== null, 404);
+        $job = ServiceJob::query()->where('public_id', $this->jobPublicId)->where('customer_id', $user->id)->firstOrFail();
+        $removeJobPhoto->handle($user, $job, $uuid);
     }
 
     public function post(PostServiceJob $postServiceJob): void
@@ -222,6 +252,9 @@ final class Wizard extends Component
     {
         $service = $this->service();
         $question = $this->currentQuestion();
+        $photoJob = $this->jobPublicId === null ? null : ServiceJob::query()->where('public_id', $this->jobPublicId)
+            ->where('customer_id', $this->user()?->id)->first();
+        $photos = $photoJob?->getMedia(ServiceJob::PHOTO_COLLECTION) ?? collect();
 
         return view('livewire.booking.wizard', [
             'service' => $service,
@@ -241,6 +274,8 @@ final class Wizard extends Component
             'preferredDateLabel' => $this->validPreferredDate()?->translatedFormat('D j M'),
             'isUrgent' => $this->timeWindow === TimeWindow::Today->value || ScopingAnswers::isUrgent($service, $this->checkedAnswers()),
             'reviewAnswers' => $this->checkedAnswers(),
+            'photos' => $photos,
+            'photoUrls' => $photoJob === null ? [] : $photos->mapWithKeys(fn ($photo): array => [$photo->uuid => $photoJob->photoUrl($photo)])->all(),
         ])->title($service->name);
     }
 
@@ -275,6 +310,16 @@ final class Wizard extends Component
     {
         $this->notes = trim($this->notes);
         $this->validate(['notes' => ['nullable', 'string', 'max:'.config('sortd.jobs.notes_max_length')]]);
+        $this->step = 'photos';
+        $this->autosaveIfCustomer();
+    }
+
+    private function leavePhotos(): void
+    {
+        if ($this->photoUpload instanceof TemporaryUploadedFile) {
+            throw ValidationException::withMessages(['photoUpload' => __('Add your selected photo before continuing, or choose another file.')]);
+        }
+
         $this->step = 'property';
         $this->autosaveIfCustomer();
     }
@@ -386,7 +431,7 @@ final class Wizard extends Component
 
         $this->step = match (true) {
             ScopingAnswers::missingRequired($this->service(), $job->scoping_answers) !== [] => 'questions',
-            $job->property_id === null => 'property',
+            $job->property_id === null => 'photos',
             $job->time_window === null => 'when',
             default => 'review',
         };

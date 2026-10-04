@@ -6,6 +6,7 @@ namespace App\Filament\Admin\Resources\ServiceJobs\Schemas;
 
 use App\Models\ServiceJob;
 use App\Models\ServiceJobEvent;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -38,6 +39,11 @@ final class ServiceJobInfolist
                         ))
                         ->listWithLineBreaks()->placeholder(__('No answers yet')),
                     TextEntry::make('customer_notes')->label(__('Customer notes'))->placeholder('—'),
+                ]),
+                Section::make(__('Photos'))->schema([
+                    ImageEntry::make('job_photos')->hiddenLabel()->height(140)
+                        ->state(fn (ServiceJob $record): array => $record->getMedia(ServiceJob::PHOTO_COLLECTION)
+                            ->map(fn ($photo): string => $record->photoUrl($photo))->all()),
                 ]),
                 Section::make(__('Timeline'))->schema([
                     RepeatableEntry::make('events')->hiddenLabel()->schema([
