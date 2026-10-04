@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Matching;
 
+use App\Domain\Pros\Enums\DocumentStatus;
+use App\Domain\Pros\Enums\ProStatus;
 use App\Models\Pro;
 use App\Models\Service;
 use App\Models\Suburb;
@@ -17,7 +19,7 @@ final class EligibleProsQuery
     public function for(Service $service, Suburb $suburb, ?User $customer = null): Builder
     {
         return Pro::query()
-            ->where('status', 'approved')
+            ->where('status', ProStatus::Approved)
             ->whereNotNull('approved_at')
             ->whereHas('services', fn (Builder $query): Builder => $query->whereKey($service->id))
             ->whereHas('serviceAreas', fn (Builder $query): Builder => $query->whereKey($suburb->id))
@@ -34,7 +36,7 @@ final class EligibleProsQuery
             ->when($service->requires_registration !== null, function (Builder $query) use ($service): void {
                 $query->whereHas('documents', fn (Builder $documents): Builder => $documents
                     ->where('type', $service->requires_registration->value)
-                    ->where('status', 'verified')
+                    ->where('status', DocumentStatus::Verified)
                     ->whereNotNull('verified_at')
                     ->where(fn (Builder $valid): Builder => $valid->whereNull('expires_at')->orWhere('expires_at', '>', now())));
             });

@@ -1,6 +1,6 @@
 # Spec 008 · Pro application and vetting
 
-Status: Approved · Phase: 3 · Owner: founder
+Status: Done (awaiting merge) · Phase: 3 · Owner: founder
 
 ## Goal
 A tradesperson who signed up as a pro (spec 011) can complete an application, and a vetting admin can check it and approve or reject it. Approval is what makes a pro count for coverage (spec 006) and, later, receive invites (spec 009). Until now no real pro can become approved.
@@ -90,3 +90,27 @@ This spec covers the application and vetting only. Bank details move to the paym
 ## Progress
 - 2026-10-04: Drafted after spec 007 merged in PR #27. Awaiting founder approval and the four decisions above.
 - 2026-10-04: Founder approved the spec with all four recommended defaults.
+- 2026-10-04: Founder approved the build plan.
+- 2026-10-04: Built on `feat/008-pro-vetting`; tests in `tests/Feature/Pros/`. Image re-encoding was extracted from job photos into a shared helper (job photo tests unchanged and passing).
+- 2026-10-04: Code, security and spec reviews. Fixed:
+  - an admin who is also a pro could open their own application (and its private notes) in the vetting screens;
+  - a reapplication carried over earlier verifications, and a registration number could change under a "Verified" badge;
+  - a flagged registration could not be fixed from the form;
+  - upload and submission rate limits were missing;
+  - pro-side status changes were not in the activity log;
+  - a replacement referee's agreement was not asked;
+  - the prune left vetting reasons behind and paged by offset;
+  - inactive services could be chosen by admins;
+  - PDFs with scripts or embedded files are now refused;
+  - "Apply again" is shown after the wait;
+  - review-step "Change" links added;
+  - a policy now covers references;
+  - stale status messages are skipped.
+  - Deviations: `paused` left out until journey P4; `vetting.abandoned_after_days` dropped (decision 3 decides); the bio label no longer says customers see it (AC15).
+- 2026-10-04: Checks:
+  - `composer check` passed (477 tests, 2,112 assertions; 0 Larastan errors; no Composer advisories);
+  - `npm audit --audit-level=high` found 0 vulnerabilities;
+  - assets built;
+  - welcome page and application steps checked at 360 px with a local test pro.
+- Awaiting PR review and founder merge approval.
+

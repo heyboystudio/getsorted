@@ -25,9 +25,8 @@ final class LocalCoverageSeeder extends Seeder
             return;
         }
 
-        $pro = Pro::query()->firstOrCreate(['user_id' => $user->id], [
-            'business_name' => 'Local demo pro', 'status' => 'approved', 'approved_at' => now(),
-        ]);
+        $pro = Pro::query()->firstOrNew(['user_id' => $user->id]);
+        $pro->forceFill(['business_name' => 'Local demo pro', 'status' => 'approved', 'approved_at' => $pro->approved_at ?? now()])->save();
         $pro->services()->syncWithoutDetaching(Service::query()->where('is_active', true)->whereNull('requires_registration')->pluck('id')->all());
         $pro->serviceAreas()->syncWithoutDetaching(Suburb::query()->where('is_active', true)->pluck('id')->all());
     }

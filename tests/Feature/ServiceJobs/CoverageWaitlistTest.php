@@ -65,7 +65,7 @@ it('continues to questions only for an eligible approved pro', function (): void
         ->assertSet('step', 'questions')
         ->assertSee('Where is the leak coming from?');
 
-    $pro->update(['status' => 'paused']);
+    $pro->forceFill(['status' => 'suspended'])->save();
     expect(app(EligibleProsQuery::class)->exists($this->service, $this->suburb))->toBeFalse();
 });
 
@@ -76,9 +76,9 @@ it('requires a current verified registration when the service needs one', functi
     $pro->serviceAreas()->attach($this->suburb);
 
     expect(app(EligibleProsQuery::class)->exists($registered, $this->suburb))->toBeFalse();
-    $document = $pro->documents()->create(['type' => $registered->requires_registration->value, 'status' => 'verified', 'verified_at' => now(), 'expires_at' => now()->addMonth()]);
+    $document = $pro->documents()->forceCreate(['type' => $registered->requires_registration->value, 'status' => 'verified', 'verified_at' => now(), 'expires_at' => now()->addMonth()]);
     expect(app(EligibleProsQuery::class)->exists($registered, $this->suburb))->toBeTrue();
-    $document->update(['expires_at' => now()->subDay()]);
+    $document->forceFill(['expires_at' => now()->subDay()])->save();
     expect(app(EligibleProsQuery::class)->exists($registered, $this->suburb))->toBeFalse();
 });
 
@@ -187,7 +187,7 @@ it('refuses posting when the last eligible pro becomes unavailable', function ()
         answers: $answers, notes: null, propertyPublicId: $property->public_id,
         preferredDate: now()->toImmutable()->addDays(2), timeWindow: TimeWindow::Morning,
     ));
-    $pro->update(['status' => 'paused']);
+    $pro->forceFill(['status' => 'suspended'])->save();
 
     expect(fn () => app(PostServiceJob::class)->handle($customer, $job))->toThrow(NoEligiblePros::class);
     expect($job->fresh()->status)->toBe(ServiceJobStatus::Draft);

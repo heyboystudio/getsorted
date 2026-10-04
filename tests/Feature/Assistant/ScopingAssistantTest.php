@@ -586,7 +586,7 @@ it('shows the guidance note for a registered-electrician service without advice 
     [$customer, $property] = aiCustomer();
     $this->actingAs($customer);
     $this->drain->update(['requires_registration' => 'electrical_registered_person', 'safety_advice' => []]);
-    Pro::query()->sole()->documents()->create(['type' => 'electrical_registered_person', 'status' => 'verified', 'verified_at' => now()]);
+    Pro::query()->sole()->documents()->forceCreate(['type' => 'electrical_registered_person', 'status' => 'verified', 'verified_at' => now()]);
 
     reviewStep($property, 'Sink is blocked.', $this->drain)->assertSee('This is guidance, not a guarantee.');
 });

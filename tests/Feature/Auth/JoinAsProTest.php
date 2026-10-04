@@ -141,7 +141,7 @@ it('lands a returning pro on the pro welcome page (AC6)', function (): void {
 
     $this->actingAs($pro)->get('/pros/welcome')->assertOk()
         ->assertSee('Thanks, Sipho')
-        ->assertSee('application form opens soon');
+        ->assertSee('Start your application'); // Spec 008 replaced the "opens soon" holding text.
 });
 
 it('lets a pro who is also a customer reach both areas (AC7)', function (): void {
@@ -201,7 +201,7 @@ it('lands a pro who is also a customer on the pro welcome page (AC6)', function 
 
 it('shows the welcome page with a log-out button (AC6)', function (): void {
     $this->actingAs(User::factory()->pro()->create(['first_name' => 'Sipho']))->get('/pros/welcome')
-        ->assertSee('Thanks, Sipho — your application form opens soon')
+        ->assertSee('Thanks, Sipho — tell us about your business so we can check your details.')
         ->assertSee('action="'.route('logout').'"', false);
 });
 

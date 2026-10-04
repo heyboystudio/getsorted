@@ -1,0 +1,434 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Domain\Accounts\Enums\Role;
+use App\Domain\Pros\Actions\CheckReference;
+use App\Domain\Pros\Actions\DecideApplication;
+use App\Domain\Pros\Actions\SaveApplicationStep;
+use App\Domain\Pros\Actions\StartApplication;
+use App\Domain\Pros\Actions\StoreProDocument;
+use App\Domain\Pros\Actions\SubmitApplication;
+use App\Domain\Pros\Actions\VetDocument;
+use App\Domain\Pros\Data\BusinessDetails;
+use App\Domain\Pros\Data\ReferenceData;
+use App\Domain\Pros\Enums\BusinessType;
+use App\Domain\Pros\Enums\DocumentStatus;
+use App\Domain\Pros\Enums\DocumentType;
+use App\Domain\Pros\Enums\ProStatus;
+use App\Domain\Pros\Enums\ReferenceOutcome;
+use App\Filament\Admin\Pages\Auth\Login as AdminLogin;
+use App\Filament\Admin\Resources\ProApplications\Pages\ListProApplications;
+use App\Filament\Admin\Resources\ProApplications\Pages\ViewProApplication;
+use App\Filament\Admin\Resources\ProApplications\RelationManagers\DocumentsRelationManager;
+use App\Filament\Admin\Resources\ProApplications\RelationManagers\ReferencesRelationManager;
+use App\Livewire\Pros\Application;
+use App\Livewire\Pros\Status;
+use App\Models\Pro;
+use App\Models\Service;
+use App\Models\Suburb;
+use App\Models\User;
+use Database\Seeders\CatalogueSeeder;
+use Database\Seeders\SuburbSeeder;
+use Filament\Actions\Testing\TestAction;
+use Filament\Facades\Filament;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
+
+uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
+    Storage::fake('media');
+});
+
+function screensApplicant(): User
+{
+    return User::factory()->pro()->create(['first_name' => 'Bongani']);
+}
+
+function screensAdmin(Role $role = Role::AdminVetting): User
+{
+    $admin = User::factory()->create();
+    $admin->assignRole($role->value);
+
+    return $admin;
+}
+
+/** A submitted application built through the domain actions. */
+function screensSubmitted(): Pro
+{
+    $user = screensApplicant();
+    $pro = app(StartApplication::class)->handle($user);
+    $steps = app(SaveApplicationStep::class);
+    $steps->business($user, $pro, new BusinessDetails('Bongani Fix-It', BusinessType::Company, '4123456789'));
+    $steps->services($user, $pro, [Service::query()->where('key', 'leak_repair')->value('id')]);
+    $steps->areas($user, $pro, [Suburb::query()->where('slug', 'musgrave')->value('id')]);
+    $steps->references($user, $pro, [new ReferenceData('Thandi Mkhize', '082 123 4567', 'Customer'), new ReferenceData('Sipho Ndlovu', '071 234 5678', 'Supplier')], true);
+    $steps->bio($user, $pro, 'Reliable plumber.');
+    $steps->consent($user, $pro, true);
+    foreach ([DocumentType::IdDocument, DocumentType::ProofOfAddress, DocumentType::ProfilePhoto] as $type) {
+        app(StoreProDocument::class)->handle($user, $pro, $type, UploadedFile::fake()->image($type->value.'.jpg', 40, 30));
+    }
+    app(SubmitApplication::class)->handle($user, $pro->fresh());
+
+    return $pro->fresh();
+}
+
+// --- Pro screens (AC1, AC4–AC6) ------------------------------------------------------
+
+it('offers to start, continue or check an application from the pro welcome page (screens)', function (): void {
+    $user = screensApplicant();
+    $this->actingAs($user)->get(route('pros.welcome'))->assertSee('Start your application')->assertSee(route('pros.apply'), false);
+
+    app(StartApplication::class)->handle($user);
+    $this->get(route('pros.welcome'))->assertSee('Continue your application');
+
+    $submitted = screensSubmitted();
+    $this->actingAs($submitted->user)->get(route('pros.welcome'))->assertSee('Check your application')->assertSee(route('pros.status'), false);
+});
+
+it('walks a pro through the application on one screen per step and submits it (AC1, AC4)', function (): void {
+    $user = screensApplicant();
+    $this->actingAs($user);
+    $leak = Service::query()->where('key', 'leak_repair')->sole();
+    $musgrave = Suburb::query()->where('slug', 'musgrave')->sole();
+
+    $wizard = Livewire::test(Application::class)
+        ->assertSet('step', 'business')
+        ->call('next')->assertHasErrors(['businessName'])
+        ->set('businessName', 'Bongani Fix-It')->set('businessType', 'sole_trader')->call('next')
+        ->assertSet('step', 'services')
+        ->set('serviceIds', [$leak->id])->call('next')
+        ->assertSet('step', 'areas')
+        ->set('suburbIds', [$musgrave->id])->call('next')
+        ->assertSet('step', 'documents');
+
+    foreach (['id_document', 'proof_of_address', 'profile_photo'] as $type) {
+        $wizard->set('uploads.'.$type, UploadedFile::fake()->image($type.'.jpg', 40, 30))->assertHasNoErrors();
+    }
+
+    $wizard->call('next')->assertSet('step', 'references')
+        ->set('references', [
+            ['name' => 'Thandi Mkhize', 'phone' => '082 123 4567', 'relationship' => 'Customer'],
+            ['name' => 'Sipho Ndlovu', 'phone' => '071 234 5678', 'relationship' => 'Supplier'],
+        ])->set('refereesAgreed', true)->call('next')
+        ->assertSet('step', 'about')
+        ->set('bio', 'Reliable plumber.')->set('consent', true)->call('next')
+        ->assertSet('step', 'review')
+        ->assertSee('Bongani Fix-It')->assertSee('Leak repair')->assertSee('Musgrave')
+        ->call('submit')->assertRedirect(route('pros.status'));
+
+    expect(Pro::query()->sole()->status)->toBe(ProStatus::Submitted);
+});
+
+it('skips the registrations step unless a chosen service needs one (AC3)', function (): void {
+    $user = screensApplicant();
+    $this->actingAs($user);
+    $electrical = Service::query()->where('requires_registration', 'electrical_registered_person')->firstOrFail();
+
+    Livewire::test(Application::class)
+        ->set('businessName', 'Spark')->set('businessType', 'company')->call('next')
+        ->set('serviceIds', [$electrical->id])->call('next')
+        ->set('suburbIds', [Suburb::query()->where('slug', 'musgrave')->value('id')])->call('next')
+        ->call('next')->assertSet('step', 'registrations')
+        ->assertSee('Registered electrician')
+        ->set('registrationNumbers.electrical_registered_person', 'ER-555')
+        ->set('uploads.electrical_registered_person', UploadedFile::fake()->image('er.jpg', 20, 20))
+        ->call('next')->assertSet('step', 'references');
+
+    expect(Pro::query()->sole()->documents()->where('type', DocumentType::ElectricalRegisteredPerson)->sole()->number)->toBe('ER-555');
+});
+
+it('keeps customers and guests out of the application (AC1)', function (): void {
+    $this->get(route('pros.apply'))->assertRedirect(route('login'));
+    $this->actingAs(User::factory()->customer()->create())->get(route('pros.apply'))->assertRedirect(route('pros.join'));
+});
+
+it('sends a submitted pro to the status page instead of the form (AC4)', function (): void {
+    $pro = screensSubmitted();
+
+    $this->actingAs($pro->user)->get(route('pros.apply'))->assertRedirect(route('pros.status'));
+});
+
+it('shows the status, checklist and vetting messages, but never internal notes (AC5)', function (): void {
+    $pro = screensSubmitted();
+    $admin = screensAdmin();
+    $id = $pro->documents()->where('type', DocumentType::IdDocument)->sole();
+    app(VetDocument::class)->flag($admin, $id, 'The photo is blurred.');
+    app(VetDocument::class)->verify($admin, $pro->documents()->where('type', DocumentType::ProofOfAddress)->sole(), null);
+    app(CheckReference::class)->handle($admin, $pro->references()->first(), ReferenceOutcome::Positive, 'INTERNAL: said he is slow');
+    app(DecideApplication::class)->requestChanges($admin, $pro->fresh(), 'Please upload a clearer ID.');
+
+    $this->actingAs($pro->user);
+    Livewire::test(Status::class)
+        ->assertSee('Changes requested')
+        ->assertSee('Please upload a clearer ID.')
+        ->assertSee('The photo is blurred.')
+        ->assertSee('Verified')
+        ->assertSee('Fix these items')
+        ->assertDontSee('INTERNAL')
+        ->assertDontSee('082 123 4567');
+});
+
+it('lets a pro fix only flagged documents from the form after changes are requested (AC6)', function (): void {
+    $pro = screensSubmitted();
+    $admin = screensAdmin();
+    app(VetDocument::class)->flag($admin, $pro->documents()->where('type', DocumentType::IdDocument)->sole(), 'Blurred.');
+    app(DecideApplication::class)->requestChanges($admin, $pro->fresh(), 'Clearer ID please.');
+    $this->actingAs($pro->user);
+
+    Livewire::test(Application::class)
+        ->assertSet('step', 'documents')
+        ->set('uploads.proof_of_address', UploadedFile::fake()->image('poa.jpg', 20, 20))->assertForbidden();
+
+    Livewire::test(Application::class)
+        ->set('uploads.id_document', UploadedFile::fake()->image('id.jpg', 30, 20))->assertHasNoErrors()
+        ->call('submit')->assertRedirect(route('pros.status'));
+
+    expect($pro->fresh()->status)->toBe(ProStatus::Submitted);
+});
+
+// --- Document links (AC8, policies) --------------------------------------------------
+
+it('serves a document only through a valid signed link to its owner or a vetting admin (AC8)', function (): void {
+    $pro = screensSubmitted();
+    $document = $pro->documents()->where('type', DocumentType::IdDocument)->sole();
+    $url = $document->temporaryUrl();
+
+    expect($url)->not->toContain('/'.$document->id.'?')->toContain($document->public_id);
+
+    $this->actingAs($pro->user)->get($url)->assertOk()->assertHeader('Content-Type', 'image/webp')->assertHeader('Cache-Control', 'no-store, private');
+    $this->actingAs(screensApplicant())->get($url)->assertNotFound();
+    $this->actingAs(User::factory()->customer()->create())->get($url)->assertNotFound();
+
+    $vetting = screensAdmin();
+    $this->actingAs($vetting)->get($url)->assertForbidden();
+    $this->actingAs($vetting)->withSession([AdminLogin::SESSION_KEY => $vetting->id])->get($url)->assertOk();
+
+    $support = screensAdmin(Role::AdminSupport);
+    $this->actingAs($support)->withSession([AdminLogin::SESSION_KEY => $support->id])->get($url)->assertNotFound();
+
+    $this->travel(6)->minutes();
+    $this->actingAs($pro->user)->get($url)->assertForbidden();
+});
+
+it('downloads PDFs instead of showing them inline (AC8)', function (): void {
+    $user = screensApplicant();
+    $pro = app(StartApplication::class)->handle($user);
+    $document = app(StoreProDocument::class)->handle($user, $pro, DocumentType::ProofOfAddress, UploadedFile::fake()->createWithContent('bill.pdf', "%PDF-1.4\n%%EOF"));
+
+    $this->actingAs($user)->get($document->temporaryUrl())->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf')
+        ->assertHeader('Content-Disposition', 'attachment; filename=document.pdf');
+});
+
+// --- Admin (AC7–AC11) ----------------------------------------------------------------
+
+it('lists submitted applications, oldest first, to vetting and super admins only (AC7)', function (): void {
+    $older = screensSubmitted();
+    $this->travel(1)->day();
+    $newer = screensSubmitted();
+    Filament::setCurrentPanel('admin');
+
+    foreach ([Role::AdminSupport, Role::AdminFinance] as $role) {
+        $this->actingAs(screensAdmin($role));
+        Livewire::test(ListProApplications::class)->assertForbidden();
+        Livewire::test(ViewProApplication::class, ['record' => $older->public_id])->assertForbidden();
+    }
+    $this->actingAs(User::factory()->customer()->create())->get('/admin/applications')->assertForbidden();
+
+    $this->actingAs(screensAdmin(Role::AdminSuper));
+    Livewire::test(ListProApplications::class)
+        ->assertCanSeeTableRecords([$older, $newer], inOrder: true)
+        ->assertSee('Bongani Fix-It')
+        ->assertDontSee('082 123 4567');
+});
+
+it('shows the whole application with document links and records checks (AC8)', function (): void {
+    $pro = screensSubmitted();
+    $admin = screensAdmin();
+    $this->actingAs($admin);
+    Filament::setCurrentPanel('admin');
+
+    Livewire::test(ViewProApplication::class, ['record' => $pro->public_id])
+        ->assertSee('Bongani Fix-It')->assertSee('4123456789')->assertSee('Leak repair')->assertSee('Musgrave')->assertSee('Reliable plumber.');
+
+    $document = $pro->documents()->where('type', DocumentType::IdDocument)->sole();
+    Livewire::test(DocumentsRelationManager::class, ['ownerRecord' => $pro, 'pageClass' => ViewProApplication::class])
+        ->assertSee('Identity document')
+        ->callAction(TestAction::make('verify')->table($document), data: [])
+        ->assertHasNoFormErrors();
+    expect($document->fresh()->status)->toBe(DocumentStatus::Verified)->and($document->fresh()->verified_by)->toBe($admin->id);
+
+    $address = $pro->documents()->where('type', DocumentType::ProofOfAddress)->sole();
+    Livewire::test(DocumentsRelationManager::class, ['ownerRecord' => $pro, 'pageClass' => ViewProApplication::class])
+        ->callAction(TestAction::make('flag')->table($address), data: ['flag_message' => ''])->assertHasFormErrors(['flag_message']);
+    expect($address->fresh()->status)->toBe(DocumentStatus::Pending);
+    Livewire::test(DocumentsRelationManager::class, ['ownerRecord' => $pro, 'pageClass' => ViewProApplication::class])
+        ->callAction(TestAction::make('flag')->table($address), data: ['flag_message' => 'Older than 3 months.'])->assertHasNoFormErrors();
+    expect($address->fresh()->status)->toBe(DocumentStatus::Flagged);
+
+    $reference = $pro->references()->first();
+    Livewire::test(ReferencesRelationManager::class, ['ownerRecord' => $pro, 'pageClass' => ViewProApplication::class])
+        ->assertSee('082 123 4567')
+        ->callAction(TestAction::make('record')->table($reference), data: ['outcome' => 'positive', 'note' => 'Good work.'])
+        ->assertHasNoFormErrors();
+    expect($reference->fresh()->outcome)->toBe(ReferenceOutcome::Positive)->and($reference->fresh()->checked_by)->toBe($admin->id);
+});
+
+it('approves, requests changes and rejects from the application view (AC9, AC10)', function (): void {
+    $admin = screensAdmin();
+    $this->actingAs($admin);
+    Filament::setCurrentPanel('admin');
+
+    $ready = screensSubmitted();
+    foreach ($ready->documents as $document) {
+        app(VetDocument::class)->verify($admin, $document, null);
+    }
+    foreach ($ready->references as $reference) {
+        app(CheckReference::class)->handle($admin, $reference, ReferenceOutcome::Positive, null);
+    }
+    Livewire::test(ViewProApplication::class, ['record' => $ready->public_id])->callAction('approve')->assertHasNoErrors();
+    expect($ready->fresh()->status)->toBe(ProStatus::Approved);
+
+    $notReady = screensSubmitted();
+    Livewire::test(ViewProApplication::class, ['record' => $notReady->public_id])->callAction('approve')->assertNotified();
+    expect($notReady->fresh()->status)->toBe(ProStatus::Submitted);
+
+    Livewire::test(ViewProApplication::class, ['record' => $notReady->public_id])
+        ->callAction('requestChanges', data: ['reason' => ''])->assertHasActionErrors(['reason']);
+    expect($notReady->fresh()->status)->toBe(ProStatus::Submitted);
+    Livewire::test(ViewProApplication::class, ['record' => $notReady->public_id])
+        ->callAction('requestChanges', data: ['reason' => 'Upload a clearer ID.'])->assertHasNoActionErrors();
+    expect($notReady->fresh()->status)->toBe(ProStatus::ChangesRequested);
+
+    $third = screensSubmitted();
+    Livewire::test(ViewProApplication::class, ['record' => $third->public_id])
+        ->callAction('reject', data: ['reason' => 'Could not confirm references.'])->assertHasNoActionErrors();
+    expect($third->fresh()->status)->toBe(ProStatus::Rejected);
+});
+
+it('suspends and reinstates an approved pro from the view (AC11)', function (): void {
+    $admin = screensAdmin(Role::AdminSuper);
+    $this->actingAs($admin);
+    Filament::setCurrentPanel('admin');
+    $pro = screensSubmitted();
+    foreach ($pro->documents as $document) {
+        app(VetDocument::class)->verify($admin, $document, null);
+    }
+    foreach ($pro->references as $reference) {
+        app(CheckReference::class)->handle($admin, $reference, ReferenceOutcome::Positive, null);
+    }
+    app(DecideApplication::class)->approve($admin, $pro->fresh());
+
+    Livewire::test(ViewProApplication::class, ['record' => $pro->public_id])
+        ->assertActionHidden('approve')
+        ->callAction('suspend', data: ['reason' => 'Complaint under review.'])->assertHasNoActionErrors();
+    expect($pro->fresh()->status)->toBe(ProStatus::Suspended);
+
+    Livewire::test(ViewProApplication::class, ['record' => $pro->public_id])->callAction('reinstate');
+    expect($pro->fresh()->status)->toBe(ProStatus::Approved);
+});
+
+it('lets admins correct services and suburbs, with a log entry (rules)', function (): void {
+    $admin = screensAdmin();
+    $this->actingAs($admin);
+    Filament::setCurrentPanel('admin');
+    $pro = screensSubmitted();
+    $drain = Service::query()->where('key', 'blocked_drain')->sole();
+    $berea = Suburb::query()->where('is_active', true)->where('slug', '!=', 'musgrave')->firstOrFail();
+
+    Livewire::test(ViewProApplication::class, ['record' => $pro->public_id])
+        ->callAction('editCoverage', data: ['service_ids' => [$drain->id], 'suburb_ids' => [$berea->id]])
+        ->assertHasNoActionErrors();
+
+    expect($pro->fresh()->services->pluck('key')->all())->toBe(['blocked_drain'])
+        ->and($pro->fresh()->serviceAreas->pluck('id')->all())->toBe([$berea->id])
+        ->and(DB::table('activity_log')->where('description', 'pro_coverage_edited')->count())->toBe(1);
+});
+
+it('hides an admin\'s own application from them in the vetting screens (security review)', function (): void {
+    $admin = screensAdmin();
+    $admin->assignRole(Role::Pro->value);
+    $own = screensSubmitted();
+    $own->forceFill(['user_id' => $admin->id])->save();
+    $other = screensSubmitted();
+    $this->actingAs($admin);
+    Filament::setCurrentPanel('admin');
+
+    Livewire::test(ListProApplications::class)->assertCanSeeTableRecords([$other])->assertCanNotSeeTableRecords([$own]);
+    Livewire::test(ViewProApplication::class, ['record' => $own->public_id])->assertNotFound();
+});
+
+it('shows an expired registration as expired on the status page (AC12)', function (): void {
+    $user = screensApplicant();
+    $electrical = Service::query()->where('requires_registration', 'electrical_registered_person')->firstOrFail();
+    $pro = app(StartApplication::class)->handle($user);
+    app(SaveApplicationStep::class)->services($user, $pro, [$electrical->id]);
+    $document = app(StoreProDocument::class)->handle($user, $pro, DocumentType::ElectricalRegisteredPerson, UploadedFile::fake()->image('er.jpg', 20, 20));
+    $document->forceFill(['status' => DocumentStatus::Verified, 'verified_at' => now(), 'expires_at' => now()->subDay()])->save();
+
+    $this->actingAs($user);
+    Livewire::test(Status::class)->assertSee('Expired');
+});
+
+it('links each part of the review step back to its step (screens)', function (): void {
+    $user = screensApplicant();
+    $this->actingAs($user);
+    app(StartApplication::class)->handle($user);
+
+    Livewire::test(Application::class)->call('goTo', 'review')->assertSeeHtml("wire:click=\"goTo('services')\"")
+        ->call('goTo', 'services')->assertSet('step', 'services');
+});
+
+it('lets a pro fix a flagged registration from the form, even after re-uploading first (code review, AC6)', function (): void {
+    $user = screensApplicant();
+    $electrical = Service::query()->where('requires_registration', 'electrical_registered_person')->firstOrFail();
+    $pro = app(StartApplication::class)->handle($user);
+    $steps = app(SaveApplicationStep::class);
+    $steps->business($user, $pro, new BusinessDetails('Spark', BusinessType::Company, null));
+    $steps->services($user, $pro, [Service::query()->where('key', 'leak_repair')->value('id'), $electrical->id]);
+    $steps->areas($user, $pro, [Suburb::query()->where('slug', 'musgrave')->value('id')]);
+    $steps->references($user, $pro, [new ReferenceData('Thandi Mkhize', '082 123 4567', 'Customer'), new ReferenceData('Sipho Ndlovu', '071 234 5678', 'Supplier')], true);
+    $steps->bio($user, $pro, 'Electrician.');
+    $steps->consent($user, $pro, true);
+    $steps->registration($user, $pro, DocumentType::ElectricalRegisteredPerson, 'ER-OLD');
+    foreach ([DocumentType::IdDocument, DocumentType::ProofOfAddress, DocumentType::ProfilePhoto, DocumentType::ElectricalRegisteredPerson] as $type) {
+        app(StoreProDocument::class)->handle($user, $pro, $type, UploadedFile::fake()->image($type->value.'.jpg', 40, 30));
+    }
+    app(SubmitApplication::class)->handle($user, $pro->fresh());
+    $admin = screensAdmin();
+    app(VetDocument::class)->verify($admin, $pro->documents()->where('type', DocumentType::IdDocument)->sole(), null);
+    app(VetDocument::class)->flag($admin, $pro->documents()->where('type', DocumentType::ElectricalRegisteredPerson)->sole(), 'Certificate and number do not match.');
+    app(DecideApplication::class)->requestChanges($admin, $pro->fresh(), 'Fix the electrical registration.');
+    $this->actingAs($user);
+
+    Livewire::test(Application::class)
+        ->assertSet('step', 'registrations')
+        ->set('uploads.electrical_registered_person', UploadedFile::fake()->image('new.jpg', 30, 30))->assertHasNoErrors()
+        ->set('registrationNumbers.electrical_registered_person', 'ER-NEW')
+        ->call('next')->assertHasNoErrors()->assertSet('step', 'review')
+        ->call('submit')->assertRedirect(route('pros.status'));
+
+    $registration = $pro->documents()->where('type', DocumentType::ElectricalRegisteredPerson)->sole();
+    expect($pro->fresh()->status)->toBe(ProStatus::Submitted)
+        ->and($registration->number)->toBe('ER-NEW')
+        ->and($registration->status)->toBe(DocumentStatus::Pending)
+        ->and($registration->flag_message)->toBeNull()
+        ->and($pro->documents()->where('type', DocumentType::IdDocument)->sole()->status)->toBe(DocumentStatus::Verified);
+});
+
+it('offers to apply again once the wait is over (code review)', function (): void {
+    $pro = screensSubmitted();
+    app(DecideApplication::class)->reject(screensAdmin(), $pro, 'Not yet.');
+    $this->actingAs($pro->user);
+
+    $this->get(route('pros.welcome'))->assertDontSee('Apply again');
+    $this->travel(91)->days();
+    $this->get(route('pros.welcome'))->assertSee('Apply again')->assertSee(route('pros.apply'), false);
+    Livewire::test(Status::class)->assertSee('Apply again');
+});
