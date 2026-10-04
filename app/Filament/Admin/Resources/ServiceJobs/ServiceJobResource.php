@@ -6,6 +6,7 @@ namespace App\Filament\Admin\Resources\ServiceJobs;
 
 use App\Filament\Admin\Resources\ServiceJobs\Pages\ListServiceJobs;
 use App\Filament\Admin\Resources\ServiceJobs\Pages\ViewServiceJob;
+use App\Filament\Admin\Resources\ServiceJobs\RelationManagers\InvitesRelationManager;
 use App\Filament\Admin\Resources\ServiceJobs\Schemas\ServiceJobInfolist;
 use App\Filament\Admin\Resources\ServiceJobs\Tables\ServiceJobsTable;
 use App\Models\ServiceJob;
@@ -45,6 +46,13 @@ final class ServiceJobResource extends Resource
     public static function table(Table $table): Table
     {
         return ServiceJobsTable::configure($table);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            InvitesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

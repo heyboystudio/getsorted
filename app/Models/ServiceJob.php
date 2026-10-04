@@ -40,6 +40,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property CarbonImmutable|null $ai_summary_generated_at
  * @property string|null $ai_summary_input_hash
  * @property CarbonImmutable|null $posted_at
+ * @property CarbonImmutable|null $last_wave_at
+ * @property CarbonImmutable|null $matching_stopped_at
+ * @property string|null $matching_stopped_reason
  * @property CarbonImmutable|null $quote_window_ends_at
  * @property CarbonImmutable|null $cancelled_at
  * @property string|null $cancel_reason
@@ -78,6 +81,12 @@ final class ServiceJob extends Model implements HasMedia
     public function getRouteKeyName(): string
     {
         return 'public_id';
+    }
+
+    /** @return HasMany<ServiceJobInvite, $this> */
+    public function invites(): HasMany
+    {
+        return $this->hasMany(ServiceJobInvite::class);
     }
 
     /** @return BelongsTo<User, $this> */
@@ -137,6 +146,8 @@ final class ServiceJob extends Model implements HasMedia
             'ai_summary_source' => SummarySource::class,
             'ai_summary_generated_at' => 'immutable_datetime',
             'posted_at' => 'immutable_datetime',
+            'last_wave_at' => 'immutable_datetime',
+            'matching_stopped_at' => 'immutable_datetime',
             'quote_window_ends_at' => 'immutable_datetime',
             'cancelled_at' => 'immutable_datetime',
         ];

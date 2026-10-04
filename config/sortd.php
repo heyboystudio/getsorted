@@ -73,6 +73,11 @@ return [
         'searches_per_hour' => 120,
     ],
 
+    'matching' => [
+        // Abuse protection for pros turning invites down (spec 009).
+        'declines_per_hour' => 30,
+    ],
+
     'pros' => [
         // Abuse protection for the pro application (spec 008).
         'uploads_per_hour' => 30,

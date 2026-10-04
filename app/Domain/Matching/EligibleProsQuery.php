@@ -8,9 +8,11 @@ use App\Domain\Pros\Enums\DocumentStatus;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Models\Pro;
 use App\Models\Service;
+use App\Models\ServiceJob;
 use App\Models\Suburb;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
 final class EligibleProsQuery
@@ -42,9 +44,36 @@ final class EligibleProsQuery
             });
     }
 
+    /**
+     * Eligible pros for a posted job who were not invited yet, fewest invites in
+     * the last 7 days first, random tie-break (spec 009, AC2; founder decision 2).
+     *
+     * @return Collection<int, Pro>
+     */
+    public function rankedFor(ServiceJob $job, int $limit): Collection
+    {
+        $job->loadMissing(['service.trade', 'property.suburb', 'customer']);
+
+        if (! $job->property?->suburb instanceof Suburb || ! $this->servable($job->service, $job->property->suburb)) {
+            return new Collection;
+        }
+
+        return $this->for($job->service, $job->property->suburb, $job->customer)
+            ->whereDoesntHave('invites', fn (Builder $invites): Builder => $invites->where('service_job_id', $job->id))
+            ->withCount(['invites as recent_invites' => fn (Builder $invites): Builder => $invites->where('invited_at', '>=', now()->subDays(7))])
+            ->orderBy('recent_invites')
+            ->inRandomOrder()
+            ->limit($limit)
+            ->get();
+    }
+
     public function exists(Service $service, Suburb $suburb, ?User $customer = null): bool
     {
-        return $suburb->is_active && $service->is_active && $service->trade->is_active
-            && $this->for($service, $suburb, $customer)->exists();
+        return $this->servable($service, $suburb) && $this->for($service, $suburb, $customer)->exists();
+    }
+
+    private function servable(Service $service, Suburb $suburb): bool
+    {
+        return $suburb->is_active && $service->is_active && $service->trade->is_active;
     }
 }

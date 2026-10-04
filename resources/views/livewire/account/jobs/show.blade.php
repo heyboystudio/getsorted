@@ -13,6 +13,19 @@
         <h1 class="mt-1 text-3xl font-semibold tracking-tight">{{ $job->service->name }}</h1>
         <p class="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-sm">{{ $job->status->customerLabel() }}@if ($job->urgency === \App\Domain\ServiceJobs\Enums\Urgency::Urgent) · {{ __('Urgent') }}@endif</p>
 
+        @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Open)
+            <div class="mt-6 rounded-xl border border-zinc-200 bg-white p-4" role="status">
+                <p class="font-medium">{{ __('Finding your pros') }}</p>
+                <p class="mt-1 text-sm text-zinc-600">
+                    @if ($invitedCount > 0)
+                        {{ trans_choice(':count pro invited so far. Quotes will appear here.|:count pros invited so far. Quotes will appear here.', $invitedCount, ['count' => $invitedCount]) }}
+                    @else
+                        {{ __("We're still looking for a pro who can take this job. We'll WhatsApp you as soon as quotes come in.") }}
+                    @endif
+                </p>
+            </div>
+        @endif
+
         <dl class="mt-6 space-y-4 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
             @foreach ($job->orderedAnswers() as $answer)
                 <div><dt class="text-zinc-500">{{ $answer['prompt'] }}</dt><dd>{{ is_array($answer['answer']) ? implode(', ', $answer['answer']) : ($answer['type'] === 'yes_no' ? __(ucfirst((string) $answer['answer'])) : $answer['answer']) }}</dd></div>

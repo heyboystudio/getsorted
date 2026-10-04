@@ -1,6 +1,6 @@
 # Spec 009 · Matching and invite waves
 
-Status: Approved · Phase: 3 · Owner: founder
+Status: In progress · Phase: 3 · Owner: founder
 
 ## Goal
 When a customer posts a job, Sortd invites suitable vetted pros automatically, in waves, so the job collects quotes without the customer doing anything more. Pros get a WhatsApp message and see the job (without the customer's identity or street address), and can open or decline it. Quoting itself is spec 010.
@@ -72,3 +72,4 @@ When a customer posts a job, Sortd invites suitable vetted pros automatically, i
 ## Progress
 - 2026-10-04: Drafted after spec 008 merged in PR #29. Awaiting founder approval and the three decisions above.
 - 2026-10-04: Founder approved the spec with all three recommended defaults.
+- 2026-10-04: Founder approved the build plan.

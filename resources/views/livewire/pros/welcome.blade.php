@@ -16,6 +16,10 @@
             <a href="{{ route('pros.apply') }}" class="mt-6 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center text-lg font-medium text-white hover:bg-emerald-800">
                 {{ $status === null ? __('Start your application') : __('Continue your application') }}
             </a>
+        @elseif ($status === \App\Domain\Pros\Enums\ProStatus::Approved)
+            <p class="mt-3 text-lg text-zinc-600">{{ __("Hi :name, you're approved.", ['name' => $firstName]) }}</p>
+            <a href="{{ route('pros.jobs') }}" class="mt-6 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center text-lg font-medium text-white hover:bg-emerald-800">{{ __('Your jobs') }}</a>
+            <a href="{{ route('pros.status') }}" class="mt-3 inline-block text-sm text-emerald-800 underline underline-offset-4">{{ __('Your application and documents') }}</a>
         @else
             <p class="mt-3 text-lg text-zinc-600">{{ __('Thanks, :name. Your application is :status.', ['name' => $firstName, 'status' => mb_strtolower($status->label())]) }}</p>
             <a href="{{ route($canReapply ? 'pros.apply' : 'pros.status') }}" class="mt-6 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center text-lg font-medium text-white hover:bg-emerald-800">{{ $canReapply ? __('Apply again') : __('Check your application') }}</a>

@@ -99,6 +99,12 @@ final class Pro extends Model
         return $this->hasMany(ProReference::class)->orderBy('id');
     }
 
+    /** @return HasMany<ServiceJobInvite, $this> */
+    public function invites(): HasMany
+    {
+        return $this->hasMany(ServiceJobInvite::class);
+    }
+
     /** @return HasMany<ProEvent, $this> */
     public function events(): HasMany
     {
