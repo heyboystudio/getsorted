@@ -1,6 +1,6 @@
 # Spec 011 · Join as a pro (sign-up entry)
 
-Status: Approved · Phase: 1 · Owner: founder
+Status: Done (awaiting merge) · Phase: 1 · Owner: founder
 
 ## Goal
 Tradespeople can sign up as a pro with the same phone + code login customers use (spec 001), so Phase 1's exit criterion "customer **and pro** can sign up with OTP" is met. The full application wizard and vetting stay in spec 008; the pro panel stays locked until then.
@@ -60,3 +60,5 @@ States as in spec 001 (loading, double-submit protection, friendly errors).
 ## Progress
 - 2026-10-04: Drafted for founder review.
 - 2026-10-04: Approved as proposed.
+- 2026-10-04: Built on `feat/011-join-as-a-pro`; every AC tested in `tests/Feature/Auth/JoinAsProTest.php`. Reviewers found no security issues; fixed: pros who are also customers now land on the pro page, a double submit can't record the agreement twice, logged-in customers following a join link reach the agreement step, pro-only accounts are kept out of `/app`, welcome wording matches AC6.
+- Note: the join page says jobs go "to at most three pros" (from the PRD's "up to three vetted pros").

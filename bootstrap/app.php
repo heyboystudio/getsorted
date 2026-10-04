@@ -18,7 +18,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
         $middleware->redirectGuestsTo(fn (): string => route('login'));
-        $middleware->redirectUsersTo(fn (Request $request): string => $request->user() instanceof User && $request->user()->isAdmin() ? '/admin' : route('account.home'));
+        $middleware->redirectUsersTo(function (Request $request): string {
+            $user = $request->user();
+
+            if ($user instanceof User && $user->isAdmin()) {
+                return '/admin';
+            }
+
+            return $user instanceof User ? route($user->homeRoute($request->query('as') === 'pro')) : route('account.home');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

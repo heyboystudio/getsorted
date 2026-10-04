@@ -5,5 +5,6 @@
         <h1 id="welcome-title" class="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">{{ __("We're getting things ready.") }}</h1>
         <p class="mt-6 max-w-md text-lg leading-relaxed text-zinc-600">{{ __('A simpler way to connect with local tradespeople in Durban.') }}</p>
         <div class="mt-12 h-1 w-12 rounded-full bg-emerald-700" aria-hidden="true"></div>
+        <p class="mt-12 text-sm text-zinc-600">{{ __('Are you a tradesperson?') }} <a href="{{ route('pros.join') }}" class="font-medium text-emerald-800 underline underline-offset-4">{{ __('Join as a pro') }}</a></p>
     </section>
 </main>

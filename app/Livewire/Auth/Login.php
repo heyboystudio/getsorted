@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Auth;
 
 use App\Contracts\Data\MessageChannel;
-use App\Domain\Accounts\Actions\RegisterCustomer;
+use App\Domain\Accounts\Actions\RegisterAccount;
 use App\Domain\Accounts\Actions\SendLoginCode;
 use App\Domain\Accounts\Actions\VerifyLoginCode;
 use App\Domain\Accounts\Enums\LoginStep;
+use App\Domain\Accounts\Enums\Role;
 use App\Domain\Accounts\Exceptions\CouldNotSendLoginCode;
 use App\Domain\Accounts\Exceptions\LoginCodeRejected;
 use App\Domain\Accounts\Exceptions\PhoneAlreadyRegistered;
@@ -35,6 +36,10 @@ final class Login extends Component
 
     #[Locked]
     public LoginStep $step = LoginStep::Phone;
+
+    /** Signing up as a pro (`/login?as=pro`, spec 011). */
+    #[Locked]
+    public bool $asPro = false;
 
     public string $phone = '';
 
@@ -65,6 +70,13 @@ final class Login extends Component
     public bool $acceptPrivacy = false;
 
     public bool $marketing = false;
+
+    public bool $acceptProAgreement = false;
+
+    public function mount(): void
+    {
+        $this->asPro = request()->query('as') === 'pro';
+    }
 
     public function sendCode(SendLoginCode $sendLoginCode): void
     {
@@ -146,7 +158,7 @@ final class Login extends Component
         $this->step = LoginStep::Profile;
     }
 
-    public function register(RegisterCustomer $registerCustomer): void
+    public function register(RegisterAccount $registerAccount): void
     {
         if ($this->redirectIfLoggedIn()) {
             return;
@@ -157,7 +169,7 @@ final class Login extends Component
         $phoneE164 = $this->verifiedPhone();
 
         if ($phoneE164 === null || $phoneE164 !== $this->phoneE164) {
-            $this->reset();
+            $this->startOver();
 
             throw ValidationException::withMessages(['phone' => __('Please verify your number again.')]);
         }
@@ -177,7 +189,9 @@ final class Login extends Component
             'acceptTerms' => ['accepted'],
             'acceptPrivacy' => ['accepted'],
             'marketing' => ['boolean'],
+            'acceptProAgreement' => $this->asPro ? ['accepted'] : ['boolean'],
         ], [
+            'acceptProAgreement.accepted' => __('Please accept the pro agreement.'),
             'firstName.required' => __('Enter your first name.'),
             'lastName.required' => __('Enter your surname.'),
             'email.email' => __('Enter a valid email address, or leave it empty.'),
@@ -186,7 +200,8 @@ final class Login extends Component
         ]);
 
         try {
-            $user = $registerCustomer->handle(
+            $user = $registerAccount->handle(
+                $this->asPro ? Role::Pro : Role::Customer,
                 $phoneE164,
                 trim($validated['firstName']),
                 trim($validated['lastName']),
@@ -197,7 +212,7 @@ final class Login extends Component
             );
         } catch (PhoneAlreadyRegistered) {
             session()->forget(self::VERIFIED_PHONE_KEY);
-            $this->reset();
+            $this->startOver();
 
             throw ValidationException::withMessages(['phone' => __('This number already has an account. Log in to continue.')]);
         }
@@ -208,7 +223,7 @@ final class Login extends Component
 
     public function changeNumber(): void
     {
-        $this->reset();
+        $this->startOver();
     }
 
     public function maskedPhone(): string
@@ -257,7 +272,7 @@ final class Login extends Component
         Auth::login($user, $this->remember);
         session()->regenerate();
 
-        $this->redirectRoute('account.home');
+        $this->redirectRoute($user->homeRoute($this->asPro));
     }
 
     private function verifiedPhone(): ?string
@@ -291,6 +306,15 @@ final class Login extends Component
         return trans_choice(':count minute|:count minutes', (int) ceil($seconds / 60));
     }
 
+    /** Back to the number step, keeping whether this is a pro sign-up. */
+    private function startOver(): void
+    {
+        $this->reset([
+            'step', 'phone', 'phoneE164', 'codeSentAt', 'channel', 'developmentCode', 'code', 'remember',
+            'firstName', 'lastName', 'email', 'acceptTerms', 'acceptPrivacy', 'marketing', 'acceptProAgreement',
+        ]);
+    }
+
     /** `guest` middleware only runs on page load, so actions re-check it. */
     private function redirectIfLoggedIn(): bool
     {
@@ -298,7 +322,8 @@ final class Login extends Component
             return false;
         }
 
-        $this->redirectRoute('account.home');
+        $user = auth()->user();
+        $this->redirectRoute($user instanceof User ? $user->homeRoute($this->asPro) : 'account.home');
 
         return true;
     }

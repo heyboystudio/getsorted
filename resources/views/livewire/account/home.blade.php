@@ -8,7 +8,7 @@
             </form>
         </div>
 
-        <h1 class="text-3xl font-semibold tracking-tight">{{ __('Hi :name', ['name' => $firstName]) }} 👋</h1>
+        <h1 class="text-3xl font-semibold tracking-tight">{{ __('Hi :name', ['name' => $firstName]) }} <span aria-hidden="true">👋</span></h1>
         <p class="mt-3 text-lg text-zinc-600">{{ __('Your jobs will appear here.') }}</p>
     </section>
 </main>

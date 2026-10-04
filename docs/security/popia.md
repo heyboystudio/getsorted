@@ -17,7 +17,7 @@
 |---|---|
 | Minimality | Collect only what a booking or vetting needs. No ID numbers from customers. |
 | Purpose specification | Each field has a stated purpose in the privacy notice. |
-| Consent records | `consents` table stores type, version, timestamp, IP. |
+| Consent records | `consents` table stores type (terms, privacy, marketing, pro agreement), version, timestamp, IP and browser. |
 | Direct marketing | Opt-in only (unticked box), separate from terms; one-tap unsubscribe in every marketing message. |
 | Special personal information | Pro background checks may involve criminal-record information: obtain explicit consent in the application, restrict access to the vetting role, store results as pass/fail plus date where possible. |
 | Data-subject access | "Download my data" in account settings (JSON + PDFs). |
