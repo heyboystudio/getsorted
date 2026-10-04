@@ -1,6 +1,6 @@
 # Spec 010 · Quote builder, comparison and acceptance
 
-Status: Approved · Phase: 3 · Owner: founder
+Status: In progress · Phase: 3 · Owner: founder
 
 ## Goal
 An invited pro can send an itemised quote from their phone. The customer compares up to three quotes side by side and accepts one. The job is then booked with that pro, who gets the customer's contact details and address. This completes Phase 3. Paying deposits and final invoices is Phase 4.
@@ -98,3 +98,4 @@ An invited pro can send an itemised quote from their phone. The customer compare
 ## Progress
 - 2026-10-04: Drafted after spec 009 merged in PR #32 and the docs refresh in PR #33. Awaiting founder approval and the three decisions above.
 - 2026-10-04: Founder approved the spec with all three recommended defaults.
+- 2026-10-04: Founder approved the build plan.

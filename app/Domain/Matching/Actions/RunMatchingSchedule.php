@@ -33,7 +33,8 @@ final readonly class RunMatchingSchedule
             ->where('status', ServiceJobStatus::Open)
             ->whereNull('matching_stopped_at')
             ->where(fn (Builder $query): Builder => $query->whereNull('last_wave_at')->orWhere('last_wave_at', '<=', now()->subHours($this->settings->wave_interval_hours)))
-            ->whereHas('invites', fn (Builder $invites): Builder => $invites->where('status', InviteStatus::Quoted), '<', $this->settings->enough_quotes)
+            // Current submitted quotes (spec 010) decide whether more pros are needed.
+            ->where('quotes_count', '<', $this->settings->enough_quotes)
             ->lazyById()
             ->each(fn (ServiceJob $job): int => $this->runInviteWave->handle($job, firstWave: $job->last_wave_at === null));
     }

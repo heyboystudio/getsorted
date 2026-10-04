@@ -10,9 +10,27 @@ use App\Domain\Matching\Actions\OpenInvite;
 use App\Domain\Matching\Enums\DeclineReason;
 use App\Domain\Matching\Enums\InviteStatus;
 use App\Domain\Matching\Exceptions\CannotInvite;
+use App\Domain\Quotes\Actions\ReviseQuote;
+use App\Domain\Quotes\Actions\SubmitQuote;
+use App\Domain\Quotes\Actions\WithdrawQuote;
+use App\Domain\Quotes\Data\QuoteDraft;
+use App\Domain\Quotes\Data\QuoteLineData;
+use App\Domain\Quotes\Data\QuoteTotals;
+use App\Domain\Quotes\Enums\LineKind;
+use App\Domain\Quotes\Enums\QuoteStatus;
+use App\Domain\Quotes\Exceptions\CannotQuote;
+use App\Domain\Quotes\Support\QuoteCalculator;
+use App\Domain\Quotes\Support\QuoteRules;
+use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Livewire\Pros\Jobs\Concerns\EnsuresApprovedPro;
+use App\Models\Quote;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobInvite;
+use App\Settings\QuoteSettings;
+use App\Support\LocalTime;
+use App\Support\Rand;
+use Brick\Math\BigDecimal;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -21,9 +39,10 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
- * One invite as the pro sees it (spec 009, AC8–AC10): never the customer's
- * name, contact details or street address; description and notes have contact
- * details stripped (founder decision 3).
+ * One invite as the pro sees it (spec 009, AC8–AC10), with the quote builder,
+ * the pro's sent quote and, once their quote is accepted, the customer's
+ * contact details and address (spec 010, AC1–AC5, AC9). Before acceptance the
+ * pro never sees the customer's identity, contact details or street address.
  */
 #[Layout('components.layouts.app')]
 #[Title('Job')]
@@ -41,6 +60,28 @@ final class Show extends Component
 
     public string $note = '';
 
+    #[Locked]
+    public bool $building = false;
+
+    #[Locked]
+    public bool $previewing = false;
+
+    #[Locked]
+    public bool $sent = false;
+
+    /** @var list<array{kind: string, description: string, quantity: string, unitPrice: string}> */
+    public array $lines = [];
+
+    public int $depositPercent = 0;
+
+    public string $earliestStartDate = '';
+
+    public int $validityDays = 7;
+
+    public string $notes = '';
+
+    public string $withdrawReason = '';
+
     public function mount(ServiceJobInvite $invite, OpenInvite $openInvite): void
     {
         if (! $this->ensureApprovedPro()) {
@@ -49,6 +90,10 @@ final class Show extends Component
 
         abort_unless($invite->pro_id === $this->currentPro()->id, 404);
         $this->invitePublicId = $invite->public_id;
+
+        if ($invite->status === InviteStatus::Quoted || $this->myQuote() instanceof Quote) {
+            return;
+        }
 
         try {
             $openInvite->handle($this->currentUser(), $invite);
@@ -76,16 +121,115 @@ final class Show extends Component
         $this->redirectRoute('pros.jobs');
     }
 
-    public function render(): View
+    public function startQuote(QuoteSettings $settings): void
+    {
+        $this->resetErrorBag();
+        $this->lines = [['kind' => LineKind::Labour->value, 'description' => '', 'quantity' => '1', 'unitPrice' => '']];
+        $this->depositPercent = 0;
+        $this->earliestStartDate = LocalTime::today()->addDay()->toDateString();
+        $this->validityDays = $settings->default_validity_days;
+        $this->notes = '';
+        $this->building = true;
+        $this->previewing = false;
+    }
+
+    /** Opens the builder filled with the pro's current quote (AC5, AC12). */
+    public function startRevision(): void
+    {
+        $quote = $this->myQuote();
+        abort_unless($quote instanceof Quote, 404);
+        $quote->load('lines');
+
+        $this->resetErrorBag();
+        $this->lines = $quote->lines->map(fn ($line): array => [
+            'kind' => $line->kind->value,
+            'description' => $line->description,
+            'quantity' => rtrim(rtrim((string) $line->quantity, '0'), '.'),
+            'unitPrice' => (string) BigDecimal::ofUnscaledValue($line->unit_price_cents, 2),
+        ])->values()->all();
+        $this->depositPercent = $quote->deposit_percent;
+        $this->earliestStartDate = max($quote->earliest_start_date->toDateString(), LocalTime::today()->toDateString());
+        $this->validityDays = max(1, (int) $quote->submitted_at->setTimezone(LocalTime::timezone())->startOfDay()->diffInDays($quote->valid_until));
+        $this->notes = (string) $quote->notes;
+        $this->building = true;
+        $this->previewing = false;
+    }
+
+    public function addLine(): void
+    {
+        if (count($this->lines) < 30) {
+            $this->lines[] = ['kind' => LineKind::Materials->value, 'description' => '', 'quantity' => '1', 'unitPrice' => ''];
+        }
+    }
+
+    public function removeLine(int $index): void
+    {
+        unset($this->lines[$index]);
+        $this->lines = array_values($this->lines);
+    }
+
+    public function editQuote(): void
+    {
+        $this->previewing = false;
+    }
+
+    /** Checks the quote and shows it as the customer will see it, with the estimated payout (AC2). */
+    public function preview(QuoteCalculator $calculator, QuoteRules $rules): void
+    {
+        $this->resetErrorBag();
+        $draft = $this->draft();
+        $totals = $calculator->calculate($draft, $this->currentPro()->vat_number !== null);
+        $this->remap(fn () => $rules->check($draft, $totals));
+        $this->previewing = true;
+    }
+
+    public function submitQuote(SubmitQuote $submitQuote, ReviseQuote $reviseQuote): void
+    {
+        $this->resetErrorBag();
+        $draft = $this->draft();
+        $existing = $this->myQuote();
+
+        try {
+            $this->remap(fn () => $existing instanceof Quote
+                ? $reviseQuote->handle($this->currentUser(), $existing, $draft)
+                : $submitQuote->handle($this->currentUser(), $this->invite(), $draft));
+        } catch (CannotQuote $exception) {
+            throw ValidationException::withMessages(['quote' => $exception->getMessage()]);
+        }
+
+        $this->building = false;
+        $this->previewing = false;
+        $this->sent = true;
+    }
+
+    public function withdraw(WithdrawQuote $withdrawQuote): void
+    {
+        $this->resetErrorBag();
+        $quote = $this->myQuote();
+        abort_unless($quote instanceof Quote, 404);
+
+        try {
+            $withdrawQuote->handle($this->currentUser(), $quote, $this->withdrawReason);
+        } catch (CannotQuote $exception) {
+            throw ValidationException::withMessages(['withdrawReason' => $exception->getMessage()]);
+        }
+
+        $this->redirectRoute('pros.jobs');
+    }
+
+    public function render(QuoteCalculator $calculator): View
     {
         $invite = $this->invite();
+        $quote = $this->myQuote()?->load('lines');
+        $job = ServiceJob::query()->with(['service.trade', 'service.questions', 'property.suburb', 'customer', 'media'])->findOrFail($invite->service_job_id);
+        $accepted = $quote instanceof Quote && $quote->status === QuoteStatus::Accepted && $job->accepted_quote_id === $quote->id;
+        $canQuote = ! $quote instanceof Quote && ! $this->unavailable && $invite->isAvailable();
+        $hasOpenQuote = $quote instanceof Quote && in_array($quote->status, [QuoteStatus::Submitted, QuoteStatus::Expired], true) && $job->status === ServiceJobStatus::Open;
 
-        if ($this->unavailable || ! $invite->isAvailable()) {
+        if (! $accepted && ! $canQuote && ! $hasOpenQuote && ! $this->sent) {
             return view('livewire.pros.jobs.show', ['invite' => $invite, 'job' => null]);
         }
 
-        /** @var ServiceJob $job */
-        $job = ServiceJob::query()->with(['service.trade', 'service.questions', 'property.suburb', 'media'])->findOrFail($invite->service_job_id);
         $description = $job->ai_summary === null ? null : Redactor::strip($job->ai_summary);
         $notes = $job->customer_notes === null ? null : Redactor::strip($job->customer_notes);
 
@@ -103,9 +247,109 @@ final class Show extends Component
             'notes' => $notes === '' || $notes === $description ? null : $notes,
             'photoUrls' => $job->getMedia(ServiceJob::PHOTO_COLLECTION)->map(fn ($photo): string => $invite->photoUrl($photo))->all(),
             'invitedCount' => $job->invites()->count(),
-            'quotesCount' => $job->invites()->where('status', InviteStatus::Quoted)->count(),
+            'quotesCount' => $job->quotes_count,
             'reasons' => DeclineReason::cases(),
+            'canQuote' => $canQuote,
+            'quote' => $quote,
+            'accepted' => $accepted,
+            // Contact details only for the pro whose quote was accepted (AC9).
+            'contact' => $accepted ? [
+                'name' => $job->customer->first_name,
+                'phone' => $job->customer->phone_e164,
+                'label' => $job->property?->label,
+                'address' => $job->property?->street_address,
+                'suburb' => $job->property?->suburb?->name,
+            ] : null,
+            'previewTotals' => $this->building && $this->previewing ? $this->previewTotals($calculator) : null,
+            'lineKinds' => LineKind::cases(),
+            'maxDeposit' => app(QuoteSettings::class)->max_deposit_percent,
         ]);
+    }
+
+    private function previewTotals(QuoteCalculator $calculator): ?QuoteTotals
+    {
+        try {
+            return $calculator->calculate($this->draft(), $this->currentPro()->vat_number !== null);
+        } catch (ValidationException) {
+            return null;
+        }
+    }
+
+    /** The builder's fields as a domain draft; rand amounts become cents here (AC2). */
+    private function draft(): QuoteDraft
+    {
+        $errors = [];
+        $lines = [];
+
+        foreach ($this->lines as $index => $line) {
+            $cents = Rand::toCents((string) $line['unitPrice']);
+            $kind = LineKind::tryFrom((string) $line['kind']);
+
+            if ($cents === null) {
+                $errors["lines.{$index}.unitPrice"] = __('Enter a price in rand, e.g. 350 or 120.50.');
+            }
+
+            if (! $kind instanceof LineKind) {
+                $errors["lines.{$index}.kind"] = __('Choose labour, materials or call-out.');
+            }
+
+            $lines[] = new QuoteLineData($kind ?? LineKind::Labour, (string) $line['description'], trim((string) $line['quantity']), $cents ?? 0);
+        }
+
+        $start = CarbonImmutable::createFromFormat('Y-m-d', $this->earliestStartDate, LocalTime::timezone());
+
+        if (! $start instanceof CarbonImmutable) {
+            $errors['earliestStartDate'] = __('Choose a start date.');
+        }
+
+        if ($errors !== []) {
+            // Also report line problems the domain would find, so every field is marked at once.
+            try {
+                app(QuoteRules::class)->check(new QuoteDraft($lines, $this->depositPercent, $start ?: LocalTime::today(), $this->validityDays, $this->notes), app(QuoteCalculator::class)->calculate(new QuoteDraft($lines, 0, LocalTime::today(), 7, null), false));
+            } catch (ValidationException $exception) {
+                foreach ($exception->errors() as $key => $messages) {
+                    $errors[$this->field($key)] ??= $messages[0];
+                }
+            }
+
+            throw ValidationException::withMessages($errors);
+        }
+
+        return new QuoteDraft($lines, $this->depositPercent, $start->startOfDay(), $this->validityDays, $this->notes === '' ? null : $this->notes);
+    }
+
+    /** Runs a domain call and renames its error keys to the builder's fields. */
+    private function remap(callable $call): mixed
+    {
+        try {
+            return $call();
+        } catch (ValidationException $exception) {
+            $errors = [];
+            foreach ($exception->errors() as $key => $messages) {
+                $errors[$this->field($key)] = $messages;
+            }
+
+            throw ValidationException::withMessages($errors);
+        }
+    }
+
+    private function field(string $key): string
+    {
+        return match (true) {
+            str_ends_with($key, '.unit_price') => str_replace('.unit_price', '.unitPrice', $key),
+            $key === 'deposit_percent' => 'depositPercent',
+            $key === 'earliest_start_date' => 'earliestStartDate',
+            $key === 'validity_days' => 'validityDays',
+            default => $key,
+        };
+    }
+
+    private function myQuote(): ?Quote
+    {
+        $invite = $this->invite();
+
+        return Quote::query()->where('service_job_id', $invite->service_job_id)->where('pro_id', $invite->pro_id)
+            ->orderByDesc('version')->first();
     }
 
     private function invite(): ServiceJobInvite

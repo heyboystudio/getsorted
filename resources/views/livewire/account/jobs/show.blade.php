@@ -52,6 +52,8 @@
             </section>
         @endif
 
+        @include('livewire.account.jobs.partials.quotes')
+
         @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Draft)
             <a href="{{ route('booking.continue', $job) }}" class="mt-6 block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white hover:bg-emerald-800">{{ __('Finish your request') }}</a>
         @endif

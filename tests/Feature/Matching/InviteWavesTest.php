@@ -196,7 +196,8 @@ it('re-checks eligibility at invite time (AC6)', function (): void {
 it('stops later waves once enough quotes are in (AC3)', function (): void {
     eligiblePros(8);
     $job = postLeakJob();
-    $job->invites()->limit(2)->get()->each(fn (ServiceJobInvite $invite) => $invite->forceFill(['status' => InviteStatus::Quoted])->save());
+    // Since spec 010 the job's count of current quotes decides this (the quote flow keeps it up to date).
+    $job->forceFill(['quotes_count' => 2])->save();
 
     $this->travel(13)->hours();
     app(RunMatchingSchedule::class)->handle();

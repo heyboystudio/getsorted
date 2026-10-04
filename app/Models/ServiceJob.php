@@ -40,6 +40,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property CarbonImmutable|null $ai_summary_generated_at
  * @property string|null $ai_summary_input_hash
  * @property CarbonImmutable|null $posted_at
+ * @property int $quotes_count
+ * @property int|null $accepted_quote_id
+ * @property CarbonImmutable|null $scheduled_for
  * @property CarbonImmutable|null $last_wave_at
  * @property CarbonImmutable|null $matching_stopped_at
  * @property string|null $matching_stopped_reason
@@ -81,6 +84,18 @@ final class ServiceJob extends Model implements HasMedia
     public function getRouteKeyName(): string
     {
         return 'public_id';
+    }
+
+    /** @return HasMany<Quote, $this> */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class);
+    }
+
+    /** @return BelongsTo<Quote, $this> */
+    public function acceptedQuote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class, 'accepted_quote_id');
     }
 
     /** @return HasMany<ServiceJobInvite, $this> */
@@ -147,6 +162,8 @@ final class ServiceJob extends Model implements HasMedia
             'ai_summary_generated_at' => 'immutable_datetime',
             'posted_at' => 'immutable_datetime',
             'last_wave_at' => 'immutable_datetime',
+            'quotes_count' => 'integer',
+            'scheduled_for' => 'immutable_date',
             'matching_stopped_at' => 'immutable_datetime',
             'quote_window_ends_at' => 'immutable_datetime',
             'cancelled_at' => 'immutable_datetime',

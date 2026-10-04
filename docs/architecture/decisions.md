@@ -39,6 +39,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 033 | AI scoping assistant: Laravel AI SDK, Anthropic, shipped switched off (spec 007) | Accepted | 2026-10-04 |
 | 034 | Pro application and vetting (spec 008) | Accepted | 2026-10-04 |
 | 035 | Daily login-code cap off on local machines (temporary) | Accepted | 2026-10-04 |
+| 036 | Quotes, comparison and acceptance (spec 010) | Accepted | 2026-10-04 |
 
 ---
 
@@ -292,4 +293,13 @@ Short architecture decision records. **Add an entry for every significant choice
 **Decision:** `sortd.otp.daily_cap_in_local` (default `false`) skips only the daily per-number cap, and only when `APP_ENV=local`. It is always enforced in testing, staging and production, and the 15-minute per-number and hourly per-IP limits still apply everywhere. Today's local counters were cleared.
 
 **Consequences:** To turn it back on locally, set `daily_cap_in_local` to `true` (or remove the switch once testing is done). A test pins that non-local environments keep the cap.
+
+## 036 · Quotes, comparison and acceptance (spec 010)
+**Context:** Phase 3's last step: invited pros quote, customers compare up to three and accept one. Payments are Phase 4.
+
+**Decision:** Quotes are versioned rows (`quotes` + `quote_lines`); a revision supersedes the previous version and an expired quote can be renewed while the job is open. `QuoteCalculator` derives every amount from the lines with `Brick\Money`, rounding half-up once per line and once each for VAT, deposit and the commission estimate; the browser never sends totals. At most three current quotes per job (`service_jobs.quotes_count`, kept by the quote actions under the job lock); the third closes the remaining invites, and later invite waves now count quotes rather than invite statuses. Accepting runs in one locked transaction: quote accepted, other quotes declined, open invites closed, `pro_job_allocations` written, and the job moves `open → scheduled` (no deposit) or `open → awaiting_deposit` through `ServiceJobStateMachine` (`quote_accepted`). The scheduler (`sortd:expire-quotes`, every 5 minutes) expires quotes after their valid-until date and open jobs after `quote_window_ends_at` (`job_expired`). Contact details and the street address are shown only to the pro whose quote was accepted; customers see the accepted pro's business name and mobile.
+
+**Founder decisions (2026-10-04):** (1) deposits can be set now; an accepted quote with a deposit waits in "awaiting deposit" with "payment opens soon", and the 48-hour release timer arrives with payments; (2) VAT at the `money.vat_percent` setting (15%) only for pros with a VAT number, to confirm with an accountant; (3) pros see an *estimated* payout using `money.commission_percent` (12%, Q1 default) on labour and call-out, none on materials (Q2 default).
+
+**Consequences:** Quote text is masked for phone numbers, emails, links, ID/card numbers and bank details (`ContactMasker`); `pros.contact_masking_count` flags repeat attempts for admins at 3. Withdrawing closes that pro's invite (they cannot quote the job again). No PDFs, payments or ledger entries yet; those come with Phase 4. `composer check` now needs `COMPOSER_PROCESS_TIMEOUT=0` locally because the suite runs longer than Composer's 300-second default.
 
