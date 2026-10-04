@@ -1,6 +1,6 @@
 # Spec 007 · AI scoping assistant
 
-Status: Draft · Phase: 2 · Owner: founder
+Status: Approved · Phase: 2 · Owner: founder
 
 ## Goal
 Let a customer start a booking by describing the problem in their own words, and give every posted job a short, neutral summary for pros. The assistant only suggests: the customer confirms the service and edits the summary, and booking works fully when the assistant is unavailable.
@@ -69,10 +69,11 @@ Let a customer start a booking by describing the problem in their own words, and
 - Showing summaries to pros (spec 009).
 - Choosing a production host or turning the feature on in production. That follows the founder's decision below and the privacy notice update.
 
-## Open questions
-1. **Sending customer text to an overseas AI provider (POPIA).** Anthropic processes requests outside South Africa. Recommended: build now with the fake, and ship the real adapter switched off (`ai.enabled` = false) until (a) the privacy notice names the AI provider and the cross-border transfer and (b) you have accepted the provider's data processing terms. Approve, or prefer not to use an overseas provider?
-2. **Spending cap.** Recommended default: at most 2,000 assistant calls per day (about US$3 a day at most at current Haiku 4.5 pricing for short texts), adjustable in admin. Approve the default?
-3. **Who has the final say on the description pros see?** Recommended: the customer's edited version wins and the AI never overwrites it (AC7). Approve?
+## Decisions (founder, 2026-10-04)
+1. **Overseas AI provider (POPIA):** build now with the fake; ship the real adapter switched off (`ai.enabled` = false) until the privacy notice names the AI provider and the cross-border transfer, and the founder has accepted the provider's data processing terms.
+2. **Spending cap:** at most 2,000 assistant calls per day by default, adjustable in admin.
+3. **Final say on the description:** the customer's edited version wins; the AI never overwrites it (AC7).
 
 ## Progress
 - 2026-10-04: Drafted after spec 006 merged in PR #25. Awaiting founder approval and the three decisions above.
+- 2026-10-04: Founder approved the spec with all three recommended defaults.
