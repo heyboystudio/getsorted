@@ -1,6 +1,6 @@
 # Spec 005 · Booking flow: service → questions → property → when → post
 
-Status: Approved · Phase: 2 · Owner: founder
+Status: Done (awaiting merge) · Phase: 2 · Owner: founder
 
 ## Goal
 A customer can describe a job by picking a trade and service, answering that service's scoping questions, choosing a property and a preferred date, and **post** it. Posted jobs appear for admins. This creates the job record and the job state machine that every later feature (coverage, AI, matching, quotes, payments) builds on.
@@ -74,3 +74,5 @@ Mobile first (360 px), one decision per screen, big tap targets, progress bar ("
 ## Progress
 - 2026-10-04: Drafted for founder review.
 - 2026-10-04: Approved as proposed.
+- 2026-10-04: Built on `feat/005-booking-flow`; tests in `tests/Feature/ServiceJobs/`. Browser walkthrough found two issues, fixed: tapping an urgent answer now stays on the question so the safety advice is read; answers display in question order. Review found and fixed: multi-choice questions couldn't be answered in a browser; opening a service created drafts that could lock customers out (now drafts start on the first answer, are reused per service, and can be removed); notes limit enforced in the domain; "today" uses Durban time; the job-posted message is queued after commit; urgency shown on review; tampered dates handled.
+- Extras: customers can remove drafts from their account; `TimeWindow::Today` stores today's date (SAST).

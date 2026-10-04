@@ -4,19 +4,18 @@ declare(strict_types=1);
 
 namespace App\Domain\ServiceJobs\Actions;
 
-use App\Contracts\Data\MessageReceipt;
-use App\Contracts\Data\OutgoingMessage;
-use App\Contracts\MessagingChannel;
 use App\Domain\ServiceJobs\Enums\ActorType;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Domain\ServiceJobs\Exceptions\CannotPostServiceJob;
 use App\Domain\ServiceJobs\ServiceJobStateMachine;
 use App\Domain\ServiceJobs\Support\ScopingAnswers;
+use App\Jobs\SendJobPostedMessage;
 use App\Models\Property;
 use App\Models\ServiceJob;
 use App\Models\User;
 use App\Settings\JobTimers;
+use App\Support\LocalTime;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -25,7 +24,6 @@ final readonly class PostServiceJob
 {
     public function __construct(
         private ServiceJobStateMachine $stateMachine,
-        private MessagingChannel $messaging,
         private JobTimers $timers,
     ) {}
 
@@ -61,11 +59,7 @@ final readonly class PostServiceJob
 
         RateLimiter::hit($limitKey, 24 * 60 * 60);
 
-        DB::afterCommit(fn (): MessageReceipt => $this->messaging->send(new OutgoingMessage(
-            (string) $customer->phone_e164,
-            'job_posted',
-            ['service' => $job->service->name],
-        )));
+        SendJobPostedMessage::dispatch($job->id);
 
         return $job;
     }
@@ -83,6 +77,10 @@ final readonly class PostServiceJob
 
         if (! $job->service->is_active || ! $job->service->trade->is_active) {
             throw new CannotPostServiceJob(__('This service is not available right now.'));
+        }
+
+        if (mb_strlen((string) $job->customer_notes) > (int) config('sortd.jobs.notes_max_length')) {
+            throw new CannotPostServiceJob(__('Notes can be up to :max characters.', ['max' => config('sortd.jobs.notes_max_length')]));
         }
 
         if (ScopingAnswers::missingRequired($job->service, $job->scoping_answers) !== []) {
@@ -106,11 +104,14 @@ final readonly class PostServiceJob
             throw new CannotPostServiceJob(__('Please choose when you need the work done.'));
         }
 
-        if ($date->isBefore(today()) || $date->isAfter(today()->addDays((int) config('sortd.jobs.booking_days_ahead')))) {
+        $today = LocalTime::today()->toDateString();
+        $lastDay = LocalTime::today()->addDays((int) config('sortd.jobs.booking_days_ahead'))->toDateString();
+
+        if ($date->toDateString() < $today || $date->toDateString() > $lastDay) {
             throw new CannotPostServiceJob(__('Please choose a date in the next :days days.', ['days' => config('sortd.jobs.booking_days_ahead')]));
         }
 
-        if ($window === TimeWindow::Today && (! $job->service->emergency_capable || ! $date->isToday())) {
+        if ($window === TimeWindow::Today && (! $job->service->emergency_capable || $date->toDateString() !== $today)) {
             throw new CannotPostServiceJob(__('Urgent same-day bookings are only for emergency services, today.'));
         }
     }

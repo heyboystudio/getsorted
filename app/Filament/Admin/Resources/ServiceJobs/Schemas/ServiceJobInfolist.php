@@ -21,8 +21,8 @@ final class ServiceJobInfolist
                 Section::make(__('Job'))->columns(2)->schema([
                     TextEntry::make('service.name')->label(__('Service')),
                     TextEntry::make('service.trade.name')->label(__('Trade')),
-                    TextEntry::make('status')->label(__('Status'))->badge()->formatStateUsing(fn ($state): string => str($state->value)->replace('_', ' ')->ucfirst()->toString()),
-                    TextEntry::make('urgency')->label(__('Urgency'))->formatStateUsing(fn ($state): string => ucfirst($state->value)),
+                    TextEntry::make('status')->label(__('Status'))->badge()->formatStateUsing(fn ($state): string => __(str($state->value)->replace('_', ' ')->ucfirst()->toString())),
+                    TextEntry::make('urgency')->label(__('Urgency'))->formatStateUsing(fn ($state): string => __(ucfirst($state->value))),
                     TextEntry::make('property.suburb.name')->label(__('Suburb'))->placeholder('—'),
                     TextEntry::make('time_window')->label(__('When'))
                         ->formatStateUsing(fn ($state, ServiceJob $record): string => $state->label().($record->preferred_date ? ', '.$record->preferred_date->format('D j M') : ''))

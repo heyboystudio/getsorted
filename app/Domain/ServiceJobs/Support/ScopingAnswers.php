@@ -99,6 +99,12 @@ final class ScopingAnswers
             return null;
         }
 
+        foreach ($raw as $value) {
+            if (! is_string($value) && ! is_int($value)) {
+                return null;
+            }
+        }
+
         $values = array_values(array_unique(array_map(strval(...), $raw)));
 
         return array_diff($values, $question->options) === [] ? $values : null;

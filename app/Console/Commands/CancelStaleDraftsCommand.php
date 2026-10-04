@@ -26,9 +26,8 @@ final class CancelStaleDraftsCommand extends Command
         ServiceJob::query()
             ->where('status', ServiceJobStatus::Draft)
             ->where('updated_at', '<', $cutoff)
-            ->orderBy('id')
-            ->each(function (ServiceJob $job) use ($cancel, &$count): void {
-                if ($cancel->handle($job, ActorType::System, null, 'Draft expired') instanceof ServiceJob) {
+            ->eachById(function (ServiceJob $job) use ($cancel, $cutoff, &$count): void {
+                if ($cancel->handle($job, ActorType::System, null, 'Draft expired', $cutoff) instanceof ServiceJob) {
                     $count++;
                 }
             });

@@ -33,6 +33,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 027 | One account for customer and pro; pro sign-up (spec 011) | Accepted | 2026-10-04 |
 | 028 | Catalogue: YAML seeds, admin panel is the source of truth (spec 003) | Accepted | 2026-10-04 |
 | 029 | Suburbs and properties; location = suburb centre for now (spec 004) | Accepted | 2026-10-04 |
+| 030 | Booking flow and job state machine (spec 005) | Accepted | 2026-10-04 |
 
 ---
 
@@ -235,3 +236,15 @@ Short architecture decision records. **Add an entry for every significant choice
 - Properties belong to one customer, are reached only by `public_id` through the owner (404 otherwise), soft-delete, and are capped at 10 per customer (`config/sortd.php`, owner row locked to make the cap race-safe). The street address is encrypted with the app key, hidden from serialisation, not on any admin screen, and never in logs or the audit log (audit entries hold only the suburb).
 - No geocoding yet (founder decision): customers pick a suburb from Sortd's list and type their street; `properties.location` is the suburb centroid, enough for suburb-level matching. A map pin/street autocomplete comes with a geocoding provider.
 - `/app` routes require the customer role (`EnsureCustomer`); pro-only accounts are redirected to the pro area.
+
+## 030 · Booking flow and job state machine (spec 005)
+**Context:** Spec 005 and `docs/product/job-lifecycle.md`.
+
+**Decision:**
+- `ServiceJobStateMachine` holds the **full** lifecycle transition map; only it writes `service_jobs.status` (not fillable) and every change appends a `service_job_events` row (model refuses edits/deletes). Spec 005 adds the `PostServiceJob` (draft → open) and `CancelServiceJob` (draft → cancelled) Actions; others arrive with their specs. Tests iterate the map.
+- Posting runs in a transaction with the job locked and re-checks every guard (verified phone, required answers, own non-deleted property in an active suburb, active service/trade, date within 30 days in **Africa/Johannesburg** time, "today" only for emergency services, notes length). The customer's `job_posted` message is a queued job dispatched after commit on the `notifications` queue. The "eligible pro" guard arrives with spec 006 (founder decision).
+- Answers are checked on the server against type and options and stored with the prompt as asked, so catalogue edits don't rewrite history; they are shown in question order.
+- Drafts start on the first answer (not on opening a service), are reused per customer and service, can be removed by the customer, are capped at 5 per customer, and expire after `job_timers.draft_expiry_days` via a daily, idempotent command that re-checks staleness under lock. Posting is limited to 10 per customer per day.
+- Guests answer questions without an account; their answers are kept in the session through login (`url.intended`, server-built paths only). "Add property" returns to the booking only for whitelisted booking paths (no open redirect).
+- Admins see jobs read-only with suburb but never street address or customer contact details.
+- Timers live in `spatie/laravel-settings` (`JobTimers`), not code.

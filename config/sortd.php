@@ -9,6 +9,9 @@ declare(strict_types=1);
 
 return [
 
+    // Customers' local time for "today" and booking dates; storage stays UTC.
+    'timezone' => 'Africa/Johannesburg',
+
     'otp' => [
         // Security baseline §1: 6 digits, 10-minute expiry, 5 attempts, single use.
         'length' => 6,

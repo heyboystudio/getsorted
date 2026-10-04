@@ -24,7 +24,7 @@
             <div class="mt-6 space-y-3" wire:key="q-{{ $question->key }}">
                 @if ($input === 'tap')
                     @foreach ($question->type === \App\Domain\Catalogue\Enums\QuestionType::YesNo ? ['yes' => __('Yes'), 'no' => __('No')] : array_combine($question->options, $question->options) as $value => $label)
-                        <button type="button" wire:click="choose(@js($value))" wire:loading.attr="disabled"
+                        <button type="button" wire:click="choose(@js($value))" wire:loading.attr="disabled" aria-pressed="{{ ($answers[$question->key] ?? null) === $value ? 'true' : 'false' }}"
                             @class(['block w-full rounded-xl border px-4 py-4 text-left text-lg', 'border-emerald-700 bg-emerald-50' => ($answers[$question->key] ?? null) === $value, 'border-zinc-300 bg-white hover:border-emerald-700' => ($answers[$question->key] ?? null) !== $value])>{{ $label }}</button>
                     @endforeach
                     @unless ($question->required)
@@ -74,7 +74,7 @@
                 <p class="mt-1 text-sm text-zinc-500">{{ __('We only share your street address with the pro you choose.') }}</p>
                 <div class="mt-6 space-y-3">
                     @foreach ($properties as $property)
-                        <button type="button" wire:click="selectProperty('{{ $property->public_id }}')"
+                        <button type="button" wire:click="selectProperty('{{ $property->public_id }}')" aria-pressed="{{ $propertyPublicId === $property->public_id ? 'true' : 'false' }}"
                             @class(['block w-full rounded-xl border px-4 py-4 text-left', 'border-emerald-700 bg-emerald-50' => $propertyPublicId === $property->public_id, 'border-zinc-300 bg-white hover:border-emerald-700' => $propertyPublicId !== $property->public_id])>
                             <span class="block font-medium">{{ $property->label }}</span>
                             <span class="block text-sm text-zinc-600">{{ $property->street_address }}, {{ $property->suburb->name }}</span>
@@ -99,7 +99,7 @@
             @error('timeWindow') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
             @if ($timeWindow !== 'today')
                 <label for="preferredDate" class="mt-6 block text-sm font-medium">{{ __('Preferred day') }}</label>
-                <input id="preferredDate" type="date" wire:model="preferredDate" min="{{ now()->toDateString() }}" max="{{ $maxDate }}" class="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3">
+                <input id="preferredDate" type="date" wire:model="preferredDate" min="{{ $minDate }}" max="{{ $maxDate }}" class="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3">
                 @error('preferredDate') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
             @endif
             <button type="button" wire:click="next" wire:loading.attr="disabled" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Next') }}</button>
@@ -127,7 +127,8 @@
                 <div class="p-4">
                     <div class="flex justify-between"><dt class="font-medium">{{ __('When') }}</dt><button type="button" wire:click="change('when')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>
                     <dd class="mt-2 text-sm text-zinc-700">
-                        {{ \App\Domain\ServiceJobs\Enums\TimeWindow::tryFrom($timeWindow)?->label() }}@if ($preferredDate && $timeWindow !== 'today'), {{ \Carbon\CarbonImmutable::parse($preferredDate)->translatedFormat('D j M') }}@endif
+                        {{ \App\Domain\ServiceJobs\Enums\TimeWindow::tryFrom($timeWindow)?->label() }}@if ($preferredDateLabel && $timeWindow !== 'today'), {{ $preferredDateLabel }}@endif
+                        @if ($isUrgent) <span class="ml-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800">{{ __('Urgent') }}</span> @endif
                     </dd>
                 </div>
             </dl>

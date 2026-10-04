@@ -12,7 +12,7 @@ final class BookingReturn
 {
     public static function sanitise(?string $path): ?string
     {
-        if (! is_string($path) || ! preg_match('#^/(book/[a-z0-9_]+/[a-z0-9_]+|app/jobs/[0-9A-HJKMNP-TV-Z]{26}/continue)$#i', $path)) {
+        if (! is_string($path) || ! preg_match('#^/(book/[a-z0-9_]+/[a-z0-9_]+|app/jobs/[0-9A-HJKMNP-TV-Z]{26}/continue)\z#i', $path)) {
             return null;
         }
 

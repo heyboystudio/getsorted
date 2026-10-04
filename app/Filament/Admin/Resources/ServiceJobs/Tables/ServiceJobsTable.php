@@ -25,7 +25,7 @@ final class ServiceJobsTable
                 TextColumn::make('service.name')->label(__('Service'))->description(fn ($record): string => $record->service->trade->name),
                 TextColumn::make('property.suburb.name')->label(__('Suburb'))->placeholder('—'),
                 TextColumn::make('status')->label(__('Status'))->badge()
-                    ->formatStateUsing(fn (ServiceJobStatus $state): string => str($state->value)->replace('_', ' ')->ucfirst()->toString()),
+                    ->formatStateUsing(fn (ServiceJobStatus $state): string => __(str($state->value)->replace('_', ' ')->ucfirst()->toString())),
                 TextColumn::make('urgency')->label(__('Urgency'))->badge()
                     ->formatStateUsing(fn (Urgency $state): string => $state === Urgency::Urgent ? __('Urgent') : __('Normal'))
                     ->color(fn (Urgency $state): string => $state === Urgency::Urgent ? 'danger' : 'gray'),
@@ -33,7 +33,7 @@ final class ServiceJobsTable
             ])
             ->filters([
                 SelectFilter::make('status')->label(__('Status'))
-                    ->options(collect(ServiceJobStatus::cases())->mapWithKeys(fn (ServiceJobStatus $s): array => [$s->value => str($s->value)->replace('_', ' ')->ucfirst()->toString()])->all()),
+                    ->options(collect(ServiceJobStatus::cases())->mapWithKeys(fn (ServiceJobStatus $s): array => [$s->value => __(str($s->value)->replace('_', ' ')->ucfirst()->toString())])->all()),
                 SelectFilter::make('suburb')->label(__('Suburb'))
                     ->options(fn (): array => Suburb::query()->orderBy('name')->pluck('name', 'id')->all())
                     ->query(fn (Builder $query, array $data): Builder => $data['value'] ? $query->whereHas('property', fn (Builder $q) => $q->where('suburb_id', $data['value'])) : $query),

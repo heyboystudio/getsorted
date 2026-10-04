@@ -19,6 +19,7 @@ use App\Models\Service;
 use App\Models\ServiceJob;
 use App\Models\Trade;
 use App\Models\User;
+use App\Support\LocalTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -26,6 +27,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Throwable;
 
 /**
  * Booking wizard (spec 005): questions one per screen → notes → property →
@@ -82,7 +84,25 @@ final class Wizard extends Component
             $this->step = 'property';
         }
 
-        if ($this->isCustomer()) {
+        // Continue an existing draft for this service instead of starting another (drafts are capped).
+        $existing = $this->user()?->hasRole(Role::Customer->value) === true ? ServiceJob::query()
+            ->where('customer_id', $this->user()->id)->where('service_id', $service->id)
+            ->where('status', ServiceJobStatus::Draft)->latest('updated_at')->first() : null;
+
+        if ($existing instanceof ServiceJob && ! is_array($resume)) {
+            $this->resumeDraft($existing);
+
+            return;
+        }
+
+        if ($existing instanceof ServiceJob) {
+            $this->jobPublicId = $existing->public_id;
+        }
+
+        $this->prepareMultiChoiceAnswers();
+
+        // A draft is only created once the customer has answered something (or came back from login).
+        if ($this->isCustomer() && is_array($resume)) {
             $this->autosave();
         }
     }
@@ -177,6 +197,15 @@ final class Wizard extends Component
             return;
         }
 
+        $existing = $this->jobPublicId === null ? null : ServiceJob::query()->where('public_id', $this->jobPublicId)->where('customer_id', $user->id)->first();
+
+        // A second tap after a successful post just goes to the job.
+        if ($existing instanceof ServiceJob && $existing->status !== ServiceJobStatus::Draft) {
+            $this->redirectRoute('jobs.show', $existing);
+
+            return;
+        }
+
         $job = $this->autosave();
 
         try {
@@ -207,7 +236,10 @@ final class Wizard extends Component
             'isGuest' => ! $this->user() instanceof User,
             'isCustomer' => $this->isCustomer(),
             'bookingUrl' => $this->bookingUrl(),
-            'maxDate' => today()->addDays((int) config('sortd.jobs.booking_days_ahead'))->toDateString(),
+            'minDate' => LocalTime::today()->toDateString(),
+            'maxDate' => LocalTime::today()->addDays((int) config('sortd.jobs.booking_days_ahead'))->toDateString(),
+            'preferredDateLabel' => $this->validPreferredDate()?->translatedFormat('D j M'),
+            'isUrgent' => $this->timeWindow === TimeWindow::Today->value || ScopingAnswers::isUrgent($service, $this->checkedAnswers()),
             'reviewAnswers' => $this->checkedAnswers(),
         ])->title($service->name);
     }
@@ -264,12 +296,12 @@ final class Wizard extends Component
     private function leaveWhen(): void
     {
         if ($this->timeWindow === TimeWindow::Today->value) {
-            $this->preferredDate = today()->toDateString();
+            $this->preferredDate = LocalTime::today()->toDateString();
         }
 
         $this->validate([
             'timeWindow' => ['required', 'in:'.implode(',', array_map(fn (TimeWindow $w): string => $w->value, $this->service()->emergency_capable ? TimeWindow::cases() : [TimeWindow::Morning, TimeWindow::Afternoon, TimeWindow::Flexible]))],
-            'preferredDate' => ['required', 'date_format:Y-m-d', 'after_or_equal:today', 'before_or_equal:'.today()->addDays((int) config('sortd.jobs.booking_days_ahead'))->toDateString()],
+            'preferredDate' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.LocalTime::today()->toDateString(), 'before_or_equal:'.LocalTime::today()->addDays((int) config('sortd.jobs.booking_days_ahead'))->toDateString()],
         ], [
             'timeWindow.required' => __('Choose a time.'),
             'preferredDate.required' => __('Choose a day.'),
@@ -299,7 +331,7 @@ final class Wizard extends Component
                 answers: $this->checkedAnswers(),
                 notes: $this->notes === '' ? null : $this->notes,
                 propertyPublicId: $this->propertyPublicId,
-                preferredDate: $this->preferredDate === '' ? null : (CarbonImmutable::createFromFormat('Y-m-d', $this->preferredDate) ?: null),
+                preferredDate: $this->validPreferredDate(),
                 timeWindow: TimeWindow::tryFrom($this->timeWindow),
             ));
         } catch (CannotPostServiceJob $exception) {
@@ -350,12 +382,24 @@ final class Wizard extends Component
             $this->answers[$key] = $stored['answer'];
         }
 
+        $this->prepareMultiChoiceAnswers();
+
         $this->step = match (true) {
             ScopingAnswers::missingRequired($this->service(), $job->scoping_answers) !== [] => 'questions',
             $job->property_id === null => 'property',
             $job->time_window === null => 'when',
             default => 'review',
         };
+    }
+
+    /** Checkbox groups need an array to bind to, or the browser sends `true` (spec 005 review). */
+    private function prepareMultiChoiceAnswers(): void
+    {
+        foreach ($this->questions() as $question) {
+            if ($question->type === QuestionType::MultiChoice && ! is_array($this->answers[$question->key] ?? null)) {
+                $this->answers[$question->key] = [];
+            }
+        }
     }
 
     private function bookingUrl(): string
@@ -367,6 +411,22 @@ final class Wizard extends Component
         $service = $this->service();
 
         return route('booking.start', [$service->trade, $service], false);
+    }
+
+    /** A tampered or half-typed date is treated as "not chosen yet" rather than an error page. */
+    private function validPreferredDate(): ?CarbonImmutable
+    {
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->preferredDate) !== 1) {
+            return null;
+        }
+
+        try {
+            $date = CarbonImmutable::createFromFormat('Y-m-d', $this->preferredDate, LocalTime::timezone());
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $date instanceof CarbonImmutable ? $date->startOfDay() : null;
     }
 
     private function stepNumber(): int
@@ -388,9 +448,11 @@ final class Wizard extends Component
         return $this->service()->questions->values();
     }
 
+    private ?Service $serviceCache = null;
+
     private function service(): Service
     {
-        return Service::query()->with(['questions', 'trade'])->findOrFail($this->serviceId);
+        return $this->serviceCache ??= Service::query()->with(['questions', 'trade'])->findOrFail($this->serviceId);
     }
 
     private function selectedProperty(): ?Property

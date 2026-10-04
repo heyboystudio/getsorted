@@ -28,7 +28,13 @@ final class SaveBookingDraft
      */
     public function handle(User $customer, Service $service, ?ServiceJob $job, BookingData $data): ServiceJob
     {
-        return DB::transaction(function () use ($customer, $service, $job, $data): ServiceJob {
+        $notes = $data->notes === null ? null : trim($data->notes);
+
+        if ($notes !== null && mb_strlen($notes) > (int) config('sortd.jobs.notes_max_length')) {
+            throw new CannotPostServiceJob(__('Notes can be up to :max characters.', ['max' => config('sortd.jobs.notes_max_length')]));
+        }
+
+        return DB::transaction(function () use ($customer, $service, $job, $data, $notes): ServiceJob {
             if ($job instanceof ServiceJob) {
                 $job = ServiceJob::query()->lockForUpdate()->findOrFail($job->id);
                 Gate::forUser($customer)->authorize('update', $job);
@@ -53,7 +59,7 @@ final class SaveBookingDraft
             $job->property()->associate($property instanceof Property ? $property : null);
             $job->fill([
                 'scoping_answers' => $data->answers,
-                'customer_notes' => $data->notes,
+                'customer_notes' => $notes === '' ? null : $notes,
                 'preferred_date' => $data->preferredDate?->toDateString(),
                 'time_window' => $data->timeWindow,
                 'urgency' => $data->timeWindow === TimeWindow::Today || ScopingAnswers::isUrgent($service, $data->answers) ? Urgency::Urgent : Urgency::Normal,

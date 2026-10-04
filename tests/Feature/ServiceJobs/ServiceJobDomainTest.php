@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
 use App\Domain\Catalogue\Enums\QuestionType;
+use App\Domain\ServiceJobs\Actions\CancelServiceJob;
 use App\Domain\ServiceJobs\Actions\PostServiceJob;
 use App\Domain\ServiceJobs\Actions\SaveBookingDraft;
 use App\Domain\ServiceJobs\Data\BookingData;
@@ -282,4 +283,16 @@ it('cancels drafts untouched for 7 days, safely when run twice', function (): vo
         ->and(ServiceJobEvent::query()->where('service_job_id', $old->id)->sole())
         ->actor_type->toBe(ActorType::System)
         ->to_status->toBe(ServiceJobStatus::Cancelled);
+});
+
+it('refuses notes over the limit when saving a draft', function (): void {
+    expect(fn (): ServiceJob => draftFor($this->customer, $this->leak, ['notes' => str_repeat('x', 1001)]))->toThrow(CannotPostServiceJob::class, 'up to 1000 characters');
+});
+
+it('does not expire a draft the customer touched after it was picked', function (): void {
+    $job = draftFor($this->customer, $this->leak);
+
+    $cancelled = app(CancelServiceJob::class)->handle($job, ActorType::System, null, 'Draft expired', now()->subDays(7)->toImmutable());
+
+    expect($cancelled)->toBeNull()->and($job->fresh()->status)->toBe(ServiceJobStatus::Draft);
 });
