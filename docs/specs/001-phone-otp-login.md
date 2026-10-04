@@ -1,6 +1,6 @@
 # Spec 001 · Phone + OTP login and consent
 
-Status: Done (awaiting merge) · Phase: 1 · Owner: founder
+Status: Done (merged in PR #15) · Phase: 1 · Owner: founder
 
 ## Goal
 Customers sign up and log in with their South African mobile number and a 6-digit one-time code, and new customers accept the terms and privacy notice (POPIA consent recorded). This is the front door for every customer feature that follows.

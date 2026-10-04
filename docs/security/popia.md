@@ -19,9 +19,9 @@
 | Purpose specification | Each field has a stated purpose in the privacy notice. |
 | Consent records | `consents` table stores type (terms, privacy, marketing, pro agreement), version, timestamp, IP and browser. |
 | Direct marketing | Opt-in only (unticked box), separate from terms; one-tap unsubscribe in every marketing message. |
-| Special personal information | Pro background checks may involve criminal-record information: obtain explicit consent in the application, restrict access to the vetting role, store results as pass/fail plus date where possible. |
+| Special personal information | V1 does not perform criminal-record checks (decision 034). Reassess consent, access and retention requirements before adding any such checks. |
 | Data-subject access | "Download my data" in account settings (JSON + PDFs). |
 | Correction and deletion | Users edit their profile; "Delete my account" anonymises personal data while keeping financial records required by law. |
-| Retention | Financial records: 5 years (confirm with accountant). Job photos: 2 years after completion. AI raw text: 30 days. OTP records: 90 days. Waitlist: 12 months. Implemented as scheduled prune jobs. |
+| Retention | Financial records: 5 years (confirm with accountant). Job photos: 2 years after completion. AI raw text: 30 days. OTP records: 90 days. Waitlist: 12 months. Some prune jobs are in place; complete and verify the remaining retention schedules before launch. |
 | Security safeguards | `security-baseline.md`. |
 | Sharing with pros | Pros receive suburb-level location and job details; address and contact only after their quote is accepted. |

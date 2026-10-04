@@ -1,6 +1,6 @@
 # Spec 003 · Catalogue seeded from scoping YAML + admin editing
 
-Status: Done (awaiting merge) · Phase: 1 · Owner: founder
+Status: Done (merged in PR #19) · Phase: 1 · Owner: founder
 
 ## Goal
 The trades, services and scoping questions in `docs/product/scoping/*.yaml` are loaded into the database and can be viewed and edited by admins in `/admin`, so the booking flow (Phase 2) and pro services (spec 008) have a real catalogue to use.

@@ -10,14 +10,14 @@ Tradespeople, meanwhile, lose 20% of labour to commission and wait 3 business da
 
 ## 2. Product in one sentence
 
-Sortd turns a household's description of a problem into a clear, scoped job, sends it to up to three vetted Durban pros, and runs quote → deposit → work → final payment → review in one place, with WhatsApp updates throughout.
+Sortd turns a household's description of a problem into a clear, scoped job, invites vetted Durban pros in waves to collect up to three quotes, and runs quote → deposit → work → final payment → review in one place, with WhatsApp updates throughout.
 
 ## 3. Users and roles
 
 | Role | Who | Main surface |
 |---|---|---|
 | Customer | A Durban homeowner or tenant | Public website + customer web app (`/app`) |
-| Pro | A vetted tradesperson or small trade business | Pro portal (`/pro`, Filament panel) |
+| Pro | A vetted tradesperson or small trade business | Mobile web pages (`/pros/...`) |
 | Admin | Sortd staff: support, vetting, finance | Admin panel (`/admin`, Filament panel) |
 
 Pros may later have team members; v1 is one login per pro business.

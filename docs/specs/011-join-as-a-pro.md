@@ -1,6 +1,6 @@
 # Spec 011 · Join as a pro (sign-up entry)
 
-Status: Done (awaiting merge) · Phase: 1 · Owner: founder
+Status: Done (merged in PR #17) · Phase: 1 · Owner: founder
 
 ## Goal
 Tradespeople can sign up as a pro with the same phone + code login customers use (spec 001), so Phase 1's exit criterion "customer **and pro** can sign up with OTP" is met. The full application wizard and vetting stay in spec 008; the pro panel stays locked until then.

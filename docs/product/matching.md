@@ -22,7 +22,9 @@ The **coverage check** in booking runs the same eligibility query and stops the 
 
 ## Ranking eligible pros
 
-Score (weights configurable in admin):
+V1 ranks approved eligible pros by fewest invites in the last 7 days, with random tie-breaking (spec 009). The richer signals below are future work, after ratings and response data exist.
+
+Future score (weights and settings to be decided when these signals exist):
 
 | Signal | Why |
 |---|---|
@@ -37,8 +39,8 @@ Score (weights configurable in admin):
 1. Wave 1: invite the top **5** eligible pros (configurable).
 2. Each invite expires after 24 h.
 3. If after **12 h** the job has fewer than 2 quotes, invite the next 3.
-4. Stop inviting when the job has 3 submitted quotes; remaining open invites are closed ("this job is full").
-5. Admin can manually invite any eligible pro, or force-close matching.
+4. Stop later waves once the configurable "enough quotes" threshold is reached (2 by default). Spec 010 will add the three-submitted-quote cap and close remaining open invites when the job is full.
+5. Admin can manually invite an eligible pro who has not been invited, or stop further matching waves. Existing open invites remain valid when matching is stopped.
 
 ## What pros see in an invite
 
