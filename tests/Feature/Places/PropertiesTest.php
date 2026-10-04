@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Accounts\Enums\Role;
 use App\Domain\Properties\Enums\PropertyType;
 use App\Livewire\Account\Properties\Form;
 use App\Livewire\Account\Properties\Index;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
@@ -137,4 +139,28 @@ it('keeps the street address encrypted and out of logs and the audit log (AC12)'
 
 it('keeps pros and admins out of the properties pages', function (): void {
     $this->actingAs(User::factory()->pro()->create())->get('/app/properties')->assertRedirect(route('pros.welcome'));
+
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::AdminSuper->value);
+    $this->actingAs($admin)->get('/app/properties')->assertForbidden();
+});
+
+it('cannot open the edit form for someone else\'s property directly (AC9)', function (): void {
+    $theirs = Property::factory()->create();
+
+    Livewire::test(Form::class, ['property' => $theirs])->assertNotFound();
+});
+
+it('cannot point the form at another property from the browser (AC9)', function (): void {
+    $theirs = Property::factory()->create();
+
+    Livewire::test(Form::class)->set('publicId', $theirs->public_id);
+})->throws(CannotUpdateLockedPropertyException::class);
+
+it('forgets the chosen suburb when the suburb text is changed', function (): void {
+    Livewire::test(Form::class)
+        ->call('selectSuburb', 'morningside')->assertSet('suburb', 'morningside')
+        ->set('suburbQuery', 'Morningsid')->assertSet('suburb', null)
+        ->set('label', 'Home')->set('streetAddress', '1 Road')->set('propertyType', 'house')
+        ->call('save')->assertHasErrors(['suburb']);
 });

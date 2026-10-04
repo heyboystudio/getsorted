@@ -17,6 +17,7 @@ use Database\Seeders\SuburbSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Spatie\Activitylog\Models\Activity;
 
 uses(RefreshDatabase::class);
 
@@ -111,4 +112,39 @@ it('shows how many properties each suburb has (AC4)', function (): void {
     Property::factory()->count(2)->for(suburb('glenwood'))->create();
 
     Livewire::test(ListSuburbs::class)->assertTableColumnStateSet('properties_count', 2, suburb('glenwood'));
+});
+
+it('rejects a duplicate suburb name in the admin form', function (): void {
+    Filament::setCurrentPanel('admin');
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::AdminSuper->value);
+    $this->actingAs($admin);
+
+    Livewire::test(CreateSuburb::class)
+        ->fillForm(['name' => 'Morningside', 'slug' => 'morningside_two', 'region' => Region::BereaCentral->value, 'latitude' => -29.82, 'longitude' => 31.0, 'is_active' => false])
+        ->call('create')->assertHasFormErrors(['name']);
+});
+
+it('does not trip over an admin-added suburb with the same name when seeding', function (): void {
+    suburb('kloof')->delete();
+    Suburb::factory()->create(['slug' => 'kloof_area', 'name' => 'Kloof', 'municipality' => 'eThekwini']);
+
+    $this->seed(SuburbSeeder::class);
+
+    expect(Suburb::query()->where('name', 'Kloof')->count())->toBe(1);
+});
+
+it('audit-logs moving a suburb centre', function (): void {
+    Filament::setCurrentPanel('admin');
+    $admin = User::factory()->create();
+    $admin->assignRole(Role::AdminSuper->value);
+    $this->actingAs($admin);
+
+    Livewire::test(EditSuburb::class, ['record' => 'glenwood'])
+        ->fillForm(['latitude' => -29.8710, 'longitude' => 30.9960])->call('save')->assertHasNoFormErrors();
+
+    $entry = Activity::query()->where('description', 'suburb centre moved')->sole();
+    expect($entry->causer_id)->toBe($admin->id)
+        ->and($entry->properties['attributes']['latitude'])->toEqualWithDelta(-29.8710, 0.0001)
+        ->and($entry->properties['old']['latitude'])->toEqualWithDelta(-29.8700, 0.0001);
 });

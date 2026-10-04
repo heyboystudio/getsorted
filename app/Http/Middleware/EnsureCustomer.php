@@ -18,7 +18,12 @@ final class EnsureCustomer
         $user = $request->user();
 
         if ($user instanceof User && ! $user->hasRole(Role::Customer->value)) {
-            return redirect()->route($user->homeRoute());
+            $home = $user->homeRoute();
+
+            // An account with neither role has no home here; refuse rather than loop.
+            abort_if($home === 'account.home', 403);
+
+            return redirect()->route($home);
         }
 
         return $next($request);

@@ -11,6 +11,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
+use Illuminate\Validation\Rules\Unique;
 
 final class SuburbForm
 {
@@ -18,15 +19,16 @@ final class SuburbForm
     {
         return $schema
             ->components([
-                TextInput::make('name')->label(__('Name'))->required()->maxLength(100),
+                TextInput::make('name')->label(__('Name'))->required()->maxLength(100)
+                    ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule): Unique => $rule->where('municipality', config('sortd.places.municipality'))),
                 CatalogueFields::key(fn () => Suburb::query(), 'slug'),
                 Select::make('region')
                     ->label(__('Region'))
                     ->options(collect(Region::cases())->mapWithKeys(fn (Region $region): array => [$region->value => $region->label()])->all())
                     ->required(),
-                TextInput::make('latitude')->label(__('Centre latitude'))->numeric()->required()->minValue(-30.5)->maxValue(-29.3)
+                TextInput::make('latitude')->label(__('Centre latitude'))->numeric()->required()->minValue((float) config('sortd.places.latitude.min'))->maxValue((float) config('sortd.places.latitude.max'))
                     ->helperText(__('eThekwini is around -29.85. Approximate is fine.')),
-                TextInput::make('longitude')->label(__('Centre longitude'))->numeric()->required()->minValue(30.5)->maxValue(31.3)
+                TextInput::make('longitude')->label(__('Centre longitude'))->numeric()->required()->minValue((float) config('sortd.places.longitude.min'))->maxValue((float) config('sortd.places.longitude.max'))
                     ->helperText(__('eThekwini is around 31.0.')),
                 Toggle::make('is_active')->label(__('Active'))
                     ->helperText(__('Only active suburbs take bookings. Switch off instead of deleting.')),

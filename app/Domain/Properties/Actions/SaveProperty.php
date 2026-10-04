@@ -59,7 +59,8 @@ final class SaveProperty
             $property->save();
 
             activity()->performedOn($property)->causedBy($owner)
-                ->withProperties(['label' => $label, 'suburb' => $suburb->slug])
+                // Only the suburb: free text like the label could contain an address.
+                ->withProperties(['suburb' => $suburb->slug])
                 ->log($isNew ? 'property created' : 'property updated');
 
             return $property;

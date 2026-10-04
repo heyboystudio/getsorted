@@ -33,6 +33,13 @@ return [
         'remember_days' => 30,
     ],
 
+    'places' => [
+        'municipality' => 'eThekwini',
+        // Rough bounding box used to sanity-check admin-entered suburb centres.
+        'latitude' => ['min' => -30.5, 'max' => -29.3],
+        'longitude' => ['min' => 30.5, 'max' => 31.3],
+    ],
+
     'properties' => [
         // Saved properties per customer; prevents abuse of the address book.
         'max_per_customer' => 10,

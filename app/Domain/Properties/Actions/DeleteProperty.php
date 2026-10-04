@@ -6,6 +6,7 @@ namespace App\Domain\Properties\Actions;
 
 use App\Models\Property;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 final class DeleteProperty
@@ -15,8 +16,10 @@ final class DeleteProperty
     {
         Gate::forUser($owner)->authorize('delete', $property);
 
-        $property->delete();
+        DB::transaction(function () use ($owner, $property): void {
+            $property->delete();
 
-        activity()->performedOn($property)->causedBy($owner)->log('property deleted');
+            activity()->performedOn($property)->causedBy($owner)->log('property deleted');
+        });
     }
 }

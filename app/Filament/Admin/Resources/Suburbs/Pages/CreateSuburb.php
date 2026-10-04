@@ -20,6 +20,6 @@ final class CreateSuburb extends CreateRecord
      */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return [...$this->withCentroid($data), 'municipality' => 'eThekwini'];
+        return [...$this->withCentroid($data), 'municipality' => config('sortd.places.municipality')];
     }
 }

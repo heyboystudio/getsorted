@@ -38,7 +38,13 @@ final class SuburbSeeder extends Seeder
     public function run(): void
     {
         foreach (self::SUBURBS as $suburb) {
-            if (Suburb::query()->where('slug', $suburb['slug'])->exists()) {
+            $municipality = (string) config('sortd.places.municipality');
+            $exists = Suburb::query()
+                ->where('slug', $suburb['slug'])
+                ->orWhere(fn ($query) => $query->where('municipality', $municipality)->where('name', $suburb['name']))
+                ->exists();
+
+            if ($exists) {
                 continue;
             }
 
@@ -46,7 +52,7 @@ final class SuburbSeeder extends Seeder
                 'slug' => $suburb['slug'],
                 'name' => $suburb['name'],
                 'region' => $suburb['region'],
-                'municipality' => 'eThekwini',
+                'municipality' => $municipality,
                 'centroid' => Point::makeGeodetic($suburb['lat'], $suburb['lng']),
                 'is_active' => in_array($suburb['region'], self::ACTIVE_REGIONS, true),
             ]);
