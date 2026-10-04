@@ -10,16 +10,23 @@ use App\Domain\Accounts\Exceptions\PhoneAlreadyRegistered;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
-final class RegisterCustomer
+final readonly class RegisterAccount
 {
+    public function __construct(
+        private RecordConsent $recordConsent,
+    ) {}
+
     /**
-     * Creates a customer for a phone number verified in this session and records
-     * their POPIA consents (type, document version, time, IP, browser).
+     * Creates a customer or pro account for a phone number verified in this
+     * session and records their POPIA consents (type, document version, time,
+     * IP, browser). Pros also accept the pro agreement (spec 011).
      *
      * @throws PhoneAlreadyRegistered when the number was registered meanwhile
      */
     public function handle(
+        Role $role,
         string $phoneE164,
         string $firstName,
         string $lastName,
@@ -29,14 +36,14 @@ final class RegisterCustomer
         ?string $userAgent,
     ): User {
         try {
-            return DB::transaction(fn (): User => $this->create($phoneE164, $firstName, $lastName, $email, $marketing, $ip, $userAgent));
+            return DB::transaction(fn (): User => $this->create($role, $phoneE164, $firstName, $lastName, $email, $marketing, $ip, $userAgent));
         } catch (UniqueConstraintViolationException) {
             // The SQL in this exception contains personal data, so it is not rethrown or logged.
             throw new PhoneAlreadyRegistered('This number is already registered.');
         }
     }
 
-    private function create(string $phoneE164, string $firstName, string $lastName, ?string $email, bool $marketing, ?string $ip, ?string $userAgent): User
+    private function create(Role $role, string $phoneE164, string $firstName, string $lastName, ?string $email, bool $marketing, ?string $ip, ?string $userAgent): User
     {
         $user = new User;
         $user->forceFill([
@@ -49,12 +56,20 @@ final class RegisterCustomer
             'phone_verified_at' => now(),
         ])->save();
 
-        $user->assignRole(Role::Customer->value);
+        if (! in_array($role, [Role::Customer, Role::Pro], true)) {
+            throw new InvalidArgumentException('Only customer and pro accounts can be self-registered.');
+        }
+
+        $user->assignRole($role->value);
 
         $consents = [
             ConsentType::Terms->value => (string) config('sortd.legal.terms_version'),
             ConsentType::Privacy->value => (string) config('sortd.legal.privacy_version'),
         ];
+
+        if ($role === Role::Pro) {
+            $consents[ConsentType::ProAgreement->value] = (string) config('sortd.legal.pro_agreement_version');
+        }
 
         if ($marketing) {
             // Marketing opt-in follows the privacy notice version it was given under.
@@ -64,18 +79,7 @@ final class RegisterCustomer
         activity()->performedOn($user)->causedBy($user)->log('account created');
 
         foreach ($consents as $type => $version) {
-            $consent = $user->consents()->make([
-                'type' => $type,
-                'version' => $version,
-                'granted_at' => now(),
-                'ip' => $ip,
-                'user_agent' => $userAgent === null ? null : mb_substr($userAgent, 0, 1000),
-            ]);
-            $consent->save();
-
-            activity()->performedOn($consent)->causedBy($user)
-                ->withProperties(['type' => $type, 'version' => $version])
-                ->log('consent granted');
+            $this->recordConsent->handle($user, ConsentType::from($type), $version, $ip, $userAgent);
         }
 
         return $user;

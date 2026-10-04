@@ -37,6 +37,7 @@ return [
         // Placeholder documents until lawyer-reviewed text exists (spec 001 decision 1).
         'terms_version' => '2026-10-draft',
         'privacy_version' => '2026-10-draft',
+        'pro_agreement_version' => '2026-10-draft',
     ],
 
 ];

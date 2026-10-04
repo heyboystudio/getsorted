@@ -3,7 +3,7 @@
         <a href="{{ route('home') }}" class="mb-10 inline-block text-2xl font-semibold tracking-tight">{{ __('Sortd') }}<span aria-hidden="true" class="text-emerald-700">.</span></a>
 
         @if ($step === \App\Domain\Accounts\Enums\LoginStep::Phone)
-            <h1 class="text-2xl font-semibold tracking-tight">{{ __('Log in or sign up') }}</h1>
+            <h1 class="text-2xl font-semibold tracking-tight">{{ $asPro ? __('Join Sortd as a pro') : __('Log in or sign up') }}</h1>
             <p class="mt-2 text-zinc-600">{{ __("We'll send a 6-digit code to your phone on WhatsApp.") }}</p>
 
             <form wire:submit="sendCode" class="mt-8 space-y-4" novalidate>
@@ -96,6 +96,14 @@
                         <span>{{ __('I accept the') }} <a href="{{ route('privacy') }}" target="_blank" class="underline underline-offset-4">{{ __('privacy notice') }}</a></span>
                     </label>
                     @error('acceptPrivacy') <p class="text-red-700" role="alert">{{ $message }}</p> @enderror
+
+                    @if ($asPro)
+                        <label class="flex gap-3">
+                            <input type="checkbox" wire:model="acceptProAgreement" class="mt-0.5 size-5 shrink-0 rounded border-zinc-300 text-emerald-700">
+                            <span>{{ __('I accept the') }} <a href="{{ route('pros.agreement') }}" target="_blank" class="underline underline-offset-4">{{ __('pro agreement') }}</a></span>
+                        </label>
+                        @error('acceptProAgreement') <p class="text-red-700" role="alert">{{ $message }}</p> @enderror
+                    @endif
 
                     <label class="flex gap-3 text-zinc-600">
                         <input type="checkbox" wire:model="marketing" class="mt-0.5 size-5 shrink-0 rounded border-zinc-300 text-emerald-700">

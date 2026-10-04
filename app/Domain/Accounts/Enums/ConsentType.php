@@ -9,4 +9,5 @@ enum ConsentType: string
     case Terms = 'terms';
     case Privacy = 'privacy';
     case Marketing = 'marketing';
+    case ProAgreement = 'pro_agreement';
 }

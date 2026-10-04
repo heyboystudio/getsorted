@@ -75,6 +75,18 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
         return $this->hasAnyRole(array_map(fn (Role $role): string => $role->value, Role::adminRoles()));
     }
 
+    /** Where a phone-login user lands: pros (without the customer role) go to the pro area. */
+    public function homeRoute(bool $preferPro = false): string
+    {
+        $isPro = $this->hasRole(Role::Pro->value);
+
+        if ($isPro && ($preferPro || ! $this->hasRole(Role::Customer->value))) {
+            return 'pros.welcome';
+        }
+
+        return 'account.home';
+    }
+
     public function getFilamentName(): string
     {
         return $this->fullName();
