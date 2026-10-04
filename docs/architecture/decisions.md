@@ -44,6 +44,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 038 | Email through Resend | Accepted | 2026-10-04 |
 | 039 | Email or Google sign-in, then verified email and mobile (supersedes 004 for customers and pros) | Accepted | 2026-10-05 |
 | 040 | Twilio for WhatsApp and SMS (Q5) | Accepted | 2026-10-05 |
+| 041 | Test site: mobile saved without a code while SMS is blocked | Accepted | 2026-10-05 |
 
 ---
 
@@ -358,3 +359,10 @@ Short architecture decision records. **Add an entry for every significant choice
 - consider a branded SMS sender ID.
 
 Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SMS to South Africa.
+
+## 041 · Test site: mobile saved without a code while SMS is blocked
+**Context:** Twilio trial accounts only send Twilio's predefined SMS templates (error 572006), so Sortd's code messages are refused until the account is upgraded. The founder asked to keep the mobile step but skip the code for now.
+
+**Decision:** `PHONE_CODES_ENABLED=false` (config `sortd.otp.phone_codes_enabled`) makes "Add your mobile" save the number as verified without sending a code, then continue to the account. It still checks the number's format and refuses numbers that belong to another account, and it logs `phone saved without code (test site)`. `AppMode::skipsPhoneCodes()` honours the switch only in `local` and `preview`, so staging and production always send codes. A test proves it.
+
+**Consequences:** Numbers on the test site aren't really proven. Switch it back on (remove the setting) once Twilio is upgraded. The first SMS-first channel setting stays as decided.

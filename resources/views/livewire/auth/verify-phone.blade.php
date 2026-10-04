@@ -5,6 +5,9 @@
 
         @if ($phoneE164 === null)
             <h1 class="mt-1 text-2xl font-semibold tracking-tight">{{ $changing ? __('Change your mobile') : __('Add your mobile number') }}</h1>
+            @if (\App\Support\AppMode::skipsPhoneCodes())
+                <p class="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">{{ __('Test site: codes are switched off, so your number is saved without one.') }}</p>
+            @endif
             <p class="mt-2 text-zinc-600">{{ \App\Livewire\Auth\VerifyPhone::firstChannel() === \App\Contracts\Data\MessageChannel::Sms ? __('We\'ll text you a 6-digit code.') : __('We\'ll send a 6-digit code on WhatsApp.') }} {{ __('Pros and Sortd use this number to keep you updated about your jobs.') }}</p>
 
             <form wire:submit="sendCode" class="mt-8 space-y-4" novalidate>

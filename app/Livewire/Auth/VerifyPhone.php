@@ -13,7 +13,9 @@ use App\Domain\Accounts\Exceptions\PhoneAlreadyRegistered;
 use App\Domain\Accounts\Support\LoginThrottle;
 use App\Domain\Accounts\Support\PhoneNumbers;
 use App\Models\User;
+use App\Support\AppMode;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
@@ -65,7 +67,30 @@ final class VerifyPhone extends Component
             throw ValidationException::withMessages(['phone' => __('This is already your verified number.')]);
         }
 
+        if (AppMode::skipsPhoneCodes()) {
+            $this->saveWithoutCode($phoneE164);
+
+            return;
+        }
+
         $this->deliver($sendPhoneCode, $phoneE164, self::firstChannel(), 'phone');
+    }
+
+    /** Test site only, while codes can't be sent: keep the number and continue (decision 041). */
+    private function saveWithoutCode(string $phoneE164): void
+    {
+        if (SendPhoneCode::isTakenByAnotherAccount($this->user(), $phoneE164)) {
+            throw ValidationException::withMessages(['phone' => $this->takenMessage()]);
+        }
+
+        try {
+            $this->user()->forceFill(['phone_e164' => $phoneE164, 'phone_verified_at' => now()])->save();
+        } catch (UniqueConstraintViolationException) {
+            throw ValidationException::withMessages(['phone' => $this->takenMessage()]);
+        }
+
+        activity()->performedOn($this->user())->causedBy($this->user())->log('phone saved without code (test site)');
+        $this->redirectIntended(route($this->user()->homeRoute(session()->get('auth.as_pro') === true)));
     }
 
     /** The other channel, offered after a short wait (spec 014, AC4). */

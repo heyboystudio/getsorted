@@ -20,6 +20,9 @@ return [
         // The first channel for codes; the other is offered after the wait below.
         // SMS first until the WhatsApp sender is set up (founder, 2026-10-05).
         'default_channel' => env('OTP_DEFAULT_CHANNEL', 'sms'),
+        // Test site only (decision 041): when false, the mobile is saved without
+        // a code. Ignored everywhere except local and preview.
+        'phone_codes_enabled' => (bool) env('PHONE_CODES_ENABLED', true),
         'sms_fallback_after_seconds' => 30,
         // POPIA checklist: OTP records kept 90 days.
         'retention_days' => 90,

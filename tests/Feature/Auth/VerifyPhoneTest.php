@@ -212,6 +212,36 @@ it('shows the code on screen in local development and on the private test site o
     'production' => ['production', false],
 ]);
 
+it('saves the mobile without a code on the test site when codes are switched off (decision 041)', function (): void {
+    app()->detectEnvironment(fn (): string => 'preview');
+    config()->set('sortd.otp.phone_codes_enabled', false);
+    $user = newCustomer();
+
+    requestCode(user: $user)->assertHasNoErrors()->assertRedirect(route('account.home'));
+
+    messaging()->assertNothingSent();
+    expect($user->fresh()->phone_e164)->toBe(PHONE)->and($user->fresh()->phone_verified_at)->not->toBeNull();
+});
+
+it('still refuses a taken number when codes are switched off', function (): void {
+    app()->detectEnvironment(fn (): string => 'preview');
+    config()->set('sortd.otp.phone_codes_enabled', false);
+    User::factory()->customer()->create(['phone_e164' => PHONE]);
+
+    requestCode()->assertHasErrors(['phone']);
+});
+
+it('never skips codes in staging or production, even when switched off', function (string $environment): void {
+    app()->detectEnvironment(fn (): string => $environment);
+    config()->set('sortd.otp.phone_codes_enabled', false);
+    $user = newCustomer();
+
+    requestCode(user: $user);
+
+    messaging()->assertSent('otp_code');
+    expect($user->fresh()->phone_verified_at)->toBeNull();
+})->with(['staging', 'production']);
+
 it('prunes codes after 90 days', function (): void {
     requestCode();
     $this->travel(91)->days();
