@@ -12,10 +12,13 @@ use App\Domain\ServiceJobs\ServiceJobStateMachine;
 use App\Filament\Admin\Pages\Auth\Login as AdminLogin;
 use App\Filament\Admin\Resources\ServiceJobs\Pages\ViewServiceJob;
 use App\Livewire\Booking\Wizard;
+use App\Models\Pro;
 use App\Models\Service;
 use App\Models\ServiceJob;
+use App\Models\Suburb;
 use App\Models\User;
 use Database\Seeders\CatalogueSeeder;
+use Database\Seeders\SuburbSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -28,7 +31,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed(CatalogueSeeder::class);
+    $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
+    $pro = Pro::factory()->approved()->create();
+    $pro->services()->attach(Service::query()->where('key', 'leak_repair')->sole());
+    $pro->serviceAreas()->attach(Suburb::query()->where('slug', 'musgrave')->sole());
     Storage::fake('media');
 });
 
@@ -36,7 +42,8 @@ function photoWizard(): Testable
 {
     $service = Service::query()->where('key', 'leak_repair')->sole();
 
-    return Livewire::test(Wizard::class, ['trade' => $service->trade, 'service' => $service]);
+    return Livewire::test(Wizard::class, ['trade' => $service->trade, 'service' => $service])
+        ->call('selectSuburb', 'musgrave')->call('next');
 }
 
 it('stores a processed photo privately and lets its owner remove it', function (): void {

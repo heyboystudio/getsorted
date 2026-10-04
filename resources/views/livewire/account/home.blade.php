@@ -38,5 +38,13 @@
             <span class="font-medium">{{ __('Saved properties') }}</span>
             <span aria-hidden="true">→</span>
         </a>
+        @if ($hasWaitlistRequests)
+            <div class="mt-6 rounded-xl border border-zinc-200 bg-white p-4">
+                <p class="font-medium">{{ __('Waitlist requests') }}</p>
+                <p class="mt-1 text-sm text-zinc-600">{{ __('You can remove all requests linked to your verified phone number.') }}</p>
+                <button type="button" wire:click="removeWaitlistRequests" wire:confirm="{{ __('Remove your waitlist requests?') }}" class="mt-3 text-sm text-red-700 underline">{{ __('Remove my waitlist requests') }}</button>
+            </div>
+        @endif
+        @if ($waitlistRemoved) <p class="mt-3 text-sm text-emerald-800" role="status">{{ __('Your waitlist requests were removed.') }}</p> @endif
     </section>
 </main>

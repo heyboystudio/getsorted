@@ -53,7 +53,7 @@ erDiagram
 |---|---|
 | `suburbs` | slug (unique; URL key), name (unique per municipality), region (berea_central/north/west/south), municipality, centroid (geography Point 4326), boundary (geography MultiPolygon, nullable), is_active — **in place** (`2026_10_04_000003`) |
 | `properties` | public_id, user_id, label, street_address (encrypted, hidden), suburb_id, location (geography Point; suburb centre until a geocoder exists), postal_code, property_type (house/flat/townhouse/business/other), deleted_at — **in place** |
-| `waitlist_entries` | phone_e164, first_name, suburb_text, service_id, created_at |
+| `waitlist_entries` | first_name, phone_e164, suburb_text, suburb_key, suburb_id (nullable), service_id, privacy_version, consented_at, timestamps; unique phone + suburb key + service; pruned after 12 months — **in place** (spec 006) |
 
 ### Catalogue (seeded from `docs/product/scoping/*.yaml`)
 | Table | Key columns |
@@ -67,10 +67,12 @@ Enums: `TradeStatus`, `QuestionType`, `RegistrationType` (`App\Domain\Catalogue\
 ### Pros
 | Table | Key columns |
 |---|---|
-| `pros` | public_id, user_id (unique), business_name, vat_number, status (applied/in_review/approved/paused/suspended/rejected), bio, base_location (Point), weekly_job_cap, rating_avg, rating_count, response_rate, median_response_minutes, approved_at |
-| `pro_services` | pro_id, service_id (unique pair) |
-| `pro_service_areas` | pro_id, suburb_id (unique pair) |
-| `pro_documents` | pro_id, type (id/pirb/electrical_registration/proof_of_address/reference/insurance), number (encrypted), status, verified_by, verified_at, expires_at, rejection_reason; file via media library |
+| `pros` | public_id, user_id (unique), status, business_name, weekly_job_cap, approved_at — **minimal eligibility schema in place** (spec 006); vat_number, bio, base_location, ratings and response metrics arrive with spec 008/009 |
+| `pro_services` | pro_id, service_id (unique pair) — **in place** |
+| `pro_service_areas` | pro_id, suburb_id (unique pair) — **in place** |
+| `pro_documents` | pro_id, type, status, verified_at, expires_at — **minimal registration check in place**; encrypted number, vetting attribution, rejection reason and file arrive with spec 008 |
+| `pro_job_allocations` | pro_id, service_job_id (unique pair), allocated_at — rolling weekly cap input, in place (spec 006); invite workflow will write records in spec 009 |
+| `pro_customer_exclusions` | pro_id + customer_id (unique pair), service_job_id, upheld_at — upheld dispute exclusion, in place (spec 006); dispute workflow will write records later |
 | `pro_bank_accounts` | pro_id, bank_name, account_holder, account_number (encrypted), branch_code, provider_recipient_ref, verified_at |
 | `pro_strikes` | pro_id, type, service_job_id, notes, created_by |
 

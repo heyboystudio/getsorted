@@ -2,7 +2,7 @@
 <main class="flex min-h-dvh items-start justify-center px-5 py-10">
     <section class="w-full max-w-md">
         <div class="mb-6 flex items-center justify-between text-sm">
-            @if ($step === 'questions' && $questionIndex === 0)
+            @if ($step === 'coverage')
                 <a href="{{ route('trades.show', $service->trade) }}" class="text-zinc-600 underline underline-offset-4">← {{ $service->trade->name }}</a>
             @else
                 <button type="button" wire:click="back" class="text-zinc-600 underline underline-offset-4">← {{ __('Back') }}</button>
@@ -17,7 +17,38 @@
 
         @error('post') <p class="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
 
-        @if ($step === 'questions' && $question)
+        @if ($step === 'coverage')
+            <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('Where do you need help?') }}</h1>
+            <p class="mt-1 text-sm text-zinc-500">{{ __('Check whether pros cover this service in your suburb.') }}</p>
+            <label for="coverage-suburb" class="mt-6 block text-sm font-medium">{{ __('Suburb') }}</label>
+            <input id="coverage-suburb" type="text" wire:model.live.debounce.300ms="suburbQuery" autocomplete="off" class="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3">
+            @if ($suburbSuggestions->isNotEmpty())
+                <div class="mt-2 space-y-1" role="listbox">
+                    @foreach ($suburbSuggestions as $suggestion)
+                        <button type="button" wire:key="coverage-{{ $suggestion->slug }}" wire:click="selectSuburb('{{ $suggestion->slug }}')" class="block w-full rounded-lg border border-zinc-200 bg-white px-3 py-3 text-left hover:border-emerald-700">{{ $suggestion->name }} @unless ($suggestion->is_active) · {{ __('Coming soon') }} @endunless</button>
+                    @endforeach
+                </div>
+            @endif
+            @error('suburbQuery') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+            <button type="button" wire:click="next" wire:loading.attr="disabled" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white disabled:opacity-60">{{ __('Check availability') }}</button>
+            <p wire:loading wire:target="next" class="mt-2 text-sm text-zinc-500">{{ __('Checking coverage…') }}</p>
+        @elseif ($step === 'waitlist')
+            <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('We’re not available there for this service yet') }}</h1>
+            <p class="mt-2 text-sm text-zinc-600">{{ __('Leave your details and we can contact you when availability changes. We cannot promise a date.') }}</p>
+            <label for="waitlist-name" class="mt-6 block text-sm font-medium">{{ __('First name') }}</label>
+            <input id="waitlist-name" type="text" wire:model="waitlistFirstName" class="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3">
+            @error('firstName') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+            <label for="waitlist-phone" class="mt-4 block text-sm font-medium">{{ __('Mobile number') }}</label>
+            <input id="waitlist-phone" type="tel" wire:model="waitlistPhone" class="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3">
+            @error('phone') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+            <label class="mt-5 flex items-start gap-3 text-sm"><input type="checkbox" wire:model="waitlistConsent" class="mt-1 size-4 rounded"> <span>{{ __('I agree that Sortd may contact me about availability for this service and suburb.') }} <a href="{{ route('privacy') }}" class="text-emerald-800 underline">{{ __('Privacy notice') }}</a></span></label>
+            @error('consent') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+            @error('waitlist') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+            <button type="button" wire:click="joinWaitlist" wire:loading.attr="disabled" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white disabled:opacity-60">{{ __('Join waitlist') }}</button>
+        @elseif ($step === 'waitlist_done')
+            <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('You’re on the waitlist') }}</h1>
+            <p class="mt-2 text-zinc-600">{{ __('We’ll contact you if availability changes. No job has been posted.') }}</p>
+        @elseif ($step === 'questions' && $question)
             <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ $question->prompt }}</h1>
             @unless ($question->required) <p class="mt-1 text-sm text-zinc-500">{{ __('Optional') }}</p> @endunless
 
@@ -110,6 +141,13 @@
                     <a href="{{ route('properties.create', ['return' => $bookingUrl]) }}" class="block rounded-xl border border-dashed border-zinc-300 px-4 py-4 text-center text-emerald-800">+ {{ __('Add a property') }}</a>
                 </div>
                 @error('property') <p class="mt-3 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                @error('suburbQuery') <p class="mt-3 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                @if ($pendingPropertySuburb && $selectedProperty)
+                    <div class="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-4">
+                        <p class="text-sm text-amber-950">{{ __('This property is in :suburb. Check coverage there instead?', ['suburb' => $selectedProperty->suburb->name]) }}</p>
+                        <button type="button" wire:click="confirmPropertySuburb" class="mt-3 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white">{{ __('Check this suburb') }}</button>
+                    </div>
+                @endif
                 <button type="button" wire:click="next" wire:loading.attr="disabled" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Next') }}</button>
             @endif
         @elseif ($step === 'when')

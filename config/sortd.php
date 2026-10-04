@@ -62,6 +62,14 @@ return [
         'max_kilobytes' => 10_240,
     ],
 
+    'waitlist' => [
+        'retention_months' => 12,
+        'submissions_per_hour' => 5,
+        'submissions_per_ip_hour' => 20,
+        'checks_per_hour' => 60,
+        'searches_per_hour' => 120,
+    ],
+
     'legal' => [
         // Placeholder documents until lawyer-reviewed text exists (spec 001 decision 1).
         'terms_version' => '2026-10-draft',

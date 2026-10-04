@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\Matching;
+
+use App\Models\Pro;
+use App\Models\Service;
+use App\Models\Suburb;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+
+final class EligibleProsQuery
+{
+    /** @return Builder<Pro> */
+    public function for(Service $service, Suburb $suburb, ?User $customer = null): Builder
+    {
+        return Pro::query()
+            ->where('status', 'approved')
+            ->whereNotNull('approved_at')
+            ->whereHas('services', fn (Builder $query): Builder => $query->whereKey($service->id))
+            ->whereHas('serviceAreas', fn (Builder $query): Builder => $query->whereKey($suburb->id))
+            ->where(function (Builder $query): void {
+                $query->whereNull('weekly_job_cap')->orWhereRaw('(select count(*) from pro_job_allocations where pro_job_allocations.pro_id = pros.id and allocated_at >= ?) < pros.weekly_job_cap', [now()->subDays(7)]);
+            })
+            ->when($customer instanceof User, function (Builder $query) use ($customer): void {
+                $query->whereNotExists(function (QueryBuilder $excluded) use ($customer): void {
+                    $excluded->selectRaw('1')->from('pro_customer_exclusions')
+                        ->whereColumn('pro_customer_exclusions.pro_id', 'pros.id')
+                        ->where('pro_customer_exclusions.customer_id', $customer->id);
+                });
+            })
+            ->when($service->requires_registration !== null, function (Builder $query) use ($service): void {
+                $query->whereHas('documents', fn (Builder $documents): Builder => $documents
+                    ->where('type', $service->requires_registration->value)
+                    ->where('status', 'verified')
+                    ->whereNotNull('verified_at')
+                    ->where(fn (Builder $valid): Builder => $valid->whereNull('expires_at')->orWhere('expires_at', '>', now())));
+            });
+    }
+
+    public function exists(Service $service, Suburb $suburb, ?User $customer = null): bool
+    {
+        return $suburb->is_active && $service->is_active && $service->trade->is_active
+            && $this->for($service, $suburb, $customer)->exists();
+    }
+}
