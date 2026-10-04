@@ -41,13 +41,14 @@ final readonly class RunInviteWave
             $created = [];
 
             foreach ($this->eligiblePros->rankedFor($locked, $size) as $pro) {
+                $invitedAt = now();
                 $invite = new ServiceJobInvite;
                 $invite->forceFill([
                     'service_job_id' => $locked->id,
                     'pro_id' => $pro->id,
                     'wave' => $previousWave + 1,
-                    'invited_at' => now(),
-                    'expires_at' => now()->addHours($this->settings->invite_expiry_hours),
+                    'invited_at' => $invitedAt,
+                    'expires_at' => $invitedAt->copy()->addHours($this->settings->invite_expiry_hours),
                 ])->save();
                 $created[] = $invite;
             }

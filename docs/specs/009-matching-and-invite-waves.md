@@ -73,4 +73,4 @@ When a customer posts a job, Sortd invites suitable vetted pros automatically, i
 - 2026-10-04: Drafted after spec 008 merged in PR #29. Awaiting founder approval and the three decisions above.
 - 2026-10-04: Founder approved the spec with all three recommended defaults.
 - 2026-10-04: Founder approved the build plan.
-- 2026-10-04: Build committed on `feat/009-matching`; privacy review also redacted free-text scoping answers on the pro invite page. Local quality gate passed (507 tests, 2,244 assertions), npm audit found no vulnerabilities, and both spec 009 migrations rolled back and reapplied on `sortd_testing`. PR #32 opened for review.
+- 2026-10-04: Build committed on `feat/009-matching`; privacy review also redacted free-text scoping answers on the pro invite page and revoked photo access when a pro is suspended. Local quality gate passed (507 tests, 2,245 assertions), npm audit found no vulnerabilities, and both spec 009 migrations rolled back and reapplied on `sortd_testing`. PR #32 opened for review.

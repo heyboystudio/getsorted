@@ -95,7 +95,7 @@ it('invites the first wave of five eligible pros after posting, each with a What
     expect($invites)->toHaveCount(5)
         ->and($invites->pluck('status')->unique()->all())->toBe([InviteStatus::Invited])
         ->and($invites->pluck('wave')->unique()->all())->toBe([1])
-        ->and($invites->first()->expires_at->toDateTimeString())->toBe(now()->addHours(24)->toDateTimeString())
+        ->and($invites->first()->expires_at->toDateTimeString())->toBe($invites->first()->invited_at->addHours(24)->toDateTimeString())
         ->and($job->fresh()->last_wave_at)->not->toBeNull();
 
     matchingMessages()->assertSent('job_invite', times: 5);

@@ -40,13 +40,14 @@ final readonly class InviteProManually
                 throw new CannotInvite(__('This pro cannot take this job (service, suburb, registration or status).'));
             }
 
+            $invitedAt = now();
             $invite = new ServiceJobInvite;
             $invite->forceFill([
                 'service_job_id' => $locked->id,
                 'pro_id' => $pro->id,
                 'wave' => max(1, (int) $locked->invites()->max('wave')),
-                'invited_at' => now(),
-                'expires_at' => now()->addHours($this->settings->invite_expiry_hours),
+                'invited_at' => $invitedAt,
+                'expires_at' => $invitedAt->copy()->addHours($this->settings->invite_expiry_hours),
                 'invited_by' => $admin->id,
             ])->save();
 

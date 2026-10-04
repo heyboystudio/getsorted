@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Matching\Enums\InviteStatus;
+use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\ServiceJobs\Actions\PostServiceJob;
 use App\Domain\ServiceJobs\Actions\SaveBookingDraft;
 use App\Domain\ServiceJobs\Actions\StoreJobPhoto;
@@ -123,6 +124,10 @@ it('shows job photos to the invited pro only, through a signed link (AC8, AC10)'
 
     $invite->forceFill(['status' => InviteStatus::Declined])->save();
     $this->actingAs($pro->user)->get($invite->photoUrl($photo))->assertNotFound();
+
+    $invite->forceFill(['status' => InviteStatus::Invited])->save();
+    $pro->forceFill(['status' => ProStatus::Suspended])->save();
+    $this->actingAs($pro->user)->get($url)->assertNotFound();
 });
 
 it('declines from the invite page with a reason (AC9)', function (): void {
