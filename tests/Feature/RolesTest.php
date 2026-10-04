@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Accounts\Enums\Role;
+use App\Filament\Admin\Pages\Auth\Login;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -46,6 +47,7 @@ it('sends an admin without MFA to set it up before the dashboard', function (): 
     $admin->assignRole(Role::AdminSuper->value);
 
     $this->actingAs($admin)
+        ->withSession([Login::SESSION_KEY => $admin->id])
         ->get('/admin')
         ->assertRedirect('/admin/multi-factor-authentication/set-up');
 });

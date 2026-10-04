@@ -7,9 +7,11 @@ namespace App\Integrations\Fakes;
 use App\Contracts\Data\MessageReceipt;
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Accounts\Support\PhoneNumbers;
 use Closure;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Assert;
+use RuntimeException;
 
 /**
  * Records messages instead of sending them. In local development it also logs
@@ -20,30 +22,34 @@ final class FakeMessagingChannel implements MessagingChannel
     /** @var list<OutgoingMessage> */
     private array $sent = [];
 
+    private bool $failNext = false;
+
+    /** Makes the next send throw, to test what happens when the provider is down. */
+    public function failNextSend(): self
+    {
+        $this->failNext = true;
+
+        return $this;
+    }
+
     public function send(OutgoingMessage $message): MessageReceipt
     {
+        if ($this->failNext) {
+            $this->failNext = false;
+
+            throw new RuntimeException('Fake messaging provider is unavailable.');
+        }
+
         $this->sent[] = $message;
 
         if (app()->environment('local')) {
             // Logs never contain full phone numbers, codes or tokens (security baseline §6).
-            Log::info('[fake messaging] '.$message->channel->value.' '.$message->template.' to '.self::maskPhone($message->phoneE164), [
+            Log::info('[fake messaging] '.$message->channel->value.' '.$message->template.' to '.PhoneNumbers::maskForLogs($message->phoneE164), [
                 'parameters' => array_keys($message->parameters),
             ]);
         }
 
         return new MessageReceipt('fake_msg_'.count($this->sent), $message->channel);
-    }
-
-    /** +27821234567 → +2782*****67 */
-    public static function maskPhone(string $phoneE164): string
-    {
-        $length = mb_strlen($phoneE164);
-
-        if ($length <= 6) {
-            return str_repeat('*', $length);
-        }
-
-        return mb_substr($phoneE164, 0, 4).str_repeat('*', $length - 6).mb_substr($phoneE164, -2);
     }
 
     /** @return list<OutgoingMessage> */

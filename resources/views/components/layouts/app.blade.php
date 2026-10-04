@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="{{ __('Sortd — local home services in Durban. Coming soon.') }}">
-        <title>{{ __('Sortd') }}</title>
+        <title>{{ isset($title) ? $title.' · '.__('Sortd') : __('Sortd') }}</title>
         <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles

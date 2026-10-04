@@ -29,7 +29,8 @@ final class CreateSuperAdminCommand extends Command
             return self::FAILURE;
         }
 
-        $name = text('Full name', required: true);
+        $firstName = text('First name', required: true);
+        $lastName = text('Last name', required: true);
         $email = mb_strtolower(trim(text('Email address', required: true)));
         $password = password('Password (at least 12 characters, upper and lower case, a number and a symbol)', required: true);
         $confirmation = password('Confirm password', required: true);
@@ -41,7 +42,7 @@ final class CreateSuperAdminCommand extends Command
         }
 
         try {
-            $user = $createSuperAdmin->run($name, $email, $password);
+            $user = $createSuperAdmin->handle($firstName, $lastName, $email, $password);
         } catch (ValidationException $exception) {
             foreach ($exception->validator->errors()->all() as $message) {
                 $this->error($message);

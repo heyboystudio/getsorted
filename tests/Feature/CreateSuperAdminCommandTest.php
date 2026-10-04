@@ -31,7 +31,8 @@ const STRONG_PASSWORD = 'Correct-Horse-42-Battery';
 function runCreateSuperAdmin(string $email, string $password, ?string $confirmation = null): PendingCommand
 {
     return test()->artisan('sortd:create-super-admin')
-        ->expectsQuestion('Full name', 'Founder Person')
+        ->expectsQuestion('First name', 'Founder')
+        ->expectsQuestion('Last name', 'Person')
         ->expectsQuestion('Email address', $email)
         ->expectsQuestion('Password (at least 12 characters, upper and lower case, a number and a symbol)', $password)
         ->expectsQuestion('Confirm password', $confirmation ?? $password);
@@ -45,7 +46,9 @@ it('creates a super-admin with a hashed password', function (): void {
     expect($user->hasRole(Role::AdminSuper->value))->toBeTrue()
         ->and($user->password)->not->toBe(STRONG_PASSWORD)
         ->and(Hash::check(STRONG_PASSWORD, $user->password))->toBeTrue()
-        ->and($user->email_verified_at)->not->toBeNull();
+        ->and($user->email_verified_at)->not->toBeNull()
+        ->and($user->first_name)->toBe('Founder')
+        ->and($user->last_name)->toBe('Person');
 });
 
 it('rejects weak passwords', function (string $password): void {

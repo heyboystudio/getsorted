@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Pages\Auth;
 
+use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Auth\Pages\Login as BaseLogin;
+use Filament\Facades\Filament;
 use Filament\Schemas\Schema;
 
 /**
@@ -13,6 +15,21 @@ use Filament\Schemas\Schema;
  */
 final class Login extends BaseLogin
 {
+    /** Marks a session as signed in through this page (password + MFA). */
+    public const string SESSION_KEY = 'admin.signed_in_user_id';
+
+    public function authenticate(): ?LoginResponse
+    {
+        $response = parent::authenticate();
+
+        // Null means another step (the MFA challenge) is still pending.
+        if ($response instanceof LoginResponse && Filament::auth()->check()) {
+            session()->put(self::SESSION_KEY, Filament::auth()->id());
+        }
+
+        return $response;
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema

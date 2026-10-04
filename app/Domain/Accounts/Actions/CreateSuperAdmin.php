@@ -21,12 +21,13 @@ final class CreateSuperAdmin
     /**
      * @throws ValidationException
      */
-    public function run(string $name, string $email, #[SensitiveParameter] string $password): User
+    public function handle(string $firstName, string $lastName, string $email, #[SensitiveParameter] string $password): User
     {
         $validated = Validator::make(
-            ['name' => $name, 'email' => $email, 'password' => $password],
+            ['first_name' => $firstName, 'last_name' => $lastName, 'email' => $email, 'password' => $password],
             [
-                'name' => ['required', 'string', 'max:255'],
+                'first_name' => ['required', 'string', 'max:100'],
+                'last_name' => ['required', 'string', 'max:100'],
                 'email' => ['required', 'string', 'lowercase', 'email:strict', 'max:255', 'unique:users,email'],
                 'password' => ['required', 'string', self::passwordRule()],
             ],
@@ -35,7 +36,8 @@ final class CreateSuperAdmin
         return DB::transaction(function () use ($validated): User {
             $user = new User;
             $user->forceFill([
-                'name' => $validated['name'],
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
                 'email' => $validated['email'],
                 'password' => $validated['password'],
                 'email_verified_at' => now(),
