@@ -1,6 +1,6 @@
 # Spec 006 · Coverage check and waitlist
 
-Status: In progress · Phase: 2 · Owner: founder
+Status: Done (merged in PR #25) · Phase: 2 · Owner: founder
 
 ## Goal
 Tell a customer whether Sortd can serve their chosen service and suburb before they answer booking questions. When coverage is unavailable, collect a small waitlist request so Sortd can follow up when service becomes available.
@@ -59,3 +59,4 @@ Tell a customer whether Sortd can serve their chosen service and suburb before t
 - 2026-10-04: Founder approved the build plan. Tests were written first; implementation adds the coverage step, eligibility query, waitlist, posting recheck, retention, aggregate admin demand, and a verified-customer removal path. Local-only demo coverage is seeded separately. Final checks and review are in progress.
 - 2026-10-04: Code and security review found missing capacity/dispute filters, no coverage throttle, property suburb confirmation, and possible personal data in unlisted suburb aggregates. Fixed and added regression tests; repeated waitlist submissions now remain idempotent when throttled.
 - 2026-10-04: Final review found that a throttled visitor could tell whether a phone was already waitlisted (duplicates skipped the throttle). Every submission is now throttled first and duplicates are absorbed by the unique key; a regression test covers it. `composer check` passed (330 tests, 1,460 assertions; 0 Larastan errors; no Composer advisories); `npm audit --audit-level=high` found 0 vulnerabilities; assets built and the coverage and waitlist steps were checked at 360 px. Awaiting PR review and founder merge approval.
+- 2026-10-04: PR #25 merged with founder approval.

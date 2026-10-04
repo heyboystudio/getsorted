@@ -11,8 +11,8 @@ Suggested first specs after Phase 0 (from the roadmap):
 | 003 | Catalogue seeded from scoping YAML + admin editing — [done](003-catalogue.md) | 1 |
 | 004 | Suburbs and properties with PostGIS lookup — [done](004-suburbs-and-properties.md) | 1 |
 | 005 | Booking flow: service → scoping → property → date → post — [done](005-booking-flow.md) (photos: separate spec) | 2 |
-| 006 | Coverage check + waitlist — [in progress](006-coverage-check-and-waitlist.md) | 2 |
-| 007 | AI scoping assistant (free text → service + summary) | 2 |
+| 006 | Coverage check + waitlist — [done](006-coverage-check-and-waitlist.md) | 2 |
+| 007 | AI scoping assistant (free text → service + summary) — [draft](007-ai-scoping-assistant.md) | 2 |
 | 008 | Pro application and vetting | 3 |
 | 009 | Matching and invite waves | 3 |
 | 010 | Quote builder and customer comparison | 3 |
