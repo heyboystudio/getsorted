@@ -18,8 +18,8 @@ use App\Models\Pro;
 use App\Models\Quote;
 use App\Models\ServiceJob;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * A new version of a pro's quote: replaces a sent one without using another
@@ -31,13 +31,10 @@ final readonly class ReviseQuote
 
     public function handle(User $user, Quote $quote, QuoteDraft $draft): Quote
     {
+        Gate::forUser($user)->authorize('revise', $quote);
         $pro = Pro::query()->findOrFail($quote->pro_id);
 
-        if ($pro->user_id !== $user->id) {
-            throw new AuthorizationException;
-        }
-
-        $totals = $this->calculator->calculate($draft, $pro->vat_number !== null);
+        $totals = $this->calculator->calculate($draft, $pro->isVatRegistered());
         $this->rules->check($draft, $totals);
         SubmitQuote::throttle($user);
 

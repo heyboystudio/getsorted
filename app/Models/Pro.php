@@ -112,6 +112,12 @@ final class Pro extends Model
         return $this->contact_masking_count >= 3;
     }
 
+    /** Pros with a VAT number add VAT to quotes (spec 010, decision 2). */
+    public function isVatRegistered(): bool
+    {
+        return filled($this->vat_number);
+    }
+
     /** @return HasMany<Quote, $this> */
     public function quotes(): HasMany
     {

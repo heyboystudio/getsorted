@@ -11,6 +11,7 @@ use App\Models\ServiceJob;
 /** Shared bookkeeping for quote actions; callers hold the job lock. */
 final class QuoteFlow
 {
+    /** The hard cap on quotes per job (AC4). The admin's matching.enough_quotes only stops new waves earlier. */
     public const int MAX_QUOTES = 3;
 
     /** Recount the job's current quotes; once full, close every other open invite (AC4). */

@@ -9,6 +9,7 @@ use App\Domain\Quotes\Data\QuoteTotals;
 use App\Domain\Quotes\Enums\LineKind;
 use App\Settings\QuoteSettings;
 use App\Support\LocalTime;
+use Brick\Math\BigDecimal;
 use Illuminate\Validation\ValidationException;
 
 /** What a quote may contain (spec 010, AC1, rules). Errors are keyed for the builder's fields. */
@@ -40,7 +41,9 @@ final readonly class QuoteRules
                 $errors["lines.{$index}.description"] = __('Describe the line in up to 120 characters.');
             }
 
-            if (preg_match('/^\d{1,4}(\.\d{1,2})?$/', $line->quantity) !== 1 || (float) $line->quantity < 0.01) {
+            if (preg_match('/^\d{1,4}(\.\d{1,2})?$/', $line->quantity) !== 1
+                || BigDecimal::of($line->quantity)->isLessThan('0.01')
+                || BigDecimal::of($line->quantity)->isGreaterThan(9999)) {
                 $errors["lines.{$index}.quantity"] = __('Enter a quantity from 0.01 to 9 999.');
             }
 

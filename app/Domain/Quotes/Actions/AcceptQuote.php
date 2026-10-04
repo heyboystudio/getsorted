@@ -16,8 +16,8 @@ use App\Models\Pro;
 use App\Models\Quote;
 use App\Models\ServiceJob;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * The customer accepts one quote (spec 010, AC8, AC10): the job is booked
@@ -30,9 +30,7 @@ final readonly class AcceptQuote
 
     public function handle(User $customer, Quote $quote): ServiceJob
     {
-        if (ServiceJob::query()->whereKey($quote->service_job_id)->value('customer_id') !== $customer->id) {
-            throw new AuthorizationException;
-        }
+        Gate::forUser($customer)->authorize('accept', $quote);
 
         [$job, $declined] = DB::transaction(function () use ($customer, $quote): array {
             $job = ServiceJob::query()->lockForUpdate()->findOrFail($quote->service_job_id);

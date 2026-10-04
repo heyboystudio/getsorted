@@ -12,14 +12,22 @@ use App\Domain\Assistant\Support\Redactor;
  */
 final class ContactMasker
 {
-    private const string BANK = '/\b(?:acc(?:ount)?|acc\s*no|a\/c|branch(?:\s*code)?|bank)\b[^\d\n]{0,20}\d[\d\s\-]{4,}\d/iu';
+    /** A banking word followed by six or more digits, grouped by at most single spaces or dashes. */
+    private const string BANK = '/\b(?:acc(?:ount)?|acc\s*no|a\/c|branch(?:\s*code)?|bank)\b[^\d\n]{0,20}(?:\d[\s\-]?){5,}\d/iu';
 
-    /** @return array{string, bool} masked text and whether anything was masked */
+    /**
+     * Ordinary text (e.g. "12 m²") comes back unchanged and unflagged.
+     *
+     * @return array{string, bool} masked text and whether anything was masked
+     */
     public static function mask(string $text): array
     {
-        $masked = (string) preg_replace(self::BANK, '[bank details]', $text);
-        $masked = Redactor::strip($masked);
+        $bankMasked = (string) preg_replace(self::BANK, '[bank details]', $text, -1, $bankHits);
 
-        return [$masked, $masked !== trim($text)];
+        if ($bankHits === 0 && ! Redactor::containsPersonalData($text)) {
+            return [trim($text), false];
+        }
+
+        return [Redactor::strip($bankMasked), true];
     }
 }

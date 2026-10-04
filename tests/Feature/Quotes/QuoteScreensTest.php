@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Pros\Enums\DocumentType;
 use App\Domain\Quotes\Actions\AcceptQuote;
+use App\Domain\Quotes\Actions\ReviseQuote;
 use App\Domain\Quotes\Actions\SubmitQuote;
+use App\Domain\Quotes\Actions\WithdrawQuote;
 use App\Domain\Quotes\Data\QuoteDraft;
 use App\Domain\Quotes\Data\QuoteLineData;
 use App\Domain\Quotes\Enums\LineKind;
@@ -145,7 +147,48 @@ it('tells a pro politely when the job is already full (AC4)', function (): void 
     }
     $this->actingAs($pros[3]->user);
 
-    Livewire::test(ProJob::class, ['invite' => screenInvite($job, $pros[3])])->assertSee('This job is no longer available');
+    Livewire::test(ProJob::class, ['invite' => screenInvite($job, $pros[3])])->assertSee('This job is full')->assertDontSee('Send a quote');
+});
+
+it('sends a quote once even when "Send quote" is tapped twice (AC3)', function (): void {
+    $pro = screenQuotingPro();
+    $job = screenQuoteJob();
+    $this->actingAs($pro->user);
+
+    Livewire::test(ProJob::class, ['invite' => screenInvite($job, $pro)])
+        ->call('startQuote')
+        ->set('lines.0.kind', 'labour')->set('lines.0.description', 'Replace washer')->set('lines.0.quantity', '1')->set('lines.0.unitPrice', '300')
+        ->call('preview')->call('submitQuote')->call('submitQuote')->assertHasNoErrors();
+
+    expect(Quote::query()->count())->toBe(1)->and(Quote::query()->sole()->version)->toBe(1);
+});
+
+it('previews masked text, notes, subtotals and dates exactly as the customer will see them (AC2, AC6)', function (): void {
+    $pro = screenQuotingPro();
+    $job = screenQuoteJob();
+    $this->actingAs($pro->user);
+
+    Livewire::test(ProJob::class, ['invite' => screenInvite($job, $pro)])
+        ->call('startQuote')
+        ->set('lines.0.kind', 'labour')->set('lines.0.description', 'Call 082 123 4567')->set('lines.0.quantity', '1')->set('lines.0.unitPrice', '120,50')
+        ->set('notes', 'Mail me@example.com, free on Monday')->set('validityDays', 7)
+        ->call('preview')->assertHasNoErrors()
+        ->assertSee('Call [phone]')->assertDontSee('082 123 4567')->assertDontSee('me@example.com')->assertSee('free on Monday')
+        ->assertSee('R 120.50')->assertSee('Labour')->assertSee('Valid until')->assertSee('Earliest start')
+        // The customer's own notes still show, separate from the pro's quote notes.
+        ->assertSee("Customer's notes")->assertSee('Under the sink.');
+});
+
+it('shows why a withdrawal failed instead of doing nothing (AC5)', function (): void {
+    $pro = screenQuotingPro();
+    $job = screenQuoteJob();
+    $quote = screenSubmit($job, $pro);
+    $this->actingAs($pro->user);
+
+    Livewire::test(ProJob::class, ['invite' => screenInvite($job, $pro)])
+        ->set('withdrawReason', '  ')->call('withdraw')->assertHasErrors('withdrawReason')->assertSee('Tell the customer briefly why.');
+
+    expect($quote->fresh()->status)->toBe(QuoteStatus::Submitted);
 });
 
 // --- Customer comparison (AC7, AC8) ------------------------------------------------------
@@ -162,6 +205,45 @@ it('shows the customer up to three quotes side by side with the pro\'s details (
         ->assertSee('Quotes (2 of 3)')->assertSee('Dlamini Plumbing')->assertSee('Naidoo Plumbing')
         ->assertSee('R 570.50')->assertSee('R 114.10')->assertSee('Can come tomorrow morning.')
         ->assertSee('Labour')->assertSee('Materials')->assertSee('On Sortd since');
+});
+
+it('shows "waiting for quotes" before any quote arrives (AC7, UX)', function (): void {
+    screenQuotingPro();
+    $job = screenQuoteJob();
+    $this->actingAs($job->customer);
+
+    Livewire::test(CustomerJob::class, ['job' => $job])->assertSee('Waiting for quotes')->assertDontSee('Accept this quote');
+});
+
+it('never offers withdrawn, superseded or out-of-date quotes to the customer (AC7, AC12)', function (): void {
+    $withdrawn = screenQuotingPro('Withdrawn Co');
+    $revised = screenQuotingPro('Revised Co');
+    $job = screenQuoteJob();
+    app(WithdrawQuote::class)->handle($withdrawn->user, screenSubmit($job, $withdrawn), 'Busy');
+    $old = screenSubmit($job, $revised);
+    app(ReviseQuote::class)->handle($revised->user, $old, new QuoteDraft(
+        [new QuoteLineData(LineKind::Labour, 'New price', '1', 99900)], 0, CarbonImmutable::now('Africa/Johannesburg')->addDay()->startOfDay(), 1, null,
+    ));
+    $this->actingAs($job->customer);
+
+    Livewire::test(CustomerJob::class, ['job' => $job])
+        ->assertDontSee('Withdrawn Co')->assertDontSee('R 570.50')->assertSee('R 999.00')->assertSee('Accept this quote');
+
+    // Past its valid-until date but before the scheduler runs: shown as expired, not acceptable.
+    $this->travel(2)->days();
+    Livewire::test(CustomerJob::class, ['job' => $job])
+        ->assertSee('This quote has expired')->assertDontSee('Accept this quote');
+});
+
+it('hides a pro\'s profile photo that admins have not verified (AC7, privacy)', function (): void {
+    $pro = screenQuotingPro();
+    $document = $pro->documents()->forceCreate(['type' => DocumentType::ProfilePhoto, 'status' => 'flagged']);
+    $document->addMedia(UploadedFile::fake()->image('me.jpg', 20, 20))->toMediaCollection('file', 'media');
+    $job = screenQuoteJob();
+    $quote = screenSubmit($job, $pro);
+
+    $this->actingAs($job->customer)->get($quote->proPhotoUrl())->assertNotFound();
+    expect($quote->fresh()->hasProPhoto())->toBeFalse();
 });
 
 it('shows a quoting pro\'s profile photo to the customer through a signed link only (AC7)', function (): void {
@@ -222,6 +304,12 @@ it('reveals the customer\'s contact details and address only to the accepted pro
     $this->actingAs($loser->user);
     Livewire::test(ProJob::class, ['invite' => screenInvite($job, $loser)])
         ->assertDontSee('7 Private Lane')->assertDontSee('829990000')->assertDontSee('Nomvula');
+
+    // The contact policy, both ways.
+    expect($winner->user->can('viewContact', $job->fresh()))->toBeTrue()
+        ->and($loser->user->can('viewContact', $job->fresh()))->toBeFalse()
+        ->and($job->customer->can('viewContact', $job->fresh()))->toBeFalse()
+        ->and($job->fresh()->events()->pluck('event_type')->all())->toContain('quote_accepted');
 });
 
 // --- Admin (AC13) ------------------------------------------------------------------------

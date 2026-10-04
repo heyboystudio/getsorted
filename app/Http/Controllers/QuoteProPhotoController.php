@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Domain\Pros\Enums\DocumentStatus;
 use App\Domain\Pros\Enums\DocumentType;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Models\Pro;
@@ -25,7 +26,9 @@ final class QuoteProPhotoController extends Controller
         abort_unless($user instanceof User && ServiceJob::query()->whereKey($quote->service_job_id)->value('customer_id') === $user->id, 404);
         abort_unless(in_array($quote->status, [QuoteStatus::Submitted, QuoteStatus::Accepted], true), 404);
 
-        $file = Pro::query()->with('documents.media')->findOrFail($quote->pro_id)->document(DocumentType::ProfilePhoto)?->file();
+        $photo = Pro::query()->with('documents.media')->findOrFail($quote->pro_id)->document(DocumentType::ProfilePhoto);
+        abort_unless($photo?->status === DocumentStatus::Verified, 404);
+        $file = $photo->file();
         abort_unless($file instanceof Media, 404);
 
         return Storage::disk('media')->response($file->getPathRelativeToRoot(), null, [

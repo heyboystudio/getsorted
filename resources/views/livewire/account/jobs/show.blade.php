@@ -17,7 +17,9 @@
             <div class="mt-6 rounded-xl border border-zinc-200 bg-white p-4" role="status">
                 <p class="font-medium">{{ __('Finding your pros') }}</p>
                 <p class="mt-1 text-sm text-zinc-600">
-                    @if ($invitedCount > 0)
+                    @if ($invitedCount > 0 && $quotes->isEmpty())
+                        {{ __('Waiting for quotes.') }} {{ trans_choice(':count pro invited so far.|:count pros invited so far.', $invitedCount, ['count' => $invitedCount]) }}
+                    @elseif ($invitedCount > 0)
                         {{ trans_choice(':count pro invited so far. Quotes will appear here.|:count pros invited so far. Quotes will appear here.', $invitedCount, ['count' => $invitedCount]) }}
                     @else
                         {{ __("We're still looking for a pro who can take this job. We'll WhatsApp you as soon as quotes come in.") }}

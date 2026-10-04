@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Pros\Enums\DocumentStatus;
 use App\Domain\Pros\Enums\DocumentType;
 use App\Domain\Quotes\Enums\QuoteStatus;
+use App\Support\LocalTime;
 use Brick\Money\Money;
 use Carbon\CarbonImmutable;
 use Database\Factories\QuoteFactory;
@@ -93,7 +95,7 @@ final class Quote extends Model
 
     public function isPastValidity(): bool
     {
-        return $this->valid_until->endOfDay()->isPast();
+        return $this->valid_until->toDateString() < LocalTime::today()->toDateString();
     }
 
     /** A five-minute link to the quoting pro's profile photo for the job's customer (AC7). */
@@ -104,7 +106,9 @@ final class Quote extends Model
 
     public function hasProPhoto(): bool
     {
-        return $this->pro->document(DocumentType::ProfilePhoto)?->file() !== null;
+        $photo = $this->pro->document(DocumentType::ProfilePhoto);
+
+        return $photo?->status === DocumentStatus::Verified && $photo->file() !== null;
     }
 
     /** @return array<string, string> */

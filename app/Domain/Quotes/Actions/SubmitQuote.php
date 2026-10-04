@@ -33,7 +33,7 @@ final readonly class SubmitQuote
     {
         Gate::forUser($user)->authorize('view', $invite);
         $pro = Pro::query()->findOrFail($invite->pro_id);
-        $totals = $this->calculator->calculate($draft, $pro->vat_number !== null);
+        $totals = $this->calculator->calculate($draft, $pro->isVatRegistered());
         $this->rules->check($draft, $totals);
         self::throttle($user);
 

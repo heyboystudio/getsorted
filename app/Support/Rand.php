@@ -19,10 +19,23 @@ final class Rand
         return ($cents < 0 ? '-' : '').'R '.$whole.'.'.$fraction;
     }
 
-    /** "1234", "1234.5" or "1 234.50" → cents; null when it is not a plain rand amount. */
+    /**
+     * "1234", "1234.5", "1 234.50", "1,234.50" or "120,50" → cents; null when it is not a plain rand amount.
+     * A comma before one or two final digits is a decimal comma, never a thousands separator.
+     */
     public static function toCents(string $input): ?int
     {
-        $clean = str_replace([' ', 'R', 'r', ','], '', trim($input));
+        $clean = str_replace([' ', "\u{00A0}", 'R', 'r'], '', trim($input));
+
+        if (preg_match('/^\d+,\d{1,2}$/', $clean) === 1) {
+            $clean = str_replace(',', '.', $clean);
+        } elseif (str_contains($clean, ',')) {
+            if (preg_match('/^\d{1,3}(,\d{3})+(\.\d{1,2})?$/', $clean) !== 1) {
+                return null;
+            }
+
+            $clean = str_replace(',', '', $clean);
+        }
 
         if (preg_match('/^\d{1,9}(\.\d{1,2})?$/', $clean) !== 1) {
             return null;

@@ -5,8 +5,13 @@
 
         @if ($job === null)
             <div class="mt-8 rounded-xl border border-zinc-200 bg-white p-6 text-center">
-                <p class="text-lg font-medium">{{ __('This job is no longer available') }}</p>
-                <p class="mt-2 text-zinc-600">{{ __('It may have expired, been filled, or you already answered it.') }}</p>
+                @if ($full ?? false)
+                    <p class="text-lg font-medium">{{ __('This job is full') }}</p>
+                    <p class="mt-2 text-zinc-600">{{ __('The customer already has three quotes. We\'ll WhatsApp you about the next job that fits.') }}</p>
+                @else
+                    <p class="text-lg font-medium">{{ __('This job is no longer available') }}</p>
+                    <p class="mt-2 text-zinc-600">{{ __('It may have expired, been filled, or you already answered it.') }}</p>
+                @endif
             </div>
         @else
             <p class="mt-6 text-sm font-medium uppercase tracking-widest text-emerald-800">{{ $job->service->trade->name }}</p>
@@ -47,8 +52,8 @@
                 @foreach ($answers as $answer)
                     <div><dt class="text-zinc-500">{{ $answer['prompt'] }}</dt><dd>{{ is_array($answer['answer']) ? implode(', ', $answer['answer']) : ($answer['type'] === 'yes_no' ? __(ucfirst((string) $answer['answer'])) : $answer['answer']) }}</dd></div>
                 @endforeach
-                @if ($notes)
-                    <div><dt class="text-zinc-500">{{ __("Customer's notes") }}</dt><dd class="whitespace-pre-line">{{ $notes }}</dd></div>
+                @if ($customerNotes)
+                    <div><dt class="text-zinc-500">{{ __("Customer's notes") }}</dt><dd class="whitespace-pre-line">{{ $customerNotes }}</dd></div>
                 @endif
             </dl>
 
@@ -73,8 +78,9 @@
                             <div x-data="{ open: false }">
                                 <button type="button" x-on:click="open = ! open" class="w-full rounded-lg border border-zinc-300 px-4 py-3 font-medium">{{ __('Withdraw') }}</button>
                                 <div x-show="open" x-cloak class="mt-2 space-y-2">
-                                    <input type="text" wire:model="withdrawReason" maxlength="300" placeholder="{{ __('Why? The customer will see this.') }}" class="block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
-                                    @error('withdrawReason') <p class="text-sm text-red-700">{{ $message }}</p> @enderror
+                                    <input type="text" wire:model="withdrawReason" maxlength="300" placeholder="{{ __('Why are you withdrawing?') }}" class="block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm">
+                                    @error('withdrawReason') <p class="text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                                    @error('quote') <p class="text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                                     <button type="button" wire:click="withdraw" wire:loading.attr="disabled" wire:target="withdraw" class="w-full rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">{{ __('Withdraw quote') }}</button>
                                 </div>
                             </div>
@@ -135,15 +141,27 @@
                     @elseif ($previewTotals)
                         <p class="mt-2 text-sm text-zinc-600">{{ __('This is what the customer will see.') }}</p>
                         <dl class="mt-3 space-y-1 text-sm">
-                            @foreach ($lines as $index => $line)
-                                <div class="flex justify-between gap-3"><dt>{{ $line['description'] }} <span class="text-zinc-500">({{ $line['quantity'] }})</span></dt><dd>{{ $R::format($previewTotals->lineTotalsCents[$index]) }}</dd></div>
+                            @foreach (array_values($lines) as $index => $line)
+                                <div class="flex justify-between gap-3"><dt>{{ \App\Domain\Quotes\Enums\LineKind::tryFrom((string) $line['kind'])?->label() }}: {{ $previewText['lines'][$index] }} <span class="text-zinc-500">({{ $line['quantity'] }})</span></dt><dd>{{ $R::format($previewTotals->lineTotalsCents[$index]) }}</dd></div>
                             @endforeach
+                            <div class="flex justify-between gap-3 border-t border-zinc-200 pt-2 text-zinc-600"><dt>{{ __('Labour') }}</dt><dd>{{ $R::format($previewTotals->labourCents) }}</dd></div>
+                            <div class="flex justify-between gap-3 text-zinc-600"><dt>{{ __('Materials') }}</dt><dd>{{ $R::format($previewTotals->materialsCents) }}</dd></div>
+                            @if ($previewTotals->calloutCents > 0)
+                                <div class="flex justify-between gap-3 text-zinc-600"><dt>{{ __('Call-out') }}</dt><dd>{{ $R::format($previewTotals->calloutCents) }}</dd></div>
+                            @endif
                             @if ($previewTotals->vatCents > 0)
                                 <div class="flex justify-between gap-3 text-zinc-600"><dt>{{ __('VAT') }}</dt><dd>{{ $R::format($previewTotals->vatCents) }}</dd></div>
                             @endif
                             <div class="flex justify-between gap-3 border-t border-zinc-200 pt-2 font-semibold"><dt>{{ __('Total') }}</dt><dd>{{ $R::format($previewTotals->totalCents) }}</dd></div>
                             <div class="flex justify-between gap-3"><dt>{{ __('Deposit') }}</dt><dd>{{ $R::format($previewTotals->depositCents) }}</dd></div>
+                            @if ($previewText['start'])
+                                <div class="flex justify-between gap-3 text-zinc-600"><dt>{{ __('Earliest start') }}</dt><dd>{{ $previewText['start'] }}</dd></div>
+                            @endif
+                            <div class="flex justify-between gap-3 text-zinc-600"><dt>{{ __('Valid until') }}</dt><dd>{{ $previewText['validUntil'] }}</dd></div>
                         </dl>
+                        @if ($previewText['notes'])
+                            <p class="mt-3 whitespace-pre-line text-sm text-zinc-700">{{ $previewText['notes'] }}</p>
+                        @endif
                         <div class="mt-4 rounded-lg bg-zinc-50 p-3 text-sm">
                             <p class="font-medium">{{ __('Estimated payout: :amount', ['amount' => $R::format($previewTotals->payoutEstimateCents)]) }}</p>
                             <p class="mt-1 text-zinc-600">{{ __('After Sortd\'s commission of about :amount on labour and call-out. This is an estimate.', ['amount' => $R::format($previewTotals->commissionEstimateCents)]) }}</p>

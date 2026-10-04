@@ -19,7 +19,9 @@ use App\Domain\Quotes\Data\QuoteTotals;
 use App\Domain\Quotes\Enums\LineKind;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Exceptions\CannotQuote;
+use App\Domain\Quotes\Support\ContactMasker;
 use App\Domain\Quotes\Support\QuoteCalculator;
+use App\Domain\Quotes\Support\QuoteFlow;
 use App\Domain\Quotes\Support\QuoteRules;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Livewire\Pros\Jobs\Concerns\EnsuresApprovedPro;
@@ -178,13 +180,18 @@ final class Show extends Component
     {
         $this->resetErrorBag();
         $draft = $this->draft();
-        $totals = $calculator->calculate($draft, $this->currentPro()->vat_number !== null);
+        $totals = $calculator->calculate($draft, $this->currentPro()->isVatRegistered());
         $this->remap(fn () => $rules->check($draft, $totals));
         $this->previewing = true;
     }
 
     public function submitQuote(SubmitQuote $submitQuote, ReviseQuote $reviseQuote): void
     {
+        // Only from the preview, so a double tap or retry cannot send a second version (AC3).
+        if (! $this->building || ! $this->previewing) {
+            return;
+        }
+
         $this->resetErrorBag();
         $draft = $this->draft();
         $existing = $this->myQuote();
@@ -209,7 +216,7 @@ final class Show extends Component
         abort_unless($quote instanceof Quote, 404);
 
         try {
-            $withdrawQuote->handle($this->currentUser(), $quote, $this->withdrawReason);
+            $this->remap(fn () => $withdrawQuote->handle($this->currentUser(), $quote, $this->withdrawReason));
         } catch (CannotQuote $exception) {
             throw ValidationException::withMessages(['withdrawReason' => $exception->getMessage()]);
         }
@@ -227,7 +234,9 @@ final class Show extends Component
         $hasOpenQuote = $quote instanceof Quote && in_array($quote->status, [QuoteStatus::Submitted, QuoteStatus::Expired], true) && $job->status === ServiceJobStatus::Open;
 
         if (! $accepted && ! $canQuote && ! $hasOpenQuote && ! $this->sent) {
-            return view('livewire.pros.jobs.show', ['invite' => $invite, 'job' => null]);
+            $full = $invite->status === InviteStatus::Closed && $job->status === ServiceJobStatus::Open && $job->quotes_count >= QuoteFlow::MAX_QUOTES;
+
+            return view('livewire.pros.jobs.show', ['invite' => $invite, 'job' => null, 'full' => $full]);
         }
 
         $description = $job->ai_summary === null ? null : Redactor::strip($job->ai_summary);
@@ -244,7 +253,8 @@ final class Show extends Component
                 return $answer;
             }, $job->orderedAnswers()),
             'description' => $description === '' ? null : $description,
-            'notes' => $notes === '' || $notes === $description ? null : $notes,
+            // Not "notes": that name is the quote builder's own field on this component.
+            'customerNotes' => $notes === '' || $notes === $description ? null : $notes,
             'photoUrls' => $job->getMedia(ServiceJob::PHOTO_COLLECTION)->map(fn ($photo): string => $invite->photoUrl($photo))->all(),
             'invitedCount' => $job->invites()->count(),
             'quotesCount' => $job->quotes_count,
@@ -253,7 +263,7 @@ final class Show extends Component
             'quote' => $quote,
             'accepted' => $accepted,
             // Contact details only for the pro whose quote was accepted (AC9).
-            'contact' => $accepted ? [
+            'contact' => $accepted && $this->currentUser()->can('viewContact', $job) ? [
                 'name' => $job->customer->first_name,
                 'phone' => $job->customer->phone_e164,
                 'label' => $job->property?->label,
@@ -261,15 +271,34 @@ final class Show extends Component
                 'suburb' => $job->property?->suburb?->name,
             ] : null,
             'previewTotals' => $this->building && $this->previewing ? $this->previewTotals($calculator) : null,
+            'previewText' => $this->building && $this->previewing ? $this->previewText() : null,
             'lineKinds' => LineKind::cases(),
             'maxDeposit' => app(QuoteSettings::class)->max_deposit_percent,
         ]);
     }
 
+    /**
+     * Line descriptions and notes masked exactly as the customer will see them (AC2, AC6).
+     *
+     * @return array{lines: list<string>, notes: ?string, start: ?string, validUntil: string}
+     */
+    private function previewText(): array
+    {
+        $start = CarbonImmutable::createFromFormat('Y-m-d', $this->earliestStartDate, LocalTime::timezone());
+        $notes = trim($this->notes) === '' ? null : ContactMasker::mask($this->notes)[0];
+
+        return [
+            'lines' => array_map(static fn (array $line): string => ContactMasker::mask((string) $line['description'])[0], array_values($this->lines)),
+            'notes' => $notes,
+            'start' => $start instanceof CarbonImmutable ? $start->translatedFormat('D j M') : null,
+            'validUntil' => LocalTime::today()->addDays(max(1, $this->validityDays))->translatedFormat('D j M'),
+        ];
+    }
+
     private function previewTotals(QuoteCalculator $calculator): ?QuoteTotals
     {
         try {
-            return $calculator->calculate($this->draft(), $this->currentPro()->vat_number !== null);
+            return $calculator->calculate($this->draft(), $this->currentPro()->isVatRegistered());
         } catch (ValidationException) {
             return null;
         }
@@ -340,6 +369,7 @@ final class Show extends Component
             $key === 'deposit_percent' => 'depositPercent',
             $key === 'earliest_start_date' => 'earliestStartDate',
             $key === 'validity_days' => 'validityDays',
+            $key === 'withdraw_reason' => 'withdrawReason',
             default => $key,
         };
     }

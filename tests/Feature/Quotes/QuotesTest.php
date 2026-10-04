@@ -15,6 +15,7 @@ use App\Domain\Quotes\Data\QuoteLineData;
 use App\Domain\Quotes\Enums\LineKind;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Exceptions\CannotQuote;
+use App\Domain\Quotes\Support\ContactMasker;
 use App\Domain\Quotes\Support\QuoteCalculator;
 use App\Domain\ServiceJobs\Actions\PostServiceJob;
 use App\Domain\ServiceJobs\Actions\SaveBookingDraft;
@@ -32,6 +33,7 @@ use App\Models\Suburb;
 use App\Models\User;
 use App\Settings\MatchingSettings;
 use App\Settings\QuoteSettings;
+use App\Support\Rand;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CatalogueSeeder;
 use Database\Seeders\SuburbSeeder;
@@ -40,6 +42,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Spatie\Activitylog\Models\Activity;
 
 uses(RefreshDatabase::class);
 
@@ -231,6 +234,50 @@ it('masks contact and bank details in quotes and flags repeat offenders (AC6)', 
     expect($pro->fresh()->contact_masking_count)->toBe(3)->and($pro->fresh()->isMaskingFlagged())->toBeTrue();
 });
 
+it('leaves ordinary trade wording alone and does not flag it (AC6)', function (string $text): void {
+    expect(ContactMasker::mask($text))->toBe([$text, false]);
+})->with(['Tile 12 m²', '½ day labour', 'Branch line 22 - 22 - 15', 'Bank of the river: 3 m pipe', 'Fix 2 taps on 12/10/2026']);
+
+it('still masks bank account and branch numbers (AC6)', function (string $text): void {
+    [$masked, $changed] = ContactMasker::mask($text);
+
+    expect($changed)->toBeTrue()->and($masked)->toContain('[bank details]');
+})->with(['Acc no 62 1234 5678', 'Branch code 250655', 'Pay into account 1234-5678-90']);
+
+it('reads rand amounts the way South Africans type them (AC1)', function (string $input, ?int $cents): void {
+    expect(Rand::toCents($input))->toBe($cents);
+})->with([
+    ['350', 35000], ['120.50', 12050], ['120,50', 12050], ['120,5', 12050], ['R 1 234,50', 123450],
+    ['1 234.50', 123450], ['1,234.50', 123450], ['1,234', 123400], ['12,3456', null], ['1,23,4', null], ['abc', null], ['-5', null],
+]);
+
+it('refuses a quantity above 9 999 (AC1)', function (): void {
+    [$pro] = quotingPros(1);
+
+    try {
+        submitFor(postedJob(), $pro, new QuoteDraft([new QuoteLineData(LineKind::Labour, 'Lots', '9999.99', 100)], 0, CarbonImmutable::now()->addDay(), 7, null));
+        $this->fail('Expected a validation error.');
+    } catch (ValidationException $exception) {
+        expect($exception->errors())->toHaveKey('lines.0.quantity');
+    }
+});
+
+it('limits how often a pro can send, revise or withdraw quotes (security)', function (): void {
+    config()->set('sortd.quotes.changes_per_hour', 2);
+    [$pro] = quotingPros(1);
+    $job = postedJob();
+    $quote = submitFor($job, $pro);
+    app(ReviseQuote::class)->handle($pro->user, $quote, draftQuote());
+
+    try {
+        app(WithdrawQuote::class)->handle($pro->user, $quote->fresh()->latestVersion(), 'Busy');
+        $this->fail('Expected the rate limit.');
+    } catch (ValidationException $exception) {
+        expect($exception->errors())->toHaveKey('quote');
+    }
+    expect(Quote::query()->where('status', QuoteStatus::Submitted)->count())->toBe(1);
+});
+
 // --- Revising and withdrawing (AC5) ------------------------------------------------------
 
 it('revises a quote as a new version without using another slot (AC5)', function (): void {
@@ -261,6 +308,9 @@ it('withdraws a quote with a reason, freeing the slot (AC5)', function (): void 
         ->and($quote->fresh()->withdraw_reason)->toBe('Double-booked that week.')
         ->and($job->fresh()->quotes_count)->toBe(0);
     quoteMessages()->assertSent('quote_withdrawn');
+    $entry = Activity::query()->where('description', 'quote_withdrawn')->sole();
+    expect($entry->causer_id)->toBe($pro->user_id)->and($entry->subject_id)->toBe($job->id)
+        ->and($entry->properties['reason'])->toBe('Double-booked that week.');
 });
 
 it('lets only the quoting pro revise or withdraw (AC5, security)', function (): void {
@@ -341,7 +391,15 @@ it('refuses to accept the wrong quote, twice, or for someone else (AC10)', funct
     } catch (CannotQuote|AuthorizationException) {
         // Refused, as expected.
     }
-    expect(Quote::query()->where('status', QuoteStatus::Accepted)->count())->toBeLessThanOrEqual($case === 'twice' ? 1 : 0);
+    // Nothing else changed: the job stays open (or keeps only the first acceptance) and no extra allocation is written.
+    expect(Quote::query()->where('status', QuoteStatus::Accepted)->count())->toBe($case === 'twice' ? 1 : 0)
+        ->and($job->fresh()->status)->toBe($case === 'twice' ? ServiceJobStatus::AwaitingDeposit : ServiceJobStatus::Open)
+        ->and(DB::table('pro_job_allocations')->count())->toBe($case === 'twice' ? 1 : 0)
+        ->and($job->events()->where('event_type', 'quote_accepted')->count())->toBe($case === 'twice' ? 1 : 0);
+
+    if ($case !== 'twice') {
+        expect($job->invites()->where('status', InviteStatus::Closed)->count())->toBe($case === 'withdrawn' ? 1 : 0);
+    }
 })->with(['another customer', 'withdrawn', 'superseded', 'past its validity', 'twice', 'suspended pro']);
 
 // --- Timers (AC11, AC12) -------------------------------------------------------------
@@ -358,7 +416,8 @@ it('expires a job with no accepted quote after the quote window, safely twice (A
     expect($job->fresh()->status)->toBe(ServiceJobStatus::Expired)
         ->and($quote->fresh()->status)->toBe(QuoteStatus::Expired)
         ->and(inviteFor($job, $waiting)->status)->toBe(InviteStatus::Closed)
-        ->and($job->events()->where('event_type', 'job_expired')->count())->toBe(1);
+        ->and($job->events()->where('event_type', 'job_expired')->count())->toBe(1)
+        ->and(Activity::query()->where('description', 'job_expired')->where('subject_id', $job->id)->count())->toBe(1);
     quoteMessages()->assertSent('job_expired', times: 1);
 });
 

@@ -52,6 +52,7 @@ final readonly class ExpireQuotesAndJobs
                     $job->invites()->whereIn('status', InviteStatus::open())->update(['status' => InviteStatus::Closed->value, 'responded_at' => now(), 'updated_at' => now()]);
                     $job->forceFill(['quotes_count' => 0]);
                     $this->stateMachine->transition($job, ServiceJobStatus::Expired, 'job_expired', ActorType::System, null);
+                    activity()->performedOn($job)->log('job_expired');
 
                     return true;
                 });

@@ -26,7 +26,7 @@
                 @endphp
                 <article wire:key="quote-{{ $quote->public_id }}" class="rounded-xl border border-zinc-200 bg-white p-4">
                     <div class="flex items-center gap-3">
-                        @if ($pro->document(\App\Domain\Pros\Enums\DocumentType::ProfilePhoto)?->file())
+                        @if ($quote->hasProPhoto())
                             <img src="{{ $quote->proPhotoUrl() }}" alt="" class="size-12 rounded-full object-cover">
                         @endif
                         <div>
@@ -58,7 +58,9 @@
                             @endforeach
                         </ul>
                     </details>
-                    @if ($pro->status !== \App\Domain\Pros\Enums\ProStatus::Approved)
+                    @if ($quote->isPastValidity())
+                        <p class="mt-4 text-sm text-zinc-600">{{ __('This quote has expired.') }}</p>
+                    @elseif ($pro->status !== \App\Domain\Pros\Enums\ProStatus::Approved)
                         <p class="mt-4 text-sm text-zinc-600">{{ __('This pro is unavailable.') }}</p>
                     @else
                         <button type="button" wire:click="confirmAccept('{{ $quote->public_id }}')" class="mt-4 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Accept this quote') }}</button>
