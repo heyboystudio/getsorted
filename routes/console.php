@@ -25,3 +25,6 @@ Schedule::command('model:prune', ['--model' => [AiUsage::class]])->daily();
 
 // Spec 008: vetting records of rejected or abandoned applications (POPIA retention).
 Schedule::command('sortd:prune-vetting-records')->daily();
+
+// Spec 009: invite waves, expiry and closing.
+Schedule::command('sortd:run-matching')->everyFiveMinutes()->withoutOverlapping();

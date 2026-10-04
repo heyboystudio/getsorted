@@ -39,6 +39,8 @@ final class Show extends Component
         return view('livewire.account.jobs.show', [
             'job' => $job,
             'justPosted' => session('job_posted') === true,
+            // A count only: customers never see who was invited (spec 009, AC13).
+            'invitedCount' => $job->invites()->count(),
         ])->title($job->service->name);
     }
 }

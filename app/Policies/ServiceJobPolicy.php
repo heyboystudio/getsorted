@@ -33,6 +33,12 @@ final class ServiceJobPolicy
         return $this->owns($user, $job) && $job->status === ServiceJobStatus::Draft;
     }
 
+    /** Manual invites and stopping waves (spec 009, AC11). */
+    public function manageMatching(User $user, ServiceJob $job): bool
+    {
+        return $user->hasAnyRole([Role::AdminSupport->value, Role::AdminSuper->value]);
+    }
+
     public function delete(User $user, ServiceJob $job): bool
     {
         return false;

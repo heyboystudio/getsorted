@@ -16,6 +16,7 @@ use App\Domain\ServiceJobs\ServiceJobStateMachine;
 use App\Domain\ServiceJobs\Support\JobSummaryInput;
 use App\Domain\ServiceJobs\Support\ScopingAnswers;
 use App\Jobs\SendJobPostedMessage;
+use App\Jobs\StartMatching;
 use App\Models\Property;
 use App\Models\ServiceJob;
 use App\Models\User;
@@ -67,6 +68,7 @@ final readonly class PostServiceJob
         RateLimiter::hit($limitKey, 24 * 60 * 60);
 
         SendJobPostedMessage::dispatch($job->id);
+        StartMatching::dispatch($job->id);
 
         return $job;
     }
