@@ -15,5 +15,5 @@ Decisions the founder still needs to make. Claude Code must **not** decide these
 | Q9 | Launch suburbs: which 2–3 regions first? | Berea/central + North | Matching seed data |
 | Q10 | Hosting provider and region | **Decided:** a South African provider, specific host chosen when first needed (decision 014) | Deployment |
 | Q11 | Brand: name "Sortd" cleared (CIPC, trademark, domain)? | Working name | Public site |
-| Q12 | Will pros pay anything to join (vetting fee)? | Free | Onboarding |
+| Q12 | Will pros pay anything to join (vetting fee)? | **Decided 2026-10-04: free** (spec 011) | Onboarding |
 | Q13 | Business hours for support and SLA for disputes? | Weekdays 08:00–17:00, 2 business days | Admin |
