@@ -1,6 +1,6 @@
 # Spec 010 · Quote builder, comparison and acceptance
 
-Status: Approved · Phase: 3 · Owner: founder
+Status: Done (awaiting merge) · Phase: 3 · Owner: founder
 
 ## Goal
 An invited pro can send an itemised quote from their phone. The customer compares up to three quotes side by side and accepts one. The job is then booked with that pro, who gets the customer's contact details and address. This completes Phase 3. Paying deposits and final invoices is Phase 4.
@@ -98,3 +98,17 @@ An invited pro can send an itemised quote from their phone. The customer compare
 ## Progress
 - 2026-10-04: Drafted after spec 009 merged in PR #32 and the docs refresh in PR #33. Awaiting founder approval and the three decisions above.
 - 2026-10-04: Founder approved the spec with all three recommended defaults.
+- 2026-10-04: Founder approved the build plan.
+- 2026-10-04: Build committed on `feat/010-quotes`. A combined code, security and spec review found and we fixed:
+  - withdrawals and job expiries were missing from the activity log;
+  - an empty withdraw reason failed silently;
+  - "120,50" was read as R12 050 (it now means R120.50);
+  - a double tap on "Send quote" could send a revision;
+  - "m²" and "½" were wrongly counted as contact masking;
+  - the preview didn't show the masked text, notes, subtotals or dates;
+  - the "Waiting for quotes", "This quote has expired" and "This job is full" states were missing;
+  - quote authorisation now uses `QuotePolicy` and `ServiceJobPolicy::viewContact`;
+  - expiry is now compared by South African date;
+  - only verified profile photos are shown.
+
+  The new tests also caught a naming clash on the pro's job page that hid the customer's notes behind the pro's own quote notes; that is fixed and tested too.

@@ -28,3 +28,6 @@ Schedule::command('sortd:prune-vetting-records')->daily();
 
 // Spec 009: invite waves, expiry and closing.
 Schedule::command('sortd:run-matching')->everyFiveMinutes()->withoutOverlapping();
+
+// Spec 010: quote validity and the job quote window.
+Schedule::command('sortd:expire-quotes')->everyFiveMinutes()->withoutOverlapping();

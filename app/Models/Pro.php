@@ -38,6 +38,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $suspended_at
  * @property CarbonImmutable|null $reapply_after
  * @property CarbonImmutable|null $last_activity_at
+ * @property int $contact_masking_count
  * @property CarbonImmutable $created_at
  */
 final class Pro extends Model
@@ -105,6 +106,24 @@ final class Pro extends Model
         return $this->hasMany(ServiceJobInvite::class);
     }
 
+    /** Repeated attempts to share contact details in quotes (spec 010, AC6). */
+    public function isMaskingFlagged(): bool
+    {
+        return $this->contact_masking_count >= 3;
+    }
+
+    /** Pros with a VAT number add VAT to quotes (spec 010, decision 2). */
+    public function isVatRegistered(): bool
+    {
+        return filled($this->vat_number);
+    }
+
+    /** @return HasMany<Quote, $this> */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class);
+    }
+
     /** @return HasMany<ProEvent, $this> */
     public function events(): HasMany
     {
@@ -135,6 +154,7 @@ final class Pro extends Model
             'status' => ProStatus::class,
             'business_type' => BusinessType::class,
             'weekly_job_cap' => 'integer',
+            'contact_masking_count' => 'integer',
             'vetting_consent_at' => 'immutable_datetime',
             'submitted_at' => 'immutable_datetime',
             'decided_at' => 'immutable_datetime',

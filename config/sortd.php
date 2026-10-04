@@ -73,6 +73,11 @@ return [
         'searches_per_hour' => 120,
     ],
 
+    'quotes' => [
+        // Abuse protection for sending, revising and withdrawing quotes (spec 010).
+        'changes_per_hour' => 30,
+    ],
+
     'matching' => [
         // Abuse protection for pros turning invites down (spec 009).
         'declines_per_hour' => 30,

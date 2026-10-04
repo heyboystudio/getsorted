@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\JobPhotoController;
 use App\Http\Controllers\ProDocumentController;
 use App\Http\Controllers\ProJobPhotoController;
+use App\Http\Controllers\QuoteProPhotoController;
 use App\Http\Controllers\ShowTradeController;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsurePhoneIsVerified;
@@ -42,6 +43,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/app/jobs/{job}/photos/{photo}', JobPhotoController::class)->name('job-photos.show');
     Route::get('/pros/documents/{document}', ProDocumentController::class)->name('pro-documents.show');
     Route::get('/pros/jobs/{invite}/photos/{photo}', ProJobPhotoController::class)->name('pros.jobs.photo');
+    Route::get('/app/quotes/{quote}/pro-photo', QuoteProPhotoController::class)->name('quotes.pro-photo');
     Route::post('/logout', LogoutController::class)->name('logout');
 
     Route::middleware(EnsurePhoneIsVerified::class)->group(function (): void {

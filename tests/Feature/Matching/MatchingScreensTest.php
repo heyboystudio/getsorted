@@ -102,7 +102,7 @@ it('shows the job without the customer\'s identity, address or contact details (
         ->assertSee('Leak repair')->assertSee('Musgrave')->assertSee('Where is the leak coming from?')
         ->assertSee('Behind the fridge.')->assertSee('Leaking tap.')
         ->assertSee('1 pro invited')->assertSee('0 quotes in')
-        ->assertSee('Quoting opens soon')
+        ->assertSee('Send a quote') // Spec 010 replaced the "Quoting opens soon" placeholder.
         ->assertDontSee('Nomvula')->assertDontSee('Secretname')->assertDontSee('7 Private Lane')
         ->assertDontSee('082 123 4567')->assertDontSee('me@example.com')->assertDontSee('071 222 3333')->assertDontSee('829990000');
 
