@@ -6,6 +6,7 @@ namespace App\Livewire\Booking;
 
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Catalogue\Enums\QuestionType;
+use App\Domain\Catalogue\Enums\RegistrationType;
 use App\Domain\Matching\Actions\JoinWaitlist;
 use App\Domain\Matching\EligibleProsQuery;
 use App\Domain\Properties\Queries\SuburbSearchQuery;
@@ -18,7 +19,9 @@ use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Domain\ServiceJobs\Exceptions\CannotPostServiceJob;
 use App\Domain\ServiceJobs\Exceptions\NoEligiblePros;
+use App\Domain\ServiceJobs\Support\JobSummaryInput;
 use App\Domain\ServiceJobs\Support\ScopingAnswers;
+use App\Livewire\Welcome;
 use App\Models\Property;
 use App\Models\ScopingQuestion;
 use App\Models\Service;
@@ -114,6 +117,12 @@ final class Wizard extends Component
             $this->step = in_array($resume['step'] ?? '', ['photos', 'property'], true) ? $resume['step'] : 'coverage';
         }
 
+        $description = $this->homeDescription();
+
+        if ($this->notes === '' && $description !== null) {
+            $this->notes = $description;
+        }
+
         // Continue an existing draft for this service instead of starting another (drafts are capped).
         $existing = $this->user()?->hasRole(Role::Customer->value) === true ? ServiceJob::query()
             ->where('customer_id', $this->user()->id)->where('service_id', $service->id)
@@ -121,6 +130,12 @@ final class Wizard extends Component
 
         if ($existing instanceof ServiceJob && ! is_array($resume)) {
             $this->resumeDraft($existing);
+
+            // A draft without notes takes the home-page description, shown on the notes step to check (spec 007, AC4).
+            if ($this->notes === '' && $description !== null) {
+                $this->notes = $description;
+                $this->step = 'notes';
+            }
 
             return;
         }
@@ -326,6 +341,7 @@ final class Wizard extends Component
             'reviewAnswers' => $this->checkedAnswers(),
             'photos' => $photos,
             'photoUrls' => $photoJob === null ? [] : $photos->mapWithKeys(fn ($photo): array => [$photo->uuid => $photoJob->photoUrl($photo)])->all(),
+            'summary' => $this->step === 'review' ? $this->summaryView() : null,
             'suburbSuggestions' => RateLimiter::tooManyAttempts($this->coverageRateKey('search'), (int) config('sortd.waitlist.searches_per_hour'))
                 ? new Collection : app(SuburbSearchQuery::class)->handle($this->suburbQuery),
         ])->title($service->name);
@@ -398,6 +414,55 @@ final class Wizard extends Component
         }
 
         RateLimiter::hit($key, 3600);
+    }
+
+    /**
+     * The review step's job-description card key (remounts it when details change) and safety guidance (spec 007, AC5, AC9).
+     *
+     * @return array{key: string, advice: list<string>, guidance: bool}|null
+     */
+    private function summaryView(): ?array
+    {
+        $job = $this->reviewDraft();
+
+        if (! $job instanceof ServiceJob) {
+            return null;
+        }
+
+        $service = $this->service();
+
+        return [
+            'key' => JobSummaryInput::hash($job),
+            'advice' => $service->safety_advice,
+            'guidance' => $service->safety_advice !== [] || $service->requires_registration === RegistrationType::ElectricalRegisteredPerson,
+        ];
+    }
+
+    private function reviewDraft(): ?ServiceJob
+    {
+        $user = $this->user();
+
+        if ($this->step !== 'review' || $this->jobPublicId === null || ! $user instanceof User) {
+            return null;
+        }
+
+        return ServiceJob::query()->with('service')->where('public_id', $this->jobPublicId)
+            ->where('customer_id', $user->id)->where('status', ServiceJobStatus::Draft)->first();
+    }
+
+    /** A description typed on the home page in the last 30 minutes, used once to start the notes (spec 007, AC4). */
+    private function homeDescription(): ?string
+    {
+        /** @var array{text?: string, expires_at?: int}|null $description */
+        $description = session()->pull(Welcome::DESCRIPTION_KEY);
+
+        if (! is_array($description) || ($description['expires_at'] ?? 0) <= now()->getTimestamp()) {
+            return null;
+        }
+
+        $text = mb_substr(trim((string) ($description['text'] ?? '')), 0, (int) config('sortd.jobs.notes_max_length'));
+
+        return $text === '' ? null : $text;
     }
 
     private function nextQuestion(): void

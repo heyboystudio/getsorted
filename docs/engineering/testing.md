@@ -30,7 +30,7 @@ arch('domain does not depend on UI')
 
 arch('integrations only reached through contracts')
     ->expect('App\Integrations')
-    ->toOnlyBeUsedIn(['App\Providers', 'Tests']);
+    ->toOnlyBeUsedIn(['App\Providers', 'App\Integrations', 'Tests']); // plus: Fakes only in Providers/Tests; each adapter's helpers only within its own folder
 
 arch('no debugging leftovers')
     ->expect(['dd', 'dump', 'ray', 'var_dump'])

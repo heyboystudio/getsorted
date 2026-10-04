@@ -70,6 +70,16 @@ return [
         'searches_per_hour' => 120,
     ],
 
+    'ai' => [
+        // Spec 007. Switch, confidence threshold and daily budget are admin settings (AiSettings).
+        'model' => env('SORTD_AI_MODEL', 'claude-haiku-4-5-20251001'),
+        'timeout_seconds' => 8,
+        'suggestions_per_hour' => 10,
+        'summaries_per_hour' => 5,
+        // How long an unused home-page description waits in the session for a booking.
+        'description_ttl_minutes' => 30,
+    ],
+
     'legal' => [
         // Placeholder documents until lawyer-reviewed text exists (spec 001 decision 1).
         'terms_version' => '2026-10-draft',

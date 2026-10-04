@@ -86,11 +86,11 @@ it('records messages instead of sending them', function (): void {
 it('gives no AI suggestion unless a test scripts one', function (): void {
     $assistant = new FakeScopingAssistant;
 
-    expect($assistant->suggestService('My geyser is leaking', ['plumbing' => ['leak_repair']]))->toBeNull();
+    expect($assistant->suggestService('My geyser is leaking', ['plumbing' => ['leak_repair']])->suggestion)->toBeNull();
 
     $assistant->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.9));
 
-    expect($assistant->suggestService('My geyser is leaking', ['plumbing' => ['leak_repair']])?->serviceKey)->toBe('leak_repair')
+    expect($assistant->suggestService('My geyser is leaking', ['plumbing' => ['leak_repair']])->suggestion?->serviceKey)->toBe('leak_repair')
         ->and($assistant->descriptionsSeen())->toBe(['My geyser is leaking', 'My geyser is leaking']);
 });
 

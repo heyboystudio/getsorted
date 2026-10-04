@@ -79,7 +79,7 @@ Enums: `TradeStatus`, `QuestionType`, `RegistrationType` (`App\Domain\Catalogue\
 ### Jobs
 | Table | Key columns |
 |---|---|
-| `service_jobs` | public_id, customer_id, property_id, service_id, status, urgency (normal/urgent), preferred_date, time_window (morning/afternoon/flexible/today), scoping_answers jsonb (`{key: {prompt, type, answer}}` as asked), customer_notes, ai_summary, quotes_count, accepted_quote_id, posted_at, quote_window_ends_at, scheduled_for, started_at, completed_at, cancelled_at, cancelled_by_type/id, cancel_reason — **in place** (`2026_10_04_000004`) except quotes_count, accepted_quote_id, scheduled_for, started_at, completed_at, cancelled_by_type/id (added with their specs) |
+| `service_jobs` | public_id, customer_id, property_id, service_id, status, urgency (normal/urgent), preferred_date, time_window (morning/afternoon/flexible/today), scoping_answers jsonb (`{key: {prompt, type, answer}}` as asked), customer_notes, ai_summary (≤ 600 chars), ai_summary_source (ai/customer_edited/none), ai_summary_generated_at, ai_summary_input_hash (sha256 of service + answers + notes the description was written for), quotes_count, accepted_quote_id, posted_at, quote_window_ends_at, scheduled_for, started_at, completed_at, cancelled_at, cancelled_by_type/id, cancel_reason — **in place** (`2026_10_04_000004`; summary provenance columns `2026_10_04_120000`, spec 007) except quotes_count, accepted_quote_id, scheduled_for, started_at, completed_at, cancelled_by_type/id (added with their specs) |
 | `service_job_events` | service_job_id, from_status, to_status, event_type, actor_type, actor_id, payload jsonb, created_at (append-only; model refuses updates/deletes) — **in place** |
 
 Settings: `job_timers.quote_window_hours` (72), `job_timers.draft_expiry_days` (7) via `App\Settings\JobTimers`.
@@ -108,8 +108,8 @@ Settings: `job_timers.quote_window_hours` (72), `job_timers.draft_expiry_days` (
 |---|---|
 | `media` | `spatie/laravel-medialibrary` on private `media` disk. `job_photos` collection belongs to `ServiceJob`; up to 5 processed WebP images per job, source metadata stripped, SHA-256 custom property for repeat upload detection. Cancelled drafts delete their photos. Pro documents and invoice PDFs use later collections. |
 | `activity_log` | `spatie/laravel-activitylog` — admin and sensitive actions; append-only, never cleaned — **in place** |
-| `settings` | `spatie/laravel-settings` — timers, commission, deposit cap — **table in place**; settings classes arrive with their features |
-| `ai_interactions` | user_id, service_job_id, purpose, model, input_tokens, output_tokens, latency_ms, outcome (no raw customer text kept beyond 30 days) |
+| `settings` | `spatie/laravel-settings` — timers, commission, deposit cap — **table in place**; settings classes arrive with their features (`job_timers`; `ai`: enabled, suggestion_min_confidence, daily_call_budget, usage_retention_days — spec 007) |
+| `ai_usage` | purpose (suggest_service/summarise), provider, model, input_tokens, output_tokens, latency_ms, outcome (ok/invalid/timeout/error/throttled), service_job_id (nullable, null on delete), created_at; index (created_at, purpose). **No customer text and no user ID.** Pruned after `ai.usage_retention_days` (default 90) — **in place** (spec 007) |
 | `notifications` | Laravel database notifications |
 | Queue/cache/session | Laravel defaults on Postgres (`jobs`, `failed_jobs`, `cache`, `sessions`) |
 

@@ -89,7 +89,7 @@
                 <button type="button" wire:click="next" wire:loading.attr="disabled" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Next') }}</button>
             @endif
         @elseif ($step === 'notes')
-            <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('Anything else your pro should know?') }}</h1>
+            <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('Anything else pros should know?') }}</h1>
             <p class="mt-1 text-sm text-zinc-500">{{ __('Optional. Please don’t include phone numbers or your address here.') }}</p>
             <textarea rows="5" maxlength="{{ config('sortd.jobs.notes_max_length') }}" wire:model="notes" aria-label="{{ __('Notes for your pro') }}" class="mt-6 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3"></textarea>
             @error('notes') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
@@ -169,6 +169,17 @@
             <button type="button" wire:click="next" wire:loading.attr="disabled" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Next') }}</button>
         @elseif ($step === 'review')
             <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('Check and post') }}</h1>
+            @if ($summary)
+                <livewire:booking.job-summary-card :job-public-id="$jobPublicId" :key="'job-summary-'.$summary['key']" />
+            @endif
+            @if ($summary && $summary['guidance'])
+                <div class="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+                    @if ($summary['advice'] !== [])
+                        <ul class="list-disc space-y-1 pl-5">@foreach ($summary['advice'] as $line) <li>{{ $line }}</li> @endforeach</ul>
+                    @endif
+                    <p class="mt-2">{{ __('This is guidance, not a guarantee.') }}</p>
+                </div>
+            @endif
             <dl class="mt-6 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white">
                 <div class="p-4">
                     <div class="flex justify-between"><dt class="font-medium">{{ __('Your answers') }}</dt><button type="button" wire:click="change('questions')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>

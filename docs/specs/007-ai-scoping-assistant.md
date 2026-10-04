@@ -1,6 +1,6 @@
 # Spec 007 · AI scoping assistant
 
-Status: Approved · Phase: 2 · Owner: founder
+Status: Done (awaiting merge) · Phase: 2 · Owner: founder
 
 ## Goal
 Let a customer start a booking by describing the problem in their own words, and give every posted job a short, neutral summary for pros. The assistant only suggests: the customer confirms the service and edits the summary, and booking works fully when the assistant is unavailable.
@@ -77,3 +77,27 @@ Let a customer start a booking by describing the problem in their own words, and
 ## Progress
 - 2026-10-04: Drafted after spec 006 merged in PR #25. Awaiting founder approval and the three decisions above.
 - 2026-10-04: Founder approved the spec with all three recommended defaults.
+- 2026-10-04: Founder approved the build plan (AI settings page limited to super-admins).
+- 2026-10-04: Built on `feat/007-ai-scoping-assistant`; tests in `tests/Feature/Assistant/`. Installed `laravel/ai` 1.0.1 (decision 033). The real Anthropic adapter is bound only with an API key outside local/testing, and the `ai.enabled` setting ships off (decision 1).
+- 2026-10-04: Code, security and spec reviews. Fixed:
+  - free-text answers are now redacted;
+  - street addresses, slashed or non-ASCII-digit phone numbers and spelled-out emails are redacted, and dates are no longer mistaken for phone numbers;
+  - replies with unexpected keys are rejected;
+  - throttled requests write at most one row per limit per hour, and the daily budget is reserved atomically per Durban day;
+  - signed-in customers are limited per account;
+  - expired home descriptions are dropped from the session;
+  - failures log the exception class only;
+  - the description now fills an existing draft without notes;
+  - safety advice shows at review even without a summary;
+  - the summary card is its own component, so a slow call never holds up the review step;
+  - the architecture rules were narrowed.
+- 2026-10-04: Checks:
+  - `composer check` passed (410 tests, 1,779 assertions; 0 Larastan errors; no Composer advisories);
+  - `npm audit --audit-level=high` found 0 vulnerabilities;
+  - assets built;
+  - home page checked at 360 px.
+- Open follow-ups:
+  - Trusted-proxy configuration for per-visitor limits (with hosting, decision 014).
+  - `zend.exception_ignore_args=On` and error-tracker argument scrubbing in production.
+  - Whether customer-edited descriptions should be checked for contact details before spec 009 shows them to pros.
+- Awaiting PR review and founder merge approval.
