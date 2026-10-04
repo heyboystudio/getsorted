@@ -26,6 +26,9 @@ return [
         // slow guessing from rotating IP addresses.
         'send_per_phone' => ['max' => 3, 'minutes' => 15],
         'send_per_phone_daily' => ['max' => 10, 'minutes' => 24 * 60],
+        // Temporarily off on local development machines only, for testing (founder, 2026-10-04).
+        // Always enforced in testing, staging and production. Set true to turn it back on locally.
+        'daily_cap_in_local' => false,
         'send_per_ip' => ['max' => 10, 'minutes' => 60],
         'verify_per_ip' => ['max' => 10, 'minutes' => 15],
         'register_per_ip' => ['max' => 5, 'minutes' => 15],

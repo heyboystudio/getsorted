@@ -413,6 +413,23 @@ it('includes a daily per-number cap in the send limits', function (): void {
         ->and($limits[0]->key)->not->toContain(hash('sha256', PHONE));
 });
 
+it('skips the daily cap only on a local development machine, while it is switched off there', function (string $environment, bool $localSwitch, int $limits): void {
+    $original = app()->environment();
+    app()->detectEnvironment(fn (): string => $environment);
+    config()->set('sortd.otp.daily_cap_in_local', $localSwitch);
+
+    try {
+        expect(LoginThrottle::sendLimits(PHONE, '10.0.0.1'))->toHaveCount($limits);
+    } finally {
+        app()->detectEnvironment(fn (): string => $original);
+    }
+})->with([
+    'local, switched off' => ['local', false, 2],
+    'local, switched back on' => ['local', true, 3],
+    'production' => ['production', false, 3],
+    'staging' => ['staging', false, 3],
+]);
+
 it('discards the code and says so when the message cannot be sent', function (): void {
     messaging()->failNextSend();
 

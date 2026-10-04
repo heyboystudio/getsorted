@@ -19,11 +19,13 @@ final class LoginThrottle
     {
         $phoneKey = hash_hmac('sha256', $phoneE164, (string) config('app.key'));
 
-        return [
+        $dailyCap = ! app()->environment('local') || (bool) config('sortd.otp.daily_cap_in_local');
+
+        return array_values(array_filter([
             self::limit('send_per_phone', 'otp-send:phone:'.$phoneKey),
-            self::limit('send_per_phone_daily', 'otp-send-daily:phone:'.$phoneKey),
+            $dailyCap ? self::limit('send_per_phone_daily', 'otp-send-daily:phone:'.$phoneKey) : null,
             self::limit('send_per_ip', 'otp-send:ip:'.$ip),
-        ];
+        ]));
     }
 
     public static function verifyLimit(?string $ip): Limit
