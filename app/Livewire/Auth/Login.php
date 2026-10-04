@@ -272,13 +272,6 @@ final class Login extends Component
         Auth::login($user, $this->remember);
         session()->regenerate();
 
-        // A customer who came to join as a pro still has to accept the pro agreement.
-        if ($this->asPro && ! $user->hasRole(Role::Pro->value)) {
-            $this->redirectRoute('pros.become');
-
-            return;
-        }
-
         $this->redirectRoute($user->homeRoute($this->asPro));
     }
 

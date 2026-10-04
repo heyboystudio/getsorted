@@ -99,10 +99,11 @@
 
                     @if ($asPro)
                         <label class="flex gap-3">
-                            <input type="checkbox" wire:model="acceptProAgreement" class="mt-0.5 size-5 shrink-0 rounded border-zinc-300 text-emerald-700">
+                            <input type="checkbox" wire:model="acceptProAgreement" class="mt-0.5 size-5 shrink-0 rounded border-zinc-300 text-emerald-700"
+                                aria-describedby="acceptProAgreement-error" @error('acceptProAgreement') aria-invalid="true" @enderror>
                             <span>{{ __('I accept the') }} <a href="{{ route('pros.agreement') }}" target="_blank" class="underline underline-offset-4">{{ __('pro agreement') }}</a></span>
                         </label>
-                        @error('acceptProAgreement') <p class="text-red-700" role="alert">{{ $message }}</p> @enderror
+                        @error('acceptProAgreement') <p id="acceptProAgreement-error" class="text-red-700" role="alert">{{ $message }}</p> @enderror
                     @endif
 
                     <label class="flex gap-3 text-zinc-600">

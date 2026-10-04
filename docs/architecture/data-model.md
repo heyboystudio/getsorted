@@ -45,7 +45,7 @@ erDiagram
 |---|---|
 | `users` | public_id, first_name, last_name, phone_e164 (unique), phone_verified_at, email (nullable, unique), password (nullable; admins only), app_authentication_secret + app_authentication_recovery_codes (encrypted, hidden; admin MFA), locale, deleted_at — **in place** (migration `2026_10_03_000007`) |
 | `phone_otps` | phone_e164, code_hash (HMAC-SHA256 with app key), channel (whatsapp/sms), purpose, expires_at, attempts, consumed_at, ip — **in place**; pruned daily after 90 days |
-| `consents` | user_id (restrict on delete), type (terms/privacy/marketing), version, granted_at, withdrawn_at, ip, user_agent — **in place** |
+| `consents` | user_id (restrict on delete), type (terms/privacy/marketing/pro_agreement), version, granted_at, withdrawn_at, ip, user_agent — **in place** |
 | Roles & permissions | `spatie/laravel-permission` tables. Roles: `customer`, `pro`, `admin_super`, `admin_support`, `admin_vetting`, `admin_finance` — **in place**; created by migration `2026_10_03_000003_create_default_roles`, mirrored by `App\Domain\Accounts\Enums\Role` |
 
 ### Places

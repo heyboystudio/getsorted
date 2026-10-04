@@ -75,7 +75,11 @@ it('signs up a new pro with the pro role and three consents (AC3, AC4, AC6)', fu
     expect($user->hasRole(Role::Pro->value))->toBeTrue()
         ->and($user->hasRole(Role::Customer->value))->toBeFalse()
         ->and(consentTypes($user))->toBe(['privacy', 'pro_agreement', 'terms'])
-        ->and(Consent::query()->where('type', ConsentType::ProAgreement)->sole()->version)->toBe('2026-10-draft');
+        ->and(Consent::query()->where('type', ConsentType::ProAgreement)->sole()->version)->toBe('2026-10-draft')
+        ->and(Consent::query()->where('type', ConsentType::ProAgreement)->sole()->ip)->toBe('127.0.0.1')
+        ->and(Consent::query()->where('type', ConsentType::ProAgreement)->sole()->user_agent)->toBe('Symfony')
+        ->and(Activity::query()->where('description', 'account created')->exists())->toBeTrue()
+        ->and(Activity::query()->where('description', 'consent granted')->count())->toBe(3);
 });
 
 it('requires the pro agreement for pro sign-ups (AC3)', function (): void {
@@ -185,4 +189,37 @@ it('never lets an admin become a pro', function (): void {
 
 it('serves the draft pro agreement (AC11)', function (): void {
     $this->get('/pros/agreement')->assertOk()->assertSee('Draft — not yet in force')->assertSee('2026-10-draft');
+});
+
+it('lands a pro who is also a customer on the pro welcome page (AC6)', function (): void {
+    $user = User::factory()->customer()->create(['phone_e164' => PRO_PHONE]);
+    $user->assignRole(Role::Pro->value);
+
+    Livewire::test(Login::class)->set('phone', '082 123 4567')->call('sendCode')
+        ->set('code', proCode())->call('verifyCode')->assertRedirect(route('pros.welcome'));
+});
+
+it('shows the welcome page with a log-out button (AC6)', function (): void {
+    $this->actingAs(User::factory()->pro()->create(['first_name' => 'Sipho']))->get('/pros/welcome')
+        ->assertSee('Thanks, Sipho — your application form opens soon')
+        ->assertSee('action="'.route('logout').'"', false);
+});
+
+it('sends a logged-in customer following a join-as-pro link to the agreement step', function (): void {
+    $this->actingAs(User::factory()->customer()->create())->get('/login?as=pro')->assertRedirect(route('pros.become'));
+});
+
+it('keeps pro-only accounts out of the customer area', function (): void {
+    $this->actingAs(User::factory()->pro()->create())->get('/app')->assertRedirect(route('pros.welcome'));
+});
+
+it('records the pro agreement only once when confirmed twice', function (): void {
+    $user = User::factory()->customer()->create();
+    $action = app(App\Domain\Accounts\Actions\BecomePro::class);
+
+    $action->handle($user, '127.0.0.1', 'Symfony');
+    $action->handle(User::query()->find($user->id), '127.0.0.1', 'Symfony');
+
+    expect(Consent::query()->where('type', ConsentType::ProAgreement)->count())->toBe(1)
+        ->and(Activity::query()->where('description', 'pro role granted')->count())->toBe(1);
 });

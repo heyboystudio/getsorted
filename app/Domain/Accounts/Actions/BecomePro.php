@@ -28,11 +28,14 @@ final readonly class BecomePro
             throw new AuthorizationException('This account cannot become a pro.');
         }
 
-        if ($user->hasRole(Role::Pro->value)) {
-            return $user;
-        }
-
         return DB::transaction(function () use ($user, $ip, $userAgent): User {
+            // Locked and re-read so a double submit cannot record the agreement twice.
+            $user = User::query()->lockForUpdate()->findOrFail($user->id);
+
+            if ($user->hasRole(Role::Pro->value)) {
+                return $user;
+            }
+
             $user->assignRole(Role::Pro->value);
 
             $this->recordConsent->handle($user, ConsentType::ProAgreement, (string) config('sortd.legal.pro_agreement_version'), $ip, $userAgent);

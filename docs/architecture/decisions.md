@@ -30,6 +30,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 024 | Integration contracts and Fakes; no fallback to Fakes outside local/testing | Accepted | 2026-10-03 |
 | 025 | Security hardening baseline (headers, HTTPS, sessions, rate limits, strict models) | Accepted | 2026-10-03 |
 | 026 | Phone + OTP login implementation (spec 001) | Accepted | 2026-10-04 |
+| 027 | One account for customer and pro; pro sign-up (spec 011) | Accepted | 2026-10-04 |
 
 ---
 
@@ -208,3 +209,8 @@ Short architecture decision records. **Add an entry for every significant choice
 - **Records:** consents per type with version `2026-10-draft`, time, IP and user agent; audit-log entries "account created" and "consent granted"; OTP rows pruned after 90 days.
 
 **Deferred:** trusted-proxy configuration (needs the hosting choice; until then all users behind one proxy would share IP limits), OTP-send spike alerts (with Sentry/monitoring), equalising response time between decoy and real sends once a real messaging provider exists, email verification, re-collecting consent when the lawyer-reviewed legal text replaces the drafts.
+
+## 027 · One account for customer and pro; pro sign-up (spec 011)
+**Context:** Phase 1 requires pros to sign up with OTP; the application wizard and vetting come in spec 008.
+
+**Decision:** The founder chose one account per phone number that can hold both the `customer` and `pro` roles. Pros sign up through `/login?as=pro` (spec 001's flow and protections unchanged) and accept a draft pro agreement (`pro_agreement` consent, version `2026-10-draft`); existing customers add the role on `/pros/become`, with the user row locked so a double submit records the agreement once. `User::homeRoute()` is the single landing rule: any pro → `/pros/welcome` (which links to `/app` if they are also a customer); joining-as-pro non-pros → `/pros/become`; others → `/app`. Pro-only accounts are kept out of `/app`. `RecordConsent` is the one place consents and their audit entries are written; audit entries now include "pro role granted". Pros join free (Q12). Business details wait for spec 008; the `/pro` panel stays closed.

@@ -8,7 +8,7 @@ use App\Domain\Accounts\Enums\ConsentType;
 use App\Models\Consent;
 use App\Models\User;
 
-final class RecordConsent
+final readonly class RecordConsent
 {
     /** Stores POPIA evidence of a consent: type, document version, time, IP and browser, plus an audit entry. */
     public function handle(User $user, ConsentType $type, string $version, ?string $ip, ?string $userAgent): Consent

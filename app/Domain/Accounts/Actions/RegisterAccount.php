@@ -24,6 +24,7 @@ final readonly class RegisterAccount
      * IP, browser). Pros also accept the pro agreement (spec 011).
      *
      * @throws PhoneAlreadyRegistered when the number was registered meanwhile
+     * @throws InvalidArgumentException for roles that cannot sign themselves up
      */
     public function handle(
         Role $role,
@@ -35,6 +36,10 @@ final readonly class RegisterAccount
         ?string $ip,
         ?string $userAgent,
     ): User {
+        if (! in_array($role, [Role::Customer, Role::Pro], true)) {
+            throw new InvalidArgumentException('Only customer and pro accounts can be self-registered.');
+        }
+
         try {
             return DB::transaction(fn (): User => $this->create($role, $phoneE164, $firstName, $lastName, $email, $marketing, $ip, $userAgent));
         } catch (UniqueConstraintViolationException) {
@@ -55,10 +60,6 @@ final readonly class RegisterAccount
             'phone_e164' => $phoneE164,
             'phone_verified_at' => now(),
         ])->save();
-
-        if (! in_array($role, [Role::Customer, Role::Pro], true)) {
-            throw new InvalidArgumentException('Only customer and pro accounts can be self-registered.');
-        }
 
         $user->assignRole($role->value);
 
