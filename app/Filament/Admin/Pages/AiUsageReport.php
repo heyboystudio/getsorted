@@ -15,9 +15,15 @@ final class AiUsageReport extends Page
 {
     protected static ?string $slug = 'ai-usage';
 
-    protected static ?string $navigationLabel = 'AI usage';
+    public static function getNavigationLabel(): string
+    {
+        return __('AI usage');
+    }
 
-    protected static ?string $title = 'AI usage';
+    public function getTitle(): string
+    {
+        return __('AI usage');
+    }
 
     protected string $view = 'filament.admin.pages.ai-usage';
 

@@ -100,6 +100,16 @@ final class FakeScopingAssistant implements ScopingAssistant
         return $this->descriptionsSeen;
     }
 
+    /**
+     * Answers passed with each summary request, so tests can prove personal data was stripped.
+     *
+     * @return list<array<string, string|list<string>>>
+     */
+    public function summaryAnswersSeen(): array
+    {
+        return array_column($this->summaryRequests, 'answers');
+    }
+
     public function assertSummaryRequests(int $count): void
     {
         Assert::assertCount($count, $this->summaryRequests, 'Unexpected number of summary requests.');

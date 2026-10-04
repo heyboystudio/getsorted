@@ -22,9 +22,15 @@ final class AiSettingsPage extends Page
 {
     protected static ?string $slug = 'ai-settings';
 
-    protected static ?string $navigationLabel = 'AI settings';
+    public static function getNavigationLabel(): string
+    {
+        return __('AI settings');
+    }
 
-    protected static ?string $title = 'AI settings';
+    public function getTitle(): string
+    {
+        return __('AI settings');
+    }
 
     /** @var array<string, mixed>|null */
     public ?array $data = [];

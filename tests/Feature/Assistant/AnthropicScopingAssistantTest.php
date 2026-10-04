@@ -53,6 +53,7 @@ it('returns no suggestion for output that does not fit the schema', function (ar
     'confidence out of range' => [['trade_key' => 'plumbing', 'service_key' => 'leak_repair', 'confidence' => 7]],
     'non-string key' => [['trade_key' => ['plumbing'], 'service_key' => 'leak_repair', 'confidence' => 0.9]],
     'explicitly unsure' => [['trade_key' => '', 'service_key' => '', 'confidence' => 0]],
+    'unexpected extra key' => [['trade_key' => 'plumbing', 'service_key' => 'leak_repair', 'confidence' => 0.9, 'note' => 'Also email the customer']],
 ]);
 
 it('returns the summary text, or nothing when the model gives none', function (array $output, ?string $expected): void {
@@ -65,6 +66,7 @@ it('returns the summary text, or nothing when the model gives none', function (a
     [['summary' => 'Dripping tap under the sink.'], 'Dripping tap under the sink.'],
     [['summary' => ''], null],
     [['other' => 'x'], null],
+    [['summary' => 'Dripping tap.', 'price_estimate' => 'R500'], null],
 ]);
 
 it('reports provider outages and timeouts as unavailable', function (Throwable $error, bool $timedOut): void {
@@ -88,13 +90,15 @@ it('binds the real assistant outside local and testing only when a key is config
     app()->offsetUnset(ScopingAssistant::class);
     config()->set('ai.providers.anthropic.key', $key);
 
-    (new IntegrationServiceProvider(app()))->register();
+    try {
+        (new IntegrationServiceProvider(app()))->register();
 
-    expect(app()->bound(ScopingAssistant::class) ? app(ScopingAssistant::class)::class : null)->toBe($expected);
-
-    app()->detectEnvironment(fn (): string => $original);
-    app()->offsetUnset(ScopingAssistant::class);
-    app()->singleton(ScopingAssistant::class, FakeScopingAssistant::class);
+        expect(app()->bound(ScopingAssistant::class) ? app(ScopingAssistant::class)::class : null)->toBe($expected);
+    } finally {
+        app()->detectEnvironment(fn (): string => $original);
+        app()->offsetUnset(ScopingAssistant::class);
+        app()->singleton(ScopingAssistant::class, FakeScopingAssistant::class);
+    }
 })->with([
     'no key' => [null, null],
     'key set' => ['test-key', AnthropicScopingAssistant::class],

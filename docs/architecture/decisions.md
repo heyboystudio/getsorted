@@ -34,6 +34,9 @@ Short architecture decision records. **Add an entry for every significant choice
 | 028 | Catalogue: YAML seeds, admin panel is the source of truth (spec 003) | Accepted | 2026-10-04 |
 | 029 | Suburbs and properties; location = suburb centre for now (spec 004) | Accepted | 2026-10-04 |
 | 030 | Booking flow and job state machine (spec 005) | Accepted | 2026-10-04 |
+| 031 | Job photos and iPhone HEIC (spec 012) | Accepted | 2026-10-04 |
+| 032 | Coverage guard before booking and waitlist (spec 006) | Accepted | 2026-10-04 |
+| 033 | AI scoping assistant: Laravel AI SDK, Anthropic, shipped switched off (spec 007) | Accepted | 2026-10-04 |
 
 ---
 
@@ -262,3 +265,13 @@ Short architecture decision records. **Add an entry for every significant choice
 **Decision:** Ask for the suburb before scoping. Only an approved pro serving that service and suburb, with a current required registration, provides coverage. Recheck against the property's suburb when posting; a lost match keeps the job as a draft and offers the waitlist. Live bookings have no zero-pro bypass. The local-only `LocalCoverageSeeder` can attach the existing demo pro to active, non-registration services and active suburbs for phone walkthroughs. Admins see aggregate waitlist demand only; a verified customer can remove requests tied to their phone. Entries are pruned after 12 months.
 
 **Eligibility inputs:** The query also checks a rolling seven-day `pro_job_allocations` count against the optional weekly cap and `pro_customer_exclusions` for an upheld dispute involving the signed-in customer. Invite and dispute workflows in later specs will write these records. Guests are rechecked with their customer identity before posting. Pro application, vetting UI and individual waitlist contact access are later work. Until approved pro records exist in a live environment, customers reach the waitlist.
+
+## 033 · AI scoping assistant: Laravel AI SDK, Anthropic, shipped switched off (spec 007)
+**Context:** Spec 007 adds a "describe your problem" service suggestion and an editable job description. The tech stack named the first-party Laravel AI SDK with Anthropic. Anthropic processes data outside South Africa, which POPIA treats as a cross-border transfer.
+
+**Decision:** Install `laravel/ai` ^1.0 (1.0.1, MIT; requires PHP ^8.3 and Illuminate ^12|^13, so it supports Laravel 13). `App\Integrations\Anthropic\AnthropicScopingAssistant` implements `ScopingAssistant` with two structured-output agents and model `claude-haiku-4-5-20251001` (config `sortd.ai.model`, chosen for cost and latency), an 8-second timeout, and customer text JSON-encoded inside delimiter tags. It is bound only outside local/testing **and** only when `ai.providers.anthropic.key` is set; local and tests keep the fake. The domain calls it only when the `ai.enabled` setting is on. Founder decisions (2026-10-04): (1) ship with `ai.enabled` off until the privacy notice names the AI provider and the cross-border transfer and the founder has accepted the provider's data processing terms; (2) a 2,000 calls per Durban day budget, adjustable by super-admins in Admin → AI settings; (3) the customer's edited description always wins.
+
+**Contract change:** `ScopingAssistant` methods now return `ScopingSuggestionReply` / `ScopingSummaryReply` with an `AssistantUsage` (provider, model, tokens) so usage can be logged, and throw `AssistantUnavailable` (with a timed-out flag) on outages. All calls go through `App\Domain\Assistant\Support\AssistantCalls`, which applies the switch, per-visitor/per-draft rate limits, the daily budget, output validation and `ai_usage` logging (no customer text; pruned after 90 days by default).
+
+**Consequences:** The package publishes its own conversation migrations only on request; none are used. The architecture test now lets `App\Integrations` classes use each other (an adapter and its own helpers), while the rest of the app still reaches integrations only through contracts. Turning the assistant on in a hosted environment needs `ANTHROPIC_API_KEY` in the host's secret manager, the privacy notice update and the provider terms; there is no other code change.
+

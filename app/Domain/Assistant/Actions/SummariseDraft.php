@@ -43,7 +43,7 @@ final readonly class SummariseDraft
             'assistant:summary:'.$job->id,
             (int) config('sortd.ai.summaries_per_hour'),
             fn (ScopingAssistant $assistant): ScopingSummaryReply => $assistant->summarise(
-                $job->service->key, JobSummaryInput::answers($job), Redactor::strip((string) $job->customer_notes),
+                $job->service->key, JobSummaryInput::redactedAnswers($job), Redactor::strip((string) $job->customer_notes),
             ),
             fn (ScopingSummaryReply $reply): bool => SummaryRules::acceptable($reply->summary),
             $job->id,

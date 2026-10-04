@@ -15,8 +15,9 @@ use App\Models\AiUsage;
 use App\Settings\AiSettings;
 use App\Support\LocalTime;
 use Closure;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -42,8 +43,14 @@ final readonly class AssistantCalls
      */
     public function call(AiPurpose $purpose, string $rateKey, int $perHour, Closure $request, Closure $isUsable, ?int $serviceJobId = null): array
     {
-        if (RateLimiter::tooManyAttempts($rateKey, $perHour) || $this->budgetSpent()) {
-            $this->record($purpose, AiOutcome::Throttled, null, 0, $serviceJobId);
+        if (RateLimiter::tooManyAttempts($rateKey, $perHour)) {
+            $this->recordThrottled($purpose, 'rate:'.$rateKey, $serviceJobId);
+
+            return [AiOutcome::Throttled, null];
+        }
+
+        if (! $this->reserveBudget()) {
+            $this->recordThrottled($purpose, 'budget:'.$this->budgetKey(), $serviceJobId);
 
             return [AiOutcome::Throttled, null];
         }
@@ -58,8 +65,8 @@ final readonly class AssistantCalls
 
             return [$exception->timedOut ? AiOutcome::Timeout : AiOutcome::Error, null];
         } catch (Throwable $exception) {
-            // Report the failure class only: provider messages could echo customer text.
-            report(new RuntimeException('Scoping assistant call failed: '.$exception::class));
+            // Log the failure class only: messages and stack-frame arguments could echo customer text.
+            Log::warning('Scoping assistant call failed.', ['exception' => $exception::class]);
             $this->record($purpose, AiOutcome::Error, null, $this->elapsedMs($started), $serviceJobId);
 
             return [AiOutcome::Error, null];
@@ -71,13 +78,40 @@ final readonly class AssistantCalls
         return [$outcome, $outcome === AiOutcome::Ok ? $reply : null];
     }
 
-    /** Calls made since midnight Durban time, throttled ones excluded (founder decision 2). */
-    private function budgetSpent(): bool
+    /**
+     * Atomically reserves one call from today's budget (founder decision 2). The
+     * counter starts from today's recorded calls so a cache flush cannot reset it.
+     */
+    private function reserveBudget(): bool
     {
-        return AiUsage::query()
+        $key = $this->budgetKey();
+
+        Cache::add($key, AiUsage::query()
             ->where('created_at', '>=', LocalTime::today()->utc())
             ->where('outcome', '!=', AiOutcome::Throttled)
-            ->count() >= $this->settings->daily_call_budget;
+            ->count(), now()->addDay());
+
+        if ((int) Cache::increment($key) > $this->settings->daily_call_budget) {
+            Cache::decrement($key);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /** One counter per Durban day, so the budget resets at local midnight. */
+    private function budgetKey(): string
+    {
+        return 'assistant:budget:'.LocalTime::today()->toDateString();
+    }
+
+    /** At most one throttled row per limit per hour, so anonymous floods cannot fill the table. */
+    private function recordThrottled(AiPurpose $purpose, string $limit, ?int $serviceJobId): void
+    {
+        if (Cache::add('assistant:throttled-logged:'.hash('sha256', $limit), true, 3600)) {
+            $this->record($purpose, AiOutcome::Throttled, null, 0, $serviceJobId);
+        }
     }
 
     private function record(AiPurpose $purpose, AiOutcome $outcome, ?AssistantUsage $usage, int $latencyMs, ?int $serviceJobId): void

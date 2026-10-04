@@ -32,7 +32,7 @@ final class AnthropicScopingAssistant implements ScopingAssistant
         $response = $this->ask(new ServiceSuggestionAgent, 'Catalogue: '.$this->json($catalogue)
             ."\n<customer_description>".$this->json($description).'</customer_description>');
 
-        $data = $response instanceof StructuredAgentResponse ? $response->structured : [];
+        $data = $this->structured($response, ['trade_key', 'service_key', 'confidence']);
         $trade = $data['trade_key'] ?? null;
         $service = $data['service_key'] ?? null;
         $confidence = $data['confidence'] ?? null;
@@ -51,9 +51,24 @@ final class AnthropicScopingAssistant implements ScopingAssistant
             ."\nAnswers: ".$this->json($answers)
             ."\n<customer_notes>".$this->json($description).'</customer_notes>');
 
-        $summary = $response instanceof StructuredAgentResponse ? ($response->structured['summary'] ?? null) : null;
+        $summary = $this->structured($response, ['summary'])['summary'] ?? null;
 
         return new ScopingSummaryReply(is_string($summary) && trim($summary) !== '' ? trim($summary) : null, $this->usage($response));
+    }
+
+    /**
+     * The structured reply, or nothing when it has keys outside the schema (spec 007, AC11).
+     *
+     * @param  list<string>  $allowed
+     * @return array<string, mixed>
+     */
+    private function structured(AgentResponse $response, array $allowed): array
+    {
+        if (! $response instanceof StructuredAgentResponse || array_diff(array_keys($response->structured), $allowed) !== []) {
+            return [];
+        }
+
+        return $response->structured;
     }
 
     /** @throws AssistantUnavailable */
