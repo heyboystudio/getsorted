@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Livewire\Pros;
 
 use App\Domain\Accounts\Enums\Role;
+use App\Models\Pro;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-/** Holding page for pros until the application wizard opens (spec 011, AC6). */
+/** Pro landing page: start, continue or check the application (spec 011, AC6; spec 008). */
 #[Layout('components.layouts.app')]
 #[Title('Welcome, pro')]
 final class Welcome extends Component
@@ -30,6 +31,7 @@ final class Welcome extends Component
         return view('livewire.pros.welcome', [
             'firstName' => $user->first_name,
             'isCustomer' => $user->hasRole(Role::Customer->value),
+            'status' => Pro::query()->where('user_id', $user->id)->first()?->status,
         ]);
     }
 

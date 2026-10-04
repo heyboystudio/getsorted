@@ -7,17 +7,17 @@ namespace App\Policies;
 use App\Models\ProDocument;
 use App\Models\User;
 
-/** Document access is closed until the vetting workflow in spec 008. */
+/** Documents are seen by their pro and by vetting/super admins only (spec 008, AC8). */
 final class ProDocumentPolicy
 {
     public function viewAny(User $user): bool
     {
-        return false;
+        return ProPolicy::isVetter($user);
     }
 
     public function view(User $user, ProDocument $document): bool
     {
-        return false;
+        return $document->pro()->value('user_id') === $user->id || ProPolicy::isVetter($user);
     }
 
     public function create(User $user): bool

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\JobPhotoController;
+use App\Http\Controllers\ProDocumentController;
 use App\Http\Controllers\ShowTradeController;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsurePhoneIsVerified;
@@ -13,7 +14,9 @@ use App\Livewire\Account\Properties\Form as PropertyForm;
 use App\Livewire\Account\Properties\Index as PropertyIndex;
 use App\Livewire\Auth\Login;
 use App\Livewire\Booking\Wizard as BookingWizard;
+use App\Livewire\Pros\Application as ProApplication;
 use App\Livewire\Pros\BecomePro;
+use App\Livewire\Pros\Status as ProStatusPage;
 use App\Livewire\Pros\Welcome as ProWelcome;
 use App\Livewire\Welcome;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +37,7 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/app/jobs/{job}/photos/{photo}', JobPhotoController::class)->name('job-photos.show');
+    Route::get('/pros/documents/{document}', ProDocumentController::class)->name('pro-documents.show');
     Route::post('/logout', LogoutController::class)->name('logout');
 
     Route::middleware(EnsurePhoneIsVerified::class)->group(function (): void {
@@ -47,5 +51,7 @@ Route::middleware('auth')->group(function (): void {
         });
         Route::get('/pros/welcome', ProWelcome::class)->name('pros.welcome');
         Route::get('/pros/become', BecomePro::class)->name('pros.become');
+        Route::get('/pros/apply', ProApplication::class)->name('pros.apply');
+        Route::get('/pros/status', ProStatusPage::class)->name('pros.status');
     });
 });

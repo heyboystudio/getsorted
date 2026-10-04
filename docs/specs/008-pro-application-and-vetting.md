@@ -1,6 +1,6 @@
 # Spec 008 · Pro application and vetting
 
-Status: Approved · Phase: 3 · Owner: founder
+Status: In progress · Phase: 3 · Owner: founder
 
 ## Goal
 A tradesperson who signed up as a pro (spec 011) can complete an application, and a vetting admin can check it and approve or reject it. Approval is what makes a pro count for coverage (spec 006) and, later, receive invites (spec 009). Until now no real pro can become approved.
@@ -90,3 +90,4 @@ This spec covers the application and vetting only. Bank details move to the paym
 ## Progress
 - 2026-10-04: Drafted after spec 007 merged in PR #27. Awaiting founder approval and the four decisions above.
 - 2026-10-04: Founder approved the spec with all four recommended defaults.
+- 2026-10-04: Founder approved the build plan.

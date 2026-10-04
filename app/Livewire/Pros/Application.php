@@ -1,0 +1,333 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire\Pros;
+
+use App\Domain\Accounts\Enums\Role;
+use App\Domain\Pros\Actions\SaveApplicationStep;
+use App\Domain\Pros\Actions\StartApplication;
+use App\Domain\Pros\Actions\StoreProDocument;
+use App\Domain\Pros\Actions\SubmitApplication;
+use App\Domain\Pros\Data\BusinessDetails;
+use App\Domain\Pros\Data\ReferenceData;
+use App\Domain\Pros\Enums\BusinessType;
+use App\Domain\Pros\Enums\DocumentStatus;
+use App\Domain\Pros\Enums\DocumentType;
+use App\Domain\Pros\Enums\ProStatus;
+use App\Domain\Pros\Exceptions\CannotChangeApplication;
+use App\Models\Pro;
+use App\Models\ProReference;
+use App\Models\Suburb;
+use App\Models\Trade;
+use App\Models\User;
+use Illuminate\Contracts\View\View;
+use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
+
+/**
+ * The pro application, one step per screen (spec 008, AC1–AC4, AC6). Thin:
+ * every save goes through a domain action that checks ownership and status.
+ */
+#[Layout('components.layouts.app')]
+#[Title('Your application')]
+final class Application extends Component
+{
+    use WithFileUploads;
+
+    #[Locked]
+    public string $step = 'business';
+
+    public string $businessName = '';
+
+    public string $businessType = '';
+
+    public string $vatNumber = '';
+
+    /** @var list<int|string> */
+    public array $serviceIds = [];
+
+    /** @var list<int|string> */
+    public array $suburbIds = [];
+
+    /** @var TemporaryUploadedFile|null */
+    public $upload;
+
+    /** @var array<string, string> registration document type => number */
+    public array $registrationNumbers = [];
+
+    /** @var list<array{name: string, phone: string, relationship: string}> */
+    public array $references = [
+        ['name' => '', 'phone' => '', 'relationship' => ''],
+        ['name' => '', 'phone' => '', 'relationship' => ''],
+    ];
+
+    public bool $refereesAgreed = false;
+
+    public string $bio = '';
+
+    public bool $consent = false;
+
+    public function mount(StartApplication $startApplication): void
+    {
+        if (! $this->user()->hasRole(Role::Pro->value)) {
+            $this->redirectRoute('pros.join');
+            $this->skipRender();
+
+            return;
+        }
+
+        try {
+            $pro = $startApplication->handle($this->user());
+        } catch (CannotChangeApplication) {
+            $this->redirectRoute('pros.status');
+            $this->skipRender();
+
+            return;
+        }
+
+        if (! $pro->status->isEditable()) {
+            $this->redirectRoute('pros.status');
+            $this->skipRender();
+
+            return;
+        }
+
+        $this->fillFrom($pro);
+        $this->step = $this->steps($pro)[0];
+    }
+
+    public function next(SaveApplicationStep $save): void
+    {
+        $this->resetErrorBag();
+        $pro = $this->pro();
+        $before = $this->steps($pro);
+
+        match ($this->step) {
+            'business' => $this->saveBusiness($save, $pro),
+            'services' => $save->services($this->user(), $pro, array_map(intval(...), $this->serviceIds)),
+            'areas' => $save->areas($this->user(), $pro, array_map(intval(...), $this->suburbIds)),
+            'registrations' => $this->saveRegistrations($save, $pro),
+            'references' => $this->saveReferences($save, $pro),
+            'about' => $this->saveAbout($save, $pro),
+            default => null,
+        };
+
+        // Saving can change which steps apply (a registration step appears; a fixed item drops out).
+        $index = array_search($this->step, $before, true);
+        $target = $before[min(($index === false ? -1 : $index) + 1, count($before) - 1)];
+        $this->step = in_array($target, $this->steps($pro->refresh()), true) ? $target : 'review';
+    }
+
+    public function back(): void
+    {
+        $this->resetErrorBag();
+        $steps = $this->steps($this->pro());
+        $index = array_search($this->step, $steps, true);
+        $this->step = $steps[max(($index === false ? 0 : $index) - 1, 0)];
+    }
+
+    public function goTo(string $step): void
+    {
+        if (in_array($step, $this->steps($this->pro()), true)) {
+            $this->step = $step;
+        }
+    }
+
+    public function addDocument(string $type, StoreProDocument $storeProDocument): void
+    {
+        $this->resetErrorBag('upload');
+        $documentType = DocumentType::tryFrom($type);
+        abort_unless($documentType instanceof DocumentType, 404);
+
+        if (! $this->upload instanceof TemporaryUploadedFile) {
+            throw ValidationException::withMessages(['upload' => __('Choose a file first.')]);
+        }
+
+        $storeProDocument->handle($this->user(), $this->pro(), $documentType, $this->upload);
+        $this->upload = null;
+    }
+
+    public function submit(SubmitApplication $submitApplication): void
+    {
+        try {
+            $submitApplication->handle($this->user(), $this->pro());
+        } catch (CannotChangeApplication $exception) {
+            throw ValidationException::withMessages(['application' => $exception->getMessage()]);
+        }
+
+        $this->redirectRoute('pros.status');
+    }
+
+    public function render(): View
+    {
+        $pro = $this->pro()->load(['services.trade', 'serviceAreas', 'documents.media', 'references']);
+
+        return view('livewire.pros.application', [
+            'pro' => $pro,
+            'steps' => $this->steps($pro),
+            'trades' => Trade::query()->where('is_active', true)
+                ->with(['services' => fn ($query) => $query->where('is_active', true)->orderBy('sort')])
+                ->orderBy('sort')->get(),
+            'suburbsByRegion' => Suburb::query()->where('is_active', true)->orderBy('region')->orderBy('name')->get()->groupBy('region'),
+            'documentTypes' => $pro->status === ProStatus::ChangesRequested
+                ? $pro->documents->where('status', DocumentStatus::Flagged)->pluck('type')->filter(fn (DocumentType $type): bool => ! $type->isRegistration())->values()->all()
+                : DocumentType::required(),
+            'registrationTypes' => $pro->requiredRegistrations(),
+            'referencesToReplace' => $pro->references->filter(fn (ProReference $reference): bool => $reference->outcome->needsReplacing())->values(),
+            'businessTypes' => BusinessType::cases(),
+        ]);
+    }
+
+    /**
+     * The steps this application shows: everything for a draft; only what was
+     * flagged once changes are requested (AC6).
+     *
+     * @return list<string>
+     */
+    private function steps(Pro $pro): array
+    {
+        $pro->loadMissing(['services', 'documents', 'references']);
+
+        if ($pro->status === ProStatus::ChangesRequested) {
+            $flagged = $pro->documents->where('status', DocumentStatus::Flagged);
+
+            return array_values(array_filter([
+                $flagged->contains(fn ($document): bool => ! $document->type->isRegistration()) ? 'documents' : null,
+                $flagged->contains(fn ($document): bool => $document->type->isRegistration()) ? 'registrations' : null,
+                $pro->references->contains(fn (ProReference $reference): bool => $reference->outcome->needsReplacing()) ? 'references' : null,
+                'review',
+            ]));
+        }
+
+        return array_values(array_filter([
+            'business', 'services', 'areas', 'documents',
+            $pro->requiredRegistrations() === [] ? null : 'registrations',
+            'references', 'about', 'review',
+        ]));
+    }
+
+    private function saveBusiness(SaveApplicationStep $save, Pro $pro): void
+    {
+        $this->validate([
+            'businessName' => ['required', 'string', 'max:120'],
+            'businessType' => ['required', 'in:'.implode(',', array_column(BusinessType::cases(), 'value'))],
+        ], [
+            'businessName.required' => __('Enter your business name.'),
+            'businessType.*' => __('Choose how your business trades.'),
+        ]);
+
+        $this->remap(fn () => $save->business($this->user(), $pro, new BusinessDetails(
+            $this->businessName,
+            BusinessType::from($this->businessType),
+            $this->vatNumber === '' ? null : $this->vatNumber,
+        )), ['business_name' => 'businessName', 'vat_number' => 'vatNumber']);
+    }
+
+    private function saveRegistrations(SaveApplicationStep $save, Pro $pro): void
+    {
+        foreach ($pro->requiredRegistrations() as $type) {
+            $number = trim($this->registrationNumbers[$type->value] ?? '');
+
+            // A registration is optional: without it, that service simply is not offered (AC3).
+            if ($number !== '') {
+                $this->remap(fn () => $save->registration($this->user(), $pro, $type, $number), ['number' => 'registrationNumbers.'.$type->value]);
+            }
+        }
+    }
+
+    private function saveReferences(SaveApplicationStep $save, Pro $pro): void
+    {
+        $map = [];
+        foreach ([0, 1] as $index) {
+            $map["references.{$index}.phone_e164"] = "references.{$index}.phone";
+        }
+
+        if ($pro->status === ProStatus::ChangesRequested) {
+            $toReplace = $pro->references->filter(fn (ProReference $reference): bool => $reference->outcome->needsReplacing())->values();
+
+            foreach ($toReplace as $index => $reference) {
+                $row = $this->references[$index] ?? ['name' => '', 'phone' => '', 'relationship' => ''];
+                $this->remap(fn () => $save->replaceReference($this->user(), $pro, $reference, new ReferenceData($row['name'], $row['phone'], $row['relationship'])), [
+                    'references.1.name' => "references.{$index}.name", 'references.1.phone_e164' => "references.{$index}.phone", 'references.1.relationship' => "references.{$index}.relationship",
+                ]);
+            }
+
+            return;
+        }
+
+        $this->remap(fn () => $save->references(
+            $this->user(),
+            $pro,
+            array_map(fn (array $row): ReferenceData => new ReferenceData($row['name'], $row['phone'], $row['relationship']), array_slice($this->references, 0, 2)),
+            $this->refereesAgreed,
+        ), [...$map, 'agreed' => 'refereesAgreed']);
+    }
+
+    private function saveAbout(SaveApplicationStep $save, Pro $pro): void
+    {
+        $save->bio($this->user(), $pro, $this->bio);
+        $save->consent($this->user(), $pro, $this->consent);
+    }
+
+    /**
+     * Runs a domain save and renames its error keys to this form's fields.
+     *
+     * @param  callable(): mixed  $save
+     * @param  array<string, string>  $map
+     */
+    private function remap(callable $save, array $map): void
+    {
+        try {
+            $save();
+        } catch (ValidationException $exception) {
+            $errors = [];
+            foreach ($exception->errors() as $key => $messages) {
+                $errors[$map[$key] ?? $key] = $messages;
+            }
+
+            throw ValidationException::withMessages($errors);
+        }
+    }
+
+    private function fillFrom(Pro $pro): void
+    {
+        $pro->load(['services', 'serviceAreas', 'documents', 'references']);
+        $this->businessName = (string) $pro->business_name;
+        $this->businessType = (string) $pro->business_type?->value;
+        $this->vatNumber = (string) $pro->vat_number;
+        $this->serviceIds = $pro->services->pluck('id')->all();
+        $this->suburbIds = $pro->serviceAreas->pluck('id')->all();
+        $this->bio = (string) $pro->bio;
+        $this->consent = $pro->vetting_consent_at !== null;
+
+        foreach ($pro->documents->filter(fn ($document): bool => $document->type->isRegistration()) as $document) {
+            $this->registrationNumbers[$document->type->value] = (string) $document->number;
+        }
+
+        if ($pro->status === ProStatus::Draft && $pro->references->count() === 2) {
+            $this->references = $pro->references->map(fn (ProReference $reference): array => [
+                'name' => $reference->name, 'phone' => $reference->phone_e164, 'relationship' => $reference->relationship,
+            ])->values()->all();
+            $this->refereesAgreed = true;
+        }
+    }
+
+    private function pro(): Pro
+    {
+        return Pro::query()->where('user_id', $this->user()->id)->firstOrFail();
+    }
+
+    private function user(): User
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User, 403);
+
+        return $user;
+    }
+}

@@ -19,7 +19,7 @@ class ProFactory extends Factory
         return [
             'user_id' => User::factory()->pro(),
             'business_name' => fake()->company(),
-            'status' => 'applied',
+            'status' => 'draft',
         ];
     }
 

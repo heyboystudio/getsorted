@@ -22,3 +22,6 @@ Schedule::command('model:prune', ['--model' => [WaitlistEntry::class]])->daily()
 
 // Spec 007: AI usage records (no customer text) kept for the configured period.
 Schedule::command('model:prune', ['--model' => [AiUsage::class]])->daily();
+
+// Spec 008: vetting records of rejected or abandoned applications (POPIA retention).
+Schedule::command('sortd:prune-vetting-records')->daily();

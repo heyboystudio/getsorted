@@ -7,15 +7,19 @@ namespace App\Domain\ServiceJobs\Actions;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Models\ServiceJob;
 use App\Models\User;
+use App\Support\Images\HeicUnsupported;
+use App\Support\Images\ImageReencoder;
+use App\Support\Images\UnreadableImage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Throwable;
 
 /** Validates and re-encodes an uploaded image before it reaches private storage. */
 final class StoreJobPhoto
 {
+    public function __construct(private ImageReencoder $images) {}
+
     public function handle(User $user, ServiceJob $job, UploadedFile $upload): Media
     {
         abort_unless($user->can('update', $job), 404);
@@ -59,77 +63,11 @@ final class StoreJobPhoto
             throw $this->invalidImage();
         }
 
-        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($path);
-
-        if (in_array($mime, ['image/heic', 'image/heif'], true)) {
-            return $this->reencodeHeic($path);
-        }
-
-        if (! in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
-            throw $this->invalidImage();
-        }
-
-        $dimensions = @getimagesize($path);
-
-        if ($dimensions === false || $dimensions[0] * $dimensions[1] > 24_000_000) {
-            throw $this->invalidImage();
-        }
-
-        $image = @imagecreatefromstring((string) file_get_contents($path));
-
-        if (! $image instanceof \GdImage) {
-            throw $this->invalidImage();
-        }
-
         try {
-            imagepalettetotruecolor($image);
-            imagealphablending($image, false);
-            imagesavealpha($image, true);
-            ob_start();
-            $ok = imagewebp($image, null, 85);
-            $bytes = ob_get_clean();
-
-            if (! $ok || ! is_string($bytes) || $bytes === '') {
-                throw $this->invalidImage();
-            }
-
-            return $bytes;
-        } finally {
-            imagedestroy($image);
-        }
-    }
-
-    private function reencodeHeic(string $path): string
-    {
-        if (! class_exists(\Imagick::class) || \Imagick::queryFormats('HEIC') === []) {
+            return $this->images->toWebp($path);
+        } catch (HeicUnsupported) {
             throw ValidationException::withMessages(['photoUpload' => __('HEIC photos cannot be processed on this server yet. Please choose a JPEG, PNG or WebP photo.')]);
-        }
-
-        try {
-            $image = new \Imagick;
-            $image->pingImage($path);
-
-            if ($image->getImageWidth() * $image->getImageHeight() > 24_000_000) {
-                throw $this->invalidImage();
-            }
-
-            $image->clear();
-            $image->readImage($path.'[0]');
-            $image->autoOrient();
-            $image->stripImage();
-            $image->setImageFormat('webp');
-            $image->setImageCompressionQuality(85);
-            $bytes = $image->getImageBlob();
-            $image->clear();
-
-            if ($bytes === '') {
-                throw $this->invalidImage();
-            }
-
-            return $bytes;
-        } catch (ValidationException $exception) {
-            throw $exception;
-        } catch (Throwable) {
+        } catch (UnreadableImage) {
             throw $this->invalidImage();
         }
     }
