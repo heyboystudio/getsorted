@@ -288,7 +288,7 @@ final class Show extends Component
         $notes = trim($this->notes) === '' ? null : ContactMasker::mask($this->notes)[0];
 
         return [
-            'lines' => array_map(static fn (array $line): string => ContactMasker::mask((string) $line['description'])[0], array_values($this->lines)),
+            'lines' => array_map(static fn (array $line): string => ContactMasker::mask((string) $line['description'])[0], $this->lines),
             'notes' => $notes,
             'start' => $start instanceof CarbonImmutable ? $start->translatedFormat('D j M') : null,
             'validUntil' => LocalTime::today()->addDays(max(1, $this->validityDays))->translatedFormat('D j M'),
