@@ -1,6 +1,6 @@
 # Spec 010 · Quote builder, comparison and acceptance
 
-Status: Done (awaiting merge) · Phase: 3 · Owner: founder
+Status: Done (merged in PR #35) · Phase: 3 · Owner: founder
 
 ## Goal
 An invited pro can send an itemised quote from their phone. The customer compares up to three quotes side by side and accepts one. The job is then booked with that pro, who gets the customer's contact details and address. This completes Phase 3. Paying deposits and final invoices is Phase 4.
@@ -112,3 +112,4 @@ An invited pro can send an itemised quote from their phone. The customer compare
   - only verified profile photos are shown.
 
   The new tests also caught a naming clash on the pro's job page that hid the customer's notes behind the pro's own quote notes; that is fixed and tested too.
+- 2026-10-04: PR #35 merged with founder approval. Local quality gate: 577 tests (2,498 assertions), Larastan clean, no advisories; npm audit clean.

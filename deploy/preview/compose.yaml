@@ -1,0 +1,64 @@
+# Private test site on a throwaway server (decision 037). Fake data only.
+x-app: &app
+  image: sortd-preview:latest
+  env_file: .env
+  volumes:
+    - storage:/app/storage
+  depends_on:
+    pgsql:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  web:
+    <<: *app
+    build:
+      context: ../..
+      dockerfile: deploy/preview/Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SERVER_NAME: "${SERVER_NAME}"
+      PREVIEW_USER: "${PREVIEW_USER}"
+      PREVIEW_PASSWORD_HASH: "${PREVIEW_PASSWORD_HASH}"
+    volumes:
+      - storage:/app/storage
+      - caddy_data:/data
+      - caddy_config:/config
+
+  queue:
+    <<: *app
+    command: ["php", "artisan", "queue:work", "--tries=3", "--max-time=3600"]
+    # The image's health check probes Caddy, which only the web container runs.
+    healthcheck:
+      disable: true
+
+  scheduler:
+    <<: *app
+    command: ["php", "artisan", "schedule:work"]
+    # The image's health check probes Caddy, which only the web container runs.
+    healthcheck:
+      disable: true
+
+  pgsql:
+    image: postgis/postgis:17-3.5-alpine
+    environment:
+      POSTGRES_DB: sortd
+      POSTGRES_USER: sortd
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - pgsql:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-h", "127.0.0.1", "-d", "sortd", "-U", "sortd"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  storage:
+  pgsql:
+  caddy_data:
+  caddy_config:

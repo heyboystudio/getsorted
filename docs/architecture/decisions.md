@@ -40,6 +40,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 034 | Pro application and vetting (spec 008) | Accepted | 2026-10-04 |
 | 035 | Daily login-code cap off on local machines (temporary) | Accepted | 2026-10-04 |
 | 036 | Quotes, comparison and acceptance (spec 010) | Accepted | 2026-10-04 |
+| 037 | Private test site on a temporary AWS server ("preview" mode) | Accepted | 2026-10-04 |
 
 ---
 
@@ -303,3 +304,18 @@ Short architecture decision records. **Add an entry for every significant choice
 
 **Consequences:** Quote text is masked for phone numbers, emails, links, ID/card numbers and bank details (`ContactMasker`); `pros.contact_masking_count` flags repeat attempts for admins at 3. Withdrawing closes that pro's invite (they cannot quote the job again). Ordinary text that only changes under Unicode normalisation ("m²", "½") is not masked or counted, and bank details need a banking word plus six or more digits. Rand prices accept a decimal comma ("120,50" is R120.50); a comma is only a thousands separator in groups of three. Authorisation sits in `QuotePolicy` (revise, withdraw, accept, view) and `ServiceJobPolicy::viewContact`; a quote's validity is compared by South African calendar date. Withdrawals and job expiries are written to the activity log, as acceptances are. Customer profile photos on quotes are served only once an admin has verified them. No PDFs, payments or ledger entries yet; those come with Phase 4. `composer check` now needs `COMPOSER_PROCESS_TIMEOUT=0` locally because the suite runs longer than Composer's 300-second default.
 
+## 037 · Private test site on a temporary AWS server ("preview" mode)
+**Context:** The founder wants to click through Sortd on a phone before a real host exists. They have an AWS EC2 server for about a month (until around 2026-11-04) and the domain `sortd.heyboy.co.za`. The server is in eu-north-1 (Stockholm), not South Africa, so it is not the hosting choice in decision 014 and must not hold real personal data. No WhatsApp provider is chosen yet (Q5). In staging and production nothing fakes messages (decision 024), so nobody could sign in there.
+
+**Decision:** A new environment, `APP_ENV=preview`, for a private test site that holds fake data only.
+- `App\Support\AppMode` decides what preview may do. Preview uses the same Fakes as local development: WhatsApp, payments, AI and maps. It also shows the login code on screen, as local development does (spec 001 AC20 now covers preview too). Staging and production are unchanged.
+- Every page shows a "Test site: fake data only" banner.
+- The whole site sits behind one shared password (HTTP basic auth), and `X-Robots-Tag: noindex` keeps it out of search engines.
+- It runs in Docker (`deploy/preview/`) because Ubuntu 26.04 offers no PHP 8.4 package:
+  - FrankenPHP (`dunglas/frankenphp:1-php8.4-bookworm`) runs PHP and handles HTTPS with Let's Encrypt;
+  - the database is PostGIS 17, as in local development;
+  - separate queue and scheduler containers.
+- `deploy/preview/deploy.sh` builds the assets, copies the code without `.env` or local data, rebuilds, migrates and seeds the catalogue and suburbs.
+- The server's `.env` and the site password are created on the server and never committed or printed.
+
+**Consequences:** The test site can be thrown away at any time and nothing depends on it. Phase 0's "staging live" criterion stays open until the South African host is chosen. Testers must not enter real personal details; the banner says so. iPhone HEIC uploads work only if the image's ImageMagick reads HEIC; otherwise the spec 012 fallback message shows. When the server expires, its data goes with it.

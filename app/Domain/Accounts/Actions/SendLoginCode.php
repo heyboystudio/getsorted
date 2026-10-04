@@ -13,6 +13,7 @@ use App\Domain\Accounts\Exceptions\CouldNotSendLoginCode;
 use App\Domain\Accounts\Support\PhoneNumbers;
 use App\Models\PhoneOtp;
 use App\Models\User;
+use App\Support\AppMode;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -70,7 +71,7 @@ final readonly class SendLoginCode
             throw new CouldNotSendLoginCode('Login code could not be sent.', $exception->getCode(), previous: $exception);
         }
 
-        return new SentLoginCodeData($phoneE164, $channel, $sentAt, app()->environment('local') ? $code : null);
+        return new SentLoginCodeData($phoneE164, $channel, $sentAt, AppMode::showsLoginCodes() ? $code : null);
     }
 
     /** HMAC with the app key, so a leaked table cannot be brute-forced offline. */

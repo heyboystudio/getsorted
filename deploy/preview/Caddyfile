@@ -1,0 +1,16 @@
+{
+	frankenphp
+}
+
+{$SERVER_NAME} {
+	root * /app/public
+	encode zstd gzip
+
+	# A private test site: keep it out of search engines and behind a shared password.
+	header X-Robots-Tag "noindex, nofollow"
+	basic_auth {
+		{$PREVIEW_USER} {$PREVIEW_PASSWORD_HASH}
+	}
+
+	php_server
+}

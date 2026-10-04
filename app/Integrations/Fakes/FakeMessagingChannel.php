@@ -42,7 +42,7 @@ final class FakeMessagingChannel implements MessagingChannel
 
         $this->sent[] = $message;
 
-        if (app()->environment('local')) {
+        if (app()->environment(['local', 'preview'])) {
             // Logs never contain full phone numbers, codes or tokens (security baseline §6).
             Log::info('[fake messaging] '.$message->channel->value.' '.$message->template.' to '.PhoneNumbers::maskForLogs($message->phoneE164), [
                 'parameters' => array_keys($message->parameters),
