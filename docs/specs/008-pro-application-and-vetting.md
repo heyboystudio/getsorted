@@ -1,6 +1,6 @@
 # Spec 008 · Pro application and vetting
 
-Status: Draft · Phase: 3 · Owner: founder
+Status: Approved · Phase: 3 · Owner: founder
 
 ## Goal
 A tradesperson who signed up as a pro (spec 011) can complete an application, and a vetting admin can check it and approve or reject it. Approval is what makes a pro count for coverage (spec 006) and, later, receive invites (spec 009). Until now no real pro can become approved.
@@ -81,11 +81,12 @@ This spec covers the application and vetting only. Bank details move to the paym
 ## Out of scope
 - Bank details and payouts (Phase 4, open question 1), invites and the pro panel (009), quotes (010), pro profile editing/pause/weekly cap by the pro (P4), document expiry reminders, criminal-record checks, automated ID verification.
 
-## Open questions
-1. **Bank details:** the journey puts bank details in the application. Recommended: collect them in the payments phase, when the payment provider (Q4) decides what is needed. That avoids storing bank details we can't use yet. Approve?
-2. **Criminal-record checks:** POPIA treats these as special personal information. Recommended: none in v1; vetting is ID, proof of address, registrations and two phoned references. Revisit before launch with a provider and legal advice. Approve?
-3. **Retention for rejected or abandoned applications:** recommended 12 months after the decision or last activity, then documents, references and notes are deleted (the account itself stays). Approve, or choose another period?
-4. **Reapplying after rejection:** recommended a 90-day wait, adjustable in settings. Approve?
+## Decisions (founder, 2026-10-04)
+1. **Bank details:** collected in the payments phase, once the payment provider (Q4) is chosen; not in this application.
+2. **Criminal-record checks:** none in v1. Vetting is ID, proof of address, registrations and two phoned references; revisit before launch with a provider and legal advice.
+3. **Retention:** documents, references and vetting notes of rejected or abandoned applications are deleted 12 months after the decision or last activity; the account itself stays.
+4. **Reapplying:** a 90-day wait after rejection, adjustable in settings.
 
 ## Progress
 - 2026-10-04: Drafted after spec 007 merged in PR #27. Awaiting founder approval and the four decisions above.
+- 2026-10-04: Founder approved the spec with all four recommended defaults.
