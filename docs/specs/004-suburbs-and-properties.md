@@ -60,7 +60,7 @@ Mobile first (360 px), same style as the account home.
 1. **Q9:** launch with **Berea/central** (Morningside, Musgrave, Berea, Glenwood) and **North** (Durban North, Umhlanga, La Lucia); West and South are seeded but inactive.
 2. No map pin or street autocomplete yet: suburb from Sortd's list + typed street; location = suburb centre point. Revisit when a geocoding provider is chosen.
 3. Property types: House, Flat/apartment, Townhouse/complex, Business premises, Other.
-4. Seed approximate suburb centre points (≈1 km); admins can correct them.
+4. Seed approximate suburb centre points (≈1 km) for the 12 launch-area suburbs; admins can correct them.
 
 ## Progress
 - 2026-10-04: Drafted for founder review.

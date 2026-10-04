@@ -98,6 +98,12 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
         return trim($this->first_name.' '.$this->last_name);
     }
 
+    /** @return HasMany<Property, $this> */
+    public function properties(): HasMany
+    {
+        return $this->hasMany(Property::class);
+    }
+
     /** @return HasMany<Consent, $this> */
     public function consents(): HasMany
     {

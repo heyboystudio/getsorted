@@ -33,6 +33,11 @@ return [
         'remember_days' => 30,
     ],
 
+    'properties' => [
+        // Saved properties per customer; prevents abuse of the address book.
+        'max_per_customer' => 10,
+    ],
+
     'legal' => [
         // Placeholder documents until lawyer-reviewed text exists (spec 001 decision 1).
         'terms_version' => '2026-10-draft',

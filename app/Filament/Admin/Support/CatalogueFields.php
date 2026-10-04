@@ -20,9 +20,9 @@ final class CatalogueFields
      *
      * @param  Closure(): Builder<TModel>  $siblings  query for records whose keys must not clash
      */
-    public static function key(Closure $siblings): TextInput
+    public static function key(Closure $siblings, string $column = 'key'): TextInput
     {
-        return TextInput::make('key')
+        return TextInput::make($column)
             ->label(__('Key'))
             ->required()
             ->maxLength(64)
@@ -32,8 +32,8 @@ final class CatalogueFields
             ->disabledOn('edit')
             ->dehydrated(fn (string $operation): bool => $operation === 'create')
             ->rules([
-                fn (string $operation): Closure => function (string $attribute, mixed $value, Closure $fail) use ($siblings, $operation): void {
-                    if ($operation === 'create' && $siblings()->where('key', $value)->exists()) {
+                fn (string $operation): Closure => function (string $attribute, mixed $value, Closure $fail) use ($siblings, $operation, $column): void {
+                    if ($operation === 'create' && $siblings()->where($column, $value)->exists()) {
                         $fail(__('This key is already used here.'));
                     }
                 },

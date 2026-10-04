@@ -10,5 +10,10 @@
 
         <h1 class="text-3xl font-semibold tracking-tight">{{ __('Hi :name', ['name' => $firstName]) }} <span aria-hidden="true">👋</span></h1>
         <p class="mt-3 text-lg text-zinc-600">{{ __('Your jobs will appear here.') }}</p>
+
+        <a href="{{ route('properties.index') }}" class="mt-8 flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 hover:border-emerald-700">
+            <span class="font-medium">{{ __('Saved properties') }}</span>
+            <span aria-hidden="true">→</span>
+        </a>
     </section>
 </main>
