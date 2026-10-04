@@ -48,10 +48,10 @@ function requestCode(string $phone = '082 123 4567', ?User $user = null): Testab
     return Livewire::test(VerifyPhone::class)->set('phone', $phone)->call('sendCode');
 }
 
-it('normalises SA mobile numbers and sends a code by WhatsApp (AC4)', function (string $input): void {
+it('normalises SA mobile numbers and sends a code by SMS first (AC4, founder 2026-10-05)', function (string $input): void {
     requestCode($input)->assertHasNoErrors()->assertSet('phoneE164', PHONE);
 
-    messaging()->assertSent('otp_code', fn (OutgoingMessage $message): bool => $message->phoneE164 === PHONE && $message->channel === MessageChannel::WhatsApp);
+    messaging()->assertSent('otp_code', fn (OutgoingMessage $message): bool => $message->phoneE164 === PHONE && $message->channel === MessageChannel::Sms);
 })->with(['082 123 4567', '+27 82 123 4567', '27821234567', '0821234567']);
 
 it('rejects invalid and non-mobile numbers without sending (AC4)', function (string $input): void {
@@ -133,15 +133,22 @@ it('rejects a code that was already used', function (): void {
     }
 });
 
-it('offers SMS only after 30 seconds (AC4)', function (): void {
+it('offers WhatsApp only after 30 seconds (AC4)', function (): void {
     $this->freezeTime();
-    $component = requestCode();
+    $component = requestCode()->assertSee('WhatsApp available in');
 
-    $component->call('sendBySms')->assertHasErrors(['code']);
+    $component->call('sendByOtherChannel')->assertHasErrors(['code']);
     $this->travel(31)->seconds();
-    $component->call('sendBySms')->assertHasNoErrors();
+    $component->call('sendByOtherChannel')->assertHasNoErrors();
 
-    messaging()->assertSent('otp_code', fn (OutgoingMessage $message): bool => $message->channel === MessageChannel::Sms);
+    messaging()->assertSent('otp_code', fn (OutgoingMessage $message): bool => $message->channel === MessageChannel::WhatsApp);
+});
+
+it('can be switched back to WhatsApp first by setting', function (): void {
+    config()->set('sortd.otp.default_channel', 'whatsapp');
+
+    requestCode()->assertSee('SMS available in');
+    messaging()->assertSent('otp_code', fn (OutgoingMessage $message): bool => $message->channel === MessageChannel::WhatsApp);
 });
 
 it('limits codes to 3 per number per 15 minutes', function (): void {

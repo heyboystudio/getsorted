@@ -5,7 +5,7 @@
 
         @if ($phoneE164 === null)
             <h1 class="mt-1 text-2xl font-semibold tracking-tight">{{ $changing ? __('Change your mobile') : __('Add your mobile number') }}</h1>
-            <p class="mt-2 text-zinc-600">{{ __('We\'ll send a 6-digit code on WhatsApp. Pros and Sortd use this number to keep you updated about your jobs.') }}</p>
+            <p class="mt-2 text-zinc-600">{{ \App\Livewire\Auth\VerifyPhone::firstChannel() === \App\Contracts\Data\MessageChannel::Sms ? __('We\'ll text you a 6-digit code.') : __('We\'ll send a 6-digit code on WhatsApp.') }} {{ __('Pros and Sortd use this number to keep you updated about your jobs.') }}</p>
 
             <form wire:submit="sendCode" class="mt-8 space-y-4" novalidate>
                 <div>
@@ -52,9 +52,10 @@
                  x-data="{ seconds: {{ $this->smsAvailableIn() }} }"
                  x-init="const timer = setInterval(() => { if (seconds > 0) { seconds-- } else { clearInterval(timer) } }, 1000)">
                 <button type="button" wire:click="changeNumber" class="text-zinc-600 underline underline-offset-4">{{ __('Wrong number?') }}</button>
-                <span x-show="seconds > 0" class="text-zinc-500">{{ __('SMS available in') }} <span x-text="seconds"></span>s</span>
-                <button type="button" x-show="seconds === 0" x-cloak wire:click="sendBySms" wire:loading.attr="disabled" wire:target="sendBySms"
-                    class="font-medium text-emerald-800 underline underline-offset-4 disabled:opacity-60">{{ __('Send by SMS instead') }}</button>
+                @php($other = $channel === \App\Contracts\Data\MessageChannel::Sms ? 'WhatsApp' : 'SMS')
+                <span x-show="seconds > 0" class="text-zinc-500">{{ __(':channel available in', ['channel' => $other]) }} <span x-text="seconds"></span>s</span>
+                <button type="button" x-show="seconds === 0" x-cloak wire:click="sendByOtherChannel" wire:loading.attr="disabled" wire:target="sendByOtherChannel"
+                    class="font-medium text-emerald-800 underline underline-offset-4 disabled:opacity-60">{{ __('Send by :channel instead', ['channel' => $other]) }}</button>
             </div>
         @endif
 

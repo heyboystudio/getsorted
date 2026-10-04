@@ -17,6 +17,9 @@ return [
         'length' => 6,
         'ttl_minutes' => 10,
         'max_attempts' => 5,
+        // The first channel for codes; the other is offered after the wait below.
+        // SMS first until the WhatsApp sender is set up (founder, 2026-10-05).
+        'default_channel' => env('OTP_DEFAULT_CHANNEL', 'sms'),
         'sms_fallback_after_seconds' => 30,
         // POPIA checklist: OTP records kept 90 days.
         'retention_days' => 90,

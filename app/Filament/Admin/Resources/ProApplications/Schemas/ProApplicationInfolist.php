@@ -31,7 +31,7 @@ final class ProApplicationInfolist
             ]),
             Section::make(__('Services and suburbs'))->schema([
                 TextEntry::make('services_list')->label(__('Services'))
-                    ->state(fn (Pro $record): string => $record->services->map(fn ($service): string => $service->trade->name.' · '.$service->name)->implode(', ')),
+                    ->state(fn (Pro $record): string => $record->services()->with('trade')->get()->map(fn ($service): string => $service->trade->name.' · '.$service->name)->implode(', ')),
                 TextEntry::make('suburbs_list')->label(__('Suburbs'))
                     ->state(fn (Pro $record): string => $record->serviceAreas->pluck('name')->sort()->implode(', ')),
             ]),

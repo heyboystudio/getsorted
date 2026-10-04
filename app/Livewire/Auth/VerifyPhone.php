@@ -21,8 +21,8 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
- * Add and verify a South African mobile with a 6-digit code by WhatsApp, or SMS
- * after 30 seconds (spec 014, AC4–AC7). Also used to change a verified number.
+ * Add and verify a South African mobile with a 6-digit code, by SMS first (or
+ * WhatsApp, per `sortd.otp.default_channel`) with the other channel after 30 seconds (spec 014, AC4–AC7). Also used to change a verified number.
  */
 #[Layout('components.layouts.app')]
 #[Title('Verify your mobile')]
@@ -65,10 +65,11 @@ final class VerifyPhone extends Component
             throw ValidationException::withMessages(['phone' => __('This is already your verified number.')]);
         }
 
-        $this->deliver($sendPhoneCode, $phoneE164, MessageChannel::WhatsApp, 'phone');
+        $this->deliver($sendPhoneCode, $phoneE164, self::firstChannel(), 'phone');
     }
 
-    public function sendBySms(SendPhoneCode $sendPhoneCode): void
+    /** The other channel, offered after a short wait (spec 014, AC4). */
+    public function sendByOtherChannel(SendPhoneCode $sendPhoneCode): void
     {
         $this->resetErrorBag();
 
@@ -77,10 +78,11 @@ final class VerifyPhone extends Component
         }
 
         if (now()->getTimestamp() - $this->codeSentAt < (int) config('sortd.otp.sms_fallback_after_seconds')) {
-            throw ValidationException::withMessages(['code' => __('Please wait a moment before asking for an SMS.')]);
+            throw ValidationException::withMessages(['code' => __('Please wait a moment before asking again.')]);
         }
 
-        $this->deliver($sendPhoneCode, $this->phoneE164, MessageChannel::Sms, 'code');
+        $other = $this->channel === MessageChannel::Sms ? MessageChannel::WhatsApp : MessageChannel::Sms;
+        $this->deliver($sendPhoneCode, $this->phoneE164, $other, 'code');
     }
 
     public function verifyCode(VerifyPhoneCode $verifyPhoneCode): void
@@ -161,6 +163,11 @@ final class VerifyPhone extends Component
         $this->codeSentAt = $sent->sentAt->getTimestamp();
         $this->developmentCode = $sent->developmentCode;
         $this->code = '';
+    }
+
+    public static function firstChannel(): MessageChannel
+    {
+        return config('sortd.otp.default_channel') === 'whatsapp' ? MessageChannel::WhatsApp : MessageChannel::Sms;
     }
 
     private function takenMessage(): string

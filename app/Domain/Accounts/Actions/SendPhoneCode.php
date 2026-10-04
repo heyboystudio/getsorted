@@ -66,7 +66,8 @@ final readonly class SendPhoneCode
             $this->messaging->send(new OutgoingMessage($phoneE164, 'otp_code', ['code' => $code], $channel));
         } catch (Throwable $exception) {
             $otp->delete();
-            Log::warning('Verification code could not be sent', ['phone' => PhoneNumbers::maskForLogs($phoneE164), 'channel' => $channel->value]);
+            // The provider's message carries only its status and error code, never the number (decision 040).
+            Log::warning('Verification code could not be sent', ['phone' => PhoneNumbers::maskForLogs($phoneE164), 'channel' => $channel->value, 'reason' => $exception->getMessage()]);
 
             throw new CouldNotSendLoginCode('Verification code could not be sent.', $exception->getCode(), previous: $exception);
         }
