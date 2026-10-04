@@ -91,6 +91,9 @@ it('sends pros who are not approved to their application instead (AC7)', functio
 it('shows the job without the customer\'s identity, address or contact details (AC8, decision 3)', function (): void {
     $pro = screenPro();
     $job = screenJob();
+    $answers = $job->scoping_answers;
+    $answers['leak_location'] = ['prompt' => 'Where is the leak coming from?', 'type' => 'text', 'answer' => 'Behind the fridge. Call 082 123 4567.'];
+    $job->forceFill(['scoping_answers' => $answers])->save();
     $invite = $job->invites()->sole();
     $this->actingAs($pro->user);
 

@@ -92,7 +92,13 @@ final class Show extends Component
         return view('livewire.pros.jobs.show', [
             'invite' => $invite,
             'job' => $job,
-            'answers' => $job->orderedAnswers(),
+            'answers' => array_map(static function (array $answer): array {
+                $answer['answer'] = is_array($answer['answer'])
+                    ? array_map(static fn (mixed $value): string => Redactor::strip((string) $value), $answer['answer'])
+                    : Redactor::strip((string) $answer['answer']);
+
+                return $answer;
+            }, $job->orderedAnswers()),
             'description' => $description === '' ? null : $description,
             'notes' => $notes === '' || $notes === $description ? null : $notes,
             'photoUrls' => $job->getMedia(ServiceJob::PHOTO_COLLECTION)->map(fn ($photo): string => $invite->photoUrl($photo))->all(),
