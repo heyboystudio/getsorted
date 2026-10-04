@@ -16,3 +16,4 @@ Suggested first specs after Phase 0 (from the roadmap):
 | 008 | Pro application and vetting | 3 |
 | 009 | Matching and invite waves | 3 |
 | 010 | Quote builder and customer comparison | 3 |
+| 011 | Join as a pro (sign-up entry) — [draft](011-join-as-a-pro.md) | 1 |
