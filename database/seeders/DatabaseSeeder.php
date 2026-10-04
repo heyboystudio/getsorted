@@ -10,6 +10,7 @@ final class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Accounts are created through explicit, authorized workflows in later phases.
+        // Accounts are created through explicit, authorized workflows, never seeded.
+        $this->call(CatalogueSeeder::class);
     }
 }
