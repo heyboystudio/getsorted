@@ -18,3 +18,4 @@ Suggested first specs after Phase 0 (from the roadmap):
 | 010 | Quote builder, comparison and acceptance — [done](010-quotes-and-acceptance.md) | 3 |
 | 011 | Join as a pro (sign-up entry) — [done](011-join-as-a-pro.md) | 1 |
 | 012 | Job photos — [done](012-job-photos.md) | 2 |
+| 013 | Deposit payments, webhooks and the ledger — [draft](013-deposit-payments.md) | 4 |

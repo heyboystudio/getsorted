@@ -16,7 +16,7 @@ After launch: public SEO pages per suburb × trade, pro performance dashboards, 
 
 ## Current position (2026-10-04)
 
-Phases 1 (accounts and catalogue) and 2 (booking) are built. Phase 3 has pro application, vetting and invite waves; quote building, customer comparison and acceptance remain. Specs 001–009, 011 and 012 have merged; spec 010 is next. Phases 4–6 have not started. Phase 0's CI and staging exit criteria remain deferred under decisions 020 and 014, so launch readiness still depends on hosting, live providers and operational checks.
+Phases 1–3 are built: specs 001–012 have merged, ending with quotes and acceptance (spec 010, PR #35). Phase 4 (payments) starts with spec 013, deposit payments on the fake gateway; the payment provider (Q4) is still open. A private test site runs at sortd.heyboy.co.za on a temporary server with fake data only (decision 037). Phase 0's CI and staging exit criteria remain deferred under decisions 020 and 014, so launch readiness still depends on hosting, live providers and operational checks.
 
 ---
 
