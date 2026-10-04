@@ -1,6 +1,6 @@
 # Spec 007 · AI scoping assistant
 
-Status: Done (awaiting merge) · Phase: 2 · Owner: founder
+Status: Done (merged in PR #27) · Phase: 2 · Owner: founder
 
 ## Goal
 Let a customer start a booking by describing the problem in their own words, and give every posted job a short, neutral summary for pros. The assistant only suggests: the customer confirms the service and edits the summary, and booking works fully when the assistant is unavailable.
@@ -101,3 +101,4 @@ Let a customer start a booking by describing the problem in their own words, and
   - `zend.exception_ignore_args=On` and error-tracker argument scrubbing in production.
   - Whether customer-edited descriptions should be checked for contact details before spec 009 shows them to pros.
 - Awaiting PR review and founder merge approval.
+- 2026-10-04: PR #27 merged with founder approval.
