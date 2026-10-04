@@ -38,6 +38,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 032 | Coverage guard before booking and waitlist (spec 006) | Accepted | 2026-10-04 |
 | 033 | AI scoping assistant: Laravel AI SDK, Anthropic, shipped switched off (spec 007) | Accepted | 2026-10-04 |
 | 034 | Pro application and vetting (spec 008) | Accepted | 2026-10-04 |
+| 035 | Daily login-code cap off on local machines (temporary) | Accepted | 2026-10-04 |
 
 ---
 
@@ -284,4 +285,11 @@ Short architecture decision records. **Add an entry for every significant choice
 **Privacy and safety:** ID numbers are never stored; registration numbers and reference phones are encrypted. Documents sit on the private `media` disk and are served only through a five-minute signed link that re-checks the policy and needs the admin login session for admins; images are re-encoded (shared `App\Support\Images\ImageReencoder`, extracted from job photos), PDFs are checked by content, refused if they contain `/JavaScript`, `/JS`, `/Launch` or `/EmbeddedFile`, and always downloaded with a sandbox CSP. Uploads (30/hour) and submissions (5/hour) are rate limited per pro. A reapplication resets every earlier check, and a changed registration number must be verified again.
 
 **Consequences:** The `paused` status (journey P4) is not in the state machine yet; it arrives with the pro's own profile screens. `pro_events` stays append-only except for the prune's deliberate blanking of `reason`. Before launch, consider malware scanning of uploads and turning off `serve` on the `media` disk (nothing uses it). The spec's `vetting.abandoned_after_days` setting was dropped: decision 3's 12-month rule decides when an abandoned application is pruned.
+
+## 035 · Daily login-code cap off on local machines (temporary)
+**Context:** While testing on a local machine, the founder hit the daily limit of 10 login codes per number and asked for it to be switched off temporarily.
+
+**Decision:** `sortd.otp.daily_cap_in_local` (default `false`) skips only the daily per-number cap, and only when `APP_ENV=local`. It is always enforced in testing, staging and production, and the 15-minute per-number and hourly per-IP limits still apply everywhere. Today's local counters were cleared.
+
+**Consequences:** To turn it back on locally, set `daily_cap_in_local` to `true` (or remove the switch once testing is done). A test pins that non-local environments keep the cap.
 
