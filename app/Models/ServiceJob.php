@@ -14,6 +14,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\URL;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * A customer's job ("Job" in the UI; `jobs` is Laravel's queue table).
@@ -37,10 +41,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $cancel_reason
  * @property CarbonImmutable $updated_at
  */
-final class ServiceJob extends Model
+final class ServiceJob extends Model implements HasMedia
 {
     /** @use HasFactory<ServiceJobFactory> */
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, InteractsWithMedia;
+
+    public const string PHOTO_COLLECTION = 'job_photos';
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection(self::PHOTO_COLLECTION)->useDisk('media');
+    }
+
+    public function photoUrl(Media $photo): string
+    {
+        return URL::temporarySignedRoute('job-photos.show', now()->addMinutes(5), ['job' => $this, 'photo' => $photo->uuid]);
+    }
 
     /** Status is deliberately absent: only the state machine writes it. */
     /** @var list<string> */

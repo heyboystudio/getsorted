@@ -91,7 +91,7 @@ it('shows safety advice and marks the job urgent for an urgent answer (AC5)', fu
 });
 
 it('lets guests answer questions, then keeps the answers through login (AC2)', function (): void {
-    $wizard = answerLeakQuestions(startLeakBooking())->call('next')->assertSet('step', 'property')->assertSee('Log in to continue');
+    $wizard = answerLeakQuestions(startLeakBooking())->call('next')->assertSet('step', 'photos')->call('next')->assertSet('step', 'property')->assertSee('Log in to continue');
     expect(ServiceJob::query()->count())->toBe(0);
 
     $wizard->call('logInToContinue')->assertRedirect(route('login'));
@@ -112,6 +112,7 @@ it('books end to end: property, time, review, post and confirmation (AC6–AC9, 
 
     $wizard = answerLeakQuestions(startLeakBooking())
         ->set('notes', 'Leaks when the tap is open.')->call('next')
+        ->call('next')
         ->call('next')->assertHasErrors(['property'])
         ->call('selectProperty', $property->public_id)->call('next')->assertSet('step', 'when')
         ->set('timeWindow', 'morning')->set('preferredDate', $date)->call('next')->assertSet('step', 'review')
@@ -130,7 +131,7 @@ it('stops a booking for a property in a suburb Sortd is not in yet (AC6)', funct
     $westville = Property::factory()->for($customer)->create(['suburb_id' => Suburb::query()->where('slug', 'westville')->value('id')]);
     $this->actingAs($customer);
 
-    answerLeakQuestions(startLeakBooking())->call('next')
+    answerLeakQuestions(startLeakBooking())->call('next')->call('next')
         ->call('selectProperty', $westville->public_id)->call('next')
         ->assertHasErrors(['property'])->assertSee("Sortd isn't in Westville yet");
 });
@@ -140,7 +141,7 @@ it("cannot pick another customer's property (AC6)", function (): void {
     $theirs = Property::factory()->create();
     $this->actingAs($customer);
 
-    answerLeakQuestions(startLeakBooking())->call('next')
+    answerLeakQuestions(startLeakBooking())->call('next')->call('next')
         ->call('selectProperty', $theirs->public_id)->assertSet('propertyPublicId', null);
 });
 
@@ -158,7 +159,7 @@ it('keeps an unfinished booking as a draft to resume from the account (AC12)', f
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
 
-    answerLeakQuestions(startLeakBooking())->call('next')->call('selectProperty', $property->public_id)->call('next');
+    answerLeakQuestions(startLeakBooking())->call('next')->call('next')->call('selectProperty', $property->public_id)->call('next');
     $job = ServiceJob::query()->sole();
 
     Livewire::test(Home::class)->assertSee('Finish your request')->assertSee(route('booking.continue', $job));
@@ -271,7 +272,7 @@ it('uses Durban time for "today" (urgent bookings after midnight SAST)', functio
     // 23:30 UTC on the 10th is 01:30 SAST on the 11th.
     $this->travelTo(CarbonImmutable::parse('2026-11-10 23:30:00', 'UTC'));
 
-    answerLeakQuestions(startLeakBooking())->call('next')
+    answerLeakQuestions(startLeakBooking())->call('next')->call('next')
         ->call('selectProperty', $property->public_id)->call('next')
         ->set('timeWindow', 'today')->call('next')->assertSet('step', 'review')->assertSee('Urgent')
         ->call('post')->assertHasNoErrors();
@@ -284,7 +285,7 @@ it('queues the job-posted message instead of sending it while the customer waits
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
 
-    answerLeakQuestions(startLeakBooking())->call('next')->call('selectProperty', $property->public_id)->call('next')
+    answerLeakQuestions(startLeakBooking())->call('next')->call('next')->call('selectProperty', $property->public_id)->call('next')
         ->set('timeWindow', 'morning')->set('preferredDate', now()->addDays(2)->toDateString())->call('next')->call('post');
 
     Queue::assertPushedOn('notifications', SendJobPostedMessage::class);
@@ -295,7 +296,7 @@ it('takes a second tap on "Post job" to the job instead of an error', function (
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
 
-    $wizard = answerLeakQuestions(startLeakBooking())->call('next')->call('selectProperty', $property->public_id)->call('next')
+    $wizard = answerLeakQuestions(startLeakBooking())->call('next')->call('next')->call('selectProperty', $property->public_id)->call('next')
         ->set('timeWindow', 'morning')->set('preferredDate', now()->addDays(2)->toDateString())->call('next');
     $wizard->call('post');
     $job = ServiceJob::query()->sole();
@@ -312,7 +313,7 @@ it('treats a tampered date as not chosen instead of an error page', function ():
 });
 
 it('sends a guest back into their booking after logging in (AC2)', function (): void {
-    answerLeakQuestions(startLeakBooking())->call('next')->call('logInToContinue');
+    answerLeakQuestions(startLeakBooking())->call('next')->call('next')->call('logInToContinue');
     $customer = User::factory()->customer()->create(['phone_e164' => '+27821234567']);
 
     $login = Livewire::test(Login::class)->set('phone', '082 123 4567')->call('sendCode');

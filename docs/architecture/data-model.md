@@ -104,7 +104,7 @@ Settings: `job_timers.quote_window_hours` (72), `job_timers.draft_expiry_days` (
 ### Platform
 | Table | Key columns |
 |---|---|
-| `media` | `spatie/laravel-medialibrary` (job photos, pro documents, invoice PDFs) — private `media` disk — **in place** |
+| `media` | `spatie/laravel-medialibrary` on private `media` disk. `job_photos` collection belongs to `ServiceJob`; up to 5 processed WebP images per job, source metadata stripped, SHA-256 custom property for repeat upload detection. Cancelled drafts delete their photos. Pro documents and invoice PDFs use later collections. |
 | `activity_log` | `spatie/laravel-activitylog` — admin and sensitive actions; append-only, never cleaned — **in place** |
 | `settings` | `spatie/laravel-settings` — timers, commission, deposit cap — **table in place**; settings classes arrive with their features |
 | `ai_interactions` | user_id, service_job_id, purpose, model, input_tokens, output_tokens, latency_ms, outcome (no raw customer text kept beyond 30 days) |

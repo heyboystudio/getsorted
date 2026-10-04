@@ -57,6 +57,11 @@ return [
         'notes_max_length' => 1000,
     ],
 
+    'job_photos' => [
+        'max_count' => 5,
+        'max_kilobytes' => 10_240,
+    ],
+
     'legal' => [
         // Placeholder documents until lawyer-reviewed text exists (spec 001 decision 1).
         'terms_version' => '2026-10-draft',

@@ -28,6 +28,17 @@
             @endif
         </dl>
 
+        @if ($job->getMedia(\App\Models\ServiceJob::PHOTO_COLLECTION)->isNotEmpty())
+            <section class="mt-6">
+                <h2 class="font-semibold">{{ __('Photos') }}</h2>
+                <div class="mt-3 grid grid-cols-2 gap-3">
+                    @foreach ($job->getMedia(\App\Models\ServiceJob::PHOTO_COLLECTION) as $photo)
+                        <img src="{{ $job->photoUrl($photo) }}" alt="{{ __('Job photo :number', ['number' => $loop->iteration]) }}" class="aspect-square w-full rounded-xl object-cover" loading="lazy">
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Draft)
             <a href="{{ route('booking.continue', $job) }}" class="mt-6 block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white hover:bg-emerald-800">{{ __('Finish your request') }}</a>
         @endif

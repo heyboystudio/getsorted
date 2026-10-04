@@ -17,3 +17,4 @@ Suggested first specs after Phase 0 (from the roadmap):
 | 009 | Matching and invite waves | 3 |
 | 010 | Quote builder and customer comparison | 3 |
 | 011 | Join as a pro (sign-up entry) — [done](011-join-as-a-pro.md) | 1 |
+| 012 | Job photos — [done, awaiting merge](012-job-photos.md) | 2 |
