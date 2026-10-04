@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\PhoneOtp;
+use App\Models\WaitlistEntry;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -16,3 +17,4 @@ Schedule::command('model:prune', ['--model' => [PhoneOtp::class]])->daily();
 
 // Spec 005: abandoned booking drafts expire.
 Schedule::command('sortd:cancel-stale-drafts')->daily();
+Schedule::command('model:prune', ['--model' => [WaitlistEntry::class]])->daily();

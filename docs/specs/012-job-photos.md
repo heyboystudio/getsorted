@@ -1,6 +1,6 @@
 # Spec 012 · Job photos
 
-Status: Done (awaiting merge) · Phase: 2 · Owner: founder
+Status: Done (merged in PR #24) · Phase: 2 · Owner: founder
 
 ## Goal
 Customers can add photos to a booking so a pro can understand the problem before quoting. Photos stay private and have location metadata removed.
@@ -50,4 +50,4 @@ Customers can add photos to a booking so a pro can understand the problem before
 
 ## Progress
 - 2026-10-04: Drafted after spec 005 merged, per founder decision 3 in that spec. HEIC decision recorded at the founder's request.
-- 2026-10-04: Founder approved the build plan. Implemented the optional photo step, private processed media, signed and authorized image access, customer/admin display, and upload/removal tests. Local PHP has GD but no Imagick/HEIC codec, so a real HEIC upload cannot be exercised here; hosting must supply both before deployment. Review findings on removal races, repeat uploads and navigation during upload were fixed. `COMPOSER_PROCESS_TIMEOUT=0 composer check` passed (316 tests, 1,392 assertions); `npm audit --audit-level=high` found 0 vulnerabilities; assets built and the photo step was checked at 360 px. Awaiting PR review and founder merge approval.
+- 2026-10-04: Founder approved the build plan. Implemented the optional photo step, private processed media, signed and authorized image access, customer/admin display, and upload/removal tests. Local PHP has GD but no Imagick/HEIC codec, so a real HEIC upload cannot be exercised here; hosting must supply both before deployment. Review findings on removal races, repeat uploads and navigation during upload were fixed. `COMPOSER_PROCESS_TIMEOUT=0 composer check` passed (316 tests, 1,392 assertions); `npm audit --audit-level=high` found 0 vulnerabilities; assets built and the photo step was checked at 360 px. PR #24 merged with founder approval.

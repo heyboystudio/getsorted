@@ -255,3 +255,10 @@ Short architecture decision records. **Add an entry for every significant choice
 **Decision:** Accept JPEG, PNG, WebP and HEIC source images, up to five per job and 10 MB each. Process accepted images into WebP and discard the source bytes and metadata before storing them on the private `media` disk. Serve each photo through a five-minute signed URL with job authorization. A cancelled draft deletes its photos. Repeated upload requests for the same processed content reuse the existing photo.
 
 **Deployment requirement:** HEIC decoding requires PHP Imagick with a working HEIC codec. The current local PHP runtime does not have Imagick, so local HEIC uploads show a clear fallback message; the chosen South African host must provide and verify the codec before this feature is deployed.
+
+## 032 · Coverage guard before booking and waitlist (spec 006)
+**Context:** Spec 005 deliberately allowed jobs to post before pro eligibility existed. The founder approved spec 006 and its build plan.
+
+**Decision:** Ask for the suburb before scoping. Only an approved pro serving that service and suburb, with a current required registration, provides coverage. Recheck against the property's suburb when posting; a lost match keeps the job as a draft and offers the waitlist. Live bookings have no zero-pro bypass. The local-only `LocalCoverageSeeder` can attach the existing demo pro to active, non-registration services and active suburbs for phone walkthroughs. Admins see aggregate waitlist demand only; a verified customer can remove requests tied to their phone. Entries are pruned after 12 months.
+
+**Eligibility inputs:** The query also checks a rolling seven-day `pro_job_allocations` count against the optional weekly cap and `pro_customer_exclusions` for an upheld dispute involving the signed-in customer. Invite and dispute workflows in later specs will write these records. Guests are rechecked with their customer identity before posting. Pro application, vetting UI and individual waitlist contact access are later work. Until approved pro records exist in a live environment, customers reach the waitlist.

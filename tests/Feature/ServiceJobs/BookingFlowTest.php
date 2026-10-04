@@ -15,6 +15,7 @@ use App\Livewire\Account\Home;
 use App\Livewire\Account\Properties\Form;
 use App\Livewire\Auth\Login;
 use App\Livewire\Booking\Wizard;
+use App\Models\Pro;
 use App\Models\Property;
 use App\Models\ScopingQuestion;
 use App\Models\Service;
@@ -38,6 +39,9 @@ beforeEach(function (): void {
     $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
     $this->plumbing = Trade::query()->where('key', 'plumbing')->sole();
     $this->leak = Service::query()->where('key', 'leak_repair')->sole();
+    $pro = Pro::factory()->approved()->create();
+    $pro->services()->attach($this->leak);
+    $pro->serviceAreas()->attach(Suburb::query()->where('slug', 'musgrave')->sole());
 });
 
 function bookingCustomer(): array
@@ -50,7 +54,9 @@ function bookingCustomer(): array
 
 function startLeakBooking(): Testable
 {
-    return Livewire::test(Wizard::class, ['trade' => test()->plumbing, 'service' => test()->leak]);
+    $wizard = Livewire::test(Wizard::class, ['trade' => test()->plumbing, 'service' => test()->leak]);
+
+    return $wizard->get('step') === 'coverage' ? $wizard->call('selectSuburb', 'musgrave')->call('next') : $wizard;
 }
 
 function answerLeakQuestions(Testable $wizard, string $severity = 'Dripping'): Testable
@@ -133,7 +139,8 @@ it('stops a booking for a property in a suburb Sortd is not in yet (AC6)', funct
 
     answerLeakQuestions(startLeakBooking())->call('next')->call('next')
         ->call('selectProperty', $westville->public_id)->call('next')
-        ->assertHasErrors(['property'])->assertSee("Sortd isn't in Westville yet");
+        ->assertSet('step', 'property')->assertSee('This property is in Westville')
+        ->call('confirmPropertySuburb')->assertSet('step', 'waitlist')->assertSee('not available there');
 });
 
 it("cannot pick another customer's property (AC6)", function (): void {
@@ -208,8 +215,12 @@ it('lets customers tick several answers on a multi-choice question', function ()
     [$customer] = bookingCustomer();
     $this->actingAs($customer);
     $damp = Service::query()->where('key', 'damp_treatment')->first() ?? ScopingQuestion::query()->where('key', 'damp_where')->sole()->service;
+    $pro = Pro::factory()->approved()->create();
+    $pro->services()->attach($damp);
+    $pro->serviceAreas()->attach(Suburb::query()->where('slug', 'musgrave')->sole());
 
-    $wizard = Livewire::test(Wizard::class, ['trade' => $damp->trade, 'service' => $damp]);
+    $wizard = Livewire::test(Wizard::class, ['trade' => $damp->trade, 'service' => $damp])
+        ->call('selectSuburb', 'musgrave')->call('next');
     $index = $damp->questions->search(fn ($q): bool => $q->key === 'damp_where');
     $wizard->assertSet('answers.damp_where', []);
 

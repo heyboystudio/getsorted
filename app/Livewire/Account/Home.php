@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Livewire\Account;
 
+use App\Domain\Matching\Actions\WithdrawWaitlist;
 use App\Domain\ServiceJobs\Actions\CancelServiceJob;
 use App\Domain\ServiceJobs\Enums\ActorType;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Models\ServiceJob;
 use App\Models\User;
+use App\Models\WaitlistEntry;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -19,6 +21,16 @@ use Livewire\Component;
 #[Title('Your account')]
 final class Home extends Component
 {
+    public bool $waitlistRemoved = false;
+
+    public function removeWaitlistRequests(WithdrawWaitlist $withdraw): void
+    {
+        /** @var User $user */
+        $user = auth()->user();
+        $withdraw->handle($user);
+        $this->waitlistRemoved = true;
+    }
+
     /** Customers can remove a draft they no longer want (keeps them under the draft limit). */
     public function removeDraft(string $publicId, CancelServiceJob $cancel): void
     {
@@ -38,6 +50,7 @@ final class Home extends Component
 
         return view('livewire.account.home', [
             'firstName' => $user->first_name,
+            'hasWaitlistRequests' => $user->phone_e164 !== null && WaitlistEntry::query()->where('phone_e164', $user->phone_e164)->exists(),
             'jobs' => ServiceJob::query()->where('customer_id', $user->id)
                 ->whereNot('status', ServiceJobStatus::Cancelled)
                 ->with(['service', 'property.suburb'])

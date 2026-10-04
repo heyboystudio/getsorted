@@ -18,6 +18,7 @@ use App\Domain\ServiceJobs\Exceptions\TransitionNotAllowed;
 use App\Domain\ServiceJobs\ServiceJobStateMachine;
 use App\Domain\ServiceJobs\Support\ScopingAnswers;
 use App\Integrations\Fakes\FakeMessagingChannel;
+use App\Models\Pro;
 use App\Models\Property;
 use App\Models\ScopingQuestion;
 use App\Models\Service;
@@ -42,6 +43,9 @@ beforeEach(function (): void {
         'suburb_id' => Suburb::query()->where('slug', 'morningside')->value('id'),
     ]);
     $this->leak = Service::query()->where('key', 'leak_repair')->sole();
+    $pro = Pro::factory()->approved()->create();
+    $pro->services()->attach($this->leak);
+    $pro->serviceAreas()->attach($this->property->suburb);
 });
 
 function checkedAnswers(Service $service, array $raw): array
@@ -173,7 +177,7 @@ it('refuses to post when a guard fails and leaves the draft untouched (AC10)', f
         $test->property->suburb->update(['is_active' => false]);
 
         return draftFor($test->customer, $test->leak);
-    }, "Sortd isn't in"],
+    }, 'not available in'],
     'deleted property' => [function ($test): ServiceJob {
         $job = draftFor($test->customer, $test->leak);
         $test->property->delete();

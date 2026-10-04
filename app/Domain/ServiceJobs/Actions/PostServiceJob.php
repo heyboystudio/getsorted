@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domain\ServiceJobs\Actions;
 
+use App\Domain\Matching\EligibleProsQuery;
 use App\Domain\ServiceJobs\Enums\ActorType;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Domain\ServiceJobs\Exceptions\CannotPostServiceJob;
+use App\Domain\ServiceJobs\Exceptions\NoEligiblePros;
 use App\Domain\ServiceJobs\ServiceJobStateMachine;
 use App\Domain\ServiceJobs\Support\ScopingAnswers;
 use App\Jobs\SendJobPostedMessage;
@@ -25,6 +27,7 @@ final readonly class PostServiceJob
     public function __construct(
         private ServiceJobStateMachine $stateMachine,
         private JobTimers $timers,
+        private EligibleProsQuery $eligiblePros,
     ) {}
 
     /**
@@ -93,10 +96,6 @@ final readonly class PostServiceJob
             throw new CannotPostServiceJob(__('Please choose one of your properties.'));
         }
 
-        if (! $property->suburb->is_active) {
-            throw new CannotPostServiceJob(__("Sortd isn't in :suburb yet.", ['suburb' => $property->suburb->name]));
-        }
-
         $date = $job->preferred_date;
         $window = $job->time_window;
 
@@ -113,6 +112,10 @@ final readonly class PostServiceJob
 
         if ($window === TimeWindow::Today && (! $job->service->emergency_capable || $date->toDateString() !== $today)) {
             throw new CannotPostServiceJob(__('Urgent same-day bookings are only for emergency services, today.'));
+        }
+
+        if (! $this->eligiblePros->exists($job->service, $property->suburb, $customer)) {
+            throw new NoEligiblePros(__('We’re not available in :suburb for this service yet.', ['suburb' => $property->suburb->name]));
         }
     }
 }
