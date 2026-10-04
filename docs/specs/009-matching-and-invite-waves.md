@@ -1,6 +1,6 @@
 # Spec 009 · Matching and invite waves
 
-Status: Draft · Phase: 3 · Owner: founder
+Status: Approved · Phase: 3 · Owner: founder
 
 ## Goal
 When a customer posts a job, Sortd invites suitable vetted pros automatically, in waves, so the job collects quotes without the customer doing anything more. Pros get a WhatsApp message and see the job (without the customer's identity or street address), and can open or decline it. Quoting itself is spec 010.
@@ -64,10 +64,11 @@ When a customer posts a job, Sortd invites suitable vetted pros automatically, i
 - The pro's own availability, pause and weekly cap screens (journey P4).
 - Real WhatsApp delivery (Q5, provider not chosen; the fake channel logs messages).
 
-## Open questions
-1. **Where pros work:** the architecture planned a Filament panel at `/pro` with phone login. The pro application (spec 008) was built as mobile pages under `/pros/...` in the customer look. Recommended: keep pros on these mobile pages (`/pros/jobs`) and drop the separate Filament pro panel. It's one login, it looks the same as the rest of Sortd, and it's simpler on a phone. Approve?
-2. **Fair rotation ranking for v1:** recommended "fewest invites in the last 7 days first, random tie-break" until ratings exist. Approve?
-3. **Customer notes for pros:** the job description can be off (the AI ships switched off), so pros need the customer's own notes. Recommended: show pros both the description and the notes, with phone numbers, emails, street addresses and links stripped. This also covers the spec 007 follow-up about customers typing contact details into their edited description. Approve?
+## Decisions (founder, 2026-10-04)
+1. **Where pros work:** pros stay on the mobile pages under `/pros/...`; the separate Filament `/pro` panel is dropped.
+2. **Ranking for v1:** fewest invites in the last 7 days first, random tie-break, until ratings exist.
+3. **Customer notes for pros:** pros see the job description and the customer's notes, with phone numbers, emails, street addresses and links stripped (also settles the spec 007 follow-up).
 
 ## Progress
 - 2026-10-04: Drafted after spec 008 merged in PR #29. Awaiting founder approval and the three decisions above.
+- 2026-10-04: Founder approved the spec with all three recommended defaults.
