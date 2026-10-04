@@ -9,6 +9,6 @@ v1 launches in a short list of eThekwini suburbs, chosen where Kandua coverage w
 | West | Westville, Pinetown, Kloof | No fault-finding electricians on Kandua |
 | South | Amanzimtoti, Bluff | No fault-finding electricians on Kandua |
 
-Status: **draft** — the founder picks 2–3 regions to start based on where the first pros are recruited.
+Status: **decided 2026-10-04** — launch with **Berea / central** and **North**; West and South are seeded but switched off (spec 004).
 
 Outside the active list, booking shows a waitlist form (name, phone, suburb, service) instead of an error.

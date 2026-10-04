@@ -1,6 +1,6 @@
 # Spec 004 · Suburbs and properties
 
-Status: Draft · Phase: 1 · Owner: founder
+Status: Approved · Phase: 1 · Owner: founder
 
 ## Goal
 Sortd knows its launch suburbs (with map coordinates) and customers can save the properties where work will be done, each linked to a suburb. This completes Phase 1 ("properties with suburb lookup") and is what the coverage check, booking and matching build on in Phases 2–3.
@@ -56,11 +56,12 @@ Mobile first (360 px), same style as the account home.
 - Address autocomplete from Google/OpenStreetMap and the map pin (open question 2).
 - Suburb boundary polygons.
 
-## Open questions
-1. **Q9 — which regions launch first?** Options from `launch-area.md`: **Berea/central** (Morningside, Musgrave, Berea, Glenwood), **North** (Durban North, Umhlanga, La Lucia), **West** (Westville, Pinetown, Kloof), **South** (Amanzimtoti, Bluff). Current default: Berea/central + North.
-2. **Address lookup and map pin.** The PRD wants "suburb autocomplete → map pin". A map and street-level autocomplete need an outside service (Google Maps/Places costs money per lookup; OpenStreetMap is free but less accurate in SA). **Proposal:** for now, customers pick a suburb from our own list and type their street address; the property's location is the **suburb's centre point**, which is enough for matching by suburb. Add a map pin + street autocomplete later, when a provider is chosen. OK?
-3. **Property types.** Proposal: House, Flat/apartment, Townhouse/complex, Business premises, Other. OK?
-4. **Suburb coordinates.** I'll seed approximate centre points for the 14 suburbs (accurate to roughly a kilometre); admins can correct them later. OK?
+## Decisions (founder, 2026-10-04)
+1. **Q9:** launch with **Berea/central** (Morningside, Musgrave, Berea, Glenwood) and **North** (Durban North, Umhlanga, La Lucia); West and South are seeded but inactive.
+2. No map pin or street autocomplete yet: suburb from Sortd's list + typed street; location = suburb centre point. Revisit when a geocoding provider is chosen.
+3. Property types: House, Flat/apartment, Townhouse/complex, Business premises, Other.
+4. Seed approximate suburb centre points (≈1 km); admins can correct them.
 
 ## Progress
 - 2026-10-04: Drafted for founder review.
+- 2026-10-04: Approved as proposed.
