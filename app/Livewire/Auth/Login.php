@@ -272,7 +272,8 @@ final class Login extends Component
         Auth::login($user, $this->remember);
         session()->regenerate();
 
-        $this->redirectRoute($user->homeRoute($this->asPro));
+        // Back to where the customer was going (e.g. mid-booking), else their home.
+        $this->redirectIntended(route($user->homeRoute($this->asPro)));
     }
 
     private function verifiedPhone(): ?string

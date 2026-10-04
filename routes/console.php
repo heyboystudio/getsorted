@@ -13,3 +13,6 @@ Artisan::command('inspire', function (): void {
 
 // POPIA retention: delete login codes older than the configured period.
 Schedule::command('model:prune', ['--model' => [PhoneOtp::class]])->daily();
+
+// Spec 005: abandoned booking drafts expire.
+Schedule::command('sortd:cancel-stale-drafts')->daily();

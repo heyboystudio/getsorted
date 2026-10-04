@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Livewire\Account;
 
+use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
+use App\Models\ServiceJob;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
@@ -20,6 +22,14 @@ final class Home extends Component
         /** @var User $user */
         $user = auth()->user();
 
-        return view('livewire.account.home', ['firstName' => $user->first_name]);
+        return view('livewire.account.home', [
+            'firstName' => $user->first_name,
+            'jobs' => ServiceJob::query()->where('customer_id', $user->id)
+                ->whereNot('status', ServiceJobStatus::Cancelled)
+                ->with(['service', 'property.suburb'])
+                ->orderByRaw("case when status = 'draft' then 0 else 1 end")
+                ->latest('updated_at')
+                ->get(),
+        ]);
     }
 }

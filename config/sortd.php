@@ -45,6 +45,15 @@ return [
         'max_per_customer' => 10,
     ],
 
+    'jobs' => [
+        // Abuse protection for the booking flow (spec 005).
+        'max_drafts' => 5,
+        'posts_per_day' => 10,
+        // How far ahead customers may book.
+        'booking_days_ahead' => 30,
+        'notes_max_length' => 1000,
+    ],
+
     'legal' => [
         // Placeholder documents until lawyer-reviewed text exists (spec 001 decision 1).
         'terms_version' => '2026-10-draft',
