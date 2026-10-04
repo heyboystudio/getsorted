@@ -41,6 +41,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 035 | Daily login-code cap off on local machines (temporary) | Accepted | 2026-10-04 |
 | 036 | Quotes, comparison and acceptance (spec 010) | Accepted | 2026-10-04 |
 | 037 | Private test site on a temporary AWS server ("preview" mode) | Accepted | 2026-10-04 |
+| 038 | Email through Resend | Accepted | 2026-10-04 |
 | 039 | Email or Google sign-in, then verified email and mobile (supersedes 004 for customers and pros) | Accepted | 2026-10-05 |
 | 040 | Twilio for WhatsApp and SMS (Q5) | Accepted | 2026-10-05 |
 
@@ -322,6 +323,12 @@ Short architecture decision records. **Add an entry for every significant choice
 
 **Consequences:** The test site can be thrown away at any time and nothing depends on it. Phase 0's "staging live" criterion stays open until the South African host is chosen. Testers must not enter real personal details; the banner says so. iPhone HEIC uploads work only if the image's ImageMagick reads HEIC; otherwise the spec 012 fallback message shows. When the server expires, its data goes with it.
 
+## 038 · Email through Resend
+**Context:** Receipts and admin emails need a provider. The founder already uses Resend.
+
+**Decision:** Laravel's built-in `resend` mail transport, with `resend/resend-php` ^1.16 (MIT; checked with `composer require --dry-run` against Laravel 13 / PHP 8.4, and no advisories). Production code needs no other change: `MAIL_MAILER=resend`, `RESEND_API_KEY` and `MAIL_FROM_ADDRESS` are set per environment. The preview site sends from `noreply@sortd.heyboy.co.za`, a subdomain verified in Resend so heyboy.co.za's own email isn't affected. Local development and tests keep the `log` and `array` mailers.
+
+**Consequences:** The API key lives only in each server's `.env`. The founder entered it on the server directly, and it never passed through chat or git. When Sortd moves to its own domain, verify that domain in Resend and change `MAIL_FROM_ADDRESS`.
 ## 039 · Email or Google sign-in, then verified email and mobile (spec 014)
 **Context:** The founder decided that the phone number must not be the main way in. Customers and pros should sign up like on other sites, then prove their email and mobile. This supersedes decision 004 for customers and pros; admins keep email, password and an authenticator app.
 
