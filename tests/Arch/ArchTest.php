@@ -8,9 +8,10 @@ arch('domain does not depend on UI')
     ->expect('App\Domain')
     ->not->toUse(['App\Filament', 'App\Livewire', 'App\Http']);
 
+// An adapter may use its own helper classes; the rest of the app reaches it only through a contract.
 arch('integrations only reached through contracts')
     ->expect('App\Integrations')
-    ->toOnlyBeUsedIn(['App\Providers', 'Tests']);
+    ->toOnlyBeUsedIn(['App\Providers', 'App\Integrations', 'Tests']);
 
 arch('no debugging leftovers')
     ->expect(['dd', 'dump', 'ray', 'var_dump'])

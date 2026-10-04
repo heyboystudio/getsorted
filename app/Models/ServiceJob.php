@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
+use App\Domain\ServiceJobs\Enums\SummarySource;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Domain\ServiceJobs\Enums\Urgency;
 use Carbon\CarbonImmutable;
@@ -35,6 +36,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property array<string, array{prompt: string, type: string, answer: string|int|list<string>}> $scoping_answers
  * @property string|null $customer_notes
  * @property string|null $ai_summary
+ * @property SummarySource $ai_summary_source
+ * @property CarbonImmutable|null $ai_summary_generated_at
+ * @property string|null $ai_summary_input_hash
  * @property CarbonImmutable|null $posted_at
  * @property CarbonImmutable|null $quote_window_ends_at
  * @property CarbonImmutable|null $cancelled_at
@@ -63,7 +67,7 @@ final class ServiceJob extends Model implements HasMedia
     protected $fillable = ['urgency', 'preferred_date', 'time_window', 'scoping_answers', 'customer_notes'];
 
     /** @var array<string, mixed> */
-    protected $attributes = ['status' => 'draft', 'urgency' => 'normal', 'scoping_answers' => '{}'];
+    protected $attributes = ['status' => 'draft', 'urgency' => 'normal', 'scoping_answers' => '{}', 'ai_summary_source' => 'none'];
 
     /** @return list<string> */
     public function uniqueIds(): array
@@ -130,6 +134,8 @@ final class ServiceJob extends Model implements HasMedia
             'preferred_date' => 'immutable_date',
             'time_window' => TimeWindow::class,
             'scoping_answers' => 'array',
+            'ai_summary_source' => SummarySource::class,
+            'ai_summary_generated_at' => 'immutable_datetime',
             'posted_at' => 'immutable_datetime',
             'quote_window_ends_at' => 'immutable_datetime',
             'cancelled_at' => 'immutable_datetime',

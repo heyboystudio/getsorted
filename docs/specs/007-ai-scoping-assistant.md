@@ -1,6 +1,6 @@
 # Spec 007 · AI scoping assistant
 
-Status: Approved · Phase: 2 · Owner: founder
+Status: In progress · Phase: 2 · Owner: founder
 
 ## Goal
 Let a customer start a booking by describing the problem in their own words, and give every posted job a short, neutral summary for pros. The assistant only suggests: the customer confirms the service and edits the summary, and booking works fully when the assistant is unavailable.
@@ -77,3 +77,4 @@ Let a customer start a booking by describing the problem in their own words, and
 ## Progress
 - 2026-10-04: Drafted after spec 006 merged in PR #25. Awaiting founder approval and the three decisions above.
 - 2026-10-04: Founder approved the spec with all three recommended defaults.
+- 2026-10-04: Founder approved the build plan (AI settings page limited to super-admins).

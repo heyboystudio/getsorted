@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\AiUsage;
 use App\Models\PhoneOtp;
 use App\Models\WaitlistEntry;
 use Illuminate\Foundation\Inspiring;
@@ -18,3 +19,6 @@ Schedule::command('model:prune', ['--model' => [PhoneOtp::class]])->daily();
 // Spec 005: abandoned booking drafts expire.
 Schedule::command('sortd:cancel-stale-drafts')->daily();
 Schedule::command('model:prune', ['--model' => [WaitlistEntry::class]])->daily();
+
+// Spec 007: AI usage records (no customer text) kept for the configured period.
+Schedule::command('model:prune', ['--model' => [AiUsage::class]])->daily();

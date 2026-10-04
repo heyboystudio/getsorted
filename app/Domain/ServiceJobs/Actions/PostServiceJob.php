@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Domain\ServiceJobs\Actions;
 
+use App\Domain\Assistant\Support\SummaryRules;
 use App\Domain\Matching\EligibleProsQuery;
 use App\Domain\ServiceJobs\Enums\ActorType;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
+use App\Domain\ServiceJobs\Enums\SummarySource;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Domain\ServiceJobs\Exceptions\CannotPostServiceJob;
 use App\Domain\ServiceJobs\Exceptions\NoEligiblePros;
 use App\Domain\ServiceJobs\ServiceJobStateMachine;
+use App\Domain\ServiceJobs\Support\JobSummaryInput;
 use App\Domain\ServiceJobs\Support\ScopingAnswers;
 use App\Jobs\SendJobPostedMessage;
 use App\Models\Property;
@@ -51,6 +54,7 @@ final readonly class PostServiceJob
             $job = ServiceJob::query()->with(['service.questions', 'service.trade', 'property.suburb'])->lockForUpdate()->findOrFail($job->id);
 
             $this->guard($customer, $job);
+            $this->settleSummary($job);
 
             $job->posted_at = now();
             $job->quote_window_ends_at = now()->addHours($this->timers->quote_window_hours);
@@ -65,6 +69,23 @@ final readonly class PostServiceJob
         SendJobPostedMessage::dispatch($job->id);
 
         return $job;
+    }
+
+    /**
+     * Keep the description the customer saw: their edit, or an AI summary that
+     * still matches the details and passes the rules (spec 007, AC8). Never calls the assistant.
+     */
+    private function settleSummary(ServiceJob $job): void
+    {
+        $keep = match ($job->ai_summary_source) {
+            SummarySource::CustomerEdited => trim((string) $job->ai_summary) !== '' && mb_strlen((string) $job->ai_summary) <= SummaryRules::MAX_LENGTH,
+            SummarySource::Ai => SummaryRules::acceptable($job->ai_summary) && $job->ai_summary_input_hash === JobSummaryInput::hash($job),
+            SummarySource::None => false,
+        };
+
+        if (! $keep) {
+            $job->forceFill(['ai_summary' => null, 'ai_summary_source' => SummarySource::None, 'ai_summary_generated_at' => null]);
+        }
     }
 
     /** @throws CannotPostServiceJob */

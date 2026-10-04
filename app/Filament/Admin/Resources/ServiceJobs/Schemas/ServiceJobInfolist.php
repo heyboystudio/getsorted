@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Resources\ServiceJobs\Schemas;
 
+use App\Domain\ServiceJobs\Enums\SummarySource;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobEvent;
 use Filament\Infolists\Components\ImageEntry;
@@ -39,6 +40,8 @@ final class ServiceJobInfolist
                         ))
                         ->listWithLineBreaks()->placeholder(__('No answers yet')),
                     TextEntry::make('customer_notes')->label(__('Customer notes'))->placeholder('—'),
+                    TextEntry::make('ai_summary')->label(__('Description for pros'))->placeholder('—'),
+                    TextEntry::make('ai_summary_source')->label(__('Description source'))->formatStateUsing(fn (SummarySource $state): string => $state->label()),
                 ]),
                 Section::make(__('Photos'))->schema([
                     ImageEntry::make('job_photos')->hiddenLabel()->height(140)

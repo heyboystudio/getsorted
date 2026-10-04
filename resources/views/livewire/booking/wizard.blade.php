@@ -169,6 +169,49 @@
             <button type="button" wire:click="next" wire:loading.attr="disabled" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Next') }}</button>
         @elseif ($step === 'review')
             <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('Check and post') }}</h1>
+            @if ($summary && $summary['state'] !== 'none')
+                <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-4" aria-live="polite" @if ($summary['state'] === 'loading') wire:init="loadSummary" @endif>
+                    <div class="flex justify-between">
+                        <h2 class="font-medium">{{ __('Job description for pros') }}</h2>
+                        @if (in_array($summary['state'], ['ai', 'edited'], true) && ! $editingSummary)
+                            <button type="button" wire:click="editSummary" class="text-sm text-emerald-800 underline">{{ __('Edit') }}</button>
+                        @endif
+                    </div>
+                    @if ($summary['state'] === 'loading')
+                        <div class="mt-3 space-y-2" aria-label="{{ __('Writing a description…') }}">
+                            <div class="h-3 w-full animate-pulse rounded bg-zinc-200"></div>
+                            <div class="h-3 w-5/6 animate-pulse rounded bg-zinc-200"></div>
+                            <div class="h-3 w-2/3 animate-pulse rounded bg-zinc-200"></div>
+                        </div>
+                    @elseif ($editingSummary)
+                        <label for="summary-text" class="sr-only">{{ __('Job description for pros') }}</label>
+                        <textarea id="summary-text" wire:model="summaryText" rows="5" maxlength="600"
+                            class="mt-3 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/30"></textarea>
+                        <p class="mt-1 text-right text-xs text-zinc-500" x-data x-text="$wire.summaryText.length + ' / 600'"></p>
+                        @error('summaryText') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
+                        <div class="mt-3 flex gap-2">
+                            <button type="button" wire:click="saveSummary" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800">{{ __('Save') }}</button>
+                            <button type="button" wire:click="cancelSummaryEdit" class="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium">{{ __('Cancel') }}</button>
+                        </div>
+                    @else
+                        <p class="mt-2 whitespace-pre-line text-sm text-zinc-700">{{ $summary['text'] }}</p>
+                        @if ($summary['state'] === 'ai')
+                            <p class="mt-2 text-xs text-zinc-500">{{ __('Written with AI help, please check it') }}.</p>
+                        @endif
+                        @if ($summary['stale'])
+                            <p class="mt-2 text-xs text-amber-800">{{ __('You changed some details. Check the description still fits.') }}</p>
+                        @endif
+                    @endif
+                    @if ($summary['guidance'])
+                        <div class="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+                            @if ($summary['advice'] !== [])
+                                <ul class="list-disc space-y-1 pl-5">@foreach ($summary['advice'] as $line) <li>{{ $line }}</li> @endforeach</ul>
+                            @endif
+                            <p class="mt-2">{{ __('This is guidance, not a guarantee.') }}</p>
+                        </div>
+                    @endif
+                </section>
+            @endif
             <dl class="mt-6 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white">
                 <div class="p-4">
                     <div class="flex justify-between"><dt class="font-medium">{{ __('Your answers') }}</dt><button type="button" wire:click="change('questions')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>

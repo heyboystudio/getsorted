@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Booking;
 
 use App\Domain\Accounts\Enums\Role;
+use App\Domain\Assistant\Actions\EditJobSummary;
+use App\Domain\Assistant\Actions\SummariseDraft;
+use App\Domain\Assistant\Support\AssistantCalls;
 use App\Domain\Catalogue\Enums\QuestionType;
+use App\Domain\Catalogue\Enums\RegistrationType;
 use App\Domain\Matching\Actions\JoinWaitlist;
 use App\Domain\Matching\EligibleProsQuery;
 use App\Domain\Properties\Queries\SuburbSearchQuery;
@@ -15,10 +19,13 @@ use App\Domain\ServiceJobs\Actions\SaveBookingDraft;
 use App\Domain\ServiceJobs\Actions\StoreJobPhoto;
 use App\Domain\ServiceJobs\Data\BookingData;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
+use App\Domain\ServiceJobs\Enums\SummarySource;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Domain\ServiceJobs\Exceptions\CannotPostServiceJob;
 use App\Domain\ServiceJobs\Exceptions\NoEligiblePros;
+use App\Domain\ServiceJobs\Support\JobSummaryInput;
 use App\Domain\ServiceJobs\Support\ScopingAnswers;
+use App\Livewire\Welcome;
 use App\Models\Property;
 use App\Models\ScopingQuestion;
 use App\Models\Service;
@@ -88,6 +95,14 @@ final class Wizard extends Component
     #[Locked]
     public ?string $pendingPropertySuburb = null;
 
+    #[Locked]
+    public bool $editingSummary = false;
+
+    public string $summaryText = '';
+
+    #[Locked]
+    public ?string $summaryAttemptedHash = null;
+
     public string $preferredDate = '';
 
     public string $timeWindow = '';
@@ -113,6 +128,8 @@ final class Wizard extends Component
             $this->suburbQuery = $resume['suburb_query'] ?? '';
             $this->step = in_array($resume['step'] ?? '', ['photos', 'property'], true) ? $resume['step'] : 'coverage';
         }
+
+        $this->prefillNotesFromDescription();
 
         // Continue an existing draft for this service instead of starting another (drafts are capped).
         $existing = $this->user()?->hasRole(Role::Customer->value) === true ? ServiceJob::query()
@@ -298,6 +315,46 @@ final class Wizard extends Component
         $this->redirectRoute('jobs.show', $job);
     }
 
+    /** Review step: ask for a job description when the details changed (spec 007, AC5). */
+    public function loadSummary(SummariseDraft $summariseDraft): void
+    {
+        $job = $this->reviewDraft();
+
+        if ($job instanceof ServiceJob) {
+            $summariseDraft->handle($this->user(), $job);
+            // Tried for these details; show the plain review instead of a loader if it failed.
+            $this->summaryAttemptedHash = JobSummaryInput::hash($job);
+        }
+    }
+
+    public function editSummary(): void
+    {
+        $job = $this->reviewDraft();
+        abort_unless($job instanceof ServiceJob, 404);
+        $this->summaryText = (string) $job->ai_summary;
+        $this->editingSummary = true;
+    }
+
+    public function saveSummary(EditJobSummary $editJobSummary): void
+    {
+        $job = $this->reviewDraft();
+        abort_unless($job instanceof ServiceJob, 404);
+
+        try {
+            $editJobSummary->handle($this->user(), $job, $this->summaryText);
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages(['summaryText' => $exception->validator->errors()->first('summary')]);
+        }
+
+        $this->editingSummary = false;
+    }
+
+    public function cancelSummaryEdit(): void
+    {
+        $this->editingSummary = false;
+        $this->summaryText = '';
+    }
+
     public function render(): View
     {
         $service = $this->service();
@@ -326,6 +383,7 @@ final class Wizard extends Component
             'reviewAnswers' => $this->checkedAnswers(),
             'photos' => $photos,
             'photoUrls' => $photoJob === null ? [] : $photos->mapWithKeys(fn ($photo): array => [$photo->uuid => $photoJob->photoUrl($photo)])->all(),
+            'summary' => $this->step === 'review' ? $this->summaryView() : null,
             'suburbSuggestions' => RateLimiter::tooManyAttempts($this->coverageRateKey('search'), (int) config('sortd.waitlist.searches_per_hour'))
                 ? new Collection : app(SuburbSearchQuery::class)->handle($this->suburbQuery),
         ])->title($service->name);
@@ -398,6 +456,61 @@ final class Wizard extends Component
         }
 
         RateLimiter::hit($key, 3600);
+    }
+
+    /**
+     * What the review step shows about the job description (spec 007, AC6, AC7, AC9).
+     *
+     * @return array{state: string, text: ?string, stale: bool, advice: list<string>, guidance: bool}|null
+     */
+    private function summaryView(): ?array
+    {
+        $job = $this->reviewDraft();
+
+        if (! $job instanceof ServiceJob) {
+            return null;
+        }
+
+        $current = $job->ai_summary_input_hash === JobSummaryInput::hash($job);
+        $state = match (true) {
+            $job->ai_summary_source === SummarySource::CustomerEdited => 'edited',
+            $job->ai_summary_source === SummarySource::Ai && $current => 'ai',
+            ! $current && $this->summaryAttemptedHash !== JobSummaryInput::hash($job) && app(AssistantCalls::class)->available() => 'loading',
+            default => 'none',
+        };
+
+        $service = $this->service();
+
+        return [
+            'state' => $state,
+            'text' => $job->ai_summary,
+            'stale' => $state === 'edited' && ! $current,
+            'advice' => $service->safety_advice,
+            'guidance' => $service->safety_advice !== [] || $service->requires_registration === RegistrationType::ElectricalRegisteredPerson,
+        ];
+    }
+
+    private function reviewDraft(): ?ServiceJob
+    {
+        $user = $this->user();
+
+        if ($this->step !== 'review' || $this->jobPublicId === null || ! $user instanceof User) {
+            return null;
+        }
+
+        return ServiceJob::query()->with('service')->where('public_id', $this->jobPublicId)
+            ->where('customer_id', $user->id)->where('status', ServiceJobStatus::Draft)->first();
+    }
+
+    /** A description typed on the home page in the last 30 minutes starts the notes, once (spec 007, AC4). */
+    private function prefillNotesFromDescription(): void
+    {
+        /** @var array{text?: string, expires_at?: int}|null $description */
+        $description = session()->pull(Welcome::DESCRIPTION_KEY);
+
+        if ($this->notes === '' && is_array($description) && ($description['expires_at'] ?? 0) > now()->getTimestamp()) {
+            $this->notes = mb_substr((string) ($description['text'] ?? ''), 0, (int) config('sortd.jobs.notes_max_length'));
+        }
     }
 
     private function nextQuestion(): void
