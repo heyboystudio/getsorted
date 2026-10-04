@@ -70,6 +70,12 @@ return [
         'searches_per_hour' => 120,
     ],
 
+    'pros' => [
+        // Abuse protection for the pro application (spec 008).
+        'uploads_per_hour' => 30,
+        'submissions_per_hour' => 5,
+    ],
+
     'ai' => [
         // Spec 007. Switch, confidence threshold and daily budget are admin settings (AiSettings).
         'model' => env('SORTD_AI_MODEL', 'claude-haiku-4-5-20251001'),

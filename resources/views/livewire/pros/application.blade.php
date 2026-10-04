@@ -99,17 +99,15 @@
                         @if ($document?->file())
                             <a href="{{ $document->temporaryUrl() }}" target="_blank" rel="noopener" class="mt-1 inline-block text-sm text-emerald-800 underline">{{ __('View what you uploaded') }}</a>
                         @endif
-                        <div class="mt-3 flex flex-wrap items-center gap-2">
-                            <input type="file" wire:model="upload" accept="{{ $type->acceptsPdf() ? 'image/*,application/pdf' : 'image/*' }}" class="block w-full text-sm" aria-label="{{ __('Choose a file for :document', ['document' => $type->label()]) }}">
-                            <button type="button" wire:click="addDocument('{{ $type->value }}')" wire:loading.attr="disabled" wire:target="upload,addDocument" class="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-medium text-emerald-800 disabled:opacity-60">
-                                {{ $document?->file() ? __('Replace') : __('Add') }}
-                            </button>
-                        </div>
+                        <label class="mt-3 block text-sm">
+                            <span class="font-medium text-emerald-800">{{ $document?->file() ? __('Replace file') : __('Choose file') }}</span>
+                            <input type="file" wire:model="uploads.{{ $type->value }}" accept="{{ $type->acceptsPdf() ? 'image/*,application/pdf' : 'image/*' }}" class="mt-1 block w-full text-sm">
+                        </label>
+                        <p wire:loading wire:target="uploads.{{ $type->value }}" class="mt-2 text-sm text-zinc-600">{{ __('Uploading…') }}</p>
+                        @error('uploads.'.$type->value) <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
                     </div>
                 @endforeach
             </div>
-            <p wire:loading wire:target="upload,addDocument" class="mt-3 text-sm text-zinc-600">{{ __('Uploading…') }}</p>
-            @error('upload') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
 
         @elseif ($step === 'registrations')
             <h1 class="text-2xl font-semibold tracking-tight">{{ __('Registrations') }}</h1>
@@ -124,15 +122,17 @@
                     <label for="reg-{{ $type->value }}" class="mt-3 block text-sm">{{ __('Registration number') }}</label>
                     <input id="reg-{{ $type->value }}" type="text" wire:model="registrationNumbers.{{ $type->value }}" maxlength="40" class="{{ $input }}">
                     @error('registrationNumbers.'.$type->value) <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
-                    <div class="mt-3 flex flex-wrap items-center gap-2">
-                        <input type="file" wire:model="upload" accept="image/*,application/pdf" class="block w-full text-sm" aria-label="{{ __('Choose a file for :document', ['document' => $type->label()]) }}">
-                        <button type="button" wire:click="addDocument('{{ $type->value }}')" wire:loading.attr="disabled" wire:target="upload,addDocument" class="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-medium text-emerald-800 disabled:opacity-60">
-                            {{ $document?->file() ? __('Replace certificate') : __('Add certificate') }}
-                        </button>
-                    </div>
+                    <label class="mt-3 block text-sm">
+                        <span class="font-medium text-emerald-800">{{ $document?->file() ? __('Replace certificate') : __('Add certificate') }}</span>
+                        <input type="file" wire:model="uploads.{{ $type->value }}" accept="image/*,application/pdf" class="mt-1 block w-full text-sm">
+                    </label>
+                    @if ($document?->file())
+                        <p class="mt-1 text-sm text-emerald-800">{{ __('Certificate received') }}</p>
+                    @endif
+                    <p wire:loading wire:target="uploads.{{ $type->value }}" class="mt-2 text-sm text-zinc-600">{{ __('Uploading…') }}</p>
+                    @error('uploads.'.$type->value) <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
                 </div>
             @endforeach
-            @error('upload') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
 
         @elseif ($step === 'references')
             <h1 class="text-2xl font-semibold tracking-tight">{{ __('References') }}</h1>
@@ -153,17 +153,17 @@
                 </fieldset>
             @endforeach
             @error('references') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
-            @if ($pro->status === \App\Domain\Pros\Enums\ProStatus::Draft)
-                <label class="mt-6 flex gap-3 text-sm">
-                    <input type="checkbox" wire:model="refereesAgreed" class="mt-0.5 size-5 shrink-0 rounded text-emerald-700">
-                    <span>{{ __('Both people agreed that Sortd may phone them about my work.') }}</span>
-                </label>
-                @error('refereesAgreed') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
-            @endif
+            <label class="mt-6 flex gap-3 text-sm">
+                <input type="checkbox" wire:model="refereesAgreed" class="mt-0.5 size-5 shrink-0 rounded text-emerald-700">
+                <span>{{ $pro->status === \App\Domain\Pros\Enums\ProStatus::ChangesRequested
+                    ? __('This person agreed that Sortd may phone them about my work.')
+                    : __('Both people agreed that Sortd may phone them about my work.') }}</span>
+            </label>
+            @error('refereesAgreed') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
 
         @elseif ($step === 'about')
             <h1 class="text-2xl font-semibold tracking-tight">{{ __('About you') }}</h1>
-            <label for="bio" class="mt-6 block text-sm font-medium">{{ __('A short bio customers will see') }}</label>
+            <label for="bio" class="mt-6 block text-sm font-medium">{{ __('A short bio about your work') }}</label>
             <textarea id="bio" wire:model="bio" rows="5" maxlength="500" class="{{ $input }}" placeholder="{{ __('e.g. 15 years fixing leaks and geysers across Durban.') }}"></textarea>
             <p class="mt-1 text-right text-xs text-zinc-500" x-data x-text="$wire.bio.length + ' / 500'"></p>
             @error('bio') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
@@ -177,19 +177,19 @@
         @elseif ($step === 'review')
             <h1 class="text-2xl font-semibold tracking-tight">{{ __('Check and send') }}</h1>
             <dl class="mt-6 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white text-sm">
-                <div class="p-4"><dt class="font-medium">{{ __('Business') }}</dt><dd class="mt-1 text-zinc-700">{{ $pro->business_name }} · {{ $pro->business_type?->label() }}@if ($pro->vat_number) · {{ __('VAT') }} {{ $pro->vat_number }}@endif</dd></div>
-                <div class="p-4"><dt class="font-medium">{{ __('Services') }}</dt><dd class="mt-1 text-zinc-700">{{ $pro->services->pluck('name')->implode(', ') }}</dd></div>
-                <div class="p-4"><dt class="font-medium">{{ __('Suburbs') }}</dt><dd class="mt-1 text-zinc-700">{{ $pro->serviceAreas->pluck('name')->implode(', ') }}</dd></div>
-                <div class="p-4"><dt class="font-medium">{{ __('Documents') }}</dt>
+                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Business') }}@if (in_array('business', $steps, true))<button type="button" wire:click="goTo('business')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->business_name }} · {{ $pro->business_type?->label() }}@if ($pro->vat_number) · {{ __('VAT') }} {{ $pro->vat_number }}@endif</dd></div>
+                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Services') }}@if (in_array('services', $steps, true))<button type="button" wire:click="goTo('services')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->services->pluck('name')->implode(', ') }}</dd></div>
+                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Suburbs') }}@if (in_array('areas', $steps, true))<button type="button" wire:click="goTo('areas')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->serviceAreas->pluck('name')->implode(', ') }}</dd></div>
+                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Documents') }}@if (in_array('documents', $steps, true))<button type="button" wire:click="goTo('documents')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt>
                     <dd class="mt-1 text-zinc-700">
                         @foreach ([...\App\Domain\Pros\Enums\DocumentType::required(), ...$registrationTypes] as $type)
                             <p>{{ $type->label() }}: {{ $pro->document($type)?->file() ? $pro->document($type)->status->label() : __('Missing') }}</p>
                         @endforeach
                     </dd>
                 </div>
-                <div class="p-4"><dt class="font-medium">{{ __('References') }}</dt><dd class="mt-1 text-zinc-700">{{ $pro->references->pluck('name')->implode(', ') }}</dd></div>
+                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('References') }}@if (in_array('references', $steps, true))<button type="button" wire:click="goTo('references')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->references->pluck('name')->implode(', ') }}</dd></div>
                 @if ($pro->bio)
-                    <div class="p-4"><dt class="font-medium">{{ __('Bio') }}</dt><dd class="mt-1 whitespace-pre-line text-zinc-700">{{ $pro->bio }}</dd></div>
+                    <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Bio') }}@if (in_array('about', $steps, true))<button type="button" wire:click="goTo('about')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 whitespace-pre-line text-zinc-700">{{ $pro->bio }}</dd></div>
                 @endif
             </dl>
             @error('application') <p class="mt-3 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror

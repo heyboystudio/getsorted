@@ -108,7 +108,7 @@ it('walks a pro through the application on one screen per step and submits it (A
         ->assertSet('step', 'documents');
 
     foreach (['id_document', 'proof_of_address', 'profile_photo'] as $type) {
-        $wizard->set('upload', UploadedFile::fake()->image($type.'.jpg', 40, 30))->call('addDocument', $type)->assertHasNoErrors();
+        $wizard->set('uploads.'.$type, UploadedFile::fake()->image($type.'.jpg', 40, 30))->assertHasNoErrors();
     }
 
     $wizard->call('next')->assertSet('step', 'references')
@@ -137,7 +137,7 @@ it('skips the registrations step unless a chosen service needs one (AC3)', funct
         ->call('next')->assertSet('step', 'registrations')
         ->assertSee('Registered electrician')
         ->set('registrationNumbers.electrical_registered_person', 'ER-555')
-        ->set('upload', UploadedFile::fake()->image('er.jpg', 20, 20))->call('addDocument', 'electrical_registered_person')
+        ->set('uploads.electrical_registered_person', UploadedFile::fake()->image('er.jpg', 20, 20))
         ->call('next')->assertSet('step', 'references');
 
     expect(Pro::query()->sole()->documents()->where('type', DocumentType::ElectricalRegisteredPerson)->sole()->number)->toBe('ER-555');
@@ -183,10 +183,10 @@ it('lets a pro fix only flagged documents from the form after changes are reques
 
     Livewire::test(Application::class)
         ->assertSet('step', 'documents')
-        ->set('upload', UploadedFile::fake()->image('poa.jpg', 20, 20))->call('addDocument', 'proof_of_address')->assertForbidden();
+        ->set('uploads.proof_of_address', UploadedFile::fake()->image('poa.jpg', 20, 20))->assertForbidden();
 
     Livewire::test(Application::class)
-        ->set('upload', UploadedFile::fake()->image('id.jpg', 30, 20))->call('addDocument', 'id_document')->assertHasNoErrors()
+        ->set('uploads.id_document', UploadedFile::fake()->image('id.jpg', 30, 20))->assertHasNoErrors()
         ->call('submit')->assertRedirect(route('pros.status'));
 
     expect($pro->fresh()->status)->toBe(ProStatus::Submitted);
@@ -349,4 +349,86 @@ it('lets admins correct services and suburbs, with a log entry (rules)', functio
     expect($pro->fresh()->services->pluck('key')->all())->toBe(['blocked_drain'])
         ->and($pro->fresh()->serviceAreas->pluck('id')->all())->toBe([$berea->id])
         ->and(DB::table('activity_log')->where('description', 'pro_coverage_edited')->count())->toBe(1);
+});
+
+it('hides an admin\'s own application from them in the vetting screens (security review)', function (): void {
+    $admin = screensAdmin();
+    $admin->assignRole(Role::Pro->value);
+    $own = screensSubmitted();
+    $own->forceFill(['user_id' => $admin->id])->save();
+    $other = screensSubmitted();
+    $this->actingAs($admin);
+    Filament::setCurrentPanel('admin');
+
+    Livewire::test(ListProApplications::class)->assertCanSeeTableRecords([$other])->assertCanNotSeeTableRecords([$own]);
+    Livewire::test(ViewProApplication::class, ['record' => $own->public_id])->assertNotFound();
+});
+
+it('shows an expired registration as expired on the status page (AC12)', function (): void {
+    $user = screensApplicant();
+    $electrical = Service::query()->where('requires_registration', 'electrical_registered_person')->firstOrFail();
+    $pro = app(StartApplication::class)->handle($user);
+    app(SaveApplicationStep::class)->services($user, $pro, [$electrical->id]);
+    $document = app(StoreProDocument::class)->handle($user, $pro, DocumentType::ElectricalRegisteredPerson, UploadedFile::fake()->image('er.jpg', 20, 20));
+    $document->forceFill(['status' => DocumentStatus::Verified, 'verified_at' => now(), 'expires_at' => now()->subDay()])->save();
+
+    $this->actingAs($user);
+    Livewire::test(Status::class)->assertSee('Expired');
+});
+
+it('links each part of the review step back to its step (screens)', function (): void {
+    $user = screensApplicant();
+    $this->actingAs($user);
+    app(StartApplication::class)->handle($user);
+
+    Livewire::test(Application::class)->call('goTo', 'review')->assertSeeHtml("wire:click=\"goTo('services')\"")
+        ->call('goTo', 'services')->assertSet('step', 'services');
+});
+
+it('lets a pro fix a flagged registration from the form, even after re-uploading first (code review, AC6)', function (): void {
+    $user = screensApplicant();
+    $electrical = Service::query()->where('requires_registration', 'electrical_registered_person')->firstOrFail();
+    $pro = app(StartApplication::class)->handle($user);
+    $steps = app(SaveApplicationStep::class);
+    $steps->business($user, $pro, new BusinessDetails('Spark', BusinessType::Company, null));
+    $steps->services($user, $pro, [Service::query()->where('key', 'leak_repair')->value('id'), $electrical->id]);
+    $steps->areas($user, $pro, [Suburb::query()->where('slug', 'musgrave')->value('id')]);
+    $steps->references($user, $pro, [new ReferenceData('Thandi Mkhize', '082 123 4567', 'Customer'), new ReferenceData('Sipho Ndlovu', '071 234 5678', 'Supplier')], true);
+    $steps->bio($user, $pro, 'Electrician.');
+    $steps->consent($user, $pro, true);
+    $steps->registration($user, $pro, DocumentType::ElectricalRegisteredPerson, 'ER-OLD');
+    foreach ([DocumentType::IdDocument, DocumentType::ProofOfAddress, DocumentType::ProfilePhoto, DocumentType::ElectricalRegisteredPerson] as $type) {
+        app(StoreProDocument::class)->handle($user, $pro, $type, UploadedFile::fake()->image($type->value.'.jpg', 40, 30));
+    }
+    app(SubmitApplication::class)->handle($user, $pro->fresh());
+    $admin = screensAdmin();
+    app(VetDocument::class)->verify($admin, $pro->documents()->where('type', DocumentType::IdDocument)->sole(), null);
+    app(VetDocument::class)->flag($admin, $pro->documents()->where('type', DocumentType::ElectricalRegisteredPerson)->sole(), 'Certificate and number do not match.');
+    app(DecideApplication::class)->requestChanges($admin, $pro->fresh(), 'Fix the electrical registration.');
+    $this->actingAs($user);
+
+    Livewire::test(Application::class)
+        ->assertSet('step', 'registrations')
+        ->set('uploads.electrical_registered_person', UploadedFile::fake()->image('new.jpg', 30, 30))->assertHasNoErrors()
+        ->set('registrationNumbers.electrical_registered_person', 'ER-NEW')
+        ->call('next')->assertHasNoErrors()->assertSet('step', 'review')
+        ->call('submit')->assertRedirect(route('pros.status'));
+
+    $registration = $pro->documents()->where('type', DocumentType::ElectricalRegisteredPerson)->sole();
+    expect($pro->fresh()->status)->toBe(ProStatus::Submitted)
+        ->and($registration->number)->toBe('ER-NEW')
+        ->and($registration->status)->toBe(DocumentStatus::Pending)
+        ->and($registration->flag_message)->toBeNull()
+        ->and($pro->documents()->where('type', DocumentType::IdDocument)->sole()->status)->toBe(DocumentStatus::Verified);
+});
+
+it('offers to apply again once the wait is over (code review)', function (): void {
+    $pro = screensSubmitted();
+    app(DecideApplication::class)->reject(screensAdmin(), $pro, 'Not yet.');
+    $this->actingAs($pro->user);
+
+    $this->get(route('pros.welcome'))->assertDontSee('Apply again');
+    $this->travel(91)->days();
+    $this->get(route('pros.welcome'))->assertSee('Apply again')->assertSee(route('pros.apply'), false);
+    Livewire::test(Status::class)->assertSee('Apply again');
 });

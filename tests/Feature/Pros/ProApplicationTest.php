@@ -8,6 +8,7 @@ use App\Domain\Matching\EligibleProsQuery;
 use App\Domain\Pros\Actions\ChangeProStanding;
 use App\Domain\Pros\Actions\CheckReference;
 use App\Domain\Pros\Actions\DecideApplication;
+use App\Domain\Pros\Actions\EditProCoverage;
 use App\Domain\Pros\Actions\PruneVettingRecords;
 use App\Domain\Pros\Actions\SaveApplicationStep;
 use App\Domain\Pros\Actions\StartApplication;
@@ -248,10 +249,12 @@ it('reopens only flagged items when changes are requested, then accepts a resubm
 
     app(StoreProDocument::class)->handle($pro->user, $pro, DocumentType::IdDocument, UploadedFile::fake()->image('clear.jpg', 60, 40));
     $replaced = $pro->documents()->where('type', DocumentType::IdDocument)->sole();
-    expect($replaced->status)->toBe(DocumentStatus::Pending)->and($replaced->flag_message)->toBeNull();
+    // The message stays until resubmission so the pro can still fix a wrong upload (code review).
+    expect($replaced->status)->toBe(DocumentStatus::Pending)->and($replaced->flag_message)->toBe('The photo is blurred.');
 
     app(SubmitApplication::class)->handle($pro->user, $pro->fresh());
-    expect($pro->fresh()->status)->toBe(ProStatus::Submitted);
+    expect($pro->fresh()->status)->toBe(ProStatus::Submitted)
+        ->and($replaced->fresh()->flag_message)->toBeNull();
 });
 
 // --- Vetting (AC7–AC11) -------------------------------------------------------------
@@ -476,4 +479,123 @@ it('schedules the vetting prune daily (AC14)', function (): void {
     $events = collect(app(Schedule::class)->events())->map->command->implode(' ');
 
     expect($events)->toContain('sortd:prune-vetting-records');
+});
+
+// --- Review fixes --------------------------------------------------------------------
+
+it('clears every earlier check when a rejected pro reapplies (security review)', function (): void {
+    $pro = submitted();
+    $admin = vetter();
+    vetEverything($pro->fresh(), $admin);
+    app(DecideApplication::class)->reject($admin, $pro->fresh(), 'Not now.');
+    $this->travel(91)->days();
+
+    app(StartApplication::class)->handle($pro->user);
+
+    expect($pro->documents()->pluck('status')->map->value->unique()->all())->toBe(['pending'])
+        ->and($pro->documents()->whereNotNull('verified_at')->count())->toBe(0)
+        ->and($pro->references()->pluck('outcome')->map->value->unique()->all())->toBe(['pending']);
+});
+
+it('needs the registration checked again when its number changes (security review)', function (): void {
+    $electrical = Service::query()->where('requires_registration', 'electrical_registered_person')->firstOrFail();
+    $user = applicant();
+    $pro = completeApplication($user, ['leak_repair', $electrical->key]);
+    app(SaveApplicationStep::class)->registration($user, $pro, DocumentType::ElectricalRegisteredPerson, 'ER-1');
+    $document = app(StoreProDocument::class)->handle($user, $pro, DocumentType::ElectricalRegisteredPerson, UploadedFile::fake()->image('er.jpg', 20, 20));
+    $document->forceFill(['status' => DocumentStatus::Verified, 'verified_at' => now(), 'expires_at' => now()->addYear()])->save();
+
+    app(SaveApplicationStep::class)->registration($user, $pro, DocumentType::ElectricalRegisteredPerson, 'ER-2');
+
+    expect($document->fresh()->status)->toBe(DocumentStatus::Pending)->and($document->fresh()->verified_at)->toBeNull();
+});
+
+it('will not verify a registration without its number (spec check)', function (): void {
+    $electrical = Service::query()->where('requires_registration', 'electrical_registered_person')->firstOrFail();
+    $user = applicant();
+    $pro = completeApplication($user, ['leak_repair', $electrical->key]);
+    $document = app(StoreProDocument::class)->handle($user, $pro, DocumentType::ElectricalRegisteredPerson, UploadedFile::fake()->image('er.jpg', 20, 20));
+    app(SubmitApplication::class)->handle($user, $pro->fresh());
+
+    expect(fn () => app(VetDocument::class)->verify(vetter(), $document, now()->addYear()->toImmutable()))->toThrow(ValidationException::class)
+        ->and(fn () => app(VetDocument::class)->verify(vetter(), $document->fresh(), null))->toThrow(ValidationException::class);
+});
+
+it('limits uploads and submissions per pro (security review)', function (): void {
+    config()->set('sortd.pros.uploads_per_hour', 2);
+    $user = applicant();
+    $pro = app(StartApplication::class)->handle($user);
+
+    app(StoreProDocument::class)->handle($user, $pro, DocumentType::IdDocument, UploadedFile::fake()->image('a.jpg', 20, 20));
+    app(StoreProDocument::class)->handle($user, $pro, DocumentType::IdDocument, UploadedFile::fake()->image('b.jpg', 20, 20));
+
+    expect(fn () => app(StoreProDocument::class)->handle($user, $pro, DocumentType::IdDocument, UploadedFile::fake()->image('c.jpg', 20, 20)))
+        ->toThrow(ValidationException::class);
+
+    config()->set('sortd.pros.uploads_per_hour', 30);
+    config()->set('sortd.pros.submissions_per_hour', 1);
+    $other = completeApplication();
+    $other->forceFill(['bio' => null])->save();
+    expect(fn () => app(SubmitApplication::class)->handle($other->user, $other->fresh()))->toThrow(ValidationException::class, 'Still needed');
+
+    $other->forceFill(['bio' => 'Back again.'])->save();
+    expect(fn () => app(SubmitApplication::class)->handle($other->user, $other->fresh()))->toThrow(ValidationException::class, 'Please try again later');
+    expect($other->fresh()->status)->toBe(ProStatus::Draft);
+});
+
+it('refuses PDFs that carry scripts or embedded files (security review)', function (string $marker): void {
+    $user = applicant();
+    $pro = app(StartApplication::class)->handle($user);
+
+    expect(fn () => app(StoreProDocument::class)->handle($user, $pro, DocumentType::ProofOfAddress, UploadedFile::fake()->createWithContent('bill.pdf', "%PDF-1.4\n1 0 obj<< {$marker} >>endobj\n%%EOF")))
+        ->toThrow(ValidationException::class);
+})->with(['/JavaScript', '/JS', '/Launch', '/EmbeddedFile']);
+
+it('logs every status change, including the pro\'s own (spec check AC11)', function (): void {
+    $pro = submitted();
+
+    expect(DB::table('activity_log')->where('description', 'pro_status_changed')->where('subject_id', $pro->id)->count())->toBe(1);
+});
+
+it('lets a pro replace a reference vetting could not use, with the new referee\'s agreement (AC6, AC13)', function (): void {
+    $pro = submitted();
+    $admin = vetter();
+    $bad = $pro->references()->first();
+    app(CheckReference::class)->handle($admin, $bad, ReferenceOutcome::NoAnswer, null);
+    app(DecideApplication::class)->requestChanges($admin, $pro->fresh(), 'One referee did not answer.');
+    proMessaging()->assertSent('pro_changes_requested');
+    $steps = app(SaveApplicationStep::class);
+    $good = $pro->references()->whereKeyNot($bad->id)->sole();
+
+    expect(fn () => $steps->replaceReference($pro->user, $pro->fresh(), $bad, new ReferenceData('Lindiwe Zulu', '083 555 1234', 'Customer'), refereeAgreed: false))->toThrow(ValidationException::class)
+        ->and(fn () => $steps->replaceReference($pro->user, $pro->fresh(), $good, new ReferenceData('X Y', '083 555 9999', 'Friend'), refereeAgreed: true))->toThrow(AuthorizationException::class);
+
+    $steps->replaceReference($pro->user, $pro->fresh(), $bad, new ReferenceData('Lindiwe Zulu', '083 555 1234', 'Customer'), refereeAgreed: true);
+
+    expect($bad->fresh()->name)->toBe('Lindiwe Zulu')->and($bad->fresh()->outcome)->toBe(ReferenceOutcome::Pending);
+    app(SubmitApplication::class)->handle($pro->user, $pro->fresh());
+    expect($pro->fresh()->status)->toBe(ProStatus::Submitted);
+});
+
+it('removes the files and the vetting reasons when pruning (security review)', function (): void {
+    $pro = submitted();
+    $path = $pro->documents()->first()->file()->getPathRelativeToRoot();
+    app(DecideApplication::class)->reject(vetter(), $pro->fresh(), 'Referee said the work was poor.');
+    Storage::disk('media')->assertExists($path);
+
+    $this->travel(13)->months();
+    app(PruneVettingRecords::class)->handle();
+
+    Storage::disk('media')->assertMissing($path);
+    expect($pro->fresh()->decision_reason)->toBeNull()
+        ->and(DB::table('pro_events')->where('pro_id', $pro->id)->whereNotNull('reason')->count())->toBe(0)
+        ->and(ProEvent::query()->where('pro_id', $pro->id)->count())->toBe(2);
+});
+
+it('lets admins choose only active services when correcting coverage (security review)', function (): void {
+    $pro = submitted();
+    $inactive = Service::query()->where('key', 'blocked_drain')->sole();
+    $inactive->update(['is_active' => false]);
+
+    expect(fn () => app(EditProCoverage::class)->handle(vetter(), $pro, [$inactive->id], [$this->musgrave->id]))->toThrow(ValidationException::class);
 });

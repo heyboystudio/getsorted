@@ -65,7 +65,7 @@ it('continues to questions only for an eligible approved pro', function (): void
         ->assertSet('step', 'questions')
         ->assertSee('Where is the leak coming from?');
 
-    $pro->forceFill(['status' => 'paused'])->save();
+    $pro->forceFill(['status' => 'suspended'])->save();
     expect(app(EligibleProsQuery::class)->exists($this->service, $this->suburb))->toBeFalse();
 });
 
@@ -187,7 +187,7 @@ it('refuses posting when the last eligible pro becomes unavailable', function ()
         answers: $answers, notes: null, propertyPublicId: $property->public_id,
         preferredDate: now()->toImmutable()->addDays(2), timeWindow: TimeWindow::Morning,
     ));
-    $pro->forceFill(['status' => 'paused'])->save();
+    $pro->forceFill(['status' => 'suspended'])->save();
 
     expect(fn () => app(PostServiceJob::class)->handle($customer, $job))->toThrow(NoEligiblePros::class);
     expect($job->fresh()->status)->toBe(ServiceJobStatus::Draft);

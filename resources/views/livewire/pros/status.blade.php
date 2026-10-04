@@ -9,7 +9,7 @@
                 'bg-emerald-50 text-emerald-900' => $pro->status === $S::Approved,
                 'bg-amber-50 text-amber-900' => in_array($pro->status, [$S::ChangesRequested, $S::Draft], true),
                 'bg-red-50 text-red-900' => in_array($pro->status, [$S::Rejected, $S::Suspended], true),
-                'bg-zinc-100 text-zinc-800' => in_array($pro->status, [$S::Submitted, $S::Paused], true),
+                'bg-zinc-100 text-zinc-800' => $pro->status === $S::Submitted,
             ])>{{ $pro->status->label() }}</span>
         </p>
 
@@ -32,8 +32,10 @@
                 @endif
                 @if ($pro->status === $S::ChangesRequested)
                     <a href="{{ route('pros.apply') }}" class="mt-4 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white">{{ __('Fix these items') }}</a>
-                @elseif ($pro->status === $S::Rejected && $pro->reapply_after)
+                @elseif ($pro->status === $S::Rejected && $pro->reapply_after?->isFuture())
                     <p class="mt-4 text-zinc-700">{{ __('You can apply again from :date.', ['date' => $pro->reapply_after->format('j F Y')]) }}</p>
+                @elseif ($pro->status === $S::Rejected)
+                    <a href="{{ route('pros.apply') }}" class="mt-4 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white">{{ __('Apply again') }}</a>
                 @endif
                 @break
         @endswitch

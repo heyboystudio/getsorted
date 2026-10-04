@@ -17,6 +17,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -34,6 +35,14 @@ final readonly class StoreProDocument
     {
         Gate::forUser($user)->authorize('update', $pro);
 
+        $limitKey = 'pro-uploads:'.$user->id;
+
+        if (RateLimiter::tooManyAttempts($limitKey, (int) config('sortd.pros.uploads_per_hour'))) {
+            throw ValidationException::withMessages(['upload' => __('You have uploaded a lot of files. Please try again later.')]);
+        }
+
+        RateLimiter::hit($limitKey, 3600);
+
         if ($upload->getSize() === false || $upload->getSize() > self::MAX_KILOBYTES * 1024) {
             throw ValidationException::withMessages(['upload' => __('Each file must be 10 MB or smaller.')]);
         }
@@ -50,12 +59,19 @@ final readonly class StoreProDocument
 
             $document = $locked->documents()->firstOrNew(['type' => $type]);
 
-            // After changes are requested, only flagged documents reopen (AC6).
-            if ($locked->status === ProStatus::ChangesRequested && $document->status !== DocumentStatus::Flagged) {
+            // After changes are requested, only flagged documents reopen (AC6). The flag
+            // message stays until resubmission so the pro can fix a wrong upload again.
+            if ($locked->status === ProStatus::ChangesRequested && $document->flag_message === null) {
                 throw new AuthorizationException;
             }
 
-            $document->forceFill(['status' => DocumentStatus::Pending, 'flag_message' => null, 'verified_at' => null, 'verified_by' => null])->save();
+            $document->forceFill(['status' => DocumentStatus::Pending, 'verified_at' => null, 'verified_by' => null, 'expires_at' => null]);
+
+            if ($locked->status !== ProStatus::ChangesRequested) {
+                $document->flag_message = null;
+            }
+
+            $document->save();
             $document->addMediaFromString($bytes)
                 ->usingFileName('document.'.$extension)
                 ->usingName($type->label())
@@ -72,12 +88,18 @@ final readonly class StoreProDocument
     private function process(DocumentType $type, UploadedFile $upload): array
     {
         $path = $upload->getRealPath();
-        $mime = $path === false ? null : (new \finfo(FILEINFO_MIME_TYPE))->file($path);
 
-        if ($path !== false && $mime === 'application/pdf' && $type->acceptsPdf()) {
+        if ($path === false || $path === '') {
+            throw $this->invalid($type);
+        }
+
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($path);
+
+        if ($mime === 'application/pdf' && $type->acceptsPdf()) {
             $bytes = (string) file_get_contents($path);
 
-            if (! str_starts_with($bytes, '%PDF-')) {
+            // Vetting admins open these locally: refuse PDFs that can run scripts or carry other files.
+            if (! str_starts_with($bytes, '%PDF-') || preg_match('#/(JavaScript|JS|Launch|EmbeddedFile)\b#', $bytes) === 1) {
                 throw $this->invalid($type);
             }
 
@@ -85,7 +107,7 @@ final readonly class StoreProDocument
         }
 
         try {
-            return [$this->images->toWebp((string) $path), 'webp', 'image/webp'];
+            return [$this->images->toWebp($path), 'webp', 'image/webp'];
         } catch (HeicUnsupported) {
             throw ValidationException::withMessages(['upload' => __('HEIC photos cannot be processed on this server yet. Please choose a JPEG, PNG or WebP photo.')]);
         } catch (UnreadableImage) {

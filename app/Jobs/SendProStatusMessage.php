@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Pros\Enums\ProStatus;
 use App\Models\Pro;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -30,6 +31,19 @@ final class SendProStatusMessage implements ShouldQueue
         $pro = Pro::query()->with('user')->find($this->proId);
 
         if ($pro === null || $pro->user->phone_e164 === null) {
+            return;
+        }
+
+        // Skip a message overtaken by a later change (approved, then suspended a minute later).
+        $expected = match ($this->template) {
+            'pro_approved' => ProStatus::Approved,
+            'pro_changes_requested' => ProStatus::ChangesRequested,
+            'pro_rejected' => ProStatus::Rejected,
+            'pro_suspended' => ProStatus::Suspended,
+            default => null,
+        };
+
+        if ($expected !== null && $pro->status !== $expected) {
             return;
         }
 

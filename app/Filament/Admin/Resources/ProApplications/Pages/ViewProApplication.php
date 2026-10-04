@@ -21,6 +21,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Exceptions\Halt;
+use Illuminate\Database\Eloquent\Model;
 
 /** One application with its vetting decisions (spec 008, AC8–AC11). */
 final class ViewProApplication extends ViewRecord
@@ -53,12 +54,22 @@ final class ViewProApplication extends ViewRecord
                 ->fillForm(fn (): array => ['service_ids' => $this->pro()->services->pluck('id')->all(), 'suburb_ids' => $this->pro()->serviceAreas->pluck('id')->all()])
                 ->schema([
                     Select::make('service_ids')->label(__('Services'))->multiple()->required()
-                        ->options(fn (): array => Service::query()->with('trade')->orderBy('name')->get()->mapWithKeys(fn (Service $service): array => [$service->id => $service->trade->name.' · '.$service->name])->all()),
+                        ->options(fn (): array => Service::query()->with('trade')->where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn (Service $service): array => [$service->id => $service->trade->name.' · '.$service->name])->all()),
                     Select::make('suburb_ids')->label(__('Suburbs'))->multiple()->required()
                         ->options(fn (): array => Suburb::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all()),
                 ])
                 ->action(fn (array $data) => $this->attempt(fn () => app(EditProCoverage::class)->handle($this->admin(), $this->pro(), $data['service_ids'], $data['suburb_ids']), __('Saved'))),
         ];
+    }
+
+    protected function resolveRecord(int|string $key): Model
+    {
+        return $this->loaded(ProApplicationResource::getEloquentQuery()->where('public_id', $key)->firstOrFail());
+    }
+
+    private function loaded(Pro $pro): Pro
+    {
+        return $pro->load(['documents.media', 'events.actor']);
     }
 
     private function reasonField(): Textarea
@@ -78,7 +89,7 @@ final class ViewProApplication extends ViewRecord
         }
 
         $this->refreshFormData([]);
-        $this->record = ProApplicationResource::getEloquentQuery()->findOrFail($this->pro()->id);
+        $this->record = $this->loaded(ProApplicationResource::getEloquentQuery()->findOrFail($this->pro()->id));
         Notification::make()->success()->title($success)->send();
     }
 

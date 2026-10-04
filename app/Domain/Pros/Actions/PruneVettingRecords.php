@@ -28,16 +28,24 @@ final readonly class PruneVettingRecords
             ->where(fn (Builder $query) => $query
                 ->where(fn (Builder $rejected) => $rejected->where('status', ProStatus::Rejected)->where('decided_at', '<', $cutoff))
                 ->orWhere(fn (Builder $abandoned) => $abandoned->whereIn('status', [ProStatus::Draft, ProStatus::ChangesRequested])->where('last_activity_at', '<', $cutoff)))
-            ->where(fn (Builder $query) => $query->whereHas('documents')->orWhereHas('references')->orWhereNotNull('bio'))
+            ->where(fn (Builder $query) => $query->whereHas('documents')->orWhereHas('references')->orWhereNotNull('bio')->orWhereNotNull('decision_reason'))
+            ->lazyById()
             ->each(function (Pro $pro) use (&$pruned): void {
                 DB::transaction(function () use ($pro): void {
                     // Deleting each document also removes its file.
                     $pro->documents()->each(fn ($document) => $document->delete());
                     $pro->references()->delete();
-                    $pro->forceFill(['bio' => null, 'vat_number' => null])->save();
+                    $pro->forceFill(['bio' => null, 'vat_number' => null, 'decision_reason' => null])->save();
+                    // History rows are append-only, but their reasons can repeat what referees said: the one
+                    // deliberate exception is blanking those reasons at the end of the retention period.
+                    DB::table('pro_events')->where('pro_id', $pro->id)->whereNotNull('reason')->update(['reason' => null]);
                 });
                 $pruned++;
             });
+
+        if ($pruned > 0) {
+            activity()->withProperties(['applications' => $pruned])->log('vetting_records_pruned');
+        }
 
         return $pruned;
     }

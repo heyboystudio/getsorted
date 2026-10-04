@@ -10,6 +10,7 @@ use App\Domain\Pros\Enums\DocumentType;
 use App\Domain\Pros\Exceptions\CannotChangeApplication;
 use App\Models\ProDocument;
 use App\Models\User;
+use App\Support\LocalTime;
 use Carbon\CarbonImmutable;
 use Closure;
 use Filament\Actions\Action;
@@ -58,9 +59,10 @@ final class DocumentsRelationManager extends RelationManager
                 TextColumn::make('notes')->label(__('Private note'))->placeholder('—')->wrap(),
             ])
             ->recordActions([
+                // The five-minute link is made when clicked, so an old page still opens documents.
                 Action::make('open')->label(__('Open'))->icon('heroicon-o-eye')
                     ->visible(fn (ProDocument $record): bool => $record->file() !== null)
-                    ->url(fn (ProDocument $record): string => $record->temporaryUrl(), shouldOpenInNewTab: true),
+                    ->action(fn (ProDocument $record) => $this->js('window.open('.json_encode($record->temporaryUrl()).", '_blank', 'noopener')")),
                 Action::make('verify')->label(__('Verify'))->color('success')
                     ->visible(fn (ProDocument $record): bool => $record->file() !== null)
                     ->schema(fn (ProDocument $record): array => [
@@ -71,7 +73,7 @@ final class DocumentsRelationManager extends RelationManager
                     ->action(fn (ProDocument $record, array $data) => $this->attempt(fn () => app(VetDocument::class)->verify(
                         $this->admin(),
                         $record,
-                        isset($data['expires_at']) ? CarbonImmutable::parse($data['expires_at'])->endOfDay() : null,
+                        isset($data['expires_at']) ? CarbonImmutable::parse($data['expires_at'], LocalTime::timezone())->endOfDay() : null,
                         $data['note'] ?? null,
                     ))),
                 Action::make('flag')->label(__('Flag'))->color('warning')

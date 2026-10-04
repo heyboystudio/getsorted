@@ -21,9 +21,8 @@ final class ProStatusMachine
         'draft' => [S::Submitted],
         'submitted' => [S::Approved, S::ChangesRequested, S::Rejected],
         'changes_requested' => [S::Submitted],
-        'approved' => [S::Suspended, S::Paused],
+        'approved' => [S::Suspended],
         'suspended' => [S::Approved],
-        'paused' => [S::Approved],
         // After the reapply wait (founder decision 4).
         'rejected' => [S::Draft],
     ];
@@ -48,6 +47,9 @@ final class ProStatusMachine
         $event = new ProEvent(['from_status' => $from, 'to_status' => $to, 'actor_id' => $actor?->id, 'reason' => $reason]);
         $event->pro()->associate($pro);
         $event->save();
+
+        // Every status change is audited, with no personal data (AC11, AC15).
+        activity()->causedBy($actor)->performedOn($pro)->withProperties(['from' => $from->value, 'to' => $to->value])->log('pro_status_changed');
 
         return $event;
     }

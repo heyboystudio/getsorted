@@ -12,9 +12,6 @@ final class VettingSettings extends Settings
     /** Days a rejected applicant waits before reapplying. */
     public int $reapply_after_days;
 
-    /** Days without activity before a draft counts as abandoned. */
-    public int $abandoned_after_days;
-
     /** Months after the decision or last activity before a rejected or abandoned application's documents and references are deleted. */
     public int $retention_months;
 

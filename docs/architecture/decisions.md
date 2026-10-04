@@ -37,6 +37,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 031 | Job photos and iPhone HEIC (spec 012) | Accepted | 2026-10-04 |
 | 032 | Coverage guard before booking and waitlist (spec 006) | Accepted | 2026-10-04 |
 | 033 | AI scoping assistant: Laravel AI SDK, Anthropic, shipped switched off (spec 007) | Accepted | 2026-10-04 |
+| 034 | Pro application and vetting (spec 008) | Accepted | 2026-10-04 |
 
 ---
 
@@ -274,4 +275,13 @@ Short architecture decision records. **Add an entry for every significant choice
 **Contract change:** `ScopingAssistant` methods now return `ScopingSuggestionReply` / `ScopingSummaryReply` with an `AssistantUsage` (provider, model, tokens) so usage can be logged, and throw `AssistantUnavailable` (with a timed-out flag) on outages. All calls go through `App\Domain\Assistant\Support\AssistantCalls`, which applies the switch, per-visitor/per-draft rate limits, the daily budget, output validation and `ai_usage` logging (no customer text; pruned after 90 days by default).
 
 **Consequences:** The package publishes its own conversation migrations only on request; none are used. The architecture test now lets `App\Integrations` classes use each other (an adapter and its own helpers), while the rest of the app still reaches integrations only through contracts. Turning the assistant on in a hosted environment needs `ANTHROPIC_API_KEY` in the host's secret manager, the privacy notice update and the provider terms; there is no other code change.
+
+## 034 · Pro application and vetting (spec 008)
+**Context:** No real pro could become approved, so coverage (spec 006) always sent customers to the waitlist. The founder approved spec 008 with four decisions (2026-10-04).
+
+**Decision:** Pros apply in a Livewire form at `/pros/apply` (the Filament `/pro` panel stays closed until invites, spec 009). One `ProStatusMachine` changes `pros.status` (draft → submitted → approved/changes_requested/rejected; changes_requested → submitted; approved ↔ suspended; rejected → draft after the wait), each change in a locked transaction with a `pro_events` row and an activity-log entry. Vetting is limited to `admin_vetting` and `admin_super`, never on their own application (policy `vet`/`viewVetting`; the admin list excludes it). Approval needs a verified ID and proof of address, two positive references and at least one service the pro can do (registration verified and unexpired where required). Founder decisions: (1) bank details wait for the payments phase; (2) no criminal-record checks in v1; (3) rejected or abandoned applications lose documents, references, bio and vetting reasons 12 months after the decision or last activity (`sortd:prune-vetting-records`, daily); (4) a 90-day reapply wait (`vetting.reapply_after_days`).
+
+**Privacy and safety:** ID numbers are never stored; registration numbers and reference phones are encrypted. Documents sit on the private `media` disk and are served only through a five-minute signed link that re-checks the policy and needs the admin login session for admins; images are re-encoded (shared `App\Support\Images\ImageReencoder`, extracted from job photos), PDFs are checked by content, refused if they contain `/JavaScript`, `/JS`, `/Launch` or `/EmbeddedFile`, and always downloaded with a sandbox CSP. Uploads (30/hour) and submissions (5/hour) are rate limited per pro. A reapplication resets every earlier check, and a changed registration number must be verified again.
+
+**Consequences:** The `paused` status (journey P4) is not in the state machine yet; it arrives with the pro's own profile screens. `pro_events` stays append-only except for the prune's deliberate blanking of `reason`. Before launch, consider malware scanning of uploads and turning off `serve` on the `media` disk (nothing uses it). The spec's `vetting.abandoned_after_days` setting was dropped: decision 3's 12-month rule decides when an abandoned application is pruned.
 

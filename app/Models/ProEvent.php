@@ -25,6 +25,10 @@ final class ProEvent extends Model
 {
     public const UPDATED_AT = null;
 
+    /** The history panel always shows who made each change. */
+    /** @var list<string> */
+    protected $with = ['actor'];
+
     /** @var list<string> */
     protected $fillable = ['from_status', 'to_status', 'actor_id', 'reason'];
 

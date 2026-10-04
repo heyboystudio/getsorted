@@ -12,7 +12,6 @@ use App\Domain\Pros\Actions\SubmitApplication;
 use App\Domain\Pros\Data\BusinessDetails;
 use App\Domain\Pros\Data\ReferenceData;
 use App\Domain\Pros\Enums\BusinessType;
-use App\Domain\Pros\Enums\DocumentStatus;
 use App\Domain\Pros\Enums\DocumentType;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\Pros\Exceptions\CannotChangeApplication;
@@ -55,8 +54,8 @@ final class Application extends Component
     /** @var list<int|string> */
     public array $suburbIds = [];
 
-    /** @var TemporaryUploadedFile|null */
-    public $upload;
+    /** @var array<string, TemporaryUploadedFile|null> one slot per document type, saved as soon as a file is chosen */
+    public array $uploads = [];
 
     /** @var array<string, string> registration document type => number */
     public array $registrationNumbers = [];
@@ -139,18 +138,24 @@ final class Application extends Component
         }
     }
 
-    public function addDocument(string $type, StoreProDocument $storeProDocument): void
+    /** A chosen file is stored straight away under the document it was chosen for. */
+    public function updatedUploads(mixed $file, string $type): void
     {
-        $this->resetErrorBag('upload');
+        $this->resetErrorBag(['upload', 'uploads.'.$type]);
         $documentType = DocumentType::tryFrom($type);
         abort_unless($documentType instanceof DocumentType, 404);
 
-        if (! $this->upload instanceof TemporaryUploadedFile) {
-            throw ValidationException::withMessages(['upload' => __('Choose a file first.')]);
-        }
+        try {
+            if (! $file instanceof TemporaryUploadedFile) {
+                throw ValidationException::withMessages(['upload' => __('Choose a file.')]);
+            }
 
-        $storeProDocument->handle($this->user(), $this->pro(), $documentType, $this->upload);
-        $this->upload = null;
+            app(StoreProDocument::class)->handle($this->user(), $this->pro(), $documentType, $file);
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages(['uploads.'.$type => $exception->validator->errors()->first('upload')]);
+        } finally {
+            $this->uploads[$type] = null;
+        }
     }
 
     public function submit(SubmitApplication $submitApplication): void
@@ -176,9 +181,11 @@ final class Application extends Component
                 ->orderBy('sort')->get(),
             'suburbsByRegion' => Suburb::query()->where('is_active', true)->orderBy('region')->orderBy('name')->get()->groupBy('region'),
             'documentTypes' => $pro->status === ProStatus::ChangesRequested
-                ? $pro->documents->where('status', DocumentStatus::Flagged)->pluck('type')->filter(fn (DocumentType $type): bool => ! $type->isRegistration())->values()->all()
+                ? $pro->documents->whereNotNull('flag_message')->pluck('type')->filter(fn (DocumentType $type): bool => ! $type->isRegistration())->values()->all()
                 : DocumentType::required(),
-            'registrationTypes' => $pro->requiredRegistrations(),
+            'registrationTypes' => $pro->status === ProStatus::ChangesRequested
+                ? $pro->documents->whereNotNull('flag_message')->pluck('type')->filter(fn (DocumentType $type): bool => $type->isRegistration())->values()->all()
+                : $pro->requiredRegistrations(),
             'referencesToReplace' => $pro->references->filter(fn (ProReference $reference): bool => $reference->outcome->needsReplacing())->values(),
             'businessTypes' => BusinessType::cases(),
         ]);
@@ -195,7 +202,8 @@ final class Application extends Component
         $pro->loadMissing(['services', 'documents', 'references']);
 
         if ($pro->status === ProStatus::ChangesRequested) {
-            $flagged = $pro->documents->where('status', DocumentStatus::Flagged);
+            // Flag messages stay until resubmission, so a fixed item can be fixed again (code review).
+            $flagged = $pro->documents->whereNotNull('flag_message');
 
             return array_values(array_filter([
                 $flagged->contains(fn ($document): bool => ! $document->type->isRegistration()) ? 'documents' : null,
@@ -231,7 +239,11 @@ final class Application extends Component
 
     private function saveRegistrations(SaveApplicationStep $save, Pro $pro): void
     {
-        foreach ($pro->requiredRegistrations() as $type) {
+        $types = $pro->status === ProStatus::ChangesRequested
+            ? $pro->documents->whereNotNull('flag_message')->pluck('type')->filter(fn (DocumentType $type): bool => $type->isRegistration())->all()
+            : $pro->requiredRegistrations();
+
+        foreach ($types as $type) {
             $number = trim($this->registrationNumbers[$type->value] ?? '');
 
             // A registration is optional: without it, that service simply is not offered (AC3).
@@ -253,8 +265,9 @@ final class Application extends Component
 
             foreach ($toReplace as $index => $reference) {
                 $row = $this->references[$index] ?? ['name' => '', 'phone' => '', 'relationship' => ''];
-                $this->remap(fn () => $save->replaceReference($this->user(), $pro, $reference, new ReferenceData($row['name'], $row['phone'], $row['relationship'])), [
+                $this->remap(fn () => $save->replaceReference($this->user(), $pro, $reference, new ReferenceData($row['name'], $row['phone'], $row['relationship']), $this->refereesAgreed), [
                     'references.1.name' => "references.{$index}.name", 'references.1.phone_e164' => "references.{$index}.phone", 'references.1.relationship' => "references.{$index}.relationship",
+                    'agreed' => 'refereesAgreed',
                 ]);
             }
 

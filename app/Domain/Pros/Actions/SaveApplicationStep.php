@@ -10,6 +10,7 @@ use App\Domain\Pros\Data\ReferenceData;
 use App\Domain\Pros\Enums\DocumentStatus;
 use App\Domain\Pros\Enums\DocumentType;
 use App\Domain\Pros\Enums\ProStatus;
+use App\Domain\Pros\Enums\ReferenceOutcome;
 use App\Models\Pro;
 use App\Models\ProReference;
 use App\Models\Service;
@@ -82,12 +83,12 @@ final class SaveApplicationStep
     }
 
     /** After changes are requested: swap a reference the vetting team could not use (AC6). */
-    public function replaceReference(User $user, Pro $pro, ProReference $reference, ReferenceData $replacement): void
+    public function replaceReference(User $user, Pro $pro, ProReference $reference, ReferenceData $replacement, bool $refereeAgreed): void
     {
         Gate::forUser($user)->authorize('update', $pro);
         $others = $pro->references()->whereKeyNot($reference->id)->get()
             ->map(fn (ProReference $other): ReferenceData => new ReferenceData($other->name, $other->phone_e164, $other->relationship))->all();
-        $row = $this->validReferences($user, [...$others, $replacement], true)[count($others)];
+        $row = $this->validReferences($user, [...$others, $replacement], $refereeAgreed)[count($others)];
 
         $this->locked($user, $pro, function (Pro $locked) use ($reference, $row): void {
             $current = $locked->references()->whereKey($reference->id)->firstOrFail();
@@ -96,7 +97,7 @@ final class SaveApplicationStep
                 throw new AuthorizationException;
             }
 
-            $current->fill($row)->forceFill(['outcome' => 'pending', 'note' => null, 'checked_by' => null, 'checked_at' => null])->save();
+            $current->fill($row)->forceFill(['outcome' => ReferenceOutcome::Pending, 'note' => null, 'checked_by' => null, 'checked_at' => null])->save();
         });
     }
 
@@ -129,11 +130,17 @@ final class SaveApplicationStep
             abort_unless($type->isRegistration() && in_array($type, $locked->requiredRegistrations(), true), 404);
             $document = $locked->documents()->firstOrNew(['type' => $type]);
 
-            if ($locked->status === ProStatus::ChangesRequested && $document->status !== DocumentStatus::Flagged) {
+            if ($document->exists && $document->number === $number) {
+                return;
+            }
+
+            // After changes are requested, only a registration vetting flagged reopens (AC6).
+            if ($locked->status === ProStatus::ChangesRequested && $document->flag_message === null) {
                 throw new AuthorizationException;
             }
 
-            $document->forceFill(['number' => $number])->save();
+            // A new number has to be checked again (security review).
+            $document->forceFill(['number' => $number, 'status' => DocumentStatus::Pending, 'verified_at' => null, 'verified_by' => null, 'expires_at' => null])->save();
         });
     }
 

@@ -14,6 +14,8 @@ use App\Models\ProReference;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 /** Sends a complete application (or its fixes) to the vetting team, once (spec 008, AC4, AC6). */
@@ -23,9 +25,19 @@ final readonly class SubmitApplication
 
     public function handle(User $user, Pro $pro): Pro
     {
+        Gate::forUser($user)->authorize('view', $pro);
+
         if ($pro->user_id !== $user->id) {
             throw new AuthorizationException;
         }
+
+        $limitKey = 'pro-submissions:'.$user->id;
+
+        if (RateLimiter::tooManyAttempts($limitKey, (int) config('sortd.pros.submissions_per_hour'))) {
+            throw ValidationException::withMessages(['application' => __('Please try again later.')]);
+        }
+
+        RateLimiter::hit($limitKey, 3600);
 
         return DB::transaction(function () use ($user, $pro): Pro {
             $locked = Pro::query()->with(['services', 'serviceAreas', 'documents.media', 'references'])->lockForUpdate()->findOrFail($pro->id);
@@ -34,7 +46,8 @@ final readonly class SubmitApplication
                 throw new CannotChangeApplication(__('Your application has already been sent for review.'));
             }
 
-            $missing = $locked->status === ProStatus::Draft ? $this->missing($locked) : $this->unresolved($locked);
+            // Everything must still be there (a prune may have emptied an old application), and every flag dealt with.
+            $missing = [...$this->missing($locked), ...($locked->status === ProStatus::ChangesRequested ? $this->unresolved($locked) : [])];
 
             if ($missing !== []) {
                 throw ValidationException::withMessages(['application' => __('Still needed: :items.', ['items' => implode(', ', $missing)])]);
@@ -42,6 +55,7 @@ final readonly class SubmitApplication
 
             $locked->forceFill(['submitted_at' => now(), 'last_activity_at' => now()]);
             $this->statuses->transition($locked, ProStatus::Submitted, $user);
+            $locked->documents()->whereNotNull('flag_message')->update(['flag_message' => null]);
 
             return $locked;
         });

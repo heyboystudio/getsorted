@@ -18,7 +18,7 @@
             </a>
         @else
             <p class="mt-3 text-lg text-zinc-600">{{ __('Thanks, :name. Your application is :status.', ['name' => $firstName, 'status' => mb_strtolower($status->label())]) }}</p>
-            <a href="{{ route('pros.status') }}" class="mt-6 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center text-lg font-medium text-white hover:bg-emerald-800">{{ __('Check your application') }}</a>
+            <a href="{{ route($canReapply ? 'pros.apply' : 'pros.status') }}" class="mt-6 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center text-lg font-medium text-white hover:bg-emerald-800">{{ $canReapply ? __('Apply again') : __('Check your application') }}</a>
         @endif
 
         @if ($isCustomer)

@@ -67,12 +67,14 @@ Enums: `TradeStatus`, `QuestionType`, `RegistrationType` (`App\Domain\Catalogue\
 ### Pros
 | Table | Key columns |
 |---|---|
-| `pros` | public_id, user_id (unique), status, business_name, weekly_job_cap, approved_at — **minimal eligibility schema in place** (spec 006); vat_number, bio, base_location, ratings and response metrics arrive with spec 008/009 |
+| `pros` | public_id, user_id (unique), status (draft/submitted/changes_requested/approved/rejected/suspended — only `ProStatusMachine` changes it), business_name (nullable until the business step), business_type (sole_trader/company), vat_number, bio, weekly_job_cap, vetting_consent_at, submitted_at, decided_by, decided_at, decision_reason (shown to the pro), approved_at, suspended_at, reapply_after, last_activity_at — **in place** (spec 006 + `2026_10_04_130000`, spec 008); base_location, ratings and response metrics arrive with spec 009 |
 | `pro_services` | pro_id, service_id (unique pair) — **in place** |
 | `pro_service_areas` | pro_id, suburb_id (unique pair) — **in place** |
-| `pro_documents` | pro_id, type, status, verified_at, expires_at — **minimal registration check in place**; encrypted number, vetting attribution, rejection reason and file arrive with spec 008 |
+| `pro_documents` | public_id (ULID, used in signed URLs), pro_id, type (id_document/proof_of_address/profile_photo/pirb/electrical_registered_person; unique per pro), status (pending/verified/flagged), number (encrypted; registrations), one private media file, verified_at, verified_by, expires_at, flag_message (shown to the pro until resubmission), notes (private to vetting) — **in place** (spec 008) |
 | `pro_job_allocations` | pro_id, service_job_id (unique pair), allocated_at — rolling weekly cap input, in place (spec 006); invite workflow will write records in spec 009 |
 | `pro_customer_exclusions` | pro_id + customer_id (unique pair), service_job_id, upheld_at — upheld dispute exclusion, in place (spec 006); dispute workflow will write records later |
+| `pro_references` | pro_id, name, phone_e164 (encrypted), relationship, outcome (pending/positive/negative/no_answer), note (private), checked_by, checked_at — **in place** (spec 008) |
+| `pro_events` | pro_id, from_status, to_status, actor_id, reason, created_at — append-only status history; the retention prune blanks `reason` (spec 008, decision 034) — **in place** |
 | `pro_bank_accounts` | pro_id, bank_name, account_holder, account_number (encrypted), branch_code, provider_recipient_ref, verified_at |
 | `pro_strikes` | pro_id, type, service_job_id, notes, created_by |
 
@@ -108,7 +110,7 @@ Settings: `job_timers.quote_window_hours` (72), `job_timers.draft_expiry_days` (
 |---|---|
 | `media` | `spatie/laravel-medialibrary` on private `media` disk. `job_photos` collection belongs to `ServiceJob`; up to 5 processed WebP images per job, source metadata stripped, SHA-256 custom property for repeat upload detection. Cancelled drafts delete their photos. Pro documents and invoice PDFs use later collections. |
 | `activity_log` | `spatie/laravel-activitylog` — admin and sensitive actions; append-only, never cleaned — **in place** |
-| `settings` | `spatie/laravel-settings` — timers, commission, deposit cap — **table in place**; settings classes arrive with their features (`job_timers`; `ai`: enabled, suggestion_min_confidence, daily_call_budget, usage_retention_days — spec 007) |
+| `settings` | `spatie/laravel-settings` — timers, commission, deposit cap — **table in place**; settings classes arrive with their features (`job_timers`; `ai`: enabled, suggestion_min_confidence, daily_call_budget, usage_retention_days — spec 007; `vetting`: reapply_after_days, retention_months — spec 008) |
 | `ai_usage` | purpose (suggest_service/summarise), provider, model, input_tokens, output_tokens, latency_ms, outcome (ok/invalid/timeout/error/throttled), service_job_id (nullable, null on delete), created_at; index (created_at, purpose). **No customer text and no user ID.** Pruned after `ai.usage_retention_days` (default 90) — **in place** (spec 007) |
 | `notifications` | Laravel database notifications |
 | Queue/cache/session | Laravel defaults on Postgres (`jobs`, `failed_jobs`, `cache`, `sessions`) |

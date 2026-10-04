@@ -24,8 +24,8 @@ final class EditProCoverage
         $serviceIds = array_values(array_unique(array_map(intval(...), $serviceIds)));
         $suburbIds = array_values(array_unique(array_map(intval(...), $suburbIds)));
 
-        if ($serviceIds === [] || Service::query()->whereKey($serviceIds)->count() !== count($serviceIds)) {
-            throw ValidationException::withMessages(['service_ids' => __('Choose at least one service.')]);
+        if ($serviceIds === [] || Service::query()->whereKey($serviceIds)->where('is_active', true)->count() !== count($serviceIds)) {
+            throw ValidationException::withMessages(['service_ids' => __('Choose at least one active service.')]);
         }
 
         if ($suburbIds === [] || Suburb::query()->whereKey($suburbIds)->where('is_active', true)->count() !== count($suburbIds)) {

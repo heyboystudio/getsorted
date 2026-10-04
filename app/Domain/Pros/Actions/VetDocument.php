@@ -30,6 +30,10 @@ final class VetDocument
                 throw ValidationException::withMessages(['document' => __('There is no file to verify yet.')]);
             }
 
+            if ($locked->type->isRegistration() && ($locked->number === null || $locked->number === '')) {
+                throw ValidationException::withMessages(['document' => __('This registration has no number to check. Flag it so the pro adds one.')]);
+            }
+
             $locked->forceFill([
                 'status' => DocumentStatus::Verified,
                 'verified_at' => now(),

@@ -17,6 +17,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * The vetting queue (spec 008, AC7–AC11). Only vetting and super admins can
@@ -47,10 +48,19 @@ final class ProApplicationResource extends Resource
         return __('Pros');
     }
 
-    /** @return Builder<Pro> */
+    /**
+     * An admin who is also a pro never sees their own application here (security review).
+     *
+     * @return Builder<Pro>
+     */
     public static function getEloquentQuery(): Builder
     {
-        return Pro::query()->with(['user', 'services.trade', 'serviceAreas', 'documents.media', 'events']);
+        return Pro::query()->where('user_id', '!=', auth()->id())->with(['user', 'services.trade', 'serviceAreas']);
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return auth()->user()?->can('viewVetting', $record) === true;
     }
 
     public static function infolist(Schema $schema): Schema

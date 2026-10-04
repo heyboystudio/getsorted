@@ -35,6 +35,12 @@ final class ProPolicy
         return $pro->user_id === $user->id && $pro->status->isEditable();
     }
 
+    /** Seeing an application in the vetting screens: never your own, which would expose vetting notes (security review). */
+    public function viewVetting(User $user, Pro $pro): bool
+    {
+        return self::isVetter($user) && $pro->user_id !== $user->id;
+    }
+
     public function vet(User $user, Pro $pro): bool
     {
         return self::isVetter($user) && $pro->user_id !== $user->id;

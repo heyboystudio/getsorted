@@ -44,7 +44,9 @@ final class ProApplicationInfolist
                 RepeatableEntry::make('events')->hiddenLabel()->schema([
                     TextEntry::make('created_at')->hiddenLabel()->dateTime('j M Y H:i'),
                     TextEntry::make('to_status')->hiddenLabel()
-                        ->formatStateUsing(fn (ProStatus $state, ProEvent $record): string => $state->label().($record->reason ? ' · '.$record->reason : '')),
+                        ->formatStateUsing(fn (ProStatus $state, ProEvent $record): string => $state->label()
+                            .' · '.($record->actor?->fullName() ?? __('System'))
+                            .($record->reason ? ' · '.$record->reason : '')),
                 ])->columns(2),
             ]),
         ]);

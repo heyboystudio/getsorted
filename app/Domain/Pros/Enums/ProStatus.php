@@ -13,8 +13,6 @@ enum ProStatus: string
     case Approved = 'approved';
     case Rejected = 'rejected';
     case Suspended = 'suspended';
-    /** Set by the pro in a later spec (journey P4); never eligible. */
-    case Paused = 'paused';
 
     public function label(): string
     {
@@ -25,7 +23,6 @@ enum ProStatus: string
             self::Approved => __('Approved'),
             self::Rejected => __('Not approved'),
             self::Suspended => __('Suspended'),
-            self::Paused => __('Paused'),
         };
     }
 
