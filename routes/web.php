@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\JobPhotoController;
 use App\Http\Controllers\ProDocumentController;
 use App\Http\Controllers\ProJobPhotoController;
@@ -14,7 +16,12 @@ use App\Livewire\Account\Home;
 use App\Livewire\Account\Jobs\Show as JobShow;
 use App\Livewire\Account\Properties\Form as PropertyForm;
 use App\Livewire\Account\Properties\Index as PropertyIndex;
+use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
+use App\Livewire\Auth\Register;
+use App\Livewire\Auth\ResetPassword;
+use App\Livewire\Auth\VerifyEmail;
+use App\Livewire\Auth\VerifyPhone;
 use App\Livewire\Booking\Wizard as BookingWizard;
 use App\Livewire\Pros\Application as ProApplication;
 use App\Livewire\Pros\BecomePro;
@@ -37,6 +44,11 @@ Route::view('/pros/agreement', 'pages.pros.agreement')->name('pros.agreement');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', Login::class)->name('login');
+    Route::get('/register', Register::class)->name('register');
+    Route::get('/forgot-password', ForgotPassword::class)->name('password.request');
+    Route::get('/reset-password/{token}', ResetPassword::class)->name('password.reset');
+    Route::get('/auth/google', [GoogleController::class, 'redirect'])->middleware('throttle:20,1')->name('auth.google');
+    Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->middleware('throttle:20,1')->name('auth.google.callback');
 });
 
 Route::middleware('auth')->group(function (): void {
@@ -45,6 +57,9 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/pros/jobs/{invite}/photos/{photo}', ProJobPhotoController::class)->name('pros.jobs.photo');
     Route::get('/app/quotes/{quote}/pro-photo', QuoteProPhotoController::class)->name('quotes.pro-photo');
     Route::post('/logout', LogoutController::class)->name('logout');
+    Route::get('/verify-email', VerifyEmail::class)->name('verification.email');
+    Route::get('/verify-email/{user}/{hash}', VerifyEmailController::class)->middleware(['signed', 'throttle:6,1'])->name('verification.email.verify');
+    Route::get('/verify-mobile', VerifyPhone::class)->name('verification.phone');
 
     Route::middleware(EnsurePhoneIsVerified::class)->group(function (): void {
         Route::middleware(EnsureCustomer::class)->group(function (): void {

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\EnsureAccountIsVerified;
 use App\Http\Middleware\SecurityHeaders;
 use App\Models\User;
 use Illuminate\Foundation\Application;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
+        $middleware->appendToGroup('web', EnsureAccountIsVerified::class);
         $middleware->redirectGuestsTo(fn (): string => route('login'));
         $middleware->redirectUsersTo(function (Request $request): string {
             $user = $request->user();

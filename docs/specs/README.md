@@ -18,4 +18,4 @@ Suggested first specs after Phase 0 (from the roadmap):
 | 010 | Quote builder, comparison and acceptance — [done](010-quotes-and-acceptance.md) | 3 |
 | 011 | Join as a pro (sign-up entry) — [done](011-join-as-a-pro.md) | 1 |
 | 012 | Job photos — [done](012-job-photos.md) | 2 |
-| 014 | Sign up and sign in with email or Google, then verify your phone — [draft](014-email-google-sign-in.md) | 1 |
+| 014 | Sign up and sign in with email or Google, then verify your phone — [done, awaiting merge](014-email-google-sign-in.md) | 1 |

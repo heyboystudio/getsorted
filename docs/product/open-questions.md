@@ -8,7 +8,7 @@ Decisions the founder still needs to make. Claude Code must **not** decide these
 | Q2 | Commission on materials? | No | Payouts |
 | Q3 | Customer booking/service fee? | R0, admin setting | Checkout |
 | Q4 | Which payment provider? | Fake gateway in dev | Phase 3 |
-| Q5 | Which WhatsApp provider (BSP)? | Log-only channel in dev | Phase 1 notifications |
+| Q5 | Which WhatsApp provider (BSP)? | **Decided 2026-10-05: Twilio** for WhatsApp and SMS (decision 040) | Phase 1 notifications |
 | Q6 | Deposit release timing: at job start, or earlier for materials-heavy jobs? | At job start | Payouts |
 | Q7 | Cancellation fees for late customer cancellation? | Call-out fee only | Refunds |
 | Q8 | Guarantee terms: what does Sortd promise, and up to what amount? | Rework or refund decided by admin, 30-day window | Disputes, marketing copy |

@@ -2,36 +2,30 @@
 
 declare(strict_types=1);
 
-use App\Contracts\MessagingChannel;
 use App\Domain\Accounts\Enums\ConsentType;
-use App\Domain\Accounts\Enums\LoginStep;
 use App\Domain\Accounts\Enums\Role;
-use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Livewire\Auth\Login;
+use App\Livewire\Auth\Register;
 use App\Livewire\Pros\BecomePro;
 use App\Models\Consent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
 
 uses(RefreshDatabase::class);
 
-const PRO_PHONE = '+27821234567';
+beforeEach(function (): void {
+    Mail::fake();
+    Http::fake(['api.pwnedpasswords.com/*' => Http::response('', 200)]);
+});
 
-function proCode(): string
+function proSignIn(string $email): Testable
 {
-    /** @var FakeMessagingChannel $messaging */
-    $messaging = app(MessagingChannel::class);
-    $sent = $messaging->sent();
-
-    return end($sent)->parameters['code'];
-}
-
-function proLogin(string $phone = '082 123 4567'): Testable
-{
-    return Livewire::withQueryParams(['as' => 'pro'])->test(Login::class)->set('phone', $phone)->call('sendCode');
+    return Livewire::withQueryParams(['as' => 'pro'])->test(Login::class)->set('email', $email)->set('password', 'password')->call('login');
 }
 
 function consentTypes(User $user): array
@@ -39,10 +33,10 @@ function consentTypes(User $user): array
     return Consent::query()->where('user_id', $user->id)->pluck('type')->map->value->sort()->values()->all();
 }
 
-it('explains joining as a pro and links to the pro login (AC1)', function (): void {
+it('explains joining as a pro and links to the pro sign-up (AC1, spec 014)', function (): void {
     $this->get('/pros/join')->assertOk()
         ->assertSee('Free to join')
-        ->assertSee('href="'.route('login', ['as' => 'pro']).'"', false);
+        ->assertSee('href="'.route('register', ['as' => 'pro']).'"', false);
 });
 
 it('links tradespeople to the join page from the home page (AC1)', function (): void {
@@ -55,22 +49,19 @@ it('sends logged-in customers from the join page to the become-a-pro step (AC1, 
         ->assertSee('href="'.route('pros.become').'"', false);
 });
 
-it('uses the spec 001 phone and code steps with pro wording (AC2)', function (): void {
-    Livewire::withQueryParams(['as' => 'pro'])->test(Login::class)->assertSee('Join Sortd as a pro');
-
-    proLogin()->assertSet('step', LoginStep::Code)->assertSet('asPro', true)->assertSee('We sent a code to');
+it('uses the sign-up page with pro wording (AC2, spec 014)', function (): void {
+    Livewire::withQueryParams(['as' => 'pro'])->test(Register::class)->assertSet('asPro', true)->assertSee('Join Sortd as a pro');
 });
 
 it('signs up a new pro with the pro role and three consents (AC3, AC4, AC6)', function (): void {
-    $component = proLogin()->set('code', proCode())->call('verifyCode')
-        ->assertSet('step', LoginStep::Profile)
-        ->assertSee('pro agreement');
+    $component = Livewire::withQueryParams(['as' => 'pro'])->test(Register::class);
+    foreach (['firstName' => 'Sipho', 'lastName' => 'Dlamini', 'email' => 'sipho@example.com', 'password' => 'long-enough-password',
+        'acceptTerms' => true, 'acceptPrivacy' => true, 'acceptProAgreement' => true] as $field => $value) {
+        $component->set($field, $value);
+    }
+    $component->call('register')->assertRedirect(route('pros.welcome'));
 
-    $component->set('firstName', 'Sipho')->set('lastName', 'Dlamini')
-        ->set('acceptTerms', true)->set('acceptPrivacy', true)->set('acceptProAgreement', true)
-        ->call('register')->assertRedirect(route('pros.welcome'));
-
-    $user = User::query()->where('phone_e164', PRO_PHONE)->sole();
+    $user = User::query()->where('email', 'sipho@example.com')->sole();
 
     expect($user->hasRole(Role::Pro->value))->toBeTrue()
         ->and($user->hasRole(Role::Customer->value))->toBeFalse()
@@ -82,25 +73,14 @@ it('signs up a new pro with the pro role and three consents (AC3, AC4, AC6)', fu
         ->and(Activity::query()->where('description', 'consent granted')->count())->toBe(3);
 });
 
-it('requires the pro agreement for pro sign-ups (AC3)', function (): void {
-    proLogin()->set('code', proCode())->call('verifyCode')
-        ->set('firstName', 'Sipho')->set('lastName', 'Dlamini')
-        ->set('acceptTerms', true)->set('acceptPrivacy', true)->set('acceptProAgreement', false)
-        ->call('register')->assertHasErrors(['acceptProAgreement']);
-
-    expect(User::query()->count())->toBe(0);
-});
-
 it('does not ask customers for the pro agreement', function (): void {
-    Livewire::test(Login::class)->set('phone', '082 123 4567')->call('sendCode')
-        ->set('code', proCode())->call('verifyCode')
-        ->assertDontSee('pro agreement');
+    Livewire::test(Register::class)->assertDontSee('pro agreement');
 });
 
 it('sends an existing customer who joins as a pro to the agreement step (AC5)', function (): void {
-    User::factory()->customer()->create(['phone_e164' => PRO_PHONE]);
+    User::factory()->customer()->create(['email' => 'thandi@example.com']);
 
-    proLogin()->set('code', proCode())->call('verifyCode')->assertRedirect(route('pros.become'));
+    proSignIn('thandi@example.com')->assertRedirect(route('pros.become'));
 });
 
 it('adds the pro role to an existing customer who accepts the agreement (AC5)', function (): void {
@@ -134,10 +114,9 @@ it('sends existing pros straight to their welcome page', function (): void {
 });
 
 it('lands a returning pro on the pro welcome page (AC6)', function (): void {
-    $pro = User::factory()->pro()->create(['phone_e164' => PRO_PHONE, 'first_name' => 'Sipho']);
+    $pro = User::factory()->pro()->create(['email' => 'sipho@example.com', 'first_name' => 'Sipho']);
 
-    Livewire::test(Login::class)->set('phone', '082 123 4567')->call('sendCode')
-        ->set('code', proCode())->call('verifyCode')->assertRedirect(route('pros.welcome'));
+    Livewire::test(Login::class)->set('email', 'sipho@example.com')->set('password', 'password')->call('login')->assertRedirect(route('pros.welcome'));
 
     $this->actingAs($pro)->get('/pros/welcome')->assertOk()
         ->assertSee('Thanks, Sipho')
@@ -163,17 +142,11 @@ it('sends non-pros from the pro welcome page to the join page (AC9)', function (
     $this->get('/pros/welcome')->assertRedirect(route('login'));
 });
 
-it('refuses admin accounts on the pro sign-up exactly as on customer login (AC10)', function (): void {
-    $admin = User::factory()->create(['phone_e164' => PRO_PHONE, 'phone_verified_at' => now()]);
+it('refuses admin accounts on the pro sign-in like any wrong password (AC10)', function (): void {
+    $admin = User::factory()->create(['email' => 'admin@example.com']);
     $admin->assignRole(Role::AdminSupport->value);
 
-    /** @var FakeMessagingChannel $messaging */
-    $messaging = app(MessagingChannel::class);
-
-    proLogin()->assertSet('step', LoginStep::Code)
-        ->set('code', '000000')->call('verifyCode')->assertHasErrors(['code']);
-
-    $messaging->assertNothingSent();
+    proSignIn('admin@example.com')->assertHasErrors(['email']);
     $this->assertGuest();
 });
 
@@ -192,11 +165,10 @@ it('serves the draft pro agreement (AC11)', function (): void {
 });
 
 it('lands a pro who is also a customer on the pro welcome page (AC6)', function (): void {
-    $user = User::factory()->customer()->create(['phone_e164' => PRO_PHONE]);
+    $user = User::factory()->customer()->create(['email' => 'both@example.com']);
     $user->assignRole(Role::Pro->value);
 
-    Livewire::test(Login::class)->set('phone', '082 123 4567')->call('sendCode')
-        ->set('code', proCode())->call('verifyCode')->assertRedirect(route('pros.welcome'));
+    Livewire::test(Login::class)->set('email', 'both@example.com')->set('password', 'password')->call('login')->assertRedirect(route('pros.welcome'));
 });
 
 it('shows the welcome page with a log-out button (AC6)', function (): void {

@@ -41,7 +41,7 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
     protected $fillable = ['first_name', 'last_name', 'email', 'locale'];
 
     /** @var list<string> */
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = ['password', 'remember_token', 'google_id'];
 
     /**
      * The ULID used in URLs; the numeric id never leaves the server.
@@ -76,7 +76,24 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
     }
 
     /**
-     * Where a phone-login user lands (spec 011): pros go to the pro area; someone
+     * The verification step a signed-in customer or pro must finish before using
+     * the site: email first, then mobile (spec 014, AC6, AC10). Null when done.
+     */
+    public function pendingVerificationRoute(): ?string
+    {
+        if ($this->isAdmin()) {
+            return null;
+        }
+
+        if ($this->email_verified_at === null) {
+            return 'verification.email';
+        }
+
+        return $this->phone_verified_at === null ? 'verification.phone' : null;
+    }
+
+    /**
+     * Where a signed-in user lands (spec 011): pros go to the pro area; someone
      * who came to join as a pro but isn't one yet goes to the pro-agreement step.
      */
     public function homeRoute(bool $joiningAsPro = false): string

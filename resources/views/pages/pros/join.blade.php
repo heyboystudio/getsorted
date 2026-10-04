@@ -16,7 +16,7 @@
             @auth
                 <a href="{{ route('pros.become') }}" class="mt-6 flex w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Get started') }}</a>
             @else
-                <a href="{{ route('login', ['as' => 'pro']) }}" class="mt-6 flex w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Get started') }}</a>
+                <a href="{{ route('register', ['as' => 'pro']) }}" class="mt-6 flex w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Get started') }}</a>
             @endauth
         </section>
     </main>

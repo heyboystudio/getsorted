@@ -1,6 +1,6 @@
 # Spec 014 · Sign up and sign in with email or Google, then verify your phone
 
-Status: Draft · Phase: 1 (revisits spec 001) · Owner: founder
+Status: Done (awaiting merge) · Phase: 1 (revisits spec 001) · Owner: founder
 
 ## Goal
 Customers and pros create an account with **email and password** or **Continue with Google**, and sign in the same way. A verified mobile number is still required before anyone can post a job or quote, but it is checked *after* sign-up with a one-time code. It is no longer the way in. This replaces decision 004's "phone + code login" for customers and pros. Admin sign-in (email, password and an authenticator app) is unchanged.
@@ -75,3 +75,4 @@ Customers and pros create an account with **email and password** or **Continue w
 ## Progress
 - 2026-10-04: Drafted at the founder's request ("phone number isn't the primary method"). Planned to build before payments (spec 013), since sign-up is the first screen. Awaiting founder approval and the three decisions above.
 - 2026-10-04: Founder decided: both sign-up methods; email and mobile verified before any access; wipe test data; Twilio for WhatsApp and SMS.
+- 2026-10-05: Founder approved the build plan. Built on `feat/014-email-google-signin`: sign-up (email or Google), sign-in, password reset, email link, mobile verification and the verification gate; join-as-pro now starts at `/register?as=pro`.

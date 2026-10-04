@@ -42,25 +42,24 @@ final class UserFactory extends Factory
         return $this->state(fn (array $attributes): array => ['email_verified_at' => null]);
     }
 
-    /** A phone-login pro (sign-up done, application not yet started). */
+    public function withoutPhone(): static
+    {
+        return $this->state(fn (array $attributes): array => ['phone_e164' => null, 'phone_verified_at' => null]);
+    }
+
+    /** A fully verified pro (sign-up done, application not yet started). */
     public function pro(): static
     {
         return $this->state(fn (array $attributes): array => [
-            'email' => null,
-            'email_verified_at' => null,
-            'password' => null,
             'phone_e164' => '+2783'.fake()->unique()->numerify('#######'),
             'phone_verified_at' => now(),
         ])->afterCreating(fn (User $user): User => $user->assignRole(Role::Pro->value));
     }
 
-    /** A phone-login customer: verified SA mobile, no email or password. */
+    /** A fully verified customer: email and SA mobile both verified (spec 014). */
     public function customer(): static
     {
         return $this->state(fn (array $attributes): array => [
-            'email' => null,
-            'email_verified_at' => null,
-            'password' => null,
             'phone_e164' => '+2782'.fake()->unique()->numerify('#######'),
             'phone_verified_at' => now(),
         ])->afterCreating(fn (User $user): User => $user->assignRole(Role::Customer->value));
