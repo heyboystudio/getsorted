@@ -1,6 +1,6 @@
 # Spec 005 · Booking flow: service → questions → property → when → post
 
-Status: Draft · Phase: 2 · Owner: founder
+Status: Approved · Phase: 2 · Owner: founder
 
 ## Goal
 A customer can describe a job by picking a trade and service, answering that service's scoping questions, choosing a property and a preferred date, and **post** it. Posted jobs appear for admins. This creates the job record and the job state machine that every later feature (coverage, AI, matching, quotes, payments) builds on.
@@ -65,11 +65,12 @@ Mobile first (360 px), one decision per screen, big tap targets, progress bar ("
 ## Out of scope
 - Photos (separate spec — see open question 3), free-text + AI (007), coverage check and waitlist (006), invites/matching (009), quotes (010), cancelling a posted job.
 
-## Open questions
-1. **Posting before any pros exist.** Until pros are vetted (Phase 3) no job can be matched. Proposal: posting works now (jobs go to `open` and wait; admins see them); the "at least one eligible pro" guard is added with the coverage check (spec 006). OK?
-2. **Time windows.** Proposal: Morning 07:00–12:00, Afternoon 12:00–17:00, Flexible; "Urgent — today" only for emergency-capable services. OK?
-3. **Photos.** Proposal: a separate small spec right after this one (keeps this PR reviewable). It also needs a decision on iPhone HEIC photos: accept them (needs an extra image library on the server) or ask phones to send JPEG (most do automatically). OK to split?
-4. **Job summary for pros.** The AI summary is spec 007; until then the summary is the customer's answers + notes. OK?
+## Decisions (founder, 2026-10-04)
+1. Jobs can be posted now and wait as `open`; the "at least one eligible pro" guard arrives with spec 006.
+2. Windows: Morning 07:00–12:00, Afternoon 12:00–17:00, Flexible; "Urgent — today" only for emergency-capable services.
+3. Photos become a separate small spec straight after this one (incl. the HEIC decision).
+4. Until spec 007, the job summary is the customer's answers + notes.
 
 ## Progress
 - 2026-10-04: Drafted for founder review.
+- 2026-10-04: Approved as proposed.
