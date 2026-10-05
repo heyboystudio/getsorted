@@ -1,6 +1,6 @@
 # Spec 016 · AI booking assistant on the site (Claude on Amazon Bedrock)
 
-Status: Draft · Phase: 2–3 (builds on specs 005, 006, 007, 012, 015) · Owner: founder
+Status: Approved · Phase: 2–3 (builds on specs 005, 006, 007, 012, 015) · Owner: founder
 
 ## Goal
 A customer can open a chat on the website, describe the problem in their own words, and the assistant works out what's wrong. It asks the right follow-up questions, gives safety advice when needed, collects photos and the address, and hands over a ready-to-post job. From there the existing cycle runs unchanged: matching and invite waves (009), quotes and acceptance (010), and later payments, reviews and so on. It replaces the removed "Describe your problem" box. The website only, not WhatsApp.
@@ -63,7 +63,7 @@ A customer can open a chat on the website, describe the problem in their own wor
 ## Data changes
 - `assistant_conversations` (draft job id, user id nullable, visitor id, status, message count, timestamps).
 - `assistant_messages` (conversation id, role, scrubbed text, tool name and arguments json, created_at). Pruned per AC15.
-- Update `docs/architecture/data-model.md`. New decision record: "042 · Amazon Bedrock (EU) as the AI provider".
+- Update `docs/architecture/data-model.md`. New decision record: "043 · Amazon Bedrock (EU) as the AI provider".
 
 ## Security and privacy
 - **POPIA:** Bedrock processes in the EU (cross-region profile `eu.`), and AWS and Anthropic don't train on the data. The privacy notice must name AWS/Anthropic and the cross-border transfer before the live launch (spec 007 open question 1).
@@ -76,9 +76,12 @@ A customer can open a chat on the website, describe the problem in their own wor
 - Price estimates, booking times, or the assistant talking to pros.
 
 ## Open questions
-1. **Name and personality:** should the assistant have a name (for example "Sam" or "Sortd Assistant")? Tone: friendly, plain South African English.
-2. **Guests:** let guests chat before signing in (as in AC9), or require sign-in first? Chatting first is friendlier but costs more AI calls.
-3. **The $100 AWS credit:** confirm after the first day of use that Bedrock charges come off the credit (Billing → Credits).
+1. **The $100 AWS credit:** confirm after the first day of use that Bedrock charges come off the credit (Billing → Credits).
+
+**Decided 2026-10-05:**
+- The assistant is called **Thandi** (a South African name). Tone: friendly, plain South African English. She says she's an AI assistant when asked, and in her first message.
+- Guests can chat before signing in (AC9).
+- Build after spec 015.
 
 ## Progress
 - 2026-10-05: drafted. Bedrock access tested from the preview server: Claude Haiku 4.5 (EU profile) replies. Server IAM role and $20 budget alert in place.

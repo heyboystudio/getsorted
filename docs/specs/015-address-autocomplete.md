@@ -1,6 +1,6 @@
 # Spec 015 · Address autocomplete and suburb from address
 
-Status: Draft · Phase: 2 (improves specs 004 and 006) · Owner: founder
+Status: Approved · Phase: 2 (improves specs 004 and 006) · Owner: founder
 
 ## Goal
 Customers type their street address and pick it from Google Places suggestions instead of typing an address and choosing a suburb separately. Sortd works out the suburb from the chosen address and says straight away whether that suburb is covered. Fewer wrong suburbs, real map locations for matching, and one less step.
@@ -60,7 +60,8 @@ Customers type their street address and pick it from Google Places suggestions i
 
 ## Open questions
 1. **Privacy notice wording:** naming Google as a processor (cross-border transfer). Needed before the live launch, not before the preview.
-2. **Daily cap:** is 1,000 sessions a day OK? At about $0.017 per session with free monthly credit, that's worst case about $17/day.
+
+**Decided 2026-10-05:** a daily cap of 1,000 sessions is fine. Google's free monthly allowance per SKU covers early use.
 
 ## Progress
 - 2026-10-05: drafted. Places API (New) activated by the founder; the key is on the preview server and local `.env`.
