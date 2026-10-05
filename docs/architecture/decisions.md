@@ -413,3 +413,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** The founder found the chat-then-wizard flow lost track of the customer and repeated questions (location twice, notes twice, service confirmed twice).
 
 **Next:** spec 018: after posting, the customer chats with the quoting pros and can send more photos. Pros send an estimate quote and the customer pays the deposit on it. After accepting, the pro can raise or lower the final amount, and the customer must accept the change. This brings in-app chat into v1, which the PRD had parked.
+
+## 046 · Test site moves to Cape Town on usesorted.co.za
+
+**Date:** 2026-10-05 · **Status:** Accepted (founder)
+
+**Decision:** The test site (decision 037) runs on an EC2 **t3.small in af-south-1 (Cape Town)**: 2 vCPU, 2 GB memory plus a 2 GB swap file, 20 GB gp3 disk, Elastic IP 13.247.209.13, CPU credits set to `standard` (no surplus charges). It has the same Ubuntu 26.04 + Docker setup and the same `sortd-preview-bedrock` instance role (Bedrock stays in eu-north-1). The address is **https://usesorted.co.za** (and www), a domain the founder registered, with a Let's Encrypt certificate from Caddy. The test data was copied from the Stockholm server. `ssh aws` now points at Cape Town; the old server is `ssh aws-stockholm`.
+
+**Why:** Round trips from Durban dropped from about 200 ms to about 35 ms (page first byte 0.74 s → 0.2 s), so taps feel instant (spec 017 AC14). The account is on the AWS free plan, which in Cape Town only allows c7i-flex.large (4 GB, about $89/month) or smaller types. The founder chose the t3.small (about $25/month), so the $120 credit lasts about four months.
+
+**Watch:** Google sign-in needs `https://usesorted.co.za/auth/google/callback` added in Google Cloud Console, and the Maps key's website restrictions need `usesorted.co.za/*`. The Stockholm server keeps using credit until it is stopped. A spec 016 note: Siya's AI calls still go to Stockholm, which adds about 0.2 s only to typed messages.
