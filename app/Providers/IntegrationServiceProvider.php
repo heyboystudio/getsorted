@@ -13,6 +13,7 @@ use App\Integrations\Fakes\FakeGeocoder;
 use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Integrations\Fakes\FakePaymentGateway;
 use App\Integrations\Fakes\FakeScopingAssistant;
+use App\Integrations\Google\GooglePlacesGeocoder;
 use App\Integrations\Twilio\TwilioMessagingChannel;
 use App\Support\AppMode;
 use Illuminate\Support\ServiceProvider;
@@ -45,9 +46,11 @@ final class IntegrationServiceProvider extends ServiceProvider
             $this->app->singleton($contract, $fake);
         }
 
-        // The private test site sends real WhatsApp and SMS once Twilio is configured (decision 040).
+        // The test site sends real WhatsApp and SMS once Twilio is configured (decision 040)
+        // and looks up real addresses once a Places key is set (spec 015).
         if (AppMode::isPreview()) {
             $this->registerTwilio();
+            $this->registerPlaces();
         }
     }
 
@@ -55,9 +58,19 @@ final class IntegrationServiceProvider extends ServiceProvider
     private function registerRealProviders(): void
     {
         $this->registerTwilio();
+        $this->registerPlaces();
 
         if (filled(config('ai.providers.anthropic.key'))) {
             $this->app->singleton(ScopingAssistant::class, AnthropicScopingAssistant::class);
+        }
+    }
+
+    private function registerPlaces(): void
+    {
+        $key = config('services.google_places.key');
+
+        if (is_string($key) && $key !== '') {
+            $this->app->singleton(Geocoder::class, fn (): GooglePlacesGeocoder => new GooglePlacesGeocoder($key, (int) config('services.google_places.timeout', 3)));
         }
     }
 

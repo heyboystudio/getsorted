@@ -24,6 +24,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $street_address
  * @property int $suburb_id
  * @property Point|null $location
+ * @property string $location_source places|suburb_centroid
+ * @property string|null $google_place_id
  * @property string|null $postal_code
  * @property PropertyType $property_type
  */

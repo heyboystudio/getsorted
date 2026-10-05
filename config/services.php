@@ -27,6 +27,12 @@ return [
         'redirect' => env('APP_URL').'/auth/google/callback',
     ],
 
+    // Address autocomplete through Places API (New), server-side only (spec 015).
+    'google_places' => [
+        'key' => env('GOOGLE_MAPS_API_KEY'),
+        'timeout' => 3,
+    ],
+
     // WhatsApp and SMS (decision 040). Sandbox WhatsApp number on the test site.
     'twilio' => [
         'account_sid' => env('TWILIO_ACCOUNT_SID'),

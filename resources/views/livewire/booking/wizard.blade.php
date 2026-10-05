@@ -20,7 +20,8 @@
         @if ($step === 'coverage')
             <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('Where do you need help?') }}</h1>
             <p class="mt-1 text-sm text-zinc-500">{{ __('Check whether pros cover this service in your suburb.') }}</p>
-            <label for="coverage-suburb" class="mt-6 block text-sm font-medium">{{ __('Suburb') }}</label>
+            <div class="mt-6">@include('livewire.partials.address-search')</div>
+            <label for="coverage-suburb" class="mt-6 block text-sm font-medium">{{ $addressManual ? __('Suburb') : __('Or choose your suburb') }}</label>
             <input id="coverage-suburb" type="text" wire:model.live.debounce.300ms="suburbQuery" autocomplete="off" class="mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3">
             @if ($suburbSuggestions->isNotEmpty())
                 <div class="mt-2 space-y-1" role="listbox">

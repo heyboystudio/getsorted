@@ -10,6 +10,7 @@ use App\Integrations\Fakes\FakeGeocoder;
 use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Integrations\Fakes\FakePaymentGateway;
 use App\Integrations\Fakes\FakeScopingAssistant;
+use App\Integrations\Google\GooglePlacesGeocoder;
 use App\Providers\IntegrationServiceProvider;
 
 /** The private test site (decision 037): fakes there (the banner was removed 2026-10-05), never in staging or production. */
@@ -32,12 +33,23 @@ it('uses fake WhatsApp, payments, AI and maps on the preview site', function ():
             app()->offsetUnset($contract);
         }
         config()->set('ai.providers.anthropic.key', null);
+        config()->set('services.google_places.key', null);
         (new IntegrationServiceProvider(app()))->register();
 
         expect(app(MessagingChannel::class))->toBeInstanceOf(FakeMessagingChannel::class)
             ->and(app(PaymentGateway::class))->toBeInstanceOf(FakePaymentGateway::class)
             ->and(app(ScopingAssistant::class))->toBeInstanceOf(FakeScopingAssistant::class)
             ->and(app(Geocoder::class))->toBeInstanceOf(FakeGeocoder::class);
+    });
+});
+
+it('looks up real addresses on the preview site once a Places key is set (spec 015)', function (): void {
+    inEnvironment('preview', function (): void {
+        app()->offsetUnset(Geocoder::class);
+        config()->set('services.google_places.key', 'test-key');
+        (new IntegrationServiceProvider(app()))->register();
+
+        expect(app(Geocoder::class))->toBeInstanceOf(GooglePlacesGeocoder::class);
     });
 });
 

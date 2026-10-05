@@ -9,14 +9,16 @@ use App\Domain\Properties\Exceptions\PropertyLimitReached;
 use App\Models\Property;
 use App\Models\Suburb;
 use App\Models\User;
+use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 final class SaveProperty
 {
     /**
-     * Creates or updates a customer's property. Until a geocoder is chosen the
-     * location is the suburb's centre point (spec 004, decision 2). The audit
+     * Creates or updates a customer's property. The location is the picked
+     * address's point when the customer chose a Places suggestion (spec 015),
+     * otherwise the suburb's centre point (spec 004, decision 2). The audit
      * entry never contains the street address.
      *
      * @throws PropertyLimitReached
@@ -29,12 +31,14 @@ final class SaveProperty
         Suburb $suburb,
         ?string $postalCode,
         PropertyType $propertyType,
+        ?Point $location = null,
+        ?string $googlePlaceId = null,
     ): Property {
         $property instanceof Property
             ? Gate::forUser($owner)->authorize('update', $property)
             : Gate::forUser($owner)->authorize('create', Property::class);
 
-        return DB::transaction(function () use ($owner, $property, $label, $streetAddress, $suburb, $postalCode, $propertyType): Property {
+        return DB::transaction(function () use ($owner, $property, $label, $streetAddress, $suburb, $postalCode, $propertyType, $location, $googlePlaceId): Property {
             if (! $property instanceof Property) {
                 // Locking the owner serialises concurrent creates so the limit holds.
                 User::query()->lockForUpdate()->findOrFail($owner->id);
@@ -55,7 +59,9 @@ final class SaveProperty
                 'property_type' => $propertyType,
             ]);
             $property->suburb()->associate($suburb);
-            $property->location = $suburb->centroid;
+            $property->location = $location ?? $suburb->centroid;
+            $property->location_source = $location instanceof Point ? 'places' : 'suburb_centroid';
+            $property->google_place_id = $location instanceof Point ? $googlePlaceId : null;
             $property->save();
 
             activity()->performedOn($property)->causedBy($owner)

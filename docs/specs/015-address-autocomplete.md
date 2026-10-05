@@ -1,6 +1,6 @@
 # Spec 015 · Address autocomplete and suburb from address
 
-Status: Approved · Phase: 2 (improves specs 004 and 006) · Owner: founder
+Status: In review · Phase: 2 (improves specs 004 and 006) · Owner: founder
 
 ## Goal
 Customers type their street address and pick it from Google Places suggestions instead of typing an address and choosing a suburb separately. Sortd works out the suburb from the chosen address and says straight away whether that suburb is covered. Fewer wrong suburbs, real map locations for matching, and one less step.
@@ -65,3 +65,4 @@ Customers type their street address and pick it from Google Places suggestions i
 
 ## Progress
 - 2026-10-05: drafted. Places API (New) activated by the founder; the key is on the preview server and local `.env`.
+- 2026-10-05: built. `GooglePlacesGeocoder` (Places API New, 3 s timeout) bound when `GOOGLE_MAPS_API_KEY` is set (preview, staging, production); Fake otherwise. `AddressLookup` handles limits, daily cap (admin → Address lookup) and usage rows. Shared `SearchesAddresses` trait on the property form and the booking coverage step; picking an address in booking runs the coverage check at once. Suburb aliases editable in admin → Suburbs.
