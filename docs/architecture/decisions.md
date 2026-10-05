@@ -45,6 +45,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 039 | Email or Google sign-in, then verified email and mobile (supersedes 004 for customers and pros) | Accepted | 2026-10-05 |
 | 040 | Twilio for WhatsApp and SMS (Q5) | Accepted | 2026-10-05 |
 | 041 | Test site: mobile saved without a code while SMS is blocked | Accepted | 2026-10-05 |
+| 047 | Admin MFA optional (changes 021 and the security baseline) | Accepted | 2026-10-05 |
 
 ---
 
@@ -413,3 +414,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** The founder found the chat-then-wizard flow lost track of the customer and repeated questions (location twice, notes twice, service confirmed twice).
 
 **Next:** spec 018: after posting, the customer chats with the quoting pros and can send more photos. Pros send an estimate quote and the customer pays the deposit on it. After accepting, the pro can raise or lower the final amount, and the customer must accept the change. This brings in-app chat into v1, which the PRD had parked.
+
+## 047 · Admin MFA optional
+
+**Date:** 2026-10-05 · **Status:** Accepted (founder)
+
+**Decision:** Admins sign in to `/admin` with email and a strong password only. App-based MFA stays available, so any admin can switch it on in their profile, and admins who already set it up are still asked for a code. This applies everywhere, including the future live site. It changes decision 021 and the security baseline's "mandatory MFA".
+
+**Why:** The founder asked for 2FA to be turned off.
+
+**Risk:** A leaked or guessed admin password now gives full admin access. Strong passwords (12+ characters, checked against known breaches), login rate limits and panel-only sessions (`EnsureAdminSignedInThroughPanel`) still apply. Revisit before real customer data or money goes through the admin panel.

@@ -54,7 +54,7 @@ final class CreateSuperAdminCommand extends Command
         }
 
         $this->info("Super-admin {$user->email} created.");
-        $this->line('Sign in at '.url('/admin').' and set up your authenticator app when asked.');
+        $this->line('Sign in at '.url('/admin').'.');
 
         return self::SUCCESS;
     }

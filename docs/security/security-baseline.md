@@ -6,14 +6,14 @@ These rules are **non-negotiable**. Claude Code must follow them in every change
 
 - Customers and pros: phone + 6-digit OTP. Code stored **hashed**, expires in 10 minutes, max 5 attempts, single use.
 - Rate limits: 3 OTP sends per phone per 15 min, 10 per IP per hour; exponential back-off; alert on spikes (SMS/WhatsApp pumping fraud).
-- Admins: email + strong password + **mandatory MFA** (Filament app-based MFA). Admin panel can additionally be IP-restricted.
+- Admins: email + strong password; Filament app-based MFA is **optional** (each admin can switch it on in their profile; decision 047 dropped the requirement). Admin panel can additionally be IP-restricted.
 - Sessions: secure, HTTP-only, SameSite=Lax cookies; regenerate on login; idle timeout 2 h for admins, 30 days remember-me for customers/pros.
 - Changing phone or email requires verifying the new one; notify the old one.
 
 ## 2. Authorisation
 
 - **Every model has a Policy.** Every Livewire action, Filament resource/page/action and controller method authorises explicitly. "Hidden button" is not authorisation.
-- Default deny: Filament `canAccessPanel()` checks role + status (pros must be `approved`; admins must have MFA enabled).
+- Default deny: Filament `canAccessPanel()` checks role + status (pros must be `approved`; admins need an admin role).
 - Data scoping: queries for customers/pros always filter by owner (`whereBelongsTo($user)`); never trust an ID from the request without a policy check.
 - A pro only sees street address and customer contact after **their** quote is accepted (enforced in the Policy and in the API resource/view model, and tested).
 - Admin roles are least-privilege: support, vetting, finance, super. Refunds over a configurable amount need a second admin's approval.

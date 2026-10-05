@@ -15,7 +15,7 @@ use Filament\Schemas\Schema;
  */
 final class Login extends BaseLogin
 {
-    /** Marks a session as signed in through this page (password + MFA). */
+    /** Marks a session as signed in through this page (password, plus MFA if the admin has it on). */
     public const string SESSION_KEY = 'admin.signed_in_user_id';
 
     public function authenticate(): ?LoginResponse

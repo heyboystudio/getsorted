@@ -35,9 +35,10 @@ final class AdminPanelProvider extends PanelProvider
             ->brandName('Sortd Admin')
             ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)
+            // Optional since decision 047: an admin can switch it on in their profile.
             ->multiFactorAuthentication(
                 [AppAuthentication::make()->recoverable()->brandName('Sortd')],
-                isRequired: true,
+                isRequired: false,
             )
             ->colors([
                 'primary' => Color::Emerald,

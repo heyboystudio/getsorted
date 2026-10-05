@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Admin and customer logins share the `web` guard. Filament challenges MFA only
  * on its own login page, so a session started any other way (phone login, a
  * remember-me cookie, or a customer later given an admin role) is signed out
- * and sent to the admin login, where password + MFA are required.
+ * and sent to the admin login, where password (and MFA, if switched on) is required.
  */
 final class EnsureAdminSignedInThroughPanel
 {

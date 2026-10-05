@@ -20,10 +20,10 @@ it('sends guests from the admin dashboard to the login page', function (): void 
     $this->get('/admin')->assertRedirect('/admin/login');
 });
 
-it('requires app-based multi-factor authentication for admins', function (): void {
+it('offers optional app-based multi-factor authentication to admins', function (): void {
     $panel = Filament::getPanel('admin');
 
-    expect($panel->isMultiFactorAuthenticationRequired())->toBeTrue()
+    expect($panel->isMultiFactorAuthenticationRequired())->toBeFalse()
         ->and($panel->getMultiFactorAuthenticationProviders())->toHaveKey('app')
         ->and($panel->getMultiFactorAuthenticationProviders()['app'])->toBeInstanceOf(AppAuthentication::class);
 });

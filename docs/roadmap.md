@@ -4,7 +4,7 @@ Phases are done when their **exit criteria** pass, not when a date arrives. Timi
 
 | Phase | Goal | Rough time | Exit criteria |
 |---|---|---|---|
-| 0 · Foundations | Empty but production-grade app | 1–2 weeks | All Phase 0 tasks ticked; CI green; staging live; can log in as admin with MFA |
+| 0 · Foundations | Empty but production-grade app | 1–2 weeks | All Phase 0 tasks ticked; CI green; staging live; can log in as admin (MFA optional since decision 047) |
 | 1 · Accounts & catalogue | Phone login, roles, catalogue, properties | 1–2 weeks | Customer and pro can sign up with OTP; catalogue seeded from YAML and editable in admin; properties with suburb lookup |
 | 2 · Booking | Customer can post a job | 2–3 weeks | Full booking flow incl. coverage check, AI scoping, photos, waitlist; admin sees jobs |
 | 3 · Pros & quotes | Vetted pros quote | 2–3 weeks | Pro application + vetting; matching waves; quote builder; customer compares and accepts |
