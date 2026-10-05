@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Integrations\Anthropic;
 
 use App\Contracts\Data\AssistantUsage;
+use App\Contracts\Data\ChatReply;
+use App\Contracts\Data\ChatRequest;
 use App\Contracts\Data\ScopingSuggestion;
 use App\Contracts\Data\ScopingSuggestionReply;
 use App\Contracts\Data\ScopingSummaryReply;
@@ -19,14 +21,13 @@ use Laravel\Ai\Responses\StructuredAgentResponse;
 use Throwable;
 
 /**
- * ScopingAssistant on Anthropic through the Laravel AI SDK (spec 007). Bound only
- * outside local/testing and only when an API key is configured; the domain still
- * keeps it idle until the `ai.enabled` setting is on (founder decision 1).
+ * ScopingAssistant on Claude through the Laravel AI SDK (spec 007, 016): the
+ * Anthropic API or Amazon Bedrock (EU), per `sortd.ai.provider` (decision 043).
+ * Bound only when a provider is configured; the domain still keeps it idle
+ * until the `ai.enabled` setting is on (founder decision 1).
  */
 final class AnthropicScopingAssistant implements ScopingAssistant
 {
-    private const string PROVIDER = 'anthropic';
-
     public function suggestService(string $description, array $catalogue): ScopingSuggestionReply
     {
         $response = $this->ask(new ServiceSuggestionAgent, 'Catalogue: '.$this->json($catalogue)
@@ -56,6 +57,33 @@ final class AnthropicScopingAssistant implements ScopingAssistant
         return new ScopingSummaryReply(is_string($summary) && trim($summary) !== '' ? trim($summary) : null, $this->usage($response));
     }
 
+    public function chat(ChatRequest $request): ChatReply
+    {
+        $response = $this->ask(new SiyaAgent, $this->json([
+            'catalogue' => $request->catalogue,
+            'confirmed_service' => $request->confirmedServiceKey,
+            'questions' => $request->questions,
+            'answers' => $request->answers,
+            'transcript' => $request->transcript,
+        ]), (int) config('sortd.ai.chat_timeout_seconds'));
+
+        $data = $this->structured($response, ['reply', 'trade_key', 'service_key', 'answers']);
+        $answers = [];
+
+        foreach ((array) ($data['answers'] ?? []) as $item) {
+            $key = data_get($item, 'question_key');
+            $values = array_values(array_filter((array) data_get($item, 'values', []), is_string(...)));
+
+            if (is_string($key) && $key !== '' && $values !== []) {
+                $answers[$key] = $values;
+            }
+        }
+
+        $text = fn (string $field): ?string => is_string($data[$field] ?? null) && trim($data[$field]) !== '' ? trim($data[$field]) : null;
+
+        return new ChatReply($text('reply'), $text('trade_key'), $text('service_key'), $answers, $this->usage($response));
+    }
+
     /**
      * The structured reply, or nothing when it has keys outside the schema (spec 007, AC11).
      *
@@ -72,10 +100,10 @@ final class AnthropicScopingAssistant implements ScopingAssistant
     }
 
     /** @throws AssistantUnavailable */
-    private function ask(Agent $agent, string $prompt): AgentResponse
+    private function ask(Agent $agent, string $prompt, ?int $timeout = null): AgentResponse
     {
         try {
-            return $agent->prompt($prompt, provider: self::PROVIDER, model: $this->model(), timeout: (int) config('sortd.ai.timeout_seconds'));
+            return $agent->prompt($prompt, provider: $this->provider(), model: $this->model(), timeout: $timeout ?? (int) config('sortd.ai.timeout_seconds'));
         } catch (AiException|ConnectionException|RequestException $exception) {
             throw new AssistantUnavailable($this->timedOut($exception), $exception);
         }
@@ -94,7 +122,12 @@ final class AnthropicScopingAssistant implements ScopingAssistant
 
     private function usage(AgentResponse $response): AssistantUsage
     {
-        return new AssistantUsage(self::PROVIDER, $this->model(), $response->usage->inputTokens, $response->usage->outputTokens);
+        return new AssistantUsage($this->provider(), $this->model(), $response->usage->inputTokens, $response->usage->outputTokens);
+    }
+
+    private function provider(): string
+    {
+        return config('sortd.ai.provider') === 'bedrock' ? 'bedrock' : 'anthropic';
     }
 
     private function model(): string

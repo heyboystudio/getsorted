@@ -97,10 +97,16 @@ return [
 
     'ai' => [
         // Spec 007. Switch, confidence threshold and daily budget are admin settings (AiSettings).
+        // anthropic (direct API) or bedrock (Amazon Bedrock, EU; decision 043). Bedrock uses the server's IAM role.
+        'provider' => env('SORTD_AI_PROVIDER', 'anthropic'),
         'model' => env('SORTD_AI_MODEL', 'claude-haiku-4-5-20251001'),
         'timeout_seconds' => 8,
         'suggestions_per_hour' => 10,
         'summaries_per_hour' => 5,
+        // Spec 016 (Siya): messages per conversation and per visitor per hour.
+        'chat_messages_per_conversation' => 30,
+        'chat_messages_per_hour' => 60,
+        'chat_timeout_seconds' => 15,
         // How long an unused home-page description waits in the session for a booking.
         'description_ttl_minutes' => 30,
     ],

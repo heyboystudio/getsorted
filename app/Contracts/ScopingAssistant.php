@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Contracts;
 
+use App\Contracts\Data\ChatReply;
+use App\Contracts\Data\ChatRequest;
 use App\Contracts\Data\ScopingSuggestionReply;
 use App\Contracts\Data\ScopingSummaryReply;
 use App\Contracts\Exceptions\AssistantUnavailable;
@@ -33,4 +35,11 @@ interface ScopingAssistant
      * @throws AssistantUnavailable
      */
     public function summarise(string $serviceKey, array $answers, string $description): ScopingSummaryReply;
+
+    /**
+     * One turn of the Siya booking chat (spec 016): a reply, maybe a suggested service, maybe answers.
+     *
+     * @throws AssistantUnavailable
+     */
+    public function chat(ChatRequest $request): ChatReply;
 }

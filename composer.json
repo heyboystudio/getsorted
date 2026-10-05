@@ -10,6 +10,7 @@
     "license": "proprietary",
     "require": {
         "php": "~8.4.0",
+        "aws/aws-sdk-php": "^3.399",
         "brick/money": "^0.15",
         "clickbar/laravel-magellan": "^2.2",
         "filament/filament": "^5.9",

@@ -57,7 +57,7 @@ final class Wizard extends Component
 
     public const array STEPS = ['coverage', 'questions', 'notes', 'photos', 'property', 'when', 'review'];
 
-    private const string RESUME_KEY = 'booking.resume';
+    public const string RESUME_KEY = 'booking.resume';
 
     #[Locked]
     public int $serviceId;
@@ -94,6 +94,10 @@ final class Wizard extends Component
     #[Locked]
     public ?string $pendingPropertySuburb = null;
 
+    /** Answers came from Siya (spec 016): after coverage, skip straight to notes when they are all valid. */
+    #[Locked]
+    public bool $fromAssistant = false;
+
     public string $preferredDate = '';
 
     public string $timeWindow = '';
@@ -109,7 +113,7 @@ final class Wizard extends Component
         abort_unless($trade instanceof Trade && $service instanceof Service && $service->trade_id === $trade->id && $service->is_active && $trade->is_active, 404);
         $this->serviceId = $service->id;
 
-        /** @var array{service_id?: int, answers?: array<string, mixed>, notes?: string, step?: string, suburb?: string|null, suburb_query?: string}|null $resume */
+        /** @var array{service_id?: int, answers?: array<string, mixed>, notes?: string, step?: string, suburb?: string|null, suburb_query?: string, from_assistant?: bool}|null $resume */
         $resume = session()->pull(self::RESUME_KEY);
 
         if (is_array($resume) && ($resume['service_id'] ?? null) === $service->id) {
@@ -118,6 +122,7 @@ final class Wizard extends Component
             $this->suburb = $resume['suburb'] ?? null;
             $this->suburbQuery = $resume['suburb_query'] ?? '';
             $this->step = in_array($resume['step'] ?? '', ['photos', 'property'], true) ? $resume['step'] : 'coverage';
+            $this->fromAssistant = (bool) ($resume['from_assistant'] ?? false);
         }
 
         $description = $this->homeDescription();
@@ -405,12 +410,35 @@ final class Wizard extends Component
 
         $suburb = $this->chosenSuburb();
         $this->step = $suburb instanceof Suburb && app(EligibleProsQuery::class)->exists($this->service(), $suburb, $this->user()) ? 'questions' : 'waitlist';
+
+        // Siya already collected valid answers: go to the notes step to check them there (spec 016, AC6).
+        if ($this->step === 'questions' && $this->fromAssistant && $this->assistantAnswersComplete()) {
+            $this->questionIndex = max(0, $this->questions()->count() - 1);
+            $this->step = 'notes';
+            $this->autosaveIfCustomer();
+        }
+
         if ($this->waitlistFirstName === '' && $this->user() instanceof User) {
             $this->waitlistFirstName = $this->user()->first_name;
         }
         if ($this->waitlistPhone === '' && $this->user() instanceof User) {
             $this->waitlistPhone = (string) $this->user()->phone_e164;
         }
+    }
+
+    private function assistantAnswersComplete(): bool
+    {
+        if (ScopingAnswers::missingRequired($this->service(), $this->answers) !== []) {
+            return false;
+        }
+
+        foreach ($this->questions() as $question) {
+            if (isset($this->answers[$question->key]) && ! ScopingAnswers::check($question, $this->answers[$question->key])['ok']) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function chosenSuburb(): ?Suburb

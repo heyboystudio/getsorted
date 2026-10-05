@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Integrations\Fakes;
 
 use App\Contracts\Data\AssistantUsage;
+use App\Contracts\Data\ChatReply;
+use App\Contracts\Data\ChatRequest;
 use App\Contracts\Data\ScopingSuggestion;
 use App\Contracts\Data\ScopingSuggestionReply;
 use App\Contracts\Data\ScopingSummaryReply;
@@ -33,6 +35,41 @@ final class FakeScopingAssistant implements ScopingAssistant
 
     /** @var list<array{service: string, answers: array<string, string|list<string>>}> */
     private array $summaryRequests = [];
+
+    /** @var list<ChatReply> */
+    private array $chatReplies = [];
+
+    /** @var list<ChatRequest> */
+    private array $chatRequests = [];
+
+    /**
+     * Queue Siya replies, used in order; with none queued Siya just says hello.
+     *
+     * @param  array<string, mixed>  $answers
+     */
+    public function willChat(?string $reply, ?string $tradeKey = null, ?string $serviceKey = null, array $answers = []): self
+    {
+        $this->chatReplies[] = new ChatReply($reply, $tradeKey, $serviceKey, $answers, $this->usage());
+
+        return $this;
+    }
+
+    /** @return list<ChatRequest> */
+    public function chatRequests(): array
+    {
+        return $this->chatRequests;
+    }
+
+    public function chat(ChatRequest $request): ChatReply
+    {
+        $this->chatRequests[] = $request;
+
+        if ($this->failure instanceof AssistantUnavailable) {
+            throw $this->failure;
+        }
+
+        return array_shift($this->chatReplies) ?? new ChatReply(__('Thanks! Tell me a bit more about the problem.'), null, null, [], $this->usage());
+    }
 
     public function willSuggest(?ScopingSuggestion $suggestion): self
     {

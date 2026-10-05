@@ -51,6 +51,11 @@ final class IntegrationServiceProvider extends ServiceProvider
         if (AppMode::isPreview()) {
             $this->registerTwilio();
             $this->registerPlaces();
+
+            // Siya on Bedrock (decision 043); the test site otherwise keeps the fake assistant.
+            if (config('sortd.ai.provider') === 'bedrock') {
+                $this->app->singleton(ScopingAssistant::class, AnthropicScopingAssistant::class);
+            }
         }
     }
 
@@ -60,7 +65,7 @@ final class IntegrationServiceProvider extends ServiceProvider
         $this->registerTwilio();
         $this->registerPlaces();
 
-        if (filled(config('ai.providers.anthropic.key'))) {
+        if (config('sortd.ai.provider') === 'bedrock' || filled(config('ai.providers.anthropic.key'))) {
             $this->app->singleton(ScopingAssistant::class, AnthropicScopingAssistant::class);
         }
     }
