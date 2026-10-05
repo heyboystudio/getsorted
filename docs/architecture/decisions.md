@@ -366,3 +366,14 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Decision:** `PHONE_CODES_ENABLED=false` (config `sortd.otp.phone_codes_enabled`) makes "Add your mobile" save the number as verified without sending a code, then continue to the account. It still checks the number's format and refuses numbers that belong to another account, and it logs `phone saved without code (test site)`. `AppMode::skipsPhoneCodes()` honours the switch only in `local` and `preview`, so staging and production always send codes. A test proves it.
 
 **Consequences:** Numbers on the test site aren't really proven. Switch it back on (remove the setting) once Twilio is upgraded. The first SMS-first channel setting stays as decided.
+
+## 042 · Test site without a password
+
+**Date:** 2026-10-05 · **Status:** Accepted (founder)
+
+**Decision:** The preview site at sortd.heyboy.co.za no longer asks for the shared password (HTTP basic auth removed from the Caddyfile). It still holds fake data only, uses Fake payments and maps, keeps `X-Robots-Tag: noindex`, and the admin panel still needs password + MFA. Changes decision 037's "shared password" point.
+
+**Why:** The founder wants to share the site without handing out a password.
+
+**Watch:** anyone can now sign up and trigger real emails (Resend) and SMS (Twilio) from the site; rate limits apply. Don't put real customer data on it.
+

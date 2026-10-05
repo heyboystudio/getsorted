@@ -1,10 +1,10 @@
 # Private test site (preview)
 
-A temporary, password-protected copy of Sortd at https://sortd.heyboy.co.za for clicking through on a phone (decision 037). **Fake data only.** It is not staging and not production.
+A temporary, publicly reachable copy of Sortd at https://sortd.heyboy.co.za for clicking through on a phone (decision 037). **Fake data only.** It is not staging and not production.
 
 ## What is different there
 - `APP_ENV=preview`: WhatsApp, payments, AI and maps are the local Fakes; the login code shows on the screen.
-- The whole site needs the shared password, and search engines are told not to index it. The founder removed the persistent test-site banner on 2026-10-05; preview still uses fake service providers and test data.
+- No site password since 2026-10-05 (decision 042); search engines are told not to index it. The founder removed the persistent test-site banner on 2026-10-05; preview still uses fake service providers and test data.
 
 ## Deploying
 From the repo root, on `main`:
@@ -17,7 +17,7 @@ It builds the assets, copies the code (never `.env`), rebuilds the containers, m
 
 ## Server layout
 - `ssh aws` (Ubuntu 26.04, EC2 eu-north-1). Code in `~/sortd`. Containers: `web` (FrankenPHP: HTTPS + PHP), `queue`, `scheduler`, `pgsql`.
-- Secrets live only in `~/sortd/deploy/preview/.env` on the server: app key, database password and the site password hash. They are never committed or printed.
+- Secrets live only in `~/sortd/deploy/preview/.env` on the server: app key, database password and API keys. They are never committed or printed.
 - Logs: `cd ~/sortd/deploy/preview && docker compose logs -f web`.
 
 ## First admin

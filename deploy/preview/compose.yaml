@@ -22,7 +22,7 @@ services:
     environment:
       SERVER_NAME: "${SERVER_NAME}"
       PREVIEW_USER: "${PREVIEW_USER}"
-      PREVIEW_PASSWORD_HASH: "${PREVIEW_PASSWORD_HASH}"
+      PREVIEW_PASSWORD_HASH: "${PREVIEW_PASSWORD_HASH:-}"
     volumes:
       - storage:/app/storage
       - caddy_data:/data
