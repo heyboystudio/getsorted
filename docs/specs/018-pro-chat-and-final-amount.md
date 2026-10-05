@@ -1,6 +1,6 @@
 # Spec 018 · Chat with your pros, estimate quotes and an approved final amount
 
-Status: Draft · Phase: 3–4 (builds on specs 009, 010, 012, 013, 017) · Owner: founder
+Status: Approved (founder, 2026-10-05) · Phase: 3–4 (builds on specs 009, 010, 012, 013, 017) · Owner: founder
 
 ## Goal
 After a job is booked, the customer can **chat in Sortd with each pro who's looking at the job**. They can answer questions and send more photos, and pros can then send a better **estimate quote**. The customer accepts one estimate and pays the deposit on it (spec 013). Once the pro has seen the job, they can **raise or lower the final amount**, but the customer must **approve the change** before the final invoice is issued. This is the founder's flow from 2026-10-05 (decision 045 "Next"). It brings in-app chat into v1, which the PRD had parked.
@@ -15,7 +15,7 @@ After a job is booked, the customer can **chat in Sortd with each pro who's look
 ## Acceptance criteria
 
 **Conversations**
-1. Each pair of job and invited pro has one conversation. It **opens when the pro opens the invite** (spec 009), and the pro can write first. The customer sees a conversation on their job page once the pro has written or quoted. Each one shows the pro's business name, rating (when reviews exist) and quote status.
+1. Each pair of job and invited pro has one conversation, and **either side can start it** (decision 1). The customer's job page lists every invited pro, with "Message" next to each. The pro's invite page has "Message the customer". The conversation is created with the first message. Each one shows the pro's business name, rating (when reviews exist) and quote status. Pros whose invite was declined or expired can't be messaged.
 2. Customer and pro can send text (1–1,000 characters) and **photos** (up to 5 per message, same rules and processing as spec 012). New messages appear in about 5 seconds without reloading (polling; open question 5). The newest message is in view, and unread counts show on the job page and the pro's job list.
 3. **Before a quote is accepted**, every message passes through the existing scrubber (`Redactor`, spec 007 AC10): phone numbers, emails, links, ID numbers and street addresses become "[hidden until you book]". A banner reads: "Keep chats and payments on Sortd. Contact details are shared once you accept a quote." Photos go through the same metadata stripping as spec 012 (no GPS).
 4. Notifications send a WhatsApp/SMS **template**, "You have a new message about your {service} job", with a link. The message text is never included. There's at most one notification per conversation every 15 minutes (setting), and none while the person has the page open.
@@ -35,8 +35,8 @@ After a job is booked, the customer can **chat in Sortd with each pro who's look
    The server recalculates every total (integer cents, as spec 010). The proposal shows in the chat as a card: "Estimate R X → Proposed R Y (+R Z / −R Z)", with the reason, the changed lines and **Approve** / **Decline**.
 10. Only one proposal can be pending at a time. The pro can withdraw it while it's pending, and a new proposal replaces the old one.
 11. **Approve**, by the customer: the proposal becomes the **agreed final amount**. It's recorded with a timestamp in the job timeline (event `final_amount_approved`) and the pro is told. The final invoice (Phase 4, later spec) is for the agreed amount minus the deposit already paid. If the deposit is more than the agreed amount, the difference is refunded (refund spec).
-12. **Decline**, by the customer, with an optional note: the agreed amount stays the estimate total, and the pro is told. The pro can then: do the job at the estimate, send one revised proposal (decision 3), or **cancel with the reason "price not agreed"** under the cancellation rules (decision 4). Admins can see declined proposals.
-13. A proposal **lower** than the estimate: decision 2 (recommended: it applies straight away and the customer is told; no approval needed).
+12. **Decline**, by the customer, with an optional note: the agreed amount stays the estimate total, and the pro is told. The pro can then do the job at the estimate, send **one** more proposal (decision 3), or **cancel with the reason "price not agreed"**, with the customer's deposit **refunded in full** (decision 4; the refund itself is built in the refunds spec). Admins can see declined proposals.
+13. A proposal **lower** than the agreed amount **applies straight away** (status `applied`) and the customer is told. No approval is needed (decision 2).
 14. With no proposal, the agreed final amount is the accepted estimate's total. The pro can't issue a final invoice above the agreed amount; the server enforces this.
 
 **Admin**
@@ -76,13 +76,14 @@ After a job is booked, the customer can **chat in Sortd with each pro who's look
 - Final invoices and payment, refunds, and disputes. These are later Phase 4 specs; this spec only sets the agreed amount they will use.
 - Siya in the pro chat.
 
-## Open questions (founder)
-1. **Who can start a conversation?** Recommended: the pro, once they open the invite, and then both sides. Alternative: the customer can also message any invited pro straight away.
-2. **Lower final amounts:** apply straight away and tell the customer (recommended), or still ask for approval?
-3. **After a decline:** can the pro send one more proposal (recommended: one), none, or unlimited?
-4. **If the price isn't agreed:** the pro may cancel and the deposit is refunded in full to the customer (recommended), or the job goes to an admin to mediate first?
-5. **Live updates:** polling every 5 seconds (recommended for now; simple and cheap on the small server), or WebSockets later with Laravel Reverb?
-6. **Retention:** keep chats 24 months after the job closes (recommended, covers disputes and guarantees), or shorter?
+## Decisions (founder, 2026-10-05)
+1. **Either side** can start a conversation.
+2. **Lower final amounts** apply straight away; the customer is told.
+3. After a declined increase, the pro gets **one** more proposal.
+4. If the price isn't agreed, the pro may **cancel and the deposit is refunded in full**.
+5. **Polling every 5 seconds**; WebSockets (Reverb) can come later.
+6. Chats are kept **24 months** after the job closes.
 
 ## Progress
+- 2026-10-05: approved with the decisions above.
 - 2026-10-05: drafted from the founder's description of the post-booking flow (decision 045). Spec 013 (deposit payments, draft PR #37) is still awaiting its own three decisions.
