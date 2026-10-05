@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Booking;
 
+use App\Contracts\Data\GeocodedAddress;
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Catalogue\Enums\QuestionType;
 use App\Domain\Catalogue\Enums\RegistrationType;
@@ -21,6 +22,7 @@ use App\Domain\ServiceJobs\Exceptions\CannotPostServiceJob;
 use App\Domain\ServiceJobs\Exceptions\NoEligiblePros;
 use App\Domain\ServiceJobs\Support\JobSummaryInput;
 use App\Domain\ServiceJobs\Support\ScopingAnswers;
+use App\Livewire\Concerns\SearchesAddresses;
 use App\Livewire\Welcome;
 use App\Models\Property;
 use App\Models\ScopingQuestion;
@@ -50,6 +52,7 @@ use Throwable;
 #[Layout('components.layouts.app')]
 final class Wizard extends Component
 {
+    use SearchesAddresses;
     use WithFileUploads;
 
     public const array STEPS = ['coverage', 'questions', 'notes', 'photos', 'property', 'when', 'review'];
@@ -363,6 +366,21 @@ final class Wizard extends Component
         if ($this->chosenSuburb()?->name !== $this->suburbQuery) {
             $this->suburb = null;
         }
+    }
+
+    /** Spec 015: the picked address decides the suburb and the coverage check runs straight away. */
+    protected function addressPicked(GeocodedAddress $address, ?Suburb $suburb): void
+    {
+        if (! $suburb instanceof Suburb) {
+            $this->suburb = null;
+            $this->suburbQuery = $address->suburb ?? '';
+
+            return;
+        }
+
+        $this->suburb = $suburb->slug;
+        $this->suburbQuery = $suburb->name;
+        $this->next();
     }
 
     public function joinWaitlist(JoinWaitlist $joinWaitlist): void

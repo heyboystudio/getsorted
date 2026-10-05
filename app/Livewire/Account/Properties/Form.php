@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Livewire\Account\Properties;
 
+use App\Contracts\Data\GeocodedAddress;
 use App\Domain\Properties\Actions\SaveProperty;
 use App\Domain\Properties\Enums\PropertyType;
 use App\Domain\Properties\Exceptions\PropertyLimitReached;
 use App\Domain\Properties\Queries\SuburbSearchQuery;
 use App\Domain\ServiceJobs\Support\BookingReturn;
+use App\Livewire\Concerns\SearchesAddresses;
 use App\Models\Property;
 use App\Models\Suburb;
 use App\Models\User;
+use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
@@ -21,10 +24,12 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
-/** Add or edit a saved property (spec 004). */
+/** Add or edit a saved property (spec 004), with address search (spec 015). */
 #[Layout('components.layouts.app')]
 final class Form extends Component
 {
+    use SearchesAddresses;
+
     #[Locked]
     public ?string $publicId = null;
 
@@ -82,6 +87,10 @@ final class Form extends Component
         $suburb = Suburb::query()->where('slug', $slug)->first();
 
         if ($suburb instanceof Suburb) {
+            if ($suburb->slug !== $this->suburb) {
+                $this->forgetPickedAddress();
+            }
+
             $this->suburb = $suburb->slug;
             $this->suburbQuery = $suburb->name;
         }
@@ -92,7 +101,25 @@ final class Form extends Component
         // Typing again clears the chosen suburb until one is picked from the list.
         if ($this->selectedSuburb()?->name !== $this->suburbQuery) {
             $this->suburb = null;
+            $this->forgetPickedAddress();
         }
+    }
+
+    protected function addressPicked(GeocodedAddress $address, ?Suburb $suburb): void
+    {
+        $this->streetAddress = mb_substr($address->streetLine ?? $address->formattedAddress, 0, 200);
+        $this->postalCode = $address->postalCode ?? $this->postalCode;
+
+        if ($suburb instanceof Suburb) {
+            $this->suburb = $suburb->slug;
+            $this->suburbQuery = $suburb->name;
+        } else {
+            // No Sortd suburb matched: the customer picks one (AC7); the point is still kept.
+            $this->suburb = null;
+            $this->suburbQuery = '';
+        }
+
+        $this->resetValidation(['streetAddress', 'suburb', 'postalCode']);
     }
 
     public function save(SaveProperty $saveProperty): void
@@ -130,6 +157,8 @@ final class Form extends Component
                 Suburb::query()->where('slug', $this->suburb)->firstOrFail(),
                 $this->postalCode === '' ? null : $this->postalCode,
                 PropertyType::from($this->propertyType),
+                $this->pickedLatitude !== null && $this->pickedLongitude !== null ? Point::makeGeodetic($this->pickedLatitude, $this->pickedLongitude) : null,
+                $this->pickedPlaceId,
             );
         } catch (PropertyLimitReached) {
             throw ValidationException::withMessages(['label' => __('You can save up to :count properties. Delete one to add another.', ['count' => config('sortd.properties.max_per_customer')])]);

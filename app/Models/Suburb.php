@@ -24,6 +24,7 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property Point $centroid
  * @property MultiPolygon|null $boundary
  * @property bool $is_active
+ * @property list<string> $aliases
  */
 final class Suburb extends Model
 {
@@ -31,7 +32,7 @@ final class Suburb extends Model
     use HasFactory, LogsActivity;
 
     /** @var list<string> */
-    protected $fillable = ['slug', 'name', 'region', 'municipality', 'centroid', 'boundary', 'is_active'];
+    protected $fillable = ['slug', 'name', 'region', 'municipality', 'centroid', 'boundary', 'is_active', 'aliases'];
 
     /** URLs use the slug, never the numeric id. */
     public function getRouteKeyName(): string
@@ -68,6 +69,7 @@ final class Suburb extends Model
             'centroid' => Point::class,
             'boundary' => MultiPolygon::class,
             'is_active' => 'boolean',
+            'aliases' => 'array',
         ];
     }
 }

@@ -51,8 +51,9 @@ erDiagram
 ### Places
 | Table | Key columns |
 |---|---|
-| `suburbs` | slug (unique; URL key), name (unique per municipality), region (berea_central/north/west/south), municipality, centroid (geography Point 4326), boundary (geography MultiPolygon, nullable), is_active — **in place** (`2026_10_04_000003`) |
-| `properties` | public_id, user_id, label, street_address (encrypted, hidden), suburb_id, location (geography Point; suburb centre until a geocoder exists), postal_code, property_type (house/flat/townhouse/business/other), deleted_at — **in place** |
+| `suburbs` | slug (unique; URL key), name (unique per municipality), region (berea_central/north/west/south), municipality, centroid (geography Point 4326), boundary (geography MultiPolygon, nullable), is_active, aliases (jsonb list of other names, spec 015) — **in place** (`2026_10_04_000003`) |
+| `properties` | public_id, user_id, label, street_address (encrypted, hidden), suburb_id, location (geography Point; the picked Places address, else the suburb centre), location_source (places/suburb_centroid), google_place_id (nullable), postal_code, property_type (house/flat/townhouse/business/other), deleted_at — **in place** |
+| `geocoder_usage` | purpose (autocomplete/resolve), outcome (ok/error/throttled), latency_ms, created_at; no address text; pruned after 90 days (spec 015) — **in place** |
 | `waitlist_entries` | first_name, phone_e164, suburb_text, suburb_key, suburb_id (nullable), service_id, privacy_version, consented_at, timestamps; unique phone + suburb key + service; pruned after 12 months — **in place** (spec 006) |
 
 ### Catalogue (seeded from `docs/product/scoping/*.yaml`)
