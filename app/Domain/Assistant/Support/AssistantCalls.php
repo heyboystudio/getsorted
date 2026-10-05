@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Assistant\Support;
 
 use App\Contracts\Data\AssistantUsage;
+use App\Contracts\Data\ChatReply;
 use App\Contracts\Data\ScopingSuggestionReply;
 use App\Contracts\Data\ScopingSummaryReply;
 use App\Contracts\Exceptions\AssistantUnavailable;
@@ -35,7 +36,7 @@ final readonly class AssistantCalls
     }
 
     /**
-     * @template TReply of ScopingSuggestionReply|ScopingSummaryReply
+     * @template TReply of ScopingSuggestionReply|ScopingSummaryReply|ChatReply
      *
      * @param  Closure(ScopingAssistant): TReply  $request
      * @param  Closure(TReply): bool  $isUsable

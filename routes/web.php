@@ -16,6 +16,7 @@ use App\Livewire\Account\Home;
 use App\Livewire\Account\Jobs\Show as JobShow;
 use App\Livewire\Account\Properties\Form as PropertyForm;
 use App\Livewire\Account\Properties\Index as PropertyIndex;
+use App\Livewire\Assistant\Chat as SiyaChat;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
@@ -39,6 +40,7 @@ Route::view('/about', 'pages.about')->name('about');
 Route::view('/contact', 'pages.contact')->name('contact');
 Route::get('/trades/{trade}', ShowTradeController::class)->name('trades.show');
 // Guests may answer the questions; they log in at the property step (spec 005, AC2).
+Route::get('/help', SiyaChat::class)->name('assistant');
 Route::get('/book/{trade}/{service:key}', BookingWizard::class)->scopeBindings()->name('booking.start');
 
 Route::view('/terms', 'pages.terms')->name('terms');

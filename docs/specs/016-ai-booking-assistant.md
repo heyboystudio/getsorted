@@ -1,6 +1,6 @@
 # Spec 016 · AI booking assistant on the site (Claude on Amazon Bedrock)
 
-Status: Approved · Phase: 2–3 (builds on specs 005, 006, 007, 012, 015) · Owner: founder
+Status: In review · Phase: 2–3 (builds on specs 005, 006, 007, 012, 015) · Owner: founder
 
 ## Goal
 A customer can open a chat on the website, describe the problem in their own words, and the assistant works out what's wrong. It asks the right follow-up questions, gives safety advice when needed, collects photos and the address, and hands over a ready-to-post job. From there the existing cycle runs unchanged: matching and invite waves (009), quotes and acceptance (010), and later payments, reviews and so on. It replaces the removed "Describe your problem" box. The website only, not WhatsApp.
@@ -86,3 +86,9 @@ A customer can open a chat on the website, describe the problem in their own wor
 ## Progress
 - 2026-10-05: drafted. Bedrock access tested from the preview server: Claude Haiku 4.5 (EU profile) replies. Server IAM role and $20 budget alert in place.
 - Note for build: Docker containers need the EC2 metadata hop limit set to 2 to use the instance role (`aws ec2 modify-instance-metadata-options --http-put-response-hop-limit 2`), or the web container must run with host networking.
+- 2026-10-05: built (first version). How it differs from the draft, deliberately:
+  - **Structured replies instead of free tool calls:** each Siya turn returns JSON (reply, suggested trade/service keys, answers), which the server validates. Same safety, simpler and cheaper.
+  - **Chat kept in the session, not the database:** scrubbed text only, gone when the session ends. No admin view of conversations yet (AC15's tables are not built). Simpler and more private.
+  - **Address, photos, review and posting reuse the booking wizard:** "Continue booking" hands over the service, answers and the customer's own words; with spec 015's address search, the wizard checks coverage and jumps straight to the notes step.
+  - **Limits:** 30 messages per chat, 60 messages per visitor per hour, plus the shared daily AI budget (no separate 10-chats-a-day cap).
+

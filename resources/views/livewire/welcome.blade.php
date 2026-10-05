@@ -9,7 +9,8 @@
                     <h1 id="welcome-title">Home jobs,<br><em>handled</em> properly<span class="hero-period">.</span></h1>
                     <p class="hero-intro">Find trusted local tradespeople for the jobs that matter. Clear quotes, considered choices, and everything in one place.</p>
                     <div class="hero-actions">
-                        <a class="button button-green" href="{{ route('register') }}">Sign up free <span aria-hidden="true">↗</span></a>
+                        <a class="button button-green" href="{{ route('assistant') }}">Get help with a job <span aria-hidden="true">↗</span></a>
+                        <a class="button button-outline" href="{{ route('register') }}">Sign up free</a>
                         <a class="button button-outline" href="#how-it-works">See how it works <span aria-hidden="true">↓</span></a>
                     </div>
                     <div class="hero-proof"><p>Made for homes and local pros <strong>across Durban.</strong></p></div>

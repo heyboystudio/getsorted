@@ -377,3 +377,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 
 **Watch:** anyone can now sign up and trigger real emails (Resend) and SMS (Twilio) from the site; rate limits apply. Don't put real customer data on it.
 
+
+## 043 · Amazon Bedrock (EU) for the AI assistant (spec 016)
+
+**Date:** 2026-10-05 · **Status:** Accepted (founder)
+
+**Decision:** Claude runs through Amazon Bedrock in eu-north-1 using the EU cross-region profile (`eu.anthropic.claude-haiku-4-5-20251001-v1:0`), via the Laravel AI SDK's Bedrock driver (`aws/aws-sdk-php`). Set with `SORTD_AI_PROVIDER=bedrock`, `SORTD_AI_MODEL` and `AWS_BEDROCK_REGION`; the direct Anthropic API stays available as `anthropic`. On the test server, credentials come from the EC2 role `sortd-preview-bedrock` (only `bedrock:InvokeModel*` on Anthropic models); no AWS keys in `.env`. A $20/month AWS budget alert emails the founder.
+
+**Why:** Founder's $100 AWS credit covers Bedrock; EU processing; one provider for suggestion, summaries and Siya.
+
+**Watch:** confirm in AWS Billing → Credits that Bedrock usage comes off the credit. The privacy notice must name AWS/Anthropic before a live launch (spec 007 decision 1).
