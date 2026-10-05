@@ -1,7 +1,7 @@
 <main class="flex min-h-dvh items-start justify-center px-5 py-12">
     <section class="w-full max-w-xl">
         <div class="mb-10 flex items-center justify-between">
-            <a href="{{ route('home') }}" class="text-2xl font-semibold tracking-tight">{{ __('Sortd') }}<span aria-hidden="true" class="text-emerald-700">.</span></a>
+            <a href="{{ route('account.home') }}" class="text-2xl font-semibold tracking-tight">{{ __('Sortd') }}<span aria-hidden="true" class="text-emerald-700">.</span></a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="text-sm text-zinc-600 underline underline-offset-4">{{ __('Log out') }}</button>
@@ -11,7 +11,7 @@
         <h1 class="text-3xl font-semibold tracking-tight">{{ __('Hi :name', ['name' => $firstName]) }} <span aria-hidden="true">👋</span></h1>
         <div class="mt-6 flex items-center justify-between">
             <h2 class="text-lg font-semibold">{{ __('Your jobs') }}</h2>
-            <a href="{{ route('home') }}" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800">{{ __('Book a pro') }}</a>
+            <a href="{{ route('account.book') }}" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800">{{ __('Book a pro') }}</a>
         </div>
         @forelse ($jobs as $job)
             <div class="relative" wire:key="row-{{ $job->public_id }}">

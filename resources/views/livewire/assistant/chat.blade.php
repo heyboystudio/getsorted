@@ -1,6 +1,9 @@
 {{-- Spec 016: Siya, the booking chat. Every message is escaped text; nothing is rendered as HTML. --}}
 <main class="flex min-h-dvh justify-center px-4 py-6">
     <section class="flex w-full max-w-lg flex-col">
+        @auth
+            <a href="{{ route('account.home') }}" class="mb-4 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Your jobs') }}</a>
+        @endauth
         <header class="flex items-center justify-between gap-3 border-b border-zinc-200 pb-3">
             <div class="flex items-center gap-3">
                 <span class="flex size-10 items-center justify-center rounded-full bg-emerald-700 font-semibold text-white" aria-hidden="true">S</span>

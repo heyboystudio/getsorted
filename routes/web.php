@@ -12,6 +12,7 @@ use App\Http\Controllers\QuoteProPhotoController;
 use App\Http\Controllers\ShowTradeController;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsurePhoneIsVerified;
+use App\Livewire\Account\Book as AccountBook;
 use App\Livewire\Account\Home;
 use App\Livewire\Account\Jobs\Show as JobShow;
 use App\Livewire\Account\Properties\Form as PropertyForm;
@@ -70,6 +71,7 @@ Route::middleware('auth')->group(function (): void {
     Route::middleware(EnsurePhoneIsVerified::class)->group(function (): void {
         Route::middleware(EnsureCustomer::class)->group(function (): void {
             Route::get('/app', Home::class)->name('account.home');
+            Route::get('/app/book', AccountBook::class)->name('account.book');
             Route::get('/app/properties', PropertyIndex::class)->name('properties.index');
             Route::get('/app/properties/new', PropertyForm::class)->name('properties.create');
             Route::get('/app/properties/{property}/edit', PropertyForm::class)->name('properties.edit');
