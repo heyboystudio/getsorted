@@ -71,6 +71,11 @@ return [
         'max_kilobytes' => 10_240,
     ],
 
+    // Decision 044: before launch, take requests from every eThekwini suburb even without pros.
+    'coverage' => [
+        'require_pros' => (bool) env('SORTD_REQUIRE_PROS', false),
+    ],
+
     'waitlist' => [
         'retention_months' => 12,
         'submissions_per_hour' => 5,

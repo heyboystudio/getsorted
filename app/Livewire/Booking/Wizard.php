@@ -409,7 +409,7 @@ final class Wizard extends Component
         }
 
         $suburb = $this->chosenSuburb();
-        $this->step = $suburb instanceof Suburb && app(EligibleProsQuery::class)->exists($this->service(), $suburb, $this->user()) ? 'questions' : 'waitlist';
+        $this->step = $suburb instanceof Suburb && app(EligibleProsQuery::class)->covers($this->service(), $suburb, $this->user()) ? 'questions' : 'waitlist';
 
         // Siya already collected valid answers: go to the notes step to check them there (spec 016, AC6).
         if ($this->step === 'questions' && $this->fromAssistant && $this->assistantAnswersComplete()) {
@@ -576,7 +576,7 @@ final class Wizard extends Component
     private function checkPropertyCoverage(Property $property): void
     {
         $this->countCoverageCheck();
-        if (! app(EligibleProsQuery::class)->exists($this->service(), $property->suburb, $this->user())) {
+        if (! app(EligibleProsQuery::class)->covers($this->service(), $property->suburb, $this->user())) {
             $this->step = 'waitlist';
 
             return;
