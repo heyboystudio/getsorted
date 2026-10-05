@@ -12,19 +12,17 @@ use App\Http\Controllers\QuoteProPhotoController;
 use App\Http\Controllers\ShowTradeController;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsurePhoneIsVerified;
-use App\Livewire\Account\Book as AccountBook;
 use App\Livewire\Account\Home;
 use App\Livewire\Account\Jobs\Show as JobShow;
 use App\Livewire\Account\Properties\Form as PropertyForm;
 use App\Livewire\Account\Properties\Index as PropertyIndex;
-use App\Livewire\Assistant\Chat as SiyaChat;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Auth\VerifyEmail;
 use App\Livewire\Auth\VerifyPhone;
-use App\Livewire\Booking\Wizard as BookingWizard;
+use App\Livewire\Booking\Thread as BookingThread;
 use App\Livewire\Pros\Application as ProApplication;
 use App\Livewire\Pros\BecomePro;
 use App\Livewire\Pros\Jobs\Index as ProJobs;
@@ -40,9 +38,11 @@ Route::view('/trades', 'pages.trades.index')->name('trades.index');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('/contact', 'pages.contact')->name('contact');
 Route::get('/trades/{trade}', ShowTradeController::class)->name('trades.show');
-// Guests may answer the questions; they log in at the property step (spec 005, AC2).
-Route::get('/help', SiyaChat::class)->name('assistant');
-Route::get('/book/{trade}/{service:key}', BookingWizard::class)->scopeBindings()->name('booking.start');
+// Booking is one Siya thread (spec 017). Guests describe the problem, then sign in before Where & when.
+Route::get('/book', BookingThread::class)->name('book');
+Route::get('/book/{trade}', BookingThread::class)->name('book.trade');
+Route::get('/book/{trade}/{service:key}', BookingThread::class)->scopeBindings()->name('booking.start');
+Route::redirect('/help', '/book')->name('assistant');
 
 Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/privacy', 'pages.privacy')->name('privacy');
@@ -71,12 +71,12 @@ Route::middleware('auth')->group(function (): void {
     Route::middleware(EnsurePhoneIsVerified::class)->group(function (): void {
         Route::middleware(EnsureCustomer::class)->group(function (): void {
             Route::get('/app', Home::class)->name('account.home');
-            Route::get('/app/book', AccountBook::class)->name('account.book');
+            Route::redirect('/app/book', '/book')->name('account.book');
             Route::get('/app/properties', PropertyIndex::class)->name('properties.index');
             Route::get('/app/properties/new', PropertyForm::class)->name('properties.create');
             Route::get('/app/properties/{property}/edit', PropertyForm::class)->name('properties.edit');
             Route::get('/app/jobs/{job}', JobShow::class)->name('jobs.show');
-            Route::get('/app/jobs/{job}/continue', BookingWizard::class)->name('booking.continue');
+            Route::get('/app/jobs/{job}/continue', BookingThread::class)->name('booking.continue');
         });
         Route::get('/pros/welcome', ProWelcome::class)->name('pros.welcome');
         Route::get('/pros/become', BecomePro::class)->name('pros.become');

@@ -9,13 +9,12 @@ use App\Domain\Properties\Queries\MatchSuburbQuery;
 use App\Integrations\Fakes\FakeGeocoder;
 use App\Integrations\Google\GooglePlacesGeocoder;
 use App\Livewire\Account\Properties\Form;
-use App\Livewire\Booking\Wizard;
+use App\Livewire\Booking\Thread;
 use App\Models\GeocoderUsage;
 use App\Models\Pro;
 use App\Models\Property;
 use App\Models\Service;
 use App\Models\Suburb;
-use App\Models\Trade;
 use App\Models\User;
 use App\Settings\PlacesSettings;
 use Database\Seeders\CatalogueSeeder;
@@ -178,19 +177,24 @@ it('reads street, suburb, postal code and location from place details (AC3)', fu
 
 // --- Booking coverage step (AC5, AC6) ---------------------------------------------------
 
-it('checks coverage straight after an address is picked in booking (AC5, AC6)', function (): void {
+it('checks coverage straight after an address is added in the booking thread (AC5, AC6; spec 017 AC11)', function (): void {
     $this->seed(CatalogueSeeder::class);
     $leak = Service::query()->where('key', 'leak_repair')->sole();
     $pro = Pro::factory()->approved()->create();
     $pro->services()->attach($leak);
     $pro->serviceAreas()->attach(Suburb::query()->where('slug', 'morningside')->sole());
-    $plumbing = Trade::query()->where('key', 'plumbing')->sole();
+    $this->actingAs(User::factory()->customer()->create());
 
-    Livewire::test(Wizard::class, ['trade' => $plumbing, 'service' => $leak])
+    describeJob(threadFor($leak), $leak)->call('addProperty')
         ->set('addressQuery', 'Innes')->call('pickAddress', 'fake-morningside')
-        ->assertSet('suburb', 'morningside')->assertSet('step', 'questions');
+        ->assertSet('newSuburb', 'morningside')->assertSet('newStreet', fn (string $street): bool => $street !== '')
+        ->set('newType', 'house')->call('saveProperty')
+        ->assertSet('stage', 'when');
 
-    Livewire::test(Wizard::class, ['trade' => $plumbing, 'service' => $leak])
+    session()->forget(Thread::SESSION_KEY);
+    describeJob(threadFor($leak), $leak)->call('addProperty')
         ->set('addressQuery', 'Musgrave')->call('pickAddress', 'fake-berea')
-        ->assertSet('suburb', 'berea')->assertSet('step', 'waitlist');
+        ->assertSet('newSuburb', 'berea')
+        ->set('newType', 'flat')->call('saveProperty')
+        ->assertSet('stage', 'waitlist');
 });

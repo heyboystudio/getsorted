@@ -9,5 +9,11 @@
 	# A public test site with fake data (decision 042): keep it out of search engines.
 	header X-Robots-Tag "noindex, nofollow"
 
+	# Built CSS/JS have a content hash in the name, so browsers can keep them for a year without re-checking (spec 017 AC14).
+	@hashed path /build/assets/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+	@images path /images/* /favicon-v2.png
+	header @images Cache-Control "public, max-age=604800"
+
 	php_server
 }

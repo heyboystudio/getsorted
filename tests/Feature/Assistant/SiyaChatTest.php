@@ -5,8 +5,7 @@ declare(strict_types=1);
 use App\Contracts\ScopingAssistant;
 use App\Domain\Assistant\Enums\AiPurpose;
 use App\Integrations\Fakes\FakeScopingAssistant;
-use App\Livewire\Assistant\Chat;
-use App\Livewire\Booking\Wizard;
+use App\Livewire\Booking\Thread;
 use App\Models\AiUsage;
 use App\Models\Pro;
 use App\Models\Service;
@@ -17,6 +16,11 @@ use Database\Seeders\CatalogueSeeder;
 use Database\Seeders\SuburbSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+
+/*
+ * Siya inside the booking thread (specs 016 and 017): free text, the single
+ * service confirmation, skipping questions already answered, limits and fallbacks.
+ */
 
 uses(RefreshDatabase::class);
 
@@ -40,76 +44,82 @@ function siya(): FakeScopingAssistant
 }
 
 it('greets as an AI assistant called Siya and is linked from the home page', function (): void {
-    $this->get('/')->assertSee(route('assistant'), false)->assertSee('Get help with a job');
-    $this->get(route('assistant'))->assertOk()->assertSee("Hi, I'm Siya, Sortd's AI assistant.");
+    $this->get('/')->assertSee(route('book'), false)->assertSee('Get help with a job');
+    $this->get(route('book'))->assertOk()->assertSee('I’m Siya, Sortd’s AI assistant');
 });
 
-it('suggests a valid service and waits for the customer to confirm (AC1, AC2)', function (): void {
+it('suggests a valid service with one confirmation card, not two (spec 017 AC6)', function (): void {
     siya()->willChat('Sounds like a leaking tap. Is that right?', 'plumbing', 'leak_repair');
 
-    Livewire::test(Chat::class)
+    Livewire::test(Thread::class)
         ->set('message', 'My kitchen tap is dripping, call me on 082 123 4567')->call('send')
-        ->assertSet('suggestedServiceId', $this->leak->id)->assertSet('serviceId', null)
-        ->assertSee('Leak repair');
+        ->assertSet('suggestedServiceId', $this->leak->id)->assertSet('serviceId', null)->assertSet('stage', 'suggested')
+        ->assertSee('Leak repair')->assertDontSee('Sounds like a leaking tap. Is that right?');
 
     $transcript = siya()->chatRequests()[0]->transcript;
     expect(end($transcript)['text'])->not->toContain('082 123 4567');
     expect(AiUsage::query()->sole()->purpose)->toBe(AiPurpose::Chat);
 });
 
-it('ignores services that are not in the active catalogue (AC2)', function (): void {
+it('ignores services that are not in the active catalogue', function (): void {
     siya()->willChat('Sounds like roofing.', 'roofing', 'roof_repair');
 
-    Livewire::test(Chat::class)->set('message', 'Roof leaks')->call('send')->assertSet('suggestedServiceId', null);
+    Livewire::test(Thread::class)->set('message', 'Roof leaks')->call('send')->assertSet('suggestedServiceId', null)->assertSee('Sounds like roofing.');
 });
 
-it('discards replies with prices or contact details and shows a retry message (AC7, AC11)', function (): void {
-    siya()->willChat('That will cost about R450.')->willChat('Call 082 123 4567.');
-
-    $chat = Livewire::test(Chat::class)->set('message', 'Leaking tap')->call('send')->assertSee('Sorry, something went wrong');
-    $chat->set('message', 'Hello?')->call('send')->assertSet('failures', 2)->assertSee('Siya is having trouble');
-});
-
-it('shows stored safety advice and collects answers by chip or by typing, then hands over to booking (AC3, AC4, AC6)', function (): void {
+it('skips questions the first message already answered once the service is confirmed (spec 017 AC7)', function (): void {
     siya()->willChat('Sounds like a leak.', 'plumbing', 'leak_repair')
-        ->willChat('Thanks. Is it dripping or flowing?', answers: ['leak_location' => ['Tap'], 'severity' => ['Not a real option']]);
+        ->willChat('Got it, a dripping tap. Anything else?', answers: ['leak_location' => ['Tap'], 'severity' => ['Dripping']]);
 
-    $chat = Livewire::test(Chat::class)
-        ->set('message', 'Water leaking from my tap')->call('send')
+    $thread = Livewire::test(Thread::class)
+        ->set('message', 'My kitchen tap is dripping')->call('send')
         ->call('confirmService')
-        ->assertSee('If water is flooding, close the main stopcock first.')
-        ->set('message', 'It is the tap')->call('send')
-        ->assertSet('answers', ['leak_location' => 'Tap'])
-        ->call('answer', 'severity', 'Dripping')
         ->assertSet('answers', ['leak_location' => 'Tap', 'severity' => 'Dripping'])
-        ->assertSee('Continue booking');
+        ->assertSet('stage', 'details')
+        ->assertDontSee('Where is the leak coming from?');
 
-    $chat->call('continueBooking')->assertRedirect(route('booking.start', ['trade' => $this->plumbing, 'service' => 'leak_repair']));
-
-    // In booking, the address picks the suburb, coverage passes, and the answered questions are skipped.
-    Livewire::test(Wizard::class, ['trade' => $this->plumbing, 'service' => $this->leak])
-        ->assertSet('answers', ['leak_location' => 'Tap', 'severity' => 'Dripping'])
-        ->assertSet('notes', "Water leaking from my tap\nIt is the tap")
-        ->set('addressQuery', 'Innes')->call('pickAddress', 'fake-morningside')
-        ->assertSet('step', 'notes');
+    // The second call carried the confirmed service and the customer's own words.
+    expect(siya()->chatRequests()[1]->confirmedServiceKey)->toBe('leak_repair');
+    $thread->assertSet('notes', 'My kitchen tap is dripping');
 });
 
-it('refuses a chip answer for a question that is not being asked', function (): void {
+it('asks only what is still missing, and accepts typed or tapped answers', function (): void {
+    siya()->willChat('Sounds like a leak.', 'plumbing', 'leak_repair')
+        ->willChat('Where is it leaking from?', answers: ['severity' => ['Steady flow'], 'leak_location' => ['Not a real option']])
+        ->willChat('Thanks, a pipe.', answers: ['leak_location' => ['Pipe']]);
+
+    Livewire::test(Thread::class)
+        ->set('message', 'Water is pouring out')->call('send')->call('confirmService')
+        ->assertSet('answers', ['severity' => 'Steady flow'])->assertSet('stage', 'questions')
+        ->assertSee('Where is it leaking from?')
+        ->set('message', 'It is a pipe under the sink')->call('send')
+        ->assertSet('answers', ['severity' => 'Steady flow', 'leak_location' => 'Pipe'])->assertSet('stage', 'details');
+});
+
+it('lets the customer turn a suggestion down and describe it again', function (): void {
     siya()->willChat('Sounds like a leak.', 'plumbing', 'leak_repair');
 
-    Livewire::test(Chat::class)->set('message', 'Leak')->call('send')->call('confirmService')
-        ->call('answer', 'severity', 'Dripping')->assertNotFound();
+    Livewire::test(Thread::class)->set('message', 'Water everywhere')->call('send')
+        ->call('rejectService')->assertSet('stage', 'describe')->assertSet('suggestedServiceId', null)->assertSee('Plumbing');
 });
 
-it('shows the stop-first card for gas, sparks, smoke or flooding (AC4)', function (): void {
-    Livewire::test(Chat::class)->set('message', 'I can see sparks from the plug')->call('send')
+it('discards replies with prices or contact details and shows a retry message', function (): void {
+    siya()->willChat('That will cost about R450.')->willChat('Call 082 123 4567.');
+
+    Livewire::test(Thread::class)
+        ->set('message', 'Leaking tap')->call('send')->assertSee('Sorry, something went wrong')
+        ->set('message', 'Hello?')->call('send')->assertSet('failures', 2)->assertDontSee('R450');
+});
+
+it('shows the stop-first card for gas, sparks, smoke or flooding', function (): void {
+    Livewire::test(Thread::class)->set('message', 'I can see sparks from the plug')->call('send')
         ->assertSee('Safety first')->assertSee('switch off at the mains');
 });
 
-it('stops after the message limit and can start over (AC8, AC10)', function (): void {
+it('stops after the message limit and can start over', function (): void {
     config()->set('sortd.ai.chat_messages_per_conversation', 1);
 
-    Livewire::test(Chat::class)
+    Livewire::test(Thread::class)
         ->set('message', 'Leak')->call('send')->assertHasNoErrors()
         ->set('message', 'Again')->call('send')->assertHasErrors('message')
         ->set('message', 'start over')->call('send')
@@ -118,16 +128,30 @@ it('stops after the message limit and can start over (AC8, AC10)', function (): 
 
 it('keeps the chat after a refresh', function (): void {
     siya()->willChat('Sounds like a leak.', 'plumbing', 'leak_repair');
-    Livewire::test(Chat::class)->set('message', 'Leaking tap')->call('send');
+    Livewire::test(Thread::class)->set('message', 'Leaking tap')->call('send');
 
-    Livewire::test(Chat::class)->assertSee('Leaking tap')->assertSet('suggestedServiceId', $this->leak->id);
+    Livewire::test(Thread::class)->assertSee('Leaking tap')->assertSet('suggestedServiceId', $this->leak->id);
 });
 
-it('does not call the assistant when it is switched off (AC12)', function (): void {
+it('starts with the text from the account home box (spec 017 AC1)', function (): void {
+    siya()->willChat('Sounds like a leak.', 'plumbing', 'leak_repair');
+    session()->put(Thread::START_KEY, 'No hot water and the geyser is dripping');
+
+    Livewire::test(Thread::class)->assertSee('No hot water and the geyser is dripping')->assertSet('stage', 'suggested');
+    expect(session()->has(Thread::START_KEY))->toBeFalse();
+});
+
+it('works by taps alone when the assistant is off, keeping typed text for the pro (spec 017 AC17)', function (): void {
     $settings = app(AiSettings::class);
     $settings->enabled = false;
     $settings->save();
 
-    Livewire::test(Chat::class)->assertSee('Siya is switched off right now.')->assertDontSee('Type your message');
+    Livewire::test(Thread::class)
+        ->assertSee('Tap an option to continue')
+        ->set('message', 'The tap in the kitchen drips')->call('send')
+        ->assertSee('I can’t read messages right now')->assertSet('notes', 'The tap in the kitchen drips')
+        ->call('pickTrade', 'plumbing')->call('pickService', 'leak_repair')
+        ->assertSet('stage', 'questions')->assertSee('Where is the leak coming from?');
+
     expect(siya()->chatRequests())->toBe([]);
 });

@@ -11,8 +11,8 @@ use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\ServiceJobStateMachine;
 use App\Filament\Admin\Pages\Auth\Login as AdminLogin;
 use App\Filament\Admin\Resources\ServiceJobs\Pages\ViewServiceJob;
-use App\Livewire\Booking\Wizard;
 use App\Models\Pro;
+use App\Models\Property;
 use App\Models\Service;
 use App\Models\ServiceJob;
 use App\Models\Suburb;
@@ -38,22 +38,25 @@ beforeEach(function (): void {
     Storage::fake('media');
 });
 
-function photoWizard(): Testable
+/** The booking thread at its photos card for the signed-in customer (spec 017). */
+function photoThread(): Testable
 {
+    /** @var User $customer */
+    $customer = auth()->user();
+    $property = Property::factory()->for($customer)->create(['suburb_id' => Suburb::query()->where('slug', 'musgrave')->value('id')]);
     $service = Service::query()->where('key', 'leak_repair')->sole();
 
-    return Livewire::test(Wizard::class, ['trade' => $service->trade, 'service' => $service])
-        ->call('selectSuburb', 'musgrave')->call('next');
+    return describeJob(threadFor($service), $service)->call('selectProperty', $property->public_id)
+        ->set('preferredDate', now()->addDays(2)->toDateString())->call('chooseWhen', 'morning')
+        ->assertSet('stage', 'photos');
 }
 
 it('stores a processed photo privately and lets its owner remove it', function (): void {
     $customer = User::factory()->customer()->create();
     $this->actingAs($customer);
 
-    $wizard = photoWizard()->call('choose', 'Tap')->call('choose', 'Dripping')->call('next')
-        ->assertSet('step', 'photos')
-        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg', 80, 60))
-        ->call('addPhoto')->assertHasNoErrors();
+    $thread = photoThread()
+        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg', 80, 60))->assertHasNoErrors();
 
     $job = ServiceJob::query()->sole();
     $photo = $job->getMedia('job_photos')->sole();
@@ -62,29 +65,24 @@ it('stores a processed photo privately and lets its owner remove it', function (
         ->and($photo->uuid)->not->toBeNull();
     Storage::disk('media')->assertExists($photo->getPathRelativeToRoot());
 
-    $wizard->call('removePhoto', $photo->uuid)->assertHasNoErrors();
+    $thread->call('removePhoto', $photo->uuid)->assertHasNoErrors();
     expect($job->fresh()->getMedia('job_photos'))->toHaveCount(0);
 });
 
 it('rejects oversized, non-image and sixth uploads without saving them', function (): void {
     $customer = User::factory()->customer()->create();
     $this->actingAs($customer);
-    $wizard = photoWizard()->call('choose', 'Tap')->call('choose', 'Dripping')->call('next');
+    $thread = photoThread();
 
-    $wizard->set('photoUpload', UploadedFile::fake()->create('notes.txt', 1, 'text/plain'))
-        ->call('addPhoto')->assertHasErrors(['photoUpload']);
-    $wizard->set('photoUpload', UploadedFile::fake()->createWithContent('looks-like-a-photo.jpg', 'not an image'))
-        ->call('addPhoto')->assertHasErrors(['photoUpload']);
-    $wizard->set('photoUpload', UploadedFile::fake()->image('large.jpg')->size(10_241))
-        ->call('addPhoto')->assertHasErrors(['photoUpload']);
+    $thread->set('photoUpload', UploadedFile::fake()->create('notes.txt', 1, 'text/plain'))->assertHasErrors(['photoUpload']);
+    $thread->set('photoUpload', UploadedFile::fake()->createWithContent('looks-like-a-photo.jpg', 'not an image'))->assertHasErrors(['photoUpload']);
+    $thread->set('photoUpload', UploadedFile::fake()->image('large.jpg')->size(10_241))->assertHasErrors(['photoUpload']);
 
     for ($i = 0; $i < 5; $i++) {
-        $wizard->set('photoUpload', UploadedFile::fake()->image("image{$i}.jpg", 20 + $i, 20))
-            ->call('addPhoto')->assertHasNoErrors();
+        $thread->set('photoUpload', UploadedFile::fake()->image("image{$i}.jpg", 20 + $i, 20))->assertHasNoErrors();
     }
 
-    $wizard->set('photoUpload', UploadedFile::fake()->image('sixth.jpg', 30, 20))
-        ->call('addPhoto')->assertHasErrors(['photoUpload']);
+    $thread->set('photoUpload', UploadedFile::fake()->image('sixth.jpg', 30, 20))->assertHasErrors(['photoUpload']);
     expect(ServiceJob::query()->sole()->getMedia('job_photos'))->toHaveCount(5);
 });
 
@@ -92,8 +90,8 @@ it('allows only an authorized owner to open a signed photo URL', function (): vo
     $owner = User::factory()->customer()->create();
     $other = User::factory()->customer()->create();
     $this->actingAs($owner);
-    photoWizard()->call('choose', 'Tap')->call('choose', 'Dripping')->call('next')
-        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg', 20, 20))->call('addPhoto');
+    photoThread()
+        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg', 20, 20));
     $job = ServiceJob::query()->sole();
     $photo = $job->getMedia('job_photos')->sole();
     $url = route('job-photos.show', [$job, $photo->uuid]);
@@ -108,8 +106,8 @@ it('allows only an authorized owner to open a signed photo URL', function (): vo
 it('removes photos with a cancelled draft', function (): void {
     $customer = User::factory()->customer()->create();
     $this->actingAs($customer);
-    photoWizard()->call('choose', 'Tap')->call('choose', 'Dripping')->call('next')
-        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg'))->call('addPhoto');
+    photoThread()
+        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg'));
     $job = ServiceJob::query()->sole();
     $path = $job->getMedia('job_photos')->sole()->getPathRelativeToRoot();
 
@@ -127,9 +125,8 @@ it('strips source metadata when processing a JPEG', function (): void {
     $metadata = "Exif\0\0GPSLatitude=test-location";
     $withMetadata = substr($jpeg, 0, 2)."\xFF\xE1".pack('n', strlen($metadata) + 2).$metadata.substr($jpeg, 2);
 
-    photoWizard()->call('choose', 'Tap')->call('choose', 'Dripping')->call('next')
-        ->set('photoUpload', UploadedFile::fake()->createWithContent('location.jpg', $withMetadata))
-        ->call('addPhoto')->assertHasNoErrors();
+    photoThread()
+        ->set('photoUpload', UploadedFile::fake()->createWithContent('location.jpg', $withMetadata))->assertHasNoErrors();
 
     $photo = ServiceJob::query()->sole()->getMedia('job_photos')->sole();
     $stored = Storage::disk('media')->get($photo->getPathRelativeToRoot());
@@ -139,7 +136,7 @@ it('strips source metadata when processing a JPEG', function (): void {
 it('does not attach the same upload twice when a request is repeated', function (): void {
     $customer = User::factory()->customer()->create();
     $this->actingAs($customer);
-    photoWizard()->call('choose', 'Tap')->call('choose', 'Dripping')->call('next');
+    photoThread();
     $job = ServiceJob::query()->sole();
     $upload = UploadedFile::fake()->image('same.jpg', 20, 20);
 
@@ -153,8 +150,8 @@ it('does not attach the same upload twice when a request is repeated', function 
 it('refuses to remove a photo after its draft was posted', function (): void {
     $customer = User::factory()->customer()->create();
     $this->actingAs($customer);
-    photoWizard()->call('choose', 'Tap')->call('choose', 'Dripping')->call('next')
-        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg'))->call('addPhoto');
+    photoThread()
+        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg'));
     $staleDraft = ServiceJob::query()->sole();
     $photo = $staleDraft->getMedia('job_photos')->sole();
     $current = $staleDraft->fresh();
@@ -168,20 +165,24 @@ it('refuses to remove a photo after its draft was posted', function (): void {
     }
 });
 
-it('keeps a selected photo from being skipped before it is added', function (): void {
+it('adds a chosen photo straight away and shows it on the summary (spec 017 AC13)', function (): void {
     $customer = User::factory()->customer()->create();
     $this->actingAs($customer);
 
-    photoWizard()->call('choose', 'Tap')->call('choose', 'Dripping')->call('next')
-        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg'))
-        ->call('next')->assertHasErrors(['photoUpload'])->assertSet('step', 'photos');
+    $thread = photoThread()->assertSee('Skip for now')
+        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg'))->assertHasNoErrors()
+        ->assertSet('photoUpload', null)->assertSee('Continue')
+        ->call('finishPhotos')->assertSet('stage', 'summary')->assertSee('1 photo added');
+
+    $photo = ServiceJob::query()->sole()->getMedia('job_photos')->sole();
+    $thread->assertSee($photo->uuid);
 });
 
 it('shows photos to the customer and admin, but requires an admin panel session for the image', function (): void {
     $customer = User::factory()->customer()->create();
     $this->actingAs($customer);
-    photoWizard()->call('choose', 'Tap')->call('choose', 'Dripping')->call('next')
-        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg'))->call('addPhoto');
+    photoThread()
+        ->set('photoUpload', UploadedFile::fake()->image('leak.jpg'));
     $job = ServiceJob::query()->sole();
     $photo = $job->getMedia('job_photos')->sole();
     $this->get(route('jobs.show', $job))->assertSee('Photos')->assertSee($photo->uuid);

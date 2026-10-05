@@ -2,25 +2,32 @@
 
 declare(strict_types=1);
 
-use App\Models\Service;
-use App\Models\Trade;
+use App\Livewire\Account\Home;
+use App\Livewire\Booking\Thread;
 use App\Models\User;
 use Database\Seeders\CatalogueSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-it('keeps signed-in customers in their account when they book a pro', function (): void {
+it('links Book a pro on the account home to the booking thread (spec 017, AC1)', function (): void {
     $this->seed(CatalogueSeeder::class);
     $customer = User::factory()->customer()->create();
-    $plumbing = Trade::query()->where('key', 'plumbing')->sole();
-    $leak = Service::query()->where('key', 'leak_repair')->sole();
 
-    $this->actingAs($customer)->get(route('account.home'))->assertSee(route('account.book'), false);
+    $this->actingAs($customer)->get(route('account.home'))->assertSee(route('book'), false)->assertSee('What’s going on at home?');
+    $this->actingAs($customer)->get(route('account.book'))->assertRedirect('/book');
+});
 
-    $this->actingAs($customer)->get(route('account.book'))->assertOk()
-        ->assertSee(route('assistant'), false)
-        ->assertSee(route('booking.start', [$plumbing, $leak->key]), false);
+it('hands the "What’s going on at home?" text or a chip to Siya as the first message (spec 017, AC1)', function (): void {
+    $this->actingAs(User::factory()->customer()->create());
+
+    Livewire::test(Home::class)->set('problem', 'x')->call('describe')->assertHasErrors('problem');
+    Livewire::test(Home::class)->set('problem', 'My DB board keeps tripping')->call('describe')->assertRedirect(route('book'));
+    expect(session(Thread::START_KEY))->toBe('My DB board keeps tripping');
+
+    Livewire::test(Home::class)->call('describe', 'No hot water')->assertRedirect(route('book'));
+    expect(session(Thread::START_KEY))->toBe('No hot water');
 });
 
 it('sends guests to log in for the account booking page', function (): void {

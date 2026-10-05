@@ -1,6 +1,6 @@
 # Spec 016 · AI booking assistant on the site (Claude on Amazon Bedrock)
 
-Status: In review · Phase: 2–3 (builds on specs 005, 006, 007, 012, 015) · Owner: founder
+Status: Done · Phase: 2–3 (builds on specs 005, 006, 007, 012, 015) · Owner: founder · **The separate chat page and the hand-off to the wizard are replaced by spec 017**
 
 ## Goal
 A customer can open a chat on the website, describe the problem in their own words, and the assistant works out what's wrong. It asks the right follow-up questions, gives safety advice when needed, collects photos and the address, and hands over a ready-to-post job. From there the existing cycle runs unchanged: matching and invite waves (009), quotes and acceptance (010), and later payments, reviews and so on. It replaces the removed "Describe your problem" box. The website only, not WhatsApp.

@@ -1,6 +1,6 @@
 # Spec 006 · Coverage check and waitlist
 
-Status: Done (merged in PR #25) · Phase: 2 · Owner: founder
+Status: Done (merged in PR #25) · Phase: 2 · Owner: founder · Since spec 017 the coverage check runs when the property is picked, and the waitlist uses the signed-in account's name and number
 
 ## Goal
 Tell a customer whether Sortd can serve their chosen service and suburb before they answer booking questions. When coverage is unavailable, collect a small waitlist request so Sortd can follow up when service becomes available.

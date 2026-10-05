@@ -9,16 +9,16 @@ Each journey is a list of screens/steps. Feature specs in `docs/specs/` break th
 2. Receive 6-digit code (WhatsApp; "send by SMS instead" after 30 s).
 3. Enter code → new users add first name, surname, email (optional) and accept terms + privacy notice (POPIA consent recorded with version and timestamp).
 
-### C2 · Book a pro
-1. Start from: home search box ("describe your problem"), a trade tile, or a service link on a trade/SEO page.
-2. If free text: AI suggests trade + service; customer confirms or picks.
-3. **Coverage check** (needs a suburb): if no eligible pros → waitlist form; stop.
-4. Scoping questions (one per screen, tap answers, back button works).
-5. Optional free text and photos (≤ 5, ≤ 10 MB each, images only).
-6. Property: pick saved or add new (suburb autocomplete → map pin → street address, "we only share this with the pro you choose").
-7. When: date picker (next 30 days) + window (morning / afternoon / flexible); or "urgent — today" if service is emergency-capable.
-8. Summary with AI-written description → edit → **Post job**. Must be logged in with verified phone by this point (login can happen inline).
-9. Confirmation page + WhatsApp "job posted" template.
+### C2 · Book a pro (one Siya thread, spec 017)
+Everything happens in one conversation at `/book`, Kandua-style (`docs/product/kandua-reference.md`). A progress bar shows **Describe → Where & when → Photos → Confirm**, and finished items collapse into green ✓ cards.
+1. Start from: "Get help with a job" on the home page, "What's going on at home?" on the account home (text or quick chips), a trade page (trade pre-selected) or a service link (service pre-selected).
+2. **Describe:** tap a trade, then a service chip, or type the problem and confirm Siya's one suggestion card. Questions already answered by what the customer typed are skipped. The rest are asked one at a time as chips. Stored safety advice shows as a card. Then Continue / Add more details (added to the notes).
+3. **Sign in:** guests sign in or sign up here (spec 014, phone verified per spec 001) and come straight back to the thread with everything kept.
+4. **Where:** pick a saved property or add one inside the thread (address search, spec 015). Coverage is checked at once: covered → "Good news…", not covered → Keep me updated (waitlist with the account's details) / Choose a different service / No thanks.
+5. **When:** calendar (next 30 days), then Morning / Afternoon / Flexible; "Urgent — today" for emergency-capable services.
+6. **Photos:** optional, up to 5, from the gallery or the camera, added as soon as they're chosen; or Skip for now.
+7. **Confirm:** summary (service, answers, notes, address, when, photos, AI job description) with Change on each section. **Confirm booking** books the job. Siya never books without that tap.
+8. "Your job is booked" in the thread, with a link to the job page, plus the WhatsApp "job posted" template.
 
 ### C3 · Compare and accept quotes
 1. Job page shows quotes as they arrive (max 3): pro name, rating, reviews count, years on Sortd, registrations, total, labour vs materials, deposit, earliest date, validity, notes.

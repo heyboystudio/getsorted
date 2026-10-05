@@ -1,7 +1,7 @@
 @php($R = \App\Support\Rand::class)
 <main class="flex min-h-dvh items-start justify-center px-5 pb-40 pt-10">
     <section class="w-full max-w-xl">
-        <a href="{{ route('pros.jobs') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('Your jobs') }}</a>
+        <a wire:navigate.hover href="{{ route('pros.jobs') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('Your jobs') }}</a>
 
         @if ($job === null)
             <div class="mt-8 rounded-xl border border-zinc-200 bg-white p-6 text-center">
