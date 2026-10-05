@@ -6,11 +6,8 @@
 	root * /app/public
 	encode zstd gzip
 
-	# A private test site: keep it out of search engines and behind a shared password.
+	# A public test site with fake data (decision 042): keep it out of search engines.
 	header X-Robots-Tag "noindex, nofollow"
-	basic_auth {
-		{$PREVIEW_USER} {$PREVIEW_PASSWORD_HASH}
-	}
 
 	php_server
 }
