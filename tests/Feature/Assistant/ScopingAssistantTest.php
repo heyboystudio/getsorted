@@ -160,8 +160,7 @@ it('suggests a valid service from a stripped description and waits for the custo
         ->set('description', 'My kitchen tap is leaking, call 082 123 4567')
         ->call('find')
         ->assertHasNoErrors()
-        ->assertSee('Is this what you need?')->assertSee('Leak repair')
-        ->assertSee(route('booking.start', ['trade' => 'plumbing', 'service' => 'leak_repair']), false)
+        ->assertSet('suggestedServiceId', Service::query()->where('key', 'leak_repair')->value('id'))
         ->assertNoRedirect();
 
     expect(assistant()->descriptionsSeen())->toBe(['My kitchen tap is leaking, call [phone]'])
@@ -173,7 +172,7 @@ it('lets the customer turn down a suggestion and pick a service themselves (AC2)
 
     Livewire::test(Welcome::class)->set('description', 'My kitchen tap is leaking')->call('find')
         ->call('chooseSomethingElse')
-        ->assertDontSee('Is this what you need?')->assertSee('Choose the closest service')->assertSee('Plumbing');
+        ->assertSet('suggestedServiceId', null)->assertSet('showFallback', true);
 });
 
 it('falls back to choosing a service when the suggestion cannot be used (AC3)', function (?ScopingSuggestion $suggestion, AiOutcome $outcome): void {

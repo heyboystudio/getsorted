@@ -4,7 +4,7 @@ A temporary, password-protected copy of Sortd at https://sortd.heyboy.co.za for 
 
 ## What is different there
 - `APP_ENV=preview`: WhatsApp, payments, AI and maps are the local Fakes; the login code shows on the screen.
-- A "Test site" banner on every page; the whole site needs the shared password; search engines are told not to index it.
+- The whole site needs the shared password, and search engines are told not to index it. The founder removed the persistent test-site banner on 2026-10-05; preview still uses fake service providers and test data.
 
 ## Deploying
 From the repo root, on `main`:
@@ -25,3 +25,10 @@ On the server, run `docker compose exec web php artisan sortd:create-super-admin
 
 ## When the server expires
 Nothing depends on it. Its database and uploads go with it.
+
+## Public website pages
+The preview includes a multi-page public website: home, customer guide, trade directory and trade detail pages, pro guide, about, and the legal pages. Sign-up and sign-in use the application routes, including Google and pro registration. The homepage does not expose the free-text “Describe a problem” entry point yet. Terms, privacy and pro agreement are visibly marked as drafts and require legal review before a live launch.
+
+The website's logo and photographs are generated visual assets stored in `public/images/`. They are illustrative and do not depict actual Sortd customers, pros or completed jobs.
+
+The public navigation includes Home, About, Customers, Pros and Contact. The Contact page routes visitors to the customer or pro journey and displays founder-approved placeholder contact details: hello@sortd.heyboy.co.za and 031 000 0000. The subdomain has no receiving MX record yet; replace these details when real contact channels are connected.

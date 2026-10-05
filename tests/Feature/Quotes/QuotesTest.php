@@ -127,7 +127,7 @@ it('calculates every total in cents from the lines, without VAT for pros without
 });
 
 it('adds 15% VAT for pros with a VAT number and rounds to the cent (AC2, decision 2)', function (): void {
-    $draft = new QuoteDraft([new QuoteLineData(LineKind::Labour, 'Odd amount', '0.33', 1001)], 33, CarbonImmutable::now()->addDay(), 7, null);
+    $draft = new QuoteDraft([new QuoteLineData(LineKind::Labour, 'Odd amount', '0.33', 1001)], 33, CarbonImmutable::now('Africa/Johannesburg')->addDay(), 7, null);
 
     $totals = app(QuoteCalculator::class)->calculate($draft, vatRegistered: true);
 
@@ -149,16 +149,16 @@ it('refuses quotes that break the rules (AC1, rules)', function (QuoteDraft $dra
 
     expect(Quote::query()->count())->toBe(0);
 })->with([
-    'no lines' => [new QuoteDraft([], 0, CarbonImmutable::now()->addDay(), 7, null), 'lines'],
-    'two call-outs' => [new QuoteDraft([new QuoteLineData(LineKind::Callout, 'A', '1', 100), new QuoteLineData(LineKind::Callout, 'B', '1', 100)], 0, CarbonImmutable::now()->addDay(), 7, null), 'lines'],
-    'negative price' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, 'A', '1', -100)], 0, CarbonImmutable::now()->addDay(), 7, null), 'lines.0.unit_price'],
-    'zero quantity' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, 'A', '0', 100)], 0, CarbonImmutable::now()->addDay(), 7, null), 'lines.0.quantity'],
-    'long description' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, str_repeat('a', 121), '1', 100)], 0, CarbonImmutable::now()->addDay(), 7, null), 'lines.0.description'],
+    'no lines' => [new QuoteDraft([], 0, CarbonImmutable::now('Africa/Johannesburg')->addDay(), 7, null), 'lines'],
+    'two call-outs' => [new QuoteDraft([new QuoteLineData(LineKind::Callout, 'A', '1', 100), new QuoteLineData(LineKind::Callout, 'B', '1', 100)], 0, CarbonImmutable::now('Africa/Johannesburg')->addDay(), 7, null), 'lines'],
+    'negative price' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, 'A', '1', -100)], 0, CarbonImmutable::now('Africa/Johannesburg')->addDay(), 7, null), 'lines.0.unit_price'],
+    'zero quantity' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, 'A', '0', 100)], 0, CarbonImmutable::now('Africa/Johannesburg')->addDay(), 7, null), 'lines.0.quantity'],
+    'long description' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, str_repeat('a', 121), '1', 100)], 0, CarbonImmutable::now('Africa/Johannesburg')->addDay(), 7, null), 'lines.0.description'],
     'deposit over the cap' => [draftQuote(depositPercent: 51), 'deposit_percent'],
-    'start date in the past' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, 'A', '1', 100)], 0, CarbonImmutable::now()->subDays(2), 7, null), 'earliest_start_date'],
-    'start date too far' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, 'A', '1', 100)], 0, CarbonImmutable::now()->addDays(61), 7, null), 'earliest_start_date'],
+    'start date in the past' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, 'A', '1', 100)], 0, CarbonImmutable::now('Africa/Johannesburg')->subDays(2), 7, null), 'earliest_start_date'],
+    'start date too far' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, 'A', '1', 100)], 0, CarbonImmutable::now('Africa/Johannesburg')->addDays(61), 7, null), 'earliest_start_date'],
     'validity too long' => [draftQuote(validityDays: 31), 'validity_days'],
-    'total over R500 000' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, 'Huge', '1', 50_000_001)], 0, CarbonImmutable::now()->addDay(), 7, null), 'total'],
+    'total over R500 000' => [new QuoteDraft([new QuoteLineData(LineKind::Labour, 'Huge', '1', 50_000_001)], 0, CarbonImmutable::now('Africa/Johannesburg')->addDay(), 7, null), 'total'],
 ]);
 
 it('uses the deposit cap from settings (AC1)', function (): void {
@@ -219,7 +219,7 @@ it('masks contact and bank details in quotes and flags repeat offenders (AC6)', 
     $job = postedJob();
     $draft = new QuoteDraft(
         [new QuoteLineData(LineKind::Labour, 'Call 082 123 4567', '1', 10000)],
-        0, CarbonImmutable::now()->addDay(), 7, 'Pay cash to acc no 1234567890 or mail me@example.com',
+        0, CarbonImmutable::now('Africa/Johannesburg')->addDay(), 7, 'Pay cash to acc no 1234567890 or mail me@example.com',
     );
 
     $quote = submitFor($job, $pro, $draft);
@@ -255,7 +255,7 @@ it('refuses a quantity above 9 999 (AC1)', function (): void {
     [$pro] = quotingPros(1);
 
     try {
-        submitFor(postedJob(), $pro, new QuoteDraft([new QuoteLineData(LineKind::Labour, 'Lots', '9999.99', 100)], 0, CarbonImmutable::now()->addDay(), 7, null));
+        submitFor(postedJob(), $pro, new QuoteDraft([new QuoteLineData(LineKind::Labour, 'Lots', '9999.99', 100)], 0, CarbonImmutable::now('Africa/Johannesburg')->addDay(), 7, null));
         $this->fail('Expected a validation error.');
     } catch (ValidationException $exception) {
         expect($exception->errors())->toHaveKey('lines.0.quantity');

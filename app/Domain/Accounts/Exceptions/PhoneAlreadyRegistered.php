@@ -6,5 +6,5 @@ namespace App\Domain\Accounts\Exceptions;
 
 use RuntimeException;
 
-/** Two sign-ups raced for the same number; the second one is turned away politely. */
+/** The mobile number is already linked to another account (spec 014, AC5). */
 final class PhoneAlreadyRegistered extends RuntimeException {}

@@ -12,7 +12,7 @@ use App\Integrations\Fakes\FakePaymentGateway;
 use App\Integrations\Fakes\FakeScopingAssistant;
 use App\Providers\IntegrationServiceProvider;
 
-/** The private test site (decision 037): fakes and a visible banner there, never in staging or production. */
+/** The private test site (decision 037): fakes there (the banner was removed 2026-10-05), never in staging or production. */
 function inEnvironment(string $environment, Closure $check): void
 {
     $original = app()->environment();
@@ -50,14 +50,10 @@ it('never fakes providers in staging or production', function (string $environme
     });
 })->with(['staging', 'production']);
 
-it('shows a "test site" banner only on the preview site', function (string $environment, bool $shown): void {
-    inEnvironment($environment, function () use ($shown): void {
+it('shows no "test site" banner in any environment', function (string $environment): void {
+    inEnvironment($environment, function (): void {
         $html = $this->get('/terms')->assertOk()->getContent();
 
-        expect(str_contains((string) $html, 'Test site: fake data only'))->toBe($shown);
+        expect(str_contains((string) $html, 'Test site: fake data only'))->toBeFalse();
     });
-})->with([
-    'preview' => ['preview', true],
-    'testing' => ['testing', false],
-    'production' => ['production', false],
-]);
+})->with(['preview', 'testing', 'production']);

@@ -98,8 +98,8 @@
             <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('Add photos of the problem') }}</h1>
             <p class="mt-1 text-sm text-zinc-500">{{ __('Optional. Up to 5 photos, 10 MB each. JPEG, PNG, WebP or HEIC.') }}</p>
             @if ($isGuest)
-                <p class="mt-5 text-zinc-600">{{ __('Log in to add photos. Your answers will be kept.') }}</p>
-                <button type="button" wire:click="logInToContinue" class="mt-4 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white">{{ __('Log in to add photos') }}</button>
+                <p class="mt-5 text-zinc-600">{{ __('Sign in or create an account to add photos. Your answers will be kept.') }}</p>
+                <button type="button" wire:click="logInToContinue" class="mt-4 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white">{{ __('Sign in to add photos') }}</button>
             @elseif ($isCustomer)
                 @if ($photos->isNotEmpty())
                     <div class="mt-5 grid grid-cols-2 gap-3">
@@ -123,8 +123,8 @@
         @elseif ($step === 'property')
             <h1 class="mt-2 text-2xl font-semibold tracking-tight">{{ __('Where is the work?') }}</h1>
             @if ($isGuest)
-                <p class="mt-3 text-zinc-600">{{ __('Log in or sign up with your phone number to choose an address. Your answers are kept.') }}</p>
-                <button type="button" wire:click="logInToContinue" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Log in to continue') }}</button>
+                <p class="mt-3 text-zinc-600">{{ __('Sign in or create an account to choose an address. Your answers are kept.') }}</p>
+                <button type="button" wire:click="logInToContinue" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Sign in to continue') }}</button>
             @elseif (! $isCustomer)
                 <p class="mt-3 text-zinc-600">{{ __('Bookings need a customer account.') }}</p>
             @else

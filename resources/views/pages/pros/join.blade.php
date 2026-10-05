@@ -1,23 +1,5 @@
-<x-layouts.app :title="__('Join as a pro')">
-    <main class="flex min-h-dvh items-start justify-center px-5 py-12 sm:items-center">
-        <section class="w-full max-w-md">
-            <a href="{{ route('home') }}" class="mb-10 inline-block text-2xl font-semibold tracking-tight">{{ __('Sortd') }}<span aria-hidden="true" class="text-emerald-700">.</span></a>
-            <p class="mb-3 text-sm font-medium uppercase tracking-widest text-emerald-800">{{ __('For tradespeople') }}</p>
-            <h1 class="text-3xl font-semibold leading-tight tracking-tight">{{ __('Get jobs from Durban households') }}</h1>
-
-            <ul class="mt-8 space-y-4 text-zinc-700">
-                <li class="flex gap-3"><span aria-hidden="true" class="mt-2 size-2 shrink-0 rounded-full bg-emerald-700"></span>{{ __('Clearly scoped jobs near you, sent to at most three pros.') }}</li>
-                <li class="flex gap-3"><span aria-hidden="true" class="mt-2 size-2 shrink-0 rounded-full bg-emerald-700"></span>{{ __('You set your own prices and choose which jobs to quote.') }}</li>
-                <li class="flex gap-3"><span aria-hidden="true" class="mt-2 size-2 shrink-0 rounded-full bg-emerald-700"></span>{{ __('Sortd checks every pro’s ID, registrations and references, so customers can trust you.') }}</li>
-            </ul>
-
-            <p class="mt-8 inline-block rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-900">{{ __('Free to join') }}</p>
-
-            @auth
-                <a href="{{ route('pros.become') }}" class="mt-6 flex w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Get started') }}</a>
-            @else
-                <a href="{{ route('login', ['as' => 'pro']) }}" class="mt-6 flex w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Get started') }}</a>
-            @endauth
-        </section>
-    </main>
-</x-layouts.app>
+<x-layouts.app :title="__('Join as a pro')"><div class="sortd-site">@include('pages.partials.header')
+<main><section class="page-hero pro-page-hero"><div class="site-container page-hero-grid"><div><p class="section-kicker">FOR DURBAN TRADESPEOPLE</p><h1>Do good work.<br><em>Grow your way.</em></h1><p>Meet local customers looking for the skills you bring. Choose the jobs you want, set your own prices and keep the details together.</p><div class="page-actions">@auth<a class="button button-green" href="{{ route('pros.become') }}">Get started ↗</a>@else<a class="button button-green" href="{{ route('register', ['as' => 'pro']) }}">Sign up as a pro ↗</a><a class="button button-outline" href="{{ route('login', ['as' => 'pro']) }}">Pro sign in →</a>@endauth</div><span class="page-pill">Free to join</span></div><div class="page-feature photo-feature"><img src="{{ asset('images/pro-electrician.webp') }}" alt="Illustrative image of an electrician working in a home" width="1024" height="1536"></div></div></section>
+<section class="section"><div class="site-container"><p class="section-kicker">WHY JOIN SORTD</p><h2>Built around<br><em>the way you work.</em></h2><div class="feature-grid"><article><span>01</span><h3>Relevant local jobs</h3><p>See opportunities that fit the services you offer and the areas you cover.</p></article><article><span>02</span><h3>Your quote, your price</h3><p>Decide which jobs to quote and present clear labour, material and call-out costs.</p></article><article><span>03</span><h3>One place to follow up</h3><p>Keep track of invitations, quotes and job progress from your pro account.</p></article></div></div></section>
+<section class="section section-trades"><div class="site-container faq-page-grid"><div><p class="section-kicker">JOINING IS SIMPLE</p><h2>Three steps to<br><em>get started.</em></h2></div><div class="simple-steps"><div><span>01</span><div><h3>Create your account</h3><p>Sign up with email or Google, then verify your email and South African mobile.</p></div></div><div><span>02</span><div><h3>Tell us about your work</h3><p>Complete your pro application with your business, services and coverage areas.</p></div></div><div><span>03</span><div><h3>Go through review</h3><p>Sortd checks identity, relevant registrations and references before approving pros.</p></div></div></div></div></section>
+<section class="final-cta"><div class="site-container final-inner"><div><p class="section-kicker">READY TO JOIN?</p><h2>Let's get<br><em>to work.</em></h2></div>@auth<a class="button button-dark" href="{{ route('pros.become') }}">Get started ↗</a>@else<a class="button button-dark" href="{{ route('register', ['as' => 'pro']) }}">Sign up as a pro ↗</a>@endauth</div></section></main>@include('pages.partials.footer')</div></x-layouts.app>

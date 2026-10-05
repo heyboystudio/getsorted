@@ -65,7 +65,7 @@ function answerLeakQuestions(Testable $wizard, string $severity = 'Dripping'): T
 }
 
 it('shows active trades on the home page and services on a trade page (AC1)', function (): void {
-    $this->get('/')->assertOk()->assertSee('What do you need help with?')->assertSee('Plumbing')->assertSee(route('trades.show', $this->plumbing));
+    $this->get('/')->assertOk()->assertSee('Plumbing')->assertSee(route('trades.show', $this->plumbing));
     $this->get(route('trades.show', $this->plumbing))->assertOk()->assertSee('Leak repair')->assertSee(route('booking.start', [$this->plumbing, $this->leak]));
 
     $this->leak->update(['is_active' => false]);
@@ -97,7 +97,7 @@ it('shows safety advice and marks the job urgent for an urgent answer (AC5)', fu
 });
 
 it('lets guests answer questions, then keeps the answers through login (AC2)', function (): void {
-    $wizard = answerLeakQuestions(startLeakBooking())->call('next')->assertSet('step', 'photos')->call('next')->assertSet('step', 'property')->assertSee('Log in to continue');
+    $wizard = answerLeakQuestions(startLeakBooking())->call('next')->assertSet('step', 'photos')->call('next')->assertSet('step', 'property')->assertSee('Sign in to continue');
     expect(ServiceJob::query()->count())->toBe(0);
 
     $wizard->call('logInToContinue')->assertRedirect(route('login'));
@@ -325,11 +325,9 @@ it('treats a tampered date as not chosen instead of an error page', function ():
 
 it('sends a guest back into their booking after logging in (AC2)', function (): void {
     answerLeakQuestions(startLeakBooking())->call('next')->call('next')->call('logInToContinue');
-    $customer = User::factory()->customer()->create(['phone_e164' => '+27821234567']);
+    User::factory()->customer()->create(['email' => 'thandi@example.com']);
 
-    $login = Livewire::test(Login::class)->set('phone', '082 123 4567')->call('sendCode');
-    $sent = app(MessagingChannel::class)->sent();
-    $login->set('code', end($sent)->parameters['code'])->call('verifyCode')
+    Livewire::test(Login::class)->set('email', 'thandi@example.com')->set('password', 'password')->call('login')
         ->assertRedirect(route('booking.start', [$this->plumbing, $this->leak]));
 });
 

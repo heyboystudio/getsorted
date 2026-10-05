@@ -7,7 +7,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 001 | Laravel 13 modular monolith, PHP 8.4 | Accepted | 2026-10-03 |
 | 002 | PostgreSQL + PostGIS as the only database | Accepted | 2026-10-03 |
 | 003 | Filament 5 for admin and pro portals; Livewire 4 for customer and public UI | Accepted | 2026-10-03 |
-| 004 | Phone + one-time code login for customers and pros; email + password + MFA for admins | Accepted | 2026-10-03 |
+| 004 | Phone + one-time code login for customers and pros; email + password + MFA for admins | Superseded for customers and pros by 039 | 2026-10-03 |
 | 005 | Domain entity named `ServiceJob` to avoid clashing with Laravel queue `jobs` | Accepted | 2026-10-03 |
 | 006 | Business logic in Action classes; thin controllers/components/resources | Accepted | 2026-10-03 |
 | 007 | Money as integer cents + `brick/money`; append-only ledger | Accepted | 2026-10-03 |
@@ -41,6 +41,10 @@ Short architecture decision records. **Add an entry for every significant choice
 | 035 | Daily login-code cap off on local machines (temporary) | Accepted | 2026-10-04 |
 | 036 | Quotes, comparison and acceptance (spec 010) | Accepted | 2026-10-04 |
 | 037 | Private test site on a temporary AWS server ("preview" mode) | Accepted | 2026-10-04 |
+| 038 | Email through Resend | Accepted | 2026-10-04 |
+| 039 | Email or Google sign-in, then verified email and mobile (supersedes 004 for customers and pros) | Accepted | 2026-10-05 |
+| 040 | Twilio for WhatsApp and SMS (Q5) | Accepted | 2026-10-05 |
+| 041 | Test site: mobile saved without a code while SMS is blocked | Accepted | 2026-10-05 |
 
 ---
 
@@ -309,7 +313,7 @@ Short architecture decision records. **Add an entry for every significant choice
 
 **Decision:** A new environment, `APP_ENV=preview`, for a private test site that holds fake data only.
 - `App\Support\AppMode` decides what preview may do. Preview uses the same Fakes as local development: WhatsApp, payments, AI and maps. It also shows the login code on screen, as local development does (spec 001 AC20 now covers preview too). Staging and production are unchanged.
-- Every page shows a "Test site: fake data only" banner.
+- The persistent test-site banner was removed at the founder’s request on 2026-10-05; preview remains password-protected and uses fake integrations.
 - The whole site sits behind one shared password (HTTP basic auth), and `X-Robots-Tag: noindex` keeps it out of search engines.
 - It runs in Docker (`deploy/preview/`) because Ubuntu 26.04 offers no PHP 8.4 package:
   - FrankenPHP (`dunglas/frankenphp:1-php8.4-bookworm`) runs PHP and handles HTTPS with Let's Encrypt;
@@ -319,3 +323,46 @@ Short architecture decision records. **Add an entry for every significant choice
 - The server's `.env` and the site password are created on the server and never committed or printed.
 
 **Consequences:** The test site can be thrown away at any time and nothing depends on it. Phase 0's "staging live" criterion stays open until the South African host is chosen. Testers must not enter real personal details; the banner says so. iPhone HEIC uploads work only if the image's ImageMagick reads HEIC; otherwise the spec 012 fallback message shows. When the server expires, its data goes with it.
+
+## 038 · Email through Resend
+**Context:** Receipts and admin emails need a provider. The founder already uses Resend.
+
+**Decision:** Laravel's built-in `resend` mail transport, with `resend/resend-php` ^1.16 (MIT; checked with `composer require --dry-run` against Laravel 13 / PHP 8.4, and no advisories). Production code needs no other change: `MAIL_MAILER=resend`, `RESEND_API_KEY` and `MAIL_FROM_ADDRESS` are set per environment. The preview site sends from `noreply@sortd.heyboy.co.za`, a subdomain verified in Resend so heyboy.co.za's own email isn't affected. Local development and tests keep the `log` and `array` mailers.
+
+**Consequences:** The API key lives only in each server's `.env`. The founder entered it on the server directly, and it never passed through chat or git. When Sortd moves to its own domain, verify that domain in Resend and change `MAIL_FROM_ADDRESS`.
+## 039 · Email or Google sign-in, then verified email and mobile (spec 014)
+**Context:** The founder decided that the phone number must not be the main way in. Customers and pros should sign up like on other sites, then prove their email and mobile. This supersedes decision 004 for customers and pros; admins keep email, password and an authenticator app.
+
+**Decision:**
+- **Sign-up and sign-in:** email and password, or "Continue with Google" through `laravel/socialite` ^5.31 (MIT; checked with `composer require --dry-run` against Laravel 13 and PHP 8.4, with no advisories). Google asks only for `openid profile email` and stores `users.google_id`.
+- **Passwords:** at least 10 characters, rejected if they appear in the Have I Been Pwned breach list (only a 5-character hash prefix is sent), and stored with Laravel's hasher.
+- **Google matching an existing password account:** never linked silently. The user signs in with the password once, and the link is made then.
+- **Email verification:** a 60-minute signed link with the user's public ID and an HMAC of the address, so changing the email kills old links.
+- **Mobile verification:** reuses spec 001's code rules (`OtpPurpose::VerifyPhone`).
+- **The gate:** `EnsureAccountIsVerified`, in the `web` group, sends any signed-in customer or pro to the next step (email, then mobile) and remembers where they were going. Only the verification pages, sign-out and the legal pages are open until then.
+- **Password reset:** Laravel's broker. Emails go through Resend (decision 038). Admins never get public reset links.
+
+**Consequences:** Phone + code is no longer a way to sign in; the `login` OTP purpose remains only for old rows. Test data on the preview site and local machines was wiped, so there is no migration for phone-only accounts. Google sign-in needs `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` per environment. The privacy notice draft must mention that email is now required, which is flagged for the legal review.
+
+## 040 · Twilio for WhatsApp and SMS (Q5)
+**Context:** Login and verification codes and job updates need WhatsApp with SMS as the backup. The founder chose Twilio for both and switched on its WhatsApp feature. MailerSend's SMS only reaches the US and Canada, and Amazon SNS has no registered sender IDs for South Africa. The founder is happy for SMS to come from a random number for now.
+
+**Decision:** `App\Integrations\Twilio\TwilioMessagingChannel` implements `MessagingChannel` by calling Twilio's Messages API through Laravel's HTTP client, so there is no SDK dependency.
+- WhatsApp goes to `whatsapp:+27…` from `TWILIO_WHATSAPP_FROM`; SMS goes from `TWILIO_SMS_FROM`.
+- Message bodies are short plain text per template (`MessageTexts`) and carry only the template's parameters.
+- It binds only when all four `TWILIO_*` values are set: in staging and production, and on the preview site (decision 037), where it replaces the fake messenger. Local development and tests always use the fake.
+- Error messages keep Twilio's status and error code but never the recipient number.
+
+**Consequences:** On the test site, each tester's phone must first join Twilio's WhatsApp sandbox ("join <words>" to the sandbox number). Before launch:
+- register a production WhatsApp sender through Twilio, which includes Meta business verification;
+- get the message templates approved, and switch to template SIDs, because WhatsApp only allows free text inside a 24-hour customer-initiated window;
+- consider a branded SMS sender ID.
+
+Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SMS to South Africa.
+
+## 041 · Test site: mobile saved without a code while SMS is blocked
+**Context:** Twilio trial accounts only send Twilio's predefined SMS templates (error 572006), so Sortd's code messages are refused until the account is upgraded. The founder asked to keep the mobile step but skip the code for now.
+
+**Decision:** `PHONE_CODES_ENABLED=false` (config `sortd.otp.phone_codes_enabled`) makes "Add your mobile" save the number as verified without sending a code, then continue to the account. It still checks the number's format and refuses numbers that belong to another account, and it logs `phone saved without code (test site)`. `AppMode::skipsPhoneCodes()` honours the switch only in `local` and `preview`, so staging and production always send codes. A test proves it.
+
+**Consequences:** Numbers on the test site aren't really proven. Switch it back on (remove the setting) once Twilio is upgraded. The first SMS-first channel setting stays as decided.

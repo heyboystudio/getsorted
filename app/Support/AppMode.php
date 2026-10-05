@@ -21,6 +21,12 @@ final class AppMode
         return app()->environment(['local', 'preview']);
     }
 
+    /** Mobile numbers are saved without a code only on the test site or locally, when switched off (decision 041). */
+    public static function skipsPhoneCodes(): bool
+    {
+        return app()->environment(['local', 'preview']) && ! config('sortd.otp.phone_codes_enabled');
+    }
+
     public static function isPreview(): bool
     {
         return app()->environment('preview');

@@ -85,7 +85,7 @@ function draftFor(User $customer, Service $service, array $overrides = []): Serv
         answers: $overrides['answers'] ?? checkedAnswers($service, ['leak_location' => 'Tap', 'severity' => 'Dripping']),
         notes: $overrides['notes'] ?? 'Under the kitchen sink.',
         propertyPublicId: array_key_exists('property', $overrides) ? $overrides['property'] : test()->property->public_id,
-        preferredDate: array_key_exists('date', $overrides) ? $overrides['date'] : CarbonImmutable::today()->addDays(2),
+        preferredDate: array_key_exists('date', $overrides) ? $overrides['date'] : CarbonImmutable::today('Africa/Johannesburg')->addDays(2),
         timeWindow: array_key_exists('window', $overrides) ? $overrides['window'] : TimeWindow::Morning,
     ));
 }
@@ -191,12 +191,12 @@ it('refuses to post when a guard fails and leaves the draft untouched (AC10)', f
         return $job;
     }, 'not available'],
     'no date' => [fn ($test): ServiceJob => draftFor($test->customer, $test->leak, ['date' => null]), 'choose when'],
-    'date too far ahead' => [fn ($test): ServiceJob => draftFor($test->customer, $test->leak, ['date' => CarbonImmutable::today()->addDays(31)]), 'next 30 days'],
-    'date in the past' => [fn ($test): ServiceJob => draftFor($test->customer, $test->leak, ['date' => CarbonImmutable::today()->subDay()]), 'next 30 days'],
+    'date too far ahead' => [fn ($test): ServiceJob => draftFor($test->customer, $test->leak, ['date' => CarbonImmutable::today('Africa/Johannesburg')->addDays(31)]), 'next 30 days'],
+    'date in the past' => [fn ($test): ServiceJob => draftFor($test->customer, $test->leak, ['date' => CarbonImmutable::today('Africa/Johannesburg')->subDay()]), 'next 30 days'],
     'urgent today on a non-emergency service' => [function ($test): ServiceJob {
         $coc = Service::query()->where('key', 'electrical_coc')->sole();
 
-        return draftFor($test->customer, $coc, ['answers' => completeAnswers($coc), 'date' => CarbonImmutable::today(), 'window' => TimeWindow::Today]);
+        return draftFor($test->customer, $coc, ['answers' => completeAnswers($coc), 'date' => CarbonImmutable::today('Africa/Johannesburg'), 'window' => TimeWindow::Today]);
     }, 'emergency services'],
 ]);
 
@@ -263,7 +263,7 @@ it('stores answers with the prompt as asked, unaffected by later catalogue edits
 
 it('marks a job urgent from an urgent answer or the today window (AC5, AC7)', function (): void {
     $flooding = draftFor($this->customer, $this->leak, ['answers' => checkedAnswers($this->leak, ['leak_location' => 'Pipe', 'severity' => 'Flooding'])]);
-    $today = draftFor($this->customer, $this->leak, ['date' => CarbonImmutable::today(), 'window' => TimeWindow::Today]);
+    $today = draftFor($this->customer, $this->leak, ['date' => CarbonImmutable::today('Africa/Johannesburg'), 'window' => TimeWindow::Today]);
     $normal = draftFor($this->customer, $this->leak);
 
     expect($flooding->urgency)->toBe(Urgency::Urgent)->and($today->urgency)->toBe(Urgency::Urgent)->and($normal->urgency)->toBe(Urgency::Normal);

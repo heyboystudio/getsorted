@@ -6,20 +6,23 @@ namespace App\Domain\Accounts\Actions;
 
 use App\Domain\Accounts\Enums\OtpPurpose;
 use App\Domain\Accounts\Exceptions\LoginCodeRejected;
+use App\Domain\Accounts\Exceptions\PhoneAlreadyRegistered;
 use App\Models\PhoneOtp;
 use App\Models\User;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
-final class VerifyLoginCode
+final class VerifyPhoneCode
 {
     /**
-     * Checks a login code: unexpired, under the attempt limit, single use,
-     * compared in constant time. Returns the existing customer, or null for a
-     * new number. Admin and deleted accounts are rejected like a wrong code (AC18).
+     * Checks a phone verification code: unexpired, under the attempt limit,
+     * single use, compared in constant time. On success the number becomes the
+     * user's verified mobile (spec 014, AC5, AC7); the old number stays until then.
      *
      * @throws LoginCodeRejected
+     * @throws PhoneAlreadyRegistered when another account took the number meanwhile
      */
-    public function handle(string $phoneE164, string $code): ?User
+    public function handle(User $user, string $phoneE164, string $code): void
     {
         $maxAttempts = (int) config('sortd.otp.max_attempts');
 
@@ -28,7 +31,7 @@ final class VerifyLoginCode
         $outcome = DB::transaction(function () use ($phoneE164, $code, $maxAttempts): string|int|null {
             $otp = PhoneOtp::query()
                 ->where('phone_e164', $phoneE164)
-                ->where('purpose', OtpPurpose::Login)
+                ->where('purpose', OtpPurpose::VerifyPhone)
                 ->whereNull('consumed_at')
                 ->latest('id')
                 ->lockForUpdate()
@@ -38,7 +41,7 @@ final class VerifyLoginCode
                 // A number whose latest code was already used gets "expired", not "incorrect" (AC11).
                 $hasUsedCode = PhoneOtp::query()
                     ->where('phone_e164', $phoneE164)
-                    ->where('purpose', OtpPurpose::Login)
+                    ->where('purpose', OtpPurpose::VerifyPhone)
                     ->whereNotNull('consumed_at')
                     ->exists();
 
@@ -49,7 +52,7 @@ final class VerifyLoginCode
                 return LoginCodeRejected::EXPIRED;
             }
 
-            if (! hash_equals($otp->code_hash, SendLoginCode::hash($code))) {
+            if (! hash_equals($otp->code_hash, SendPhoneCode::hash($code))) {
                 $otp->increment('attempts');
 
                 return max(0, $maxAttempts - $otp->attempts);
@@ -68,17 +71,17 @@ final class VerifyLoginCode
             throw new LoginCodeRejected($outcome);
         }
 
-        // Blocked numbers only ever hold unsent codes, so this is defence in depth.
-        if (SendLoginCode::isBlockedFromPhoneLogin($phoneE164)) {
-            throw new LoginCodeRejected(LoginCodeRejected::INCORRECT);
+        if (SendPhoneCode::isTakenByAnotherAccount($user, $phoneE164)) {
+            throw new PhoneAlreadyRegistered('This number is already linked to another account.');
         }
 
-        $user = User::query()->where('phone_e164', $phoneE164)->first();
-
-        if ($user instanceof User && $user->phone_verified_at === null) {
-            $user->forceFill(['phone_verified_at' => now()])->save();
+        try {
+            $user->forceFill(['phone_e164' => $phoneE164, 'phone_verified_at' => now()])->save();
+        } catch (UniqueConstraintViolationException) {
+            // The SQL in this exception contains personal data, so it is not rethrown or logged.
+            throw new PhoneAlreadyRegistered('This number is already linked to another account.');
         }
 
-        return $user;
+        activity()->performedOn($user)->causedBy($user)->log('phone verified');
     }
 }

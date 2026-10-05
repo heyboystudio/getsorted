@@ -6,15 +6,14 @@ use App\Models\User;
 use App\Policies\UserPolicy;
 use Illuminate\Support\Facades\Gate;
 
-it('serves the Sortd holding page without offering accounts', function (): void {
+it('serves the Sortd public home page', function (): void {
     $this->withoutVite();
 
     $this->get('/')
         ->assertOk()
         ->assertSeeText('Sortd')
-        ->assertSeeText('What do you need help with?')
-        ->assertDontSee('href="/login"', false)
-        ->assertDontSee('href="/register"', false);
+        ->assertSee('Home jobs,<br><em>handled</em> properly', false)
+        ->assertSee(route('register'), false);
 });
 
 it('reports application health', function (): void {
@@ -26,7 +25,7 @@ it('does not expose starter account pages', function (string $path): void {
 
     $this->get($path)->assertNotFound();
 })->with([
-    '/register', '/forgot-password', '/reset-password/example',
+    // /register, /forgot-password and /reset-password are Sortd's own pages since spec 014.
     '/email/verify', '/two-factor-challenge', '/user/confirm-password',
     '/dashboard', '/settings/profile', '/settings/security', '/settings/appearance',
 ]);
@@ -34,11 +33,10 @@ it('does not expose starter account pages', function (string $path): void {
 it('does not accept starter account mutations', function (string $path): void {
     $this->post($path, [])->assertNotFound();
 })->with([
-    '/register', '/forgot-password', '/reset-password',
     '/two-factor-challenge', '/user/confirm-password',
 ]);
 
-it('has no password login form behind the phone login page', function (): void {
+it('accepts sign-in only through the Livewire form, not a plain POST', function (): void {
     $this->post('/login', ['email' => 'a@b.test', 'password' => 'secret'])->assertMethodNotAllowed();
 });
 
