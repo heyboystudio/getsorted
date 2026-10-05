@@ -388,6 +388,8 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 
 **Watch:** confirm in AWS Billing → Credits that Bedrock usage comes off the credit. The privacy notice must name AWS/Anthropic before a live launch (spec 007 decision 1).
 
+**Update 2026-10-05 (decision 043):** Claude on Bedrock needs an AWS Marketplace subscription, which this AWS account couldn't complete (likely the free account plan). Founder chose **Amazon Nova Lite** (`eu.amazon.nova-lite-v1:0`), a first-party Bedrock model covered by the AWS credit. Switching back to Claude is one setting (`SORTD_AI_MODEL`) once the account can subscribe. The server role also allows `amazon.nova-*` and the Marketplace view/subscribe actions.
+
 ## 044 · Take requests from all of Durban before pros are signed up
 
 **Date:** 2026-10-05 · **Status:** Accepted (founder)
