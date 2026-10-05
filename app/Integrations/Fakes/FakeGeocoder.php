@@ -20,10 +20,10 @@ final class FakeGeocoder implements Geocoder
     public function __construct()
     {
         $this->places = [
-            'fake-umhlanga' => new GeocodedAddress('1 Lighthouse Road, Umhlanga Rocks, Durban', 'Umhlanga', -29.7270, 31.0877, '1 Lighthouse Road', '4319'),
-            'fake-berea' => new GeocodedAddress('10 Musgrave Road, Berea, Durban', 'Berea', -29.8460, 31.0050, '10 Musgrave Road', '4001'),
-            'fake-westville' => new GeocodedAddress('5 Jan Hofmeyr Road, Westville, Durban', 'Westville', -29.8330, 30.9300, '5 Jan Hofmeyr Road', '3629'),
-            'fake-morningside' => new GeocodedAddress('12 Innes Road, Morningside, Durban', 'Morningside', -29.8270, 31.0170, '12 Innes Road', '4001'),
+            'fake-umhlanga' => new GeocodedAddress('1 Lighthouse Road, Umhlanga Rocks, Durban', 'Umhlanga', -29.7270, 31.0877, '1 Lighthouse Road', '4319', municipality: 'eThekwini Metropolitan Municipality'),
+            'fake-berea' => new GeocodedAddress('10 Musgrave Road, Berea, Durban', 'Berea', -29.8460, 31.0050, '10 Musgrave Road', '4001', municipality: 'eThekwini Metropolitan Municipality'),
+            'fake-westville' => new GeocodedAddress('5 Jan Hofmeyr Road, Westville, Durban', 'Westville', -29.8330, 30.9300, '5 Jan Hofmeyr Road', '3629', municipality: 'eThekwini Metropolitan Municipality'),
+            'fake-morningside' => new GeocodedAddress('12 Innes Road, Morningside, Durban', 'Morningside', -29.8270, 31.0170, '12 Innes Road', '4001', municipality: 'eThekwini Metropolitan Municipality'),
         ];
     }
 

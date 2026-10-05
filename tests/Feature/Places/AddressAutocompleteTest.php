@@ -82,6 +82,24 @@ it('matches suburbs by name, alias, prefix and then the nearest centre (AC4)', f
         ->and($match(['Nowhere'], -26.2, 28.0))->toBeNull();
 });
 
+it('adds an unknown Durban suburb from the address and covers it (decision 044)', function (): void {
+    $address = fn (string $area): GeocodedAddress => new GeocodedAddress("1 Main Road, {$area}", $area, -29.6300, 31.0500, '1 Main Road', '4340', [$area, 'Durban'], 'eThekwini Metropolitan Municipality');
+
+    $suburb = app(MatchSuburbQuery::class)->handle($address('Ottawa'));
+
+    expect($suburb)->name->toBe('Ottawa')->is_active->toBeTrue()->municipality->toBe('eThekwini')
+        ->and(app(MatchSuburbQuery::class)->handle($address('Ottawa'))->id)->toBe($suburb->id)
+        ->and(app(MatchSuburbQuery::class)->handle(new GeocodedAddress('x', 'Durban', -29.8580, 31.0220, areaNames: ['Durban'], municipality: 'eThekwini Metropolitan Municipality'))->slug)->toBe('durban_central');
+});
+
+it('does not add suburbs for addresses outside eThekwini', function (): void {
+    $count = Suburb::query()->count();
+
+    app(MatchSuburbQuery::class)->handle(new GeocodedAddress('x', 'Ballito', -29.5390, 31.2140, areaNames: ['Ballito'], municipality: 'KwaDukuza Local Municipality'));
+
+    expect(Suburb::query()->count())->toBe($count);
+});
+
 it('lets the customer choose a suburb when none matches (AC7)', function (): void {
     $this->actingAs(User::factory()->customer()->create());
     app()->instance(Geocoder::class, new class implements Geocoder

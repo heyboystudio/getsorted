@@ -17,5 +17,7 @@ final readonly class GeocodedAddress
         public ?string $postalCode = null,
         /** Other area names Google gives (locality, sublocality levels), most specific first. */
         public array $areaNames = [],
+        /** Google's district, e.g. "eThekwini Metropolitan Municipality". */
+        public ?string $municipality = null,
     ) {}
 }

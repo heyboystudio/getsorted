@@ -12,3 +12,7 @@ v1 launches in a short list of eThekwini suburbs, chosen where Kandua coverage w
 Status: **decided 2026-10-04** — launch with **Berea / central** and **North**; West and South are seeded but switched off (spec 004).
 
 Outside the active list, booking shows a waitlist form (name, phone, suburb, service) instead of an error.
+
+**Update 2026-10-05 (decision 044):** the whole of Durban (eThekwini) is open for requests: 86 seeded suburbs, all active, plus suburbs added automatically from Google addresses.
+
+**Update 2026-10-05 (decision 044):** the whole of Durban (eThekwini) is open for requests: 86 seeded suburbs, all active, plus suburbs added automatically from Google addresses.

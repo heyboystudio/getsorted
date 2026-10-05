@@ -399,3 +399,7 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** No pros are loaded yet; the founder wants to collect real requests across Durban.
 
 **Watch:** posted jobs may get no invites until pros exist (matching finds no one), so customers can wait indefinitely. Switch back on, or follow up manually, before promising response times. Addresses outside eThekwini still go to the waitlist.
+
+**Update 2026-10-05:** "All of Durban" means every eThekwini suburb: the suburb list grew from 12 to 86 (Pinetown to Umhlanga to the Bluff and Toti, all active), and any address Google places in eThekwini whose area isn't listed yet is added automatically as an active suburb.
+
+**Update 2026-10-05:** "All of Durban" means every eThekwini suburb: the suburb list grew from 12 to 86 (Pinetown to Umhlanga to the Bluff and Toti, all active), and any address Google places in eThekwini whose area isn't listed yet is added automatically as an active suburb.

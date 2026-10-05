@@ -31,7 +31,7 @@ function suburb(string $slug): Suburb
 }
 
 it('seeds the launch-area suburbs with centre points (AC1)', function (): void {
-    expect(Suburb::query()->count())->toBe(12)
+    expect(Suburb::query()->count())->toBeGreaterThan(80)
         ->and(Suburb::query()->pluck('municipality')->unique()->all())->toBe(['eThekwini'])
         ->and(suburb('morningside')->region)->toBe(Region::BereaCentral)
         ->and(suburb('morningside')->centroid)->toBeInstanceOf(Point::class)
@@ -43,11 +43,9 @@ it('seeds the launch-area suburbs with centre points (AC1)', function (): void {
     expect($metres)->toBeGreaterThan(9_000)->toBeLessThan(16_000);
 });
 
-it('switches on only Berea/central and North (AC2)', function (): void {
-    expect(Suburb::query()->where('is_active', true)->orderBy('name')->pluck('slug')->all())
-        ->toBe(['berea', 'durban_north', 'glenwood', 'la_lucia', 'morningside', 'musgrave', 'umhlanga'])
-        ->and(suburb('westville')->is_active)->toBeFalse()
-        ->and(suburb('bluff')->is_active)->toBeFalse();
+it('switches on every Durban suburb, from Pinetown to Umhlanga to the Bluff and Toti (decision 044)', function (): void {
+    expect(Suburb::query()->where('is_active', false)->count())->toBe(0)
+        ->and(Suburb::query()->whereIn('slug', ['pinetown', 'umhlanga', 'bluff', 'amanzimtoti', 'chatsworth', 'hillcrest', 'tongaat'])->count())->toBe(7);
 });
 
 it('only adds new suburbs when seeded again (AC3)', function (): void {
@@ -64,13 +62,13 @@ it('finds suburbs from the start of words, active ones first', function (): void
     $results = app(SuburbSearchQuery::class)->handle('morn');
     expect($results->pluck('slug')->all())->toBe(['morningside']);
 
-    expect(app(SuburbSearchQuery::class)->handle('NORTH')->pluck('slug')->all())->toBe(['durban_north'])
+    expect(app(SuburbSearchQuery::class)->handle('NORTH')->pluck('slug')->all())->toBe(['durban_north', 'westville_north'])
         ->and(app(SuburbSearchQuery::class)->handle('orth')->all())->toBe([])
         ->and(app(SuburbSearchQuery::class)->handle('')->all())->toBe([]);
 
-    $mixed = app(SuburbSearchQuery::class)->handle('b');
-    expect($mixed->pluck('slug')->all())->toBe(['berea', 'bluff'])
-        ->and($mixed->last()->is_active)->toBeFalse();
+    suburb('bluff')->update(['is_active' => false]);
+    $mixed = app(SuburbSearchQuery::class)->handle('bl');
+    expect($mixed->pluck('slug')->all())->toBe(['bluff'])->and($mixed->last()->is_active)->toBeFalse();
 });
 
 it('lets editors manage suburbs in the admin panel (AC4)', function (): void {
@@ -79,7 +77,7 @@ it('lets editors manage suburbs in the admin panel (AC4)', function (): void {
     $admin->assignRole(Role::AdminSupport->value);
     $this->actingAs($admin);
 
-    Livewire::test(ListSuburbs::class)->assertCanSeeTableRecords(Suburb::all());
+    Livewire::test(ListSuburbs::class)->searchTable('Westville')->assertCanSeeTableRecords(Suburb::query()->where('name', 'like', 'Westville%')->get());
 
     Livewire::test(EditSuburb::class, ['record' => 'westville'])
         ->fillForm(['is_active' => true, 'name' => 'Westville'])
@@ -87,9 +85,9 @@ it('lets editors manage suburbs in the admin panel (AC4)', function (): void {
     expect(suburb('westville')->is_active)->toBeTrue();
 
     Livewire::test(CreateSuburb::class)
-        ->fillForm(['name' => 'Hillcrest', 'slug' => 'hillcrest', 'region' => Region::West->value, 'latitude' => -29.78, 'longitude' => 30.76, 'is_active' => false])
+        ->fillForm(['name' => 'Cliffdale', 'slug' => 'cliffdale', 'region' => Region::West->value, 'latitude' => -29.78, 'longitude' => 30.76, 'is_active' => false])
         ->call('create')->assertHasNoFormErrors();
-    expect(suburb('hillcrest')->centroid->getLatitude())->toEqualWithDelta(-29.78, 0.0001);
+    expect(suburb('cliffdale')->centroid->getLatitude())->toEqualWithDelta(-29.78, 0.0001);
 
     Livewire::test(EditSuburb::class, ['record' => 'westville'])->assertActionDoesNotExist('delete');
     expect($admin->can('delete', suburb('westville')))->toBeFalse();
