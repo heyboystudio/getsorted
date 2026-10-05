@@ -113,6 +113,7 @@ final readonly class GooglePlacesGeocoder implements Geocoder
             streetLine: $street === '' ? null : $street,
             postalCode: isset($parts['postal_code']) && preg_match('/^\d{4}$/', $parts['postal_code']) === 1 ? $parts['postal_code'] : null,
             areaNames: $areas,
+            municipality: $parts['administrative_area_level_2'] ?? null,
         );
     }
 

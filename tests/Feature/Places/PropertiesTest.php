@@ -64,6 +64,8 @@ it('adds a property linked to its suburb with the suburb centre as location (AC6
 });
 
 it('shows the privacy note and suggests suburbs as you type (AC6)', function (): void {
+    Suburb::query()->where('slug', 'westville')->update(['is_active' => false]);
+
     Livewire::test(Form::class)
         ->assertSee('We only share your street address with the pro you choose')
         ->set('suburbQuery', 'west')
@@ -109,6 +111,7 @@ it("never shows or changes another customer's property (AC9)", function (): void
 });
 
 it('saves a property in an inactive suburb with a note (AC10)', function (): void {
+    Suburb::query()->where('slug', 'westville')->update(['is_active' => false]);
     addProperty(['suburb' => 'westville'])->assertHasNoErrors();
 
     Livewire::test(Index::class)->assertSee("Sortd isn't in Westville yet");
