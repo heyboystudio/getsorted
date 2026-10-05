@@ -33,6 +33,10 @@ use App\Livewire\Welcome;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', Welcome::class)->name('home');
+Route::view('/customers', 'pages.customers')->name('customers');
+Route::view('/trades', 'pages.trades.index')->name('trades.index');
+Route::view('/about', 'pages.about')->name('about');
+Route::view('/contact', 'pages.contact')->name('contact');
 Route::get('/trades/{trade}', ShowTradeController::class)->name('trades.show');
 // Guests may answer the questions; they log in at the property step (spec 005, AC2).
 Route::get('/book/{trade}/{service:key}', BookingWizard::class)->scopeBindings()->name('booking.start');

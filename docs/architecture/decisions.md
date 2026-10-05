@@ -313,7 +313,7 @@ Short architecture decision records. **Add an entry for every significant choice
 
 **Decision:** A new environment, `APP_ENV=preview`, for a private test site that holds fake data only.
 - `App\Support\AppMode` decides what preview may do. Preview uses the same Fakes as local development: WhatsApp, payments, AI and maps. It also shows the login code on screen, as local development does (spec 001 AC20 now covers preview too). Staging and production are unchanged.
-- Every page shows a "Test site: fake data only" banner.
+- The persistent test-site banner was removed at the founder’s request on 2026-10-05; preview remains password-protected and uses fake integrations.
 - The whole site sits behind one shared password (HTTP basic auth), and `X-Robots-Tag: noindex` keeps it out of search engines.
 - It runs in Docker (`deploy/preview/`) because Ubuntu 26.04 offers no PHP 8.4 package:
   - FrankenPHP (`dunglas/frankenphp:1-php8.4-bookworm`) runs PHP and handles HTTPS with Let's Encrypt;

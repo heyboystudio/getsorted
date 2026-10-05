@@ -65,7 +65,7 @@ function answerLeakQuestions(Testable $wizard, string $severity = 'Dripping'): T
 }
 
 it('shows active trades on the home page and services on a trade page (AC1)', function (): void {
-    $this->get('/')->assertOk()->assertSee('What do you need help with?')->assertSee('Plumbing')->assertSee(route('trades.show', $this->plumbing));
+    $this->get('/')->assertOk()->assertSee('Plumbing')->assertSee(route('trades.show', $this->plumbing));
     $this->get(route('trades.show', $this->plumbing))->assertOk()->assertSee('Leak repair')->assertSee(route('booking.start', [$this->plumbing, $this->leak]));
 
     $this->leak->update(['is_active' => false]);

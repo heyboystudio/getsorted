@@ -1,21 +1,4 @@
-<x-layouts.app :title="$trade->name">
-    <main class="flex min-h-dvh items-start justify-center px-5 py-12">
-        <section class="w-full max-w-xl">
-            <a href="{{ route('home') }}" class="mb-10 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('All trades') }}</a>
-            <h1 class="text-3xl font-semibold tracking-tight">{{ $trade->name }}</h1>
-            <p class="mt-2 text-zinc-600">{{ __('What do you need?') }}</p>
-            <ul class="mt-6 space-y-3">
-                @foreach ($services as $service)
-                    <li>
-                        <a href="{{ route('booking.start', [$trade, $service]) }}" class="block rounded-xl border border-zinc-200 bg-white p-4 hover:border-emerald-700">
-                            <span class="block font-medium">{{ $service->name }}</span>
-                            @if ($service->description)
-                                <span class="mt-1 block text-sm text-zinc-600">{{ $service->description }}</span>
-                            @endif
-                        </a>
-                    </li>
-                @endforeach
-            </ul>
-        </section>
-    </main>
-</x-layouts.app>
+<x-layouts.app :title="$trade->name"><div class="sortd-site">@include('pages.partials.header')
+<main><section class="page-hero"><div class="site-container"><a class="back-link" href="{{ route('trades.index') }}">← All trades</a><p class="section-kicker">SORTD TRADES</p><h1>{{ $trade->name }}<em>.</em></h1><p>Find local help for {{ strtolower($trade->name) }} work around your home. Explore the services below to see where to start.</p></div></section>
+<section class="section"><div class="site-container"><p class="section-kicker">EXPLORE SERVICES</p><h2>What can we<br><em>help with?</em></h2><div class="service-grid">@forelse ($services as $service)<a class="service-card" href="{{ route('booking.start', [$trade, $service]) }}"><div><h3>{{ $service->name }}</h3>@if ($service->description)<p>{{ $service->description }}</p>@endif</div><span aria-hidden="true">↗</span></a>@empty<p>We're getting these services ready.</p>@endforelse</div></div></section>
+<section class="section section-trades"><div class="site-container"><p class="section-kicker">GOOD TO KNOW</p><h2>Clear choices.<br><em>Good work.</em></h2><p class="page-lead">Your job details help eligible local pros decide whether to quote. You can review their quotes and choose the right fit for you.</p><div class="page-actions"><a class="button button-dark" href="{{ route('home') }}#how-it-works">How it works ↗</a><a class="button button-outline" href="{{ route('home') }}#questions">Common questions →</a></div></div></section></main>@include('pages.partials.footer')</div></x-layouts.app>
