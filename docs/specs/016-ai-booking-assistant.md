@@ -79,7 +79,7 @@ A customer can open a chat on the website, describe the problem in their own wor
 1. **The $100 AWS credit:** confirm after the first day of use that Bedrock charges come off the credit (Billing → Credits).
 
 **Decided 2026-10-05:**
-- The assistant is called **Thandi** (a South African name). Tone: friendly, plain South African English. She says she's an AI assistant when asked, and in her first message.
+- The assistant is called **Siya** (a South African name, after the Springboks captain; it's just a first name, with no likeness, quotes or rugby branding). Tone: friendly, plain South African English. Siya says it's an AI assistant when asked, and in its first message.
 - Guests can chat before signing in (AC9).
 - Build after spec 015.
 
