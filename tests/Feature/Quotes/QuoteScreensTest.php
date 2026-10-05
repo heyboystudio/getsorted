@@ -147,7 +147,7 @@ it('tells a pro politely when the job is already full (AC4)', function (): void 
     }
     $this->actingAs($pros[3]->user);
 
-    Livewire::test(ProJob::class, ['invite' => screenInvite($job, $pros[3])])->assertSee('This job is full')->assertDontSee('Send a quote');
+    Livewire::test(ProJob::class, ['invite' => screenInvite($job, $pros[3])])->assertSee('This job is full')->assertDontSee('Send an estimate');
 });
 
 it('sends a quote once even when "Send quote" is tapped twice (AC3)', function (): void {
@@ -202,7 +202,7 @@ it('shows the customer up to three quotes side by side with the pro\'s details (
     $this->actingAs($job->customer);
 
     Livewire::test(CustomerJob::class, ['job' => $job])
-        ->assertSee('Quotes (2 of 3)')->assertSee('Dlamini Plumbing')->assertSee('Naidoo Plumbing')
+        ->assertSee('Estimates (2 of 3)')->assertSee('Dlamini Plumbing')->assertSee('Naidoo Plumbing')
         ->assertSee('R 570.50')->assertSee('R 114.10')->assertSee('Can come tomorrow morning.')
         ->assertSee('Labour')->assertSee('Materials')->assertSee('On Sortd since');
 });
@@ -212,7 +212,7 @@ it('shows "waiting for quotes" before any quote arrives (AC7, UX)', function ():
     $job = screenQuoteJob();
     $this->actingAs($job->customer);
 
-    Livewire::test(CustomerJob::class, ['job' => $job])->assertSee('Waiting for quotes')->assertDontSee('Accept this quote');
+    Livewire::test(CustomerJob::class, ['job' => $job])->assertSee('Waiting for quotes')->assertDontSee('Accept this estimate');
 });
 
 it('never offers withdrawn, superseded or out-of-date quotes to the customer (AC7, AC12)', function (): void {
@@ -227,12 +227,12 @@ it('never offers withdrawn, superseded or out-of-date quotes to the customer (AC
     $this->actingAs($job->customer);
 
     Livewire::test(CustomerJob::class, ['job' => $job])
-        ->assertDontSee('Withdrawn Co')->assertDontSee('R 570.50')->assertSee('R 999.00')->assertSee('Accept this quote');
+        ->assertDontSee('Withdrawn Co')->assertDontSee('R 570.50')->assertSee('R 999.00')->assertSee('Accept this estimate');
 
     // Past its valid-until date but before the scheduler runs: shown as expired, not acceptable.
     $this->travel(2)->days();
     Livewire::test(CustomerJob::class, ['job' => $job])
-        ->assertSee('This quote has expired')->assertDontSee('Accept this quote');
+        ->assertSee('This estimate has expired')->assertDontSee('Accept this estimate');
 });
 
 it('hides a pro\'s profile photo that admins have not verified (AC7, privacy)', function (): void {
@@ -265,7 +265,7 @@ it('accepts a quote after confirmation and then shows the pro\'s contact details
     $this->actingAs($job->customer);
 
     Livewire::test(CustomerJob::class, ['job' => $job])
-        ->call('confirmAccept', $quote->public_id)->assertSee('Accept this quote for R 570.50?')
+        ->call('confirmAccept', $quote->public_id)->assertSee('Accept this estimate for R 570.50?')
         ->call('accept')->assertHasNoErrors()
         ->assertSee('Booked with Dlamini Plumbing')->assertSee($pro->user->phone_e164)->assertSee('Keep payments on Sortd');
 

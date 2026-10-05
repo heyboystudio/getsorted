@@ -16,7 +16,8 @@
     </section>
 @elseif ($job->status === $S::Open && $quotes->isNotEmpty())
     <section class="mt-6">
-        <h2 class="font-semibold">{{ __('Quotes (:count of 3)', ['count' => $quotes->count()]) }}</h2>
+        <h2 class="font-semibold">{{ __('Estimates (:count of 3)', ['count' => $quotes->count()]) }}</h2>
+        <p class="mt-1 text-sm text-zinc-600">{{ __('Your pro can adjust the final amount after seeing the job. You’ll approve any change.') }}</p>
         @error('accept') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
         <div class="mt-3 grid gap-4 lg:grid-cols-3">
             @foreach ($quotes as $quote)
@@ -59,11 +60,11 @@
                         </ul>
                     </details>
                     @if ($quote->isPastValidity())
-                        <p class="mt-4 text-sm text-zinc-600">{{ __('This quote has expired.') }}</p>
+                        <p class="mt-4 text-sm text-zinc-600">{{ __('This estimate has expired.') }}</p>
                     @elseif ($pro->status !== \App\Domain\Pros\Enums\ProStatus::Approved)
                         <p class="mt-4 text-sm text-zinc-600">{{ __('This pro is unavailable.') }}</p>
                     @else
-                        <button type="button" wire:click="confirmAccept('{{ $quote->public_id }}')" class="mt-4 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Accept this quote') }}</button>
+                        <button type="button" wire:click="confirmAccept('{{ $quote->public_id }}')" class="mt-4 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Accept this estimate') }}</button>
                     @endif
                 </article>
             @endforeach
@@ -73,7 +74,7 @@
     @if ($accepting)
         <div class="fixed inset-0 z-10 flex items-end justify-center bg-black/40 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="accept-title">
             <div class="w-full max-w-md rounded-xl bg-white p-5">
-                <h2 id="accept-title" class="text-lg font-semibold">{{ __('Accept this quote for :total?', ['total' => $R::format($accepting->total_cents)]) }}</h2>
+                <h2 id="accept-title" class="text-lg font-semibold">{{ __('Accept this estimate for :total?', ['total' => $R::format($accepting->total_cents)]) }}</h2>
                 <p class="mt-2 text-sm text-zinc-600">
                     {{ $accepting->deposit_cents > 0
                         ? __('A deposit of :deposit will be due. The other pros will be told you chose someone else.', ['deposit' => $R::format($accepting->deposit_cents)])

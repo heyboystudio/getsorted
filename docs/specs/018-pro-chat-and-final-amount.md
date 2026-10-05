@@ -85,5 +85,10 @@ After a job is booked, the customer can **chat in Sortd with each pro who's look
 6. Chats are kept **24 months** after the job closes.
 
 ## Progress
+- 2026-10-06: **part 1 (chat) built** on `feat/018-pro-chat`: `job_conversations` and `job_messages`, `JobChat` rules, `SendJobMessage` and `ManageJobMessage` actions, the `Jobs\Chat` Livewire component (polling every 5 seconds while visible) on the customer and pro job pages, photo links (`MessagePhotoController`), the `chat_message` notification (`SendChatNotification`), the admin "Chats" tab (read-only, every view logged, support/super admins can close a chat), daily pruning after 24 months, and the "Estimate" wording. Tests: `tests/Feature/ServiceJobs/JobChatTest.php`.
+  - **Invited pros stay anonymous** to the customer ("Pro A", "Pro B") until that pro replies or sends an estimate, which keeps spec 009 AC13 while either side can start the chat (decision 1). The founder can change this.
+  - Masking reuses spec 010's `ContactMasker` (placeholders such as "[phone]" and "[bank details]"), and attempts count towards the pro's masking flag shown to admins.
+  - There's no "download my data" feature yet, so the POPIA export of messages lands with that feature.
+  - Next: part 2, final-amount proposals (AC9–AC14).
 - 2026-10-05: approved with the decisions above.
 - 2026-10-05: drafted from the founder's description of the post-booking flow (decision 045). Spec 013 (deposit payments, draft PR #37) is still awaiting its own three decisions.

@@ -71,6 +71,20 @@ return [
         'max_kilobytes' => 10_240,
     ],
 
+    // Spec 018: chat between customers and pros.
+    'chat' => [
+        'max_length' => 1000,
+        'photos_per_message' => 5,
+        'photos_per_day' => 20,
+        'messages_per_hour' => 30,
+        // At most one "new message" WhatsApp per conversation and person in this time.
+        'notify_every_minutes' => 15,
+        // Someone who looked at the chat this recently is treated as "on the page": no notification.
+        'online_seconds' => 30,
+        'delete_within_minutes' => 5,
+        'retention_months' => 24,
+    ],
+
     // Decision 044: before launch, take requests from every eThekwini suburb even without pros.
     'coverage' => [
         'require_pros' => (bool) env('SORTD_REQUIRE_PROS', false),

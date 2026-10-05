@@ -24,6 +24,7 @@ use App\Domain\Quotes\Support\QuoteCalculator;
 use App\Domain\Quotes\Support\QuoteFlow;
 use App\Domain\Quotes\Support\QuoteRules;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
+use App\Domain\ServiceJobs\Support\JobChat;
 use App\Livewire\Pros\Jobs\Concerns\EnsuresApprovedPro;
 use App\Models\Quote;
 use App\Models\ServiceJob;
@@ -273,6 +274,8 @@ final class Show extends Component
             'previewTotals' => $this->building && $this->previewing ? $this->previewTotals($calculator) : null,
             'previewText' => $this->building && $this->previewing ? $this->previewText() : null,
             'lineKinds' => LineKind::cases(),
+            // Spec 018: the chat shows while this pro can still write, or once a conversation exists.
+            'chat' => JobChat::canWrite($job, $invite->pro) || $job->conversations()->where('pro_id', $invite->pro_id)->exists(),
             'maxDeposit' => app(QuoteSettings::class)->max_deposit_percent,
         ]);
     }
