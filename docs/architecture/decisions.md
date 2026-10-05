@@ -45,6 +45,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 039 | Email or Google sign-in, then verified email and mobile (supersedes 004 for customers and pros) | Accepted | 2026-10-05 |
 | 040 | Twilio for WhatsApp and SMS (Q5) | Accepted | 2026-10-05 |
 | 041 | Test site: mobile saved without a code while SMS is blocked | Accepted | 2026-10-05 |
+| 047 | Admin MFA optional (changes 021 and the security baseline) | Accepted | 2026-10-05 |
 
 ---
 
@@ -471,3 +472,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 - `gemini-2.5-flash` and `gemini-2.5-flash-lite` are **retired for new keys** (HTTP 404). Set `SORTD_AI_MODEL` to a current model. `gemini-3.1-flash-lite` with `SORTD_AI_THINKING_LEVEL=minimal` (the default) answered in about 1.5–7 s when the API was healthy and passed 7 of 8 cases in two runs, including the breaker-tripping message that used to fail, parking a second job, refusing unsupported work and ignoring prompt injection. The larger Flash models were overloaded (503) or timed out in the same window, and Gemini 3 with default thinking took 10–24 s per turn.
 - Provider latency is spiky (the same call took 1.5 s and 15 s+). The per-call timeout is now 25 s, provider overload gets one retry, and a failed turn keeps the validated facts so the customer can tap Try again. Re-run `siya:eval --live` after any model or prompt change and read the replies; it checks state, not tone.
 
+
+## 047 · Admin MFA optional
+
+**Date:** 2026-10-05 · **Status:** Accepted (founder)
+
+**Decision:** Admins sign in to `/admin` with email and a strong password only. App-based MFA stays available, so any admin can switch it on in their profile, and admins who already set it up are still asked for a code. This applies everywhere, including the future live site. It changes decision 021 and the security baseline's "mandatory MFA".
+
+**Why:** The founder asked for 2FA to be turned off.
+
+**Risk:** A leaked or guessed admin password now gives full admin access. Strong passwords (12+ characters, checked against known breaches), login rate limits and panel-only sessions (`EnsureAdminSignedInThroughPanel`) still apply. Revisit before real customer data or money goes through the admin panel.

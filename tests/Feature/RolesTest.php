@@ -42,12 +42,12 @@ it('keeps customers, pros and role-less users out of the admin panel', function 
     expect($user->canAccessPanel(Filament::getPanel('admin')))->toBeFalse();
 })->with([Role::Customer, Role::Pro, null]);
 
-it('sends an admin without MFA to set it up before the dashboard', function (): void {
+it('lets an admin without MFA straight into the dashboard', function (): void {
     $admin = User::factory()->create();
     $admin->assignRole(Role::AdminSuper->value);
 
     $this->actingAs($admin)
         ->withSession([Login::SESSION_KEY => $admin->id])
         ->get('/admin')
-        ->assertRedirect('/admin/multi-factor-authentication/set-up');
+        ->assertOk();
 });

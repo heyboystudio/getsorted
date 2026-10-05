@@ -59,8 +59,8 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
     }
 
     /**
-     * Default deny. The admin panel needs an admin role (MFA is enforced by
-     * the panel itself); the pro panel stays closed until pro phone login.
+     * Default deny. The admin panel needs an admin role (MFA is optional,
+     * decision 047); the pro panel stays closed until pro phone login.
      */
     public function canAccessPanel(Panel $panel): bool
     {
