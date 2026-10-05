@@ -104,6 +104,12 @@ final class ServiceJob extends Model implements HasMedia
         return $this->hasMany(ServiceJobInvite::class);
     }
 
+    /** @return HasMany<JobConversation, $this> */
+    public function conversations(): HasMany
+    {
+        return $this->hasMany(JobConversation::class);
+    }
+
     /** @return BelongsTo<User, $this> */
     public function customer(): BelongsTo
     {

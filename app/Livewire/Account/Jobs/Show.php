@@ -7,16 +7,20 @@ namespace App\Livewire\Account\Jobs;
 use App\Domain\Quotes\Actions\AcceptQuote;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Exceptions\CannotQuote;
+use App\Domain\ServiceJobs\Support\JobChat;
+use App\Models\JobConversation;
+use App\Models\Pro;
 use App\Models\Quote;
 use App\Models\ServiceJob;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
-/** A customer's own job, read-only (spec 005, AC11, AC13). */
+/** A customer's own job: details, estimates to compare (spec 010) and chats with pros (spec 018). */
 #[Layout('components.layouts.app')]
 final class Show extends Component
 {
@@ -36,6 +40,16 @@ final class Show extends Component
 
     #[Locked]
     public ?string $acceptingQuote = null;
+
+    /** The pro whose chat is open (spec 018); only pros in this job's chat list can be chosen. */
+    #[Locked]
+    public ?string $chatWith = null;
+
+    public function openChat(string $proPublicId): void
+    {
+        abort_unless($this->chats()->contains(fn (array $chat): bool => $chat['pro']->public_id === $proPublicId), 404);
+        $this->chatWith = $proPublicId;
+    }
 
     /** Opens the confirmation for one quote (spec 010, AC8). */
     public function confirmAccept(string $quotePublicId): void
@@ -82,7 +96,19 @@ final class Show extends Component
             'quotes' => $job->quotes()->whereIn('status', [QuoteStatus::Submitted, QuoteStatus::Accepted])
                 ->with(['lines', 'pro.user', 'pro.documents.media'])->orderBy('total_cents')->get(),
             'accepting' => $this->acceptingQuote === null ? null : $this->quoteOnJob($this->acceptingQuote),
+            'chats' => $chats = $this->chats(),
+            'openChat' => $chats->first(fn (array $chat): bool => $chat['pro']->public_id === $this->chatWith)
+                ?? $chats->first(fn (array $chat): bool => $chat['writable'] && $job->accepted_quote_id !== null),
         ])->title($job->service->name);
+    }
+
+    /** @return Collection<int, array{pro: Pro, label: string, named: bool, conversation: ?JobConversation, writable: bool, unread: int}> */
+    private function chats(): Collection
+    {
+        /** @var User $user */
+        $user = auth()->user();
+
+        return JobChat::customerList(ServiceJob::query()->where('public_id', $this->publicId)->where('customer_id', $user->id)->firstOrFail());
     }
 
     private function quoteOnJob(string $quotePublicId): ?Quote

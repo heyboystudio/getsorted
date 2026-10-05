@@ -28,6 +28,7 @@ final class MessageTexts
             'quote_withdrawn' => "Sortd: {$get('pro')} withdrew their quote for your {$get('service')} job: {$get('link')}",
             'quote_accepted' => "Sortd: your quote for the {$get('service')} job was accepted. See the details: {$get('link')}",
             'quote_not_chosen' => "Sortd: the customer chose another pro for the {$get('service')} job. Thanks for quoting.",
+            'chat_message' => "Sortd: you have a new message about the {$get('service')} job. Read and reply: {$get('link')}",
             'pro_approved' => "Sortd: hi {$get('first_name')}, you're approved! We'll WhatsApp you when jobs that fit come in.",
             'pro_changes_requested' => "Sortd: hi {$get('first_name')}, please update your pro application. Sign in to see what's needed.",
             'pro_rejected' => "Sortd: hi {$get('first_name')}, we couldn't approve your pro application. Sign in for details.",

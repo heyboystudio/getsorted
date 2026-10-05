@@ -194,10 +194,15 @@
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <button type="button" x-on:click="open = ! open" class="rounded-lg border border-zinc-300 px-4 py-3 font-medium">{{ __('Not for me') }}</button>
-                            <button type="button" wire:click="startQuote" class="rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white">{{ __('Send a quote') }}</button>
+                            <button type="button" wire:click="startQuote" class="rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white">{{ __('Send an estimate') }}</button>
                         </div>
                     </div>
                 </div>
+            @endif
+
+            {{-- Spec 018: chat with the customer. Their name shows only once this pro's estimate is accepted (spec 005 privacy). --}}
+            @if ($chat)
+                <livewire:jobs.chat :job-public-id="$job->public_id" :pro-public-id="$invite->pro->public_id" :title="$accepted ? $job->customer->first_name : __('the customer')" :key="'chat-'.$invite->public_id.($accepted ? '-named' : '')" />
             @endif
         @endif
     </section>

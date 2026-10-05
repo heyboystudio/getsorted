@@ -1,6 +1,6 @@
 # Spec 017 · One-thread booking with Siya (Kandua-style)
 
-Status: In progress (founder approved 2026-10-05) · Phase: 2 · Owner: founder · Replaces the booking wizard (005) and the Siya hand-off (016)
+Status: Done (merged in PR #48, founder approved 2026-10-05) · Phase: 2 · Owner: founder · Replaces the booking wizard (005) and the Siya hand-off (016)
 
 ## Goal
 Booking a pro happens in **one Siya conversation on one screen**, the way Kandua's Jess works (`docs/product/kandua-reference.md`). The customer picks a trade or describes the problem, answers 2–4 tap questions, picks where and when, adds photos, checks a summary and posts. Nothing is asked twice, there's no hand-off to a separate wizard, and a fixed progress bar always matches what's on screen. Matching and up to 3 quotes (009, 010) stay as they are.

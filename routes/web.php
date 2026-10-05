@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\JobPhotoController;
+use App\Http\Controllers\MessagePhotoController;
 use App\Http\Controllers\ProDocumentController;
 use App\Http\Controllers\ProJobPhotoController;
 use App\Http\Controllers\QuoteProPhotoController;
@@ -60,6 +61,7 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/app/jobs/{job}/photos/{photo}', JobPhotoController::class)->name('job-photos.show');
+    Route::get('/app/messages/{message}/photos/{photo}', MessagePhotoController::class)->name('message-photos.show');
     Route::get('/pros/documents/{document}', ProDocumentController::class)->name('pro-documents.show');
     Route::get('/pros/jobs/{invite}/photos/{photo}', ProJobPhotoController::class)->name('pros.jobs.photo');
     Route::get('/app/quotes/{quote}/pro-photo', QuoteProPhotoController::class)->name('quotes.pro-photo');

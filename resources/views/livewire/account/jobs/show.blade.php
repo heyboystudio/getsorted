@@ -56,6 +56,30 @@
 
         @include('livewire.account.jobs.partials.quotes')
 
+        {{-- Spec 018: chat with each pro looking at the job. Invited pros stay anonymous until they reply or quote (spec 009 AC13). --}}
+        @if ($chats->isNotEmpty())
+            <section class="mt-6" id="chats">
+                <h2 class="font-semibold">{{ $job->accepted_quote_id ? __('Chat with your pro') : __('Chat with your pros') }}</h2>
+                @if ($chats->count() > 1 || ! $openChat)
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        @foreach ($chats as $chat)
+                            <button type="button" wire:key="chat-{{ $chat['pro']->public_id }}" wire:click="openChat(@js($chat['pro']->public_id))"
+                                @class(['rounded-full border px-4 py-2 text-sm', 'border-emerald-700 bg-emerald-50' => $openChat && $openChat['pro']->is($chat['pro']), 'border-zinc-300 bg-white' => ! ($openChat && $openChat['pro']->is($chat['pro']))])>
+                                {{ $chat['label'] }}
+                                @if ($chat['unread'] > 0)<span class="ml-1 rounded-full bg-emerald-700 px-2 text-xs text-white">{{ $chat['unread'] }}</span>@endif
+                                @unless ($chat['writable'])<span class="ml-1 text-xs text-zinc-500">· {{ __('closed') }}</span>@endunless
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+                @if ($openChat)
+                    <livewire:jobs.chat :job-public-id="$job->public_id" :pro-public-id="$openChat['pro']->public_id" :title="$openChat['label']" :key="'chat-'.$openChat['pro']->public_id.'-'.$openChat['label']" />
+                @else
+                    <p class="mt-2 text-sm text-zinc-600">{{ __('Ask a pro a question or send more photos before they send their estimate.') }}</p>
+                @endif
+            </section>
+        @endif
+
         @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Draft)
             <a wire:navigate.hover href="{{ route('booking.continue', $job) }}" class="mt-6 block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white hover:bg-emerald-800">{{ __('Finish your request') }}</a>
         @endif
