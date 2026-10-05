@@ -137,7 +137,7 @@ final readonly class PostServiceJob
             throw new CannotPostServiceJob(__('Urgent same-day bookings are only for emergency services, today.'));
         }
 
-        if (! $this->eligiblePros->exists($job->service, $property->suburb, $customer)) {
+        if (! $this->eligiblePros->covers($job->service, $property->suburb, $customer)) {
             throw new NoEligiblePros(__('We’re not available in :suburb for this service yet.', ['suburb' => $property->suburb->name]));
         }
     }

@@ -72,6 +72,21 @@ final class EligibleProsQuery
         return $this->servable($service, $suburb) && $this->for($service, $suburb, $customer)->exists();
     }
 
+    /**
+     * Whether a customer may book this service in this suburb. Before launch
+     * (decision 044) any eThekwini suburb is open, even with no pros signed up;
+     * set SORTD_REQUIRE_PROS=true to require an eligible pro again (spec 006).
+     */
+    public function covers(Service $service, Suburb $suburb, ?User $customer = null): bool
+    {
+        if ((bool) config('sortd.coverage.require_pros')) {
+            return $this->exists($service, $suburb, $customer);
+        }
+
+        return $service->is_active && $service->trade->is_active
+            && $suburb->municipality === config('sortd.places.municipality');
+    }
+
     private function servable(Service $service, Suburb $suburb): bool
     {
         return $suburb->is_active && $service->is_active && $service->trade->is_active;

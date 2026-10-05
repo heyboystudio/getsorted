@@ -387,3 +387,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** Founder's $100 AWS credit covers Bedrock; EU processing; one provider for suggestion, summaries and Siya.
 
 **Watch:** confirm in AWS Billing → Credits that Bedrock usage comes off the credit. The privacy notice must name AWS/Anthropic before a live launch (spec 007 decision 1).
+
+## 044 · Take requests from all of Durban before pros are signed up
+
+**Date:** 2026-10-05 · **Status:** Accepted (founder)
+
+**Decision:** The coverage check (spec 006) no longer needs an eligible pro or an active suburb: any active service in any eThekwini suburb can be booked and posted. Controlled by `SORTD_REQUIRE_PROS` (default `false`); set it to `true` to restore spec 006's rule. Tests run with it `true`, plus tests for the open mode.
+
+**Why:** No pros are loaded yet; the founder wants to collect real requests across Durban.
+
+**Watch:** posted jobs may get no invites until pros exist (matching finds no one), so customers can wait indefinitely. Switch back on, or follow up manually, before promising response times. Addresses outside eThekwini still go to the waitlist.

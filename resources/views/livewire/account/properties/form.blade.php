@@ -44,10 +44,11 @@
                     </ul>
                 @endif
                 @error('suburb') <p id="suburb-error" class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
-                @if ($selected && $selected->is_active)
+                @php($open = $selected && ($selected->is_active || ! config('sortd.coverage.require_pros')))
+                @if ($open)
                     <p class="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">{{ __('Good news, we cover :suburb.', ['suburb' => $selected->name]) }}</p>
                 @endif
-                @if ($selected && ! $selected->is_active)
+                @if ($selected && ! $open)
                     <p class="mt-2 text-sm text-amber-800">{{ __("Sortd isn't in :suburb yet — we'll let you know when we are.", ['suburb' => $selected->name]) }}</p>
                 @endif
             </div>
