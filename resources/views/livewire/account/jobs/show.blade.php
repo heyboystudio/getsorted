@@ -1,6 +1,6 @@
 <main class="flex min-h-dvh items-start justify-center px-5 py-12">
     <section class="w-full max-w-xl">
-        <a href="{{ route('account.home') }}" class="mb-10 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Your account') }}</a>
+        <a wire:navigate.hover href="{{ route('account.home') }}" class="mb-10 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Your account') }}</a>
 
         @if ($justPosted)
             <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900" role="status">
@@ -57,7 +57,7 @@
         @include('livewire.account.jobs.partials.quotes')
 
         @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Draft)
-            <a href="{{ route('booking.continue', $job) }}" class="mt-6 block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white hover:bg-emerald-800">{{ __('Finish your request') }}</a>
+            <a wire:navigate.hover href="{{ route('booking.continue', $job) }}" class="mt-6 block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white hover:bg-emerald-800">{{ __('Finish your request') }}</a>
         @endif
     </section>
 </main>

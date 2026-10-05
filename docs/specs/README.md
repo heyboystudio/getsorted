@@ -19,3 +19,6 @@ Suggested first specs after Phase 0 (from the roadmap):
 | 011 | Join as a pro (sign-up entry) — [done](011-join-as-a-pro.md) | 1 |
 | 012 | Job photos — [done](012-job-photos.md) | 2 |
 | 014 | Sign up and sign in with email or Google, then verify your phone — [done, awaiting merge](014-email-google-sign-in.md) | 1 |
+| 016 | Siya, the AI booking assistant — [done](016-ai-booking-assistant.md) (hand-off replaced by 017) | 2 |
+| 017 | One-thread booking with Siya, Kandua-style — [in progress](017-one-thread-booking.md) | 2 |
+| 018 | Chat with quoting pros, estimate → deposit → approved final amount — to draft | 3–4 |

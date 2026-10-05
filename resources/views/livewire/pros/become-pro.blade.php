@@ -1,6 +1,6 @@
 <main class="flex min-h-dvh items-start justify-center px-5 py-12 sm:items-center">
     <section class="w-full max-w-sm">
-        <a href="{{ route('home') }}" class="mb-10 inline-block text-2xl font-semibold tracking-tight">{{ __('Sortd') }}<span aria-hidden="true" class="text-emerald-700">.</span></a>
+        <a wire:navigate.hover href="{{ route('home') }}" class="mb-10 inline-block text-2xl font-semibold tracking-tight">{{ __('Sortd') }}<span aria-hidden="true" class="text-emerald-700">.</span></a>
         <h1 class="text-2xl font-semibold tracking-tight">{{ __('Become a pro') }}</h1>
         <p class="mt-2 text-zinc-600">{{ __('Hi :name — you can use the same account as a customer and as a pro.', ['name' => $firstName]) }}</p>
 

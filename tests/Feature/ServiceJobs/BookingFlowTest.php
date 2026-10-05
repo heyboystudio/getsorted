@@ -14,10 +14,9 @@ use App\Jobs\SendJobPostedMessage;
 use App\Livewire\Account\Home;
 use App\Livewire\Account\Properties\Form;
 use App\Livewire\Auth\Login;
-use App\Livewire\Booking\Wizard;
+use App\Livewire\Booking\Thread;
 use App\Models\Pro;
 use App\Models\Property;
-use App\Models\ScopingQuestion;
 use App\Models\Service;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobEvent;
@@ -30,8 +29,12 @@ use Database\Seeders\SuburbSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
-use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+
+/*
+ * Booking in one Siya thread (spec 017), keeping spec 005's rules: questions,
+ * drafts, posting, the job list and the admin view.
+ */
 
 uses(RefreshDatabase::class);
 
@@ -44,136 +47,312 @@ beforeEach(function (): void {
     $pro->serviceAreas()->attach(Suburb::query()->where('slug', 'musgrave')->sole());
 });
 
-function bookingCustomer(): array
-{
-    $customer = User::factory()->customer()->create();
-    $property = Property::factory()->for($customer)->create(['label' => 'Home', 'street_address' => '7 Private Lane', 'suburb_id' => Suburb::query()->where('slug', 'musgrave')->value('id')]);
-
-    return [$customer, $property];
-}
-
-function startLeakBooking(): Testable
-{
-    $wizard = Livewire::test(Wizard::class, ['trade' => test()->plumbing, 'service' => test()->leak]);
-
-    return $wizard->get('step') === 'coverage' ? $wizard->call('selectSuburb', 'musgrave')->call('next') : $wizard;
-}
-
-function answerLeakQuestions(Testable $wizard, string $severity = 'Dripping'): Testable
-{
-    return $wizard->call('choose', 'Tap')->call('choose', $severity);
-}
-
-it('shows active trades on the home page and services on a trade page (AC1)', function (): void {
-    $this->get('/')->assertOk()->assertSee('Plumbing')->assertSee(route('trades.show', $this->plumbing));
+it('opens the thread from the home page, trade pages and service links (AC1, AC3)', function (): void {
+    $this->get('/')->assertOk()->assertSee(route('book'), false);
     $this->get(route('trades.show', $this->plumbing))->assertOk()->assertSee('Leak repair')->assertSee(route('booking.start', [$this->plumbing, $this->leak]));
+    $this->get(route('assistant'))->assertRedirect('/book');
+    $this->get(route('booking.start', [$this->plumbing, $this->leak]))->assertOk()->assertSee('Where is the leak coming from?');
 
     $this->leak->update(['is_active' => false]);
     $this->get(route('trades.show', $this->plumbing))->assertDontSee('Leak repair');
     $this->get(route('booking.start', [$this->plumbing, $this->leak]))->assertNotFound();
 });
 
-it('asks questions one per screen, requires answers and goes back without losing them (AC3)', function (): void {
-    [$customer] = bookingCustomer();
-    $this->actingAs($customer);
+it('starts with Siya’s greeting and the trades, then a trade’s services as chips (AC2, AC5)', function (): void {
+    Livewire::test(Thread::class)
+        ->assertSee('I’m Siya, Sortd’s AI assistant')->assertSee('Plumbing')->assertSet('stage', 'trade')
+        ->call('pickTrade', 'plumbing')->assertSet('stage', 'service')
+        ->assertSee('What’s the plumbing problem?')->assertSee('Leak repair')->assertSee('Other')
+        ->call('pickService', 'leak_repair')
+        ->assertSet('serviceId', $this->leak->id)->assertSee('You selected')->assertSee('Where is the leak coming from?');
 
-    $wizard = startLeakBooking()->assertSee('Where is the leak coming from?')->assertDontSee('How bad is it?');
-    $wizard->call('next')->assertHasErrors(['answer']);
-    $wizard->call('choose', 'Tap')->assertSee('How bad is it?')->assertSet('questionIndex', 1);
-    $wizard->call('back')->assertSet('questionIndex', 0)->assertSet('answers.leak_location', 'Tap');
-    $wizard->call('choose', 'Not a real option')->assertHasErrors(['answer'])->assertSet('questionIndex', 0);
+    $this->get(route('book.trade', $this->plumbing))->assertOk()->assertSee('What’s the plumbing problem?');
 });
 
-it('shows safety advice and marks the job urgent for an urgent answer (AC5)', function (): void {
+it('asks one question at a time with tap answers and refuses invalid ones (AC7)', function (): void {
+    threadFor($this->leak)
+        ->assertSee('Where is the leak coming from?')->assertDontSee('How bad is it?')
+        ->call('answer', 'leak_location', 'Not a real option')->assertHasErrors(['answer'])->assertSet('answers', [])
+        ->call('answer', 'leak_location', 'Tap')->assertSee('How bad is it?')
+        ->call('answer', 'leak_location', 'Pipe')->assertNotFound();
+});
+
+it('shows stored safety advice and marks the job urgent for an urgent answer (AC8)', function (): void {
     [$customer] = bookingCustomer();
     $this->actingAs($customer);
 
-    $wizard = startLeakBooking()->call('choose', 'Pipe')->call('choose', 'Flooding');
-    // Tapping an urgent answer stays on the question so the advice can be read.
-    $wizard->assertSet('step', 'questions')->assertSee('This sounds urgent')->assertSee('close the main stopcock');
-    $wizard->call('next')->assertSet('step', 'notes');
+    threadFor($this->leak)->assertSee('If water is flooding, close the main stopcock first.')
+        ->call('answer', 'leak_location', 'Pipe')->call('answer', 'severity', 'Flooding')
+        ->assertSet('stage', 'details');
 
     expect(ServiceJob::query()->sole()->urgency)->toBe(Urgency::Urgent);
 });
 
-it('lets guests answer questions, then keeps the answers through login (AC2)', function (): void {
-    $wizard = answerLeakQuestions(startLeakBooking())->call('next')->assertSet('step', 'photos')->call('next')->assertSet('step', 'property')->assertSee('Sign in to continue');
-    expect(ServiceJob::query()->count())->toBe(0);
-
-    $wizard->call('logInToContinue')->assertRedirect(route('login'));
-    expect(session('url.intended'))->toBe(route('booking.start', [$this->plumbing, $this->leak], false));
-
-    [$customer] = bookingCustomer();
-    $this->actingAs($customer);
-
-    $resumed = startLeakBooking()->assertSet('step', 'property')->assertSet('answers.leak_location', 'Tap')->assertSet('answers.severity', 'Dripping');
-    expect(ServiceJob::query()->sole()->scoping_answers)->toHaveKeys(['leak_location', 'severity']);
-    $resumed->assertSee('Where is the work?');
+it('offers Continue or more details once the questions are done, adding details to the notes (AC9)', function (): void {
+    answerQuestions(threadFor($this->leak), $this->leak)
+        ->assertSet('stage', 'details')->assertSee('Anything else your pro should know?')
+        ->call('addDetails')->set('message', 'There is a dog in the yard')->call('send')
+        ->assertSee('I’ve added that for your pro')->assertSet('notes', 'There is a dog in the yard')
+        ->call('continueDetails')->assertSet('detailsDone', true);
 });
 
-it('books end to end: property, time, review, post and confirmation (AC6–AC9, AC11)', function (): void {
+it('asks guests to sign in before Where & when and keeps everything through login (AC10)', function (): void {
+    $thread = describeJob(threadFor($this->leak), $this->leak)
+        ->assertSet('stage', 'signin')->assertSee('Sign in to book');
+    expect(ServiceJob::query()->count())->toBe(0);
+
+    $thread->call('signIn')->assertRedirect(route('login'));
+    expect(session('url.intended'))->toBe(route('booking.start', [$this->plumbing, $this->leak], false));
+
+    User::factory()->customer()->create(['email' => 'thandi@example.com']);
+    Livewire::test(Login::class)->set('email', 'thandi@example.com')->set('password', 'password')->call('login')
+        ->assertRedirect(route('booking.start', [$this->plumbing, $this->leak]));
+
+    $this->actingAs(User::query()->where('email', 'thandi@example.com')->sole());
+    threadFor($this->leak)->assertSet('stage', 'where')->assertSee('Where do you need the work done?')
+        ->assertSet('answers', ['leak_location' => 'Tap', 'severity' => 'Dripping']);
+    expect(ServiceJob::query()->sole()->scoping_answers)->toHaveKeys(['leak_location', 'severity']);
+});
+
+it('sends guests to sign up from the same card', function (): void {
+    describeJob(threadFor($this->leak), $this->leak)->call('signUp')->assertRedirect(route('register'));
+});
+
+it('books end to end in one thread: property, day and window, photos, summary, confirm (AC10–AC16)', function (): void {
+    Queue::fake();
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
     $date = now()->addDays(3)->toDateString();
 
-    $wizard = answerLeakQuestions(startLeakBooking())
-        ->set('notes', 'Leaks when the tap is open.')->call('next')
-        ->call('next')
-        ->call('next')->assertHasErrors(['property'])
-        ->call('selectProperty', $property->public_id)->call('next')->assertSet('step', 'when')
-        ->set('timeWindow', 'morning')->set('preferredDate', $date)->call('next')->assertSet('step', 'review')
-        ->assertSee('7 Private Lane')->assertSee('Leaks when the tap is open.')->assertSee('Morning (07:00–12:00)');
+    $thread = describeJob(threadFor($this->leak), $this->leak)
+        ->assertSet('stage', 'where')->assertSee('7 Private Lane')
+        ->call('selectProperty', $property->public_id)
+        ->assertSee('Location confirmed')->assertSee('Good news, we have vetted pros for this in Musgrave.')->assertSet('stage', 'when')
+        ->call('chooseWhen', 'morning')->assertHasErrors(['when'])
+        ->set('preferredDate', $date)->call('chooseWhen', 'morning')
+        ->assertSee('Date confirmed')->assertSet('stage', 'photos')->assertSee('Skip for now')
+        ->call('finishPhotos')->assertSet('stage', 'summary')
+        ->assertSee('Here’s a summary of your booking')->assertSee('7 Private Lane')->assertSee('Morning (07:00–12:00)')->assertSee('Confirm booking');
 
     $job = ServiceJob::query()->sole();
-    $wizard->call('post')->assertRedirect(route('jobs.show', $job));
+    expect($job->status)->toBe(ServiceJobStatus::Draft);
+
+    $thread->call('confirmBooking')->assertSet('stage', 'posted')->assertSee('Your job is booked')->assertSee(route('jobs.show', $job));
 
     expect($job->fresh()->status)->toBe(ServiceJobStatus::Open)
         ->and(array_column($job->fresh()->orderedAnswers(), 'prompt'))->toBe(['Where is the leak coming from?', 'How bad is it?']);
-    $this->withSession(['job_posted' => true])->get(route('jobs.show', $job))->assertOk()->assertSee('Your job is posted')->assertSee('Leak repair');
+    Queue::assertPushedOn('notifications', SendJobPostedMessage::class);
+    app(MessagingChannel::class)->assertNothingSent();
 });
 
-it('stops a booking for a property in a suburb Sortd is not in yet (AC6)', function (): void {
+it('never books without the Confirm booking tap', function (): void {
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+
+    $thread = describeJob(threadFor($this->leak), $this->leak)->call('selectProperty', $property->public_id);
+    $thread->call('confirmBooking')->assertNotFound();
+
+    expect(ServiceJob::query()->sole()->status)->toBe(ServiceJobStatus::Draft);
+});
+
+it('offers the waitlist when no pros cover the property, with the account’s details (AC11)', function (): void {
     [$customer] = bookingCustomer();
     $westville = Property::factory()->for($customer)->create(['suburb_id' => Suburb::query()->where('slug', 'westville')->value('id')]);
     $this->actingAs($customer);
 
-    answerLeakQuestions(startLeakBooking())->call('next')->call('next')
-        ->call('selectProperty', $westville->public_id)->call('next')
-        ->assertSet('step', 'property')->assertSee('This property is in Westville')
-        ->call('confirmPropertySuburb')->assertSet('step', 'waitlist')->assertSee('not available there');
+    describeJob(threadFor($this->leak), $this->leak)
+        ->call('selectProperty', $westville->public_id)
+        ->assertSet('stage', 'waitlist')->assertSee('we don’t have pros for Leak repair in Westville yet')
+        ->call('joinWaitlist')->assertSet('stage', 'closed')->assertSee('No job has been posted');
+
+    $this->assertDatabaseHas('waitlist_entries', ['phone_e164' => $customer->phone_e164, 'service_id' => $this->leak->id, 'suburb_key' => 'westville']);
 });
 
-it("cannot pick another customer's property (AC6)", function (): void {
+it('lets the customer choose a different service or say no thanks from the waitlist (AC11)', function (): void {
+    [$customer] = bookingCustomer();
+    $westville = Property::factory()->for($customer)->create(['suburb_id' => Suburb::query()->where('slug', 'westville')->value('id')]);
+    $this->actingAs($customer);
+
+    $thread = describeJob(threadFor($this->leak), $this->leak)->call('selectProperty', $westville->public_id);
+    $thread->call('noThanks')->assertSet('stage', 'closed')
+        ->call('differentService')->assertSet('stage', 'trade')->assertSet('serviceId', null)->assertSet('answers', []);
+    $this->assertDatabaseCount('waitlist_entries', 0);
+});
+
+it("cannot pick another customer's property", function (): void {
     [$customer] = bookingCustomer();
     $theirs = Property::factory()->create();
     $this->actingAs($customer);
 
-    answerLeakQuestions(startLeakBooking())->call('next')->call('next')
-        ->call('selectProperty', $theirs->public_id)->assertSet('propertyPublicId', null);
+    describeJob(threadFor($this->leak), $this->leak)->call('selectProperty', $theirs->public_id)->assertNotFound();
 });
 
-it('offers "urgent — today" only for emergency services (AC7)', function (): void {
-    [$customer] = bookingCustomer();
+it('adds a new property inside the thread and checks coverage straight away (AC10, AC11)', function (): void {
+    $customer = User::factory()->customer()->create();
     $this->actingAs($customer);
-    $coc = Service::query()->where('key', 'electrical_coc')->sole();
 
-    startLeakBooking()->set('answers', ['leak_location' => 'Tap', 'severity' => 'Dripping'])->call('change', 'when')->assertSee('Urgent — today');
-    Livewire::test(Wizard::class, ['trade' => $coc->trade, 'service' => $coc])->call('change', 'when')->assertDontSee('Urgent — today')
-        ->set('timeWindow', 'today')->call('next')->assertHasErrors(['timeWindow']);
+    describeJob(threadFor($this->leak), $this->leak)->assertSee('Add your address')
+        ->call('addProperty')->assertSet('stage', 'add_property')
+        ->call('enterAddressManually')
+        ->call('saveProperty')->assertHasErrors(['newStreet', 'newSuburb', 'newType'])
+        ->set('newStreet', '12 Innes Road')->set('newSuburbQuery', 'Musg')->assertSee('Musgrave')
+        ->call('selectNewSuburb', 'musgrave')->set('newType', 'house')
+        ->call('saveProperty')->assertHasNoErrors()->assertSet('stage', 'when')->assertSee('Location confirmed');
+
+    $property = $customer->properties()->sole();
+    expect($property->label)->toBe('Home')->and($property->street_address)->toBe('12 Innes Road');
 });
 
-it('keeps an unfinished booking as a draft to resume from the account (AC12)', function (): void {
+it('offers "urgent — today" only for emergency services (AC12)', function (): void {
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+    $painting = Service::query()->where('emergency_capable', false)->whereNull('requires_registration')->orderBy('id')->firstOrFail();
+    $pro = Pro::factory()->approved()->create();
+    $pro->services()->attach($painting);
+    $pro->serviceAreas()->attach($property->suburb);
+
+    describeJob(threadFor($this->leak), $this->leak)->call('selectProperty', $property->public_id)->assertSee('Urgent — today');
+    describeJob(threadFor($painting), $painting)->call('selectProperty', $property->public_id)->assertSet('stage', 'when')->assertDontSee('Urgent — today')
+        ->call('chooseWhen', 'today')->assertHasErrors(['when']);
+});
+
+it('uses Durban time for "today" (urgent bookings after midnight SAST)', function (): void {
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+    // 23:30 UTC on the 10th is 01:30 SAST on the 11th.
+    $this->travelTo(CarbonImmutable::parse('2026-11-10 23:30:00', 'UTC'));
+
+    describeJob(threadFor($this->leak), $this->leak)->call('selectProperty', $property->public_id)
+        ->call('chooseWhen', 'today')->call('finishPhotos')->assertSet('stage', 'summary')->assertSee('Urgent')
+        ->call('confirmBooking')->assertHasNoErrors();
+
+    expect(ServiceJob::query()->sole()->preferred_date->toDateString())->toBe('2026-11-11');
+});
+
+it('treats a tampered or out-of-range date as not chosen instead of an error page', function (string $date): void {
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
 
-    answerLeakQuestions(startLeakBooking())->call('next')->call('next')->call('selectProperty', $property->public_id)->call('next');
+    describeJob(threadFor($this->leak), $this->leak)->call('selectProperty', $property->public_id)
+        ->set('preferredDate', $date)->call('chooseWhen', 'morning')->assertHasErrors(['when'])->assertSet('stage', 'when');
+})->with(['2026-99-99', 'yesterday', '2099-01-01']);
+
+it('changes a section from the summary and comes straight back to it (AC15)', function (): void {
+    [$customer, $property] = bookingCustomer();
+    $other = Property::factory()->for($customer)->create(['label' => 'Flat', 'street_address' => '9 Other Road', 'suburb_id' => $property->suburb_id]);
+    $this->actingAs($customer);
+
+    $thread = bookUpToSummary(describeJob(threadFor($this->leak), $this->leak), $property);
+
+    $thread->call('change', 'where')->assertSet('stage', 'where')
+        ->call('selectProperty', $other->public_id)->assertSet('stage', 'summary')->assertSee('9 Other Road');
+    $thread->call('change', 'answers')->assertSet('stage', 'questions')
+        ->call('answer', 'leak_location', 'Toilet')->call('answer', 'severity', 'Steady flow')->assertSet('stage', 'summary')->assertSee('Toilet');
+    $thread->call('change', 'notes')->assertSet('stage', 'notes')->set('notesDraft', 'Gate code 1234')->call('saveNotes')
+        ->assertSet('stage', 'summary')->assertSee('Gate code 1234');
+    $thread->call('change', 'when')->set('preferredDate', now()->addDays(5)->toDateString())->call('chooseWhen', 'afternoon')
+        ->assertSet('stage', 'summary')->assertSee('Afternoon (12:00–17:00)');
+
+    expect(ServiceJob::query()->sole()->property_id)->toBe($other->id);
+});
+
+it('drops the old answers when the service is changed from the summary', function (): void {
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+
+    bookUpToSummary(describeJob(threadFor($this->leak), $this->leak), $property)
+        ->call('change', 'service')->assertSet('stage', 'trade')->assertSet('serviceId', null)->assertSet('answers', [])
+        ->assertSee('Your answers for the old service will be dropped');
+});
+
+it('enforces the notes limit', function (): void {
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+
+    bookUpToSummary(describeJob(threadFor($this->leak), $this->leak), $property)
+        ->call('change', 'notes')->set('notesDraft', str_repeat('a', 1001))->call('saveNotes')->assertHasErrors(['notesDraft']);
+
+    expect(ServiceJob::query()->sole()->customer_notes)->toBeNull();
+});
+
+it('shows the posted message again on a second Confirm tap instead of an error', function (): void {
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+
+    $thread = bookUpToSummary(describeJob(threadFor($this->leak), $this->leak), $property);
+    $thread->call('confirmBooking')->call('confirmBooking')->assertHasNoErrors()->assertSet('stage', 'posted');
+
+    expect(ServiceJob::query()->count())->toBe(1);
+});
+
+it('does not create a draft just by opening a service, and reuses a draft for the same service', function (): void {
+    [$customer] = bookingCustomer();
+    $this->actingAs($customer);
+
+    threadFor($this->leak);
+    expect(ServiceJob::query()->count())->toBe(0);
+
+    threadFor($this->leak)->call('answer', 'leak_location', 'Tap');
+    $draft = ServiceJob::query()->sole();
+
+    session()->forget(Thread::SESSION_KEY);
+    threadFor($this->leak)->call('answer', 'leak_location', 'Pipe')->assertSet('jobPublicId', $draft->public_id);
+    expect(ServiceJob::query()->count())->toBe(1);
+});
+
+it('keeps an unfinished booking as a draft to resume in the thread (spec 005 AC12)', function (): void {
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+
+    describeJob(threadFor($this->leak), $this->leak)->call('selectProperty', $property->public_id);
     $job = ServiceJob::query()->sole();
 
     Livewire::test(Home::class)->assertSee('Finish your request')->assertSee(route('booking.continue', $job));
-    Livewire::test(Wizard::class, ['job' => $job])->assertSet('step', 'when')->assertSet('propertyPublicId', $property->public_id);
+    Livewire::test(Thread::class, ['job' => $job])->assertSet('stage', 'when')->assertSet('propertyPublicId', $property->public_id)
+        ->assertSee('When do you need help?');
 });
 
-it('lists my jobs and keeps other customers out (AC13, AC14)', function (): void {
+it('keeps the thread after a refresh and starts over on Restart (AC18)', function (): void {
+    threadFor($this->leak)->call('answer', 'leak_location', 'Tap');
+
+    threadFor($this->leak)->assertSet('answers', ['leak_location' => 'Tap'])->assertSee('How bad is it?')
+        ->call('restart')->assertSet('serviceId', null)->assertSet('answers', [])->assertSet('stage', 'trade');
+});
+
+it('lets customers remove an unfinished request', function (): void {
+    [$customer] = bookingCustomer();
+    $this->actingAs($customer);
+    threadFor($this->leak)->call('answer', 'leak_location', 'Tap');
+    $draft = ServiceJob::query()->sole();
+
+    Livewire::test(Home::class)->assertSee('Remove')->call('removeDraft', $draft->public_id)->assertDontSee('Finish your request');
+
+    expect($draft->fresh()->status)->toBe(ServiceJobStatus::Cancelled)
+        ->and(ServiceJobEvent::query()->sole()->actor_type)->toBe(ActorType::Customer);
+
+    $other = ServiceJob::factory()->create(['service_id' => $this->leak->id]);
+    Livewire::test(Home::class)->call('removeDraft', $other->public_id);
+    expect($other->fresh()->status)->toBe(ServiceJobStatus::Draft);
+});
+
+it('lets customers tick several answers on a multi-choice question', function (): void {
+    $damp = Service::query()->whereHas('questions', fn ($query) => $query->where('key', 'damp_where'))->sole();
+    $thread = threadFor($damp);
+
+    // Walk to the multi-choice question by answering the earlier ones.
+    foreach ($damp->questions->takeUntil(fn ($question): bool => $question->key === 'damp_where') as $question) {
+        $thread->call('answer', $question->key, match ($question->type->value) {
+            'yes_no' => 'no',
+            'multi_choice' => [$question->options[0]],
+            default => $question->options[0],
+        });
+    }
+
+    $thread->call('answer', 'damp_where', ['Ceiling', 'Bathroom', 42])->assertHasNoErrors()
+        ->assertSet('answers.damp_where', ['Ceiling', 'Bathroom']);
+});
+
+it('lists my jobs and keeps other customers out (spec 005 AC13, AC14)', function (): void {
     [$customer, $property] = bookingCustomer();
     $mine = ServiceJob::factory()->open()->forProperty($property)->create(['service_id' => $this->leak->id]);
     $theirs = ServiceJob::factory()->open()->create(['service_id' => $this->leak->id]);
@@ -187,7 +366,7 @@ it('lists my jobs and keeps other customers out (AC13, AC14)', function (): void
     $this->get(route('booking.continue', $mine))->assertNotFound();
 });
 
-it('shows jobs to every admin role without street address or phone (AC15)', function (Role $role): void {
+it('shows jobs to every admin role without street address or phone (spec 005 AC15)', function (Role $role): void {
     [, $property] = bookingCustomer();
     $job = ServiceJob::factory()->open()->forProperty($property)->create(['service_id' => $this->leak->id, 'customer_notes' => 'Behind the fridge']);
     $event = new ServiceJobEvent(['from_status' => 'draft', 'to_status' => 'open', 'event_type' => 'job_posted', 'actor_type' => 'customer', 'actor_id' => $job->customer_id]);
@@ -205,130 +384,8 @@ it('shows jobs to every admin role without street address or phone (AC15)', func
     expect($admin->can('update', $job))->toBeFalse()->and($admin->can('delete', $job))->toBeFalse();
 })->with([Role::AdminSuper, Role::AdminSupport, Role::AdminVetting, Role::AdminFinance]);
 
-it('keeps customers and pros out of the admin jobs list (AC15)', function (): void {
+it('keeps customers and pros out of the admin jobs list (spec 005 AC15)', function (): void {
     $this->actingAs(User::factory()->customer()->create())->get('/admin/service-jobs')->assertForbidden();
-});
-
-// --- Review fixes -------------------------------------------------------------------
-
-it('lets customers tick several answers on a multi-choice question', function (): void {
-    [$customer] = bookingCustomer();
-    $this->actingAs($customer);
-    $damp = Service::query()->where('key', 'damp_treatment')->first() ?? ScopingQuestion::query()->where('key', 'damp_where')->sole()->service;
-    $pro = Pro::factory()->approved()->create();
-    $pro->services()->attach($damp);
-    $pro->serviceAreas()->attach(Suburb::query()->where('slug', 'musgrave')->sole());
-
-    $wizard = Livewire::test(Wizard::class, ['trade' => $damp->trade, 'service' => $damp])
-        ->call('selectSuburb', 'musgrave')->call('next');
-    $index = $damp->questions->search(fn ($q): bool => $q->key === 'damp_where');
-    $wizard->assertSet('answers.damp_where', []);
-
-    // Walk to the multi-choice question by answering earlier ones with valid values.
-    foreach ($damp->questions->take($index) as $earlier) {
-        $wizard->set('answers.'.$earlier->key, $earlier->type->hasOptions() ? $earlier->options[0] : 'no')->call('next');
-    }
-
-    // What the browser does: checkbox values added to the array.
-    $wizard->set('answers.damp_where', ['Ceiling', 'Bathroom'])->call('next')->assertHasNoErrors();
-    expect(ServiceJob::query()->sole()->scoping_answers['damp_where']['answer'])->toBe(['Ceiling', 'Bathroom']);
-
-    // A tampered non-array value is refused politely, not with an error page.
-    $wizard->call('back')->set('answers.damp_where', true)->call('next')->assertHasErrors(['answer']);
-});
-
-it('does not create a draft just by opening a service, and reuses a draft for the same service', function (): void {
-    [$customer] = bookingCustomer();
-    $this->actingAs($customer);
-
-    startLeakBooking();
-    expect(ServiceJob::query()->count())->toBe(0);
-
-    startLeakBooking()->call('choose', 'Tap');
-    $draft = ServiceJob::query()->sole();
-
-    startLeakBooking()->assertSet('jobPublicId', $draft->public_id)->assertSet('questionIndex', 0)->assertSet('answers.leak_location', 'Tap');
-    expect(ServiceJob::query()->count())->toBe(1);
-});
-
-it('lets customers remove an unfinished request', function (): void {
-    [$customer] = bookingCustomer();
-    $this->actingAs($customer);
-    startLeakBooking()->call('choose', 'Tap');
-    $draft = ServiceJob::query()->sole();
-
-    Livewire::test(Home::class)->assertSee('Remove')->call('removeDraft', $draft->public_id)->assertDontSee('Finish your request');
-
-    expect($draft->fresh()->status)->toBe(ServiceJobStatus::Cancelled)
-        ->and(ServiceJobEvent::query()->sole()->actor_type)->toBe(ActorType::Customer);
-
-    $other = ServiceJob::factory()->create(['service_id' => $this->leak->id]);
-    Livewire::test(Home::class)->call('removeDraft', $other->public_id);
-    expect($other->fresh()->status)->toBe(ServiceJobStatus::Draft);
-});
-
-it('enforces the notes limit on every path', function (): void {
-    [$customer] = bookingCustomer();
-    $this->actingAs($customer);
-
-    answerLeakQuestions(startLeakBooking())->set('notes', str_repeat('a', 1001))->call('change', 'when')->call('next')
-        ->assertHasErrors();
-
-    expect(ServiceJob::query()->sole()->customer_notes)->toBeNull();
-});
-
-it('uses Durban time for "today" (urgent bookings after midnight SAST)', function (): void {
-    [$customer, $property] = bookingCustomer();
-    $this->actingAs($customer);
-    // 23:30 UTC on the 10th is 01:30 SAST on the 11th.
-    $this->travelTo(CarbonImmutable::parse('2026-11-10 23:30:00', 'UTC'));
-
-    answerLeakQuestions(startLeakBooking())->call('next')->call('next')
-        ->call('selectProperty', $property->public_id)->call('next')
-        ->set('timeWindow', 'today')->call('next')->assertSet('step', 'review')->assertSee('Urgent')
-        ->call('post')->assertHasNoErrors();
-
-    expect(ServiceJob::query()->sole()->preferred_date->toDateString())->toBe('2026-11-11');
-});
-
-it('queues the job-posted message instead of sending it while the customer waits (AC11)', function (): void {
-    Queue::fake();
-    [$customer, $property] = bookingCustomer();
-    $this->actingAs($customer);
-
-    answerLeakQuestions(startLeakBooking())->call('next')->call('next')->call('selectProperty', $property->public_id)->call('next')
-        ->set('timeWindow', 'morning')->set('preferredDate', now()->addDays(2)->toDateString())->call('next')->call('post');
-
-    Queue::assertPushedOn('notifications', SendJobPostedMessage::class);
-    app(MessagingChannel::class)->assertNothingSent();
-});
-
-it('takes a second tap on "Post job" to the job instead of an error', function (): void {
-    [$customer, $property] = bookingCustomer();
-    $this->actingAs($customer);
-
-    $wizard = answerLeakQuestions(startLeakBooking())->call('next')->call('next')->call('selectProperty', $property->public_id)->call('next')
-        ->set('timeWindow', 'morning')->set('preferredDate', now()->addDays(2)->toDateString())->call('next');
-    $wizard->call('post');
-    $job = ServiceJob::query()->sole();
-
-    $wizard->call('post')->assertRedirect(route('jobs.show', $job))->assertHasNoErrors();
-});
-
-it('treats a tampered date as not chosen instead of an error page', function (): void {
-    [$customer] = bookingCustomer();
-    $this->actingAs($customer);
-
-    answerLeakQuestions(startLeakBooking())->call('change', 'when')->set('timeWindow', 'morning')->set('preferredDate', '2026-99-99')
-        ->call('next')->assertHasErrors(['preferredDate']);
-});
-
-it('sends a guest back into their booking after logging in (AC2)', function (): void {
-    answerLeakQuestions(startLeakBooking())->call('next')->call('next')->call('logInToContinue');
-    User::factory()->customer()->create(['email' => 'thandi@example.com']);
-
-    Livewire::test(Login::class)->set('email', 'thandi@example.com')->set('password', 'password')->call('login')
-        ->assertRedirect(route('booking.start', [$this->plumbing, $this->leak]));
 });
 
 it('only accepts Sortd booking paths as a return address after adding a property', function (?string $return, ?string $expected): void {
@@ -343,7 +400,7 @@ it('only accepts Sortd booking paths as a return address after adding a property
     'missing' => [null, null],
 ]);
 
-it('returns to the booking after adding a property from it', function (): void {
+it('returns to the booking after adding a property from the properties page', function (): void {
     [$customer] = bookingCustomer();
     $this->actingAs($customer);
 
@@ -354,4 +411,15 @@ it('returns to the booking after adding a property from it', function (): void {
     Livewire::withQueryParams(['return' => 'https://evil.example'])->test(Form::class)
         ->set('label', 'Office')->set('streetAddress', '4 Side Road')->call('selectSuburb', 'berea')->set('propertyType', 'business')
         ->call('save')->assertRedirect(route('properties.index'));
+});
+
+it('saves only the day that was checked, even if the calendar value is changed afterwards', function (): void {
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+    $date = now()->addDays(3)->toDateString();
+
+    bookUpToSummary(describeJob(threadFor($this->leak), $this->leak), $property, $date)
+        ->set('preferredDate', '2020-01-01')->call('confirmBooking')->assertHasNoErrors();
+
+    expect(ServiceJob::query()->sole()->preferred_date->toDateString())->toBe($date);
 });

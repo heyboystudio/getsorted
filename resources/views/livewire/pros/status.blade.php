@@ -1,7 +1,7 @@
 @php($S = \App\Domain\Pros\Enums\ProStatus::class)
 <main class="flex min-h-dvh items-start justify-center px-5 py-10">
     <section class="w-full max-w-xl">
-        <a href="{{ route('pros.welcome') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('Sortd Pro') }}</a>
+        <a wire:navigate.hover href="{{ route('pros.welcome') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('Sortd Pro') }}</a>
         <h1 class="mt-6 text-2xl font-semibold tracking-tight">{{ __('Your application') }}</h1>
         <p class="mt-3">
             <span @class([
@@ -22,7 +22,7 @@
                 @break
             @case($S::Draft)
                 <p class="mt-4 text-zinc-700">{{ __('Your application is not sent yet.') }}</p>
-                <a href="{{ route('pros.apply') }}" class="mt-4 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white">{{ __('Continue your application') }}</a>
+                <a wire:navigate.hover href="{{ route('pros.apply') }}" class="mt-4 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white">{{ __('Continue your application') }}</a>
                 @break
             @case($S::ChangesRequested)
             @case($S::Rejected)
@@ -31,11 +31,11 @@
                     <div class="mt-4 rounded-lg bg-amber-50 p-4 text-amber-900"><p class="text-sm font-medium">{{ __('Message from our vetting team') }}</p><p class="mt-1">{{ $pro->decision_reason }}</p></div>
                 @endif
                 @if ($pro->status === $S::ChangesRequested)
-                    <a href="{{ route('pros.apply') }}" class="mt-4 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white">{{ __('Fix these items') }}</a>
+                    <a wire:navigate.hover href="{{ route('pros.apply') }}" class="mt-4 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white">{{ __('Fix these items') }}</a>
                 @elseif ($pro->status === $S::Rejected && $pro->reapply_after?->isFuture())
                     <p class="mt-4 text-zinc-700">{{ __('You can apply again from :date.', ['date' => $pro->reapply_after->format('j F Y')]) }}</p>
                 @elseif ($pro->status === $S::Rejected)
-                    <a href="{{ route('pros.apply') }}" class="mt-4 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white">{{ __('Apply again') }}</a>
+                    <a wire:navigate.hover href="{{ route('pros.apply') }}" class="mt-4 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white">{{ __('Apply again') }}</a>
                 @endif
                 @break
         @endswitch

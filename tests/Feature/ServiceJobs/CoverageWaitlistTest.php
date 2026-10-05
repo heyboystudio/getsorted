@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Matching\Actions\JoinWaitlist;
 use App\Domain\Matching\EligibleProsQuery;
 use App\Domain\ServiceJobs\Actions\PostServiceJob;
 use App\Domain\ServiceJobs\Actions\SaveBookingDraft;
@@ -11,7 +12,7 @@ use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Domain\ServiceJobs\Exceptions\NoEligiblePros;
 use App\Filament\Admin\Pages\WaitlistDemand;
 use App\Livewire\Account\Home;
-use App\Livewire\Booking\Wizard;
+use App\Livewire\Booking\Thread;
 use App\Models\Pro;
 use App\Models\Property;
 use App\Models\Service;
@@ -24,6 +25,7 @@ use Database\Seeders\CatalogueSeeder;
 use Database\Seeders\SuburbSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -35,35 +37,38 @@ beforeEach(function (): void {
     $this->suburb = Suburb::query()->where('slug', 'musgrave')->sole();
 });
 
-it('starts with a suburb check and sends an uncovered service to the waitlist', function (): void {
-    Livewire::test(Wizard::class, ['trade' => $this->trade, 'service' => $this->service])
-        ->assertSet('step', 'coverage')
-        ->assertSee('Where do you need help?')
-        ->call('selectSuburb', $this->suburb->slug)
-        ->call('next')
-        ->assertSet('step', 'waitlist')
-        ->assertDontSee('Where is the leak coming from?');
+it('checks coverage when the property is picked and sends an uncovered service to the waitlist', function (): void {
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+
+    describeJob(threadFor($this->service), $this->service)
+        ->call('selectProperty', $property->public_id)
+        ->assertSet('stage', 'waitlist')->assertSet('propertyPublicId', null)
+        ->assertSee('Yes, keep me updated');
 });
 
 it('throttles repeated coverage checks', function (): void {
     config()->set('sortd.waitlist.checks_per_hour', 1);
-    $wizard = Livewire::test(Wizard::class, ['trade' => $this->trade, 'service' => $this->service])
-        ->call('selectSuburb', $this->suburb->slug)->call('next')->assertSet('step', 'waitlist');
-    $wizard->call('back')->call('next')->assertHasErrors(['suburbQuery']);
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+
+    describeJob(threadFor($this->service), $this->service)->call('selectProperty', $property->public_id)->assertSet('stage', 'waitlist');
+    session()->forget(Thread::SESSION_KEY);
+    describeJob(threadFor($this->service), $this->service)->call('selectProperty', $property->public_id)
+        ->assertHasErrors(['where'])->assertSet('stage', 'where');
 });
 
-it('continues to questions only for an eligible approved pro', function (): void {
+it('continues to Where & when only for an eligible approved pro', function (): void {
     $pro = Pro::factory()->approved()->create();
     $pro->services()->attach($this->service);
     $pro->serviceAreas()->attach($this->suburb);
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
 
     expect(app(EligibleProsQuery::class)->exists($this->service, $this->suburb))->toBeTrue();
 
-    Livewire::test(Wizard::class, ['trade' => $this->trade, 'service' => $this->service])
-        ->call('selectSuburb', $this->suburb->slug)
-        ->call('next')
-        ->assertSet('step', 'questions')
-        ->assertSee('Where is the leak coming from?');
+    describeJob(threadFor($this->service), $this->service)->call('selectProperty', $property->public_id)
+        ->assertSet('stage', 'when')->assertSee('When do you need help?');
 
     $pro->forceFill(['status' => 'suspended'])->save();
     expect(app(EligibleProsQuery::class)->exists($this->service, $this->suburb))->toBeFalse();
@@ -100,46 +105,50 @@ it('excludes a pro at their weekly cap or with an upheld dispute against the cus
         ->and(app(EligibleProsQuery::class)->exists($this->service, $this->suburb, $another))->toBeTrue();
 });
 
-it('stores one private waitlist entry for a repeated submission', function (): void {
-    Livewire::test(Wizard::class, ['trade' => $this->trade, 'service' => $this->service])
-        ->call('selectSuburb', $this->suburb->slug)->call('next')
-        ->set('waitlistFirstName', 'Andy')
-        ->set('waitlistPhone', '065 910 7772')
-        ->set('waitlistConsent', true)
-        ->call('joinWaitlist')
-        ->assertSet('step', 'waitlist_done');
+it('stores one private waitlist entry for a repeated submission from the thread', function (): void {
+    [$customer, $property] = bookingCustomer();
+    $customer->forceFill(['phone_e164' => '+27659107772'])->save();
+    $this->actingAs($customer);
 
-    Livewire::test(Wizard::class, ['trade' => $this->trade, 'service' => $this->service])
-        ->call('selectSuburb', $this->suburb->slug)->call('next')
-        ->set('waitlistFirstName', 'Andy')->set('waitlistPhone', '065 910 7772')
-        ->set('waitlistConsent', true)->call('joinWaitlist')->assertSet('step', 'waitlist_done');
+    foreach ([1, 2] as $attempt) {
+        session()->forget(Thread::SESSION_KEY);
+        describeJob(threadFor($this->service), $this->service)->call('selectProperty', $property->public_id)
+            ->call('joinWaitlist')->assertSet('stage', 'closed');
+    }
+
     expect(WaitlistEntry::query()->count())->toBe(1)
         ->and(WaitlistEntry::query()->sole()->phone_e164)->toBe('+27659107772');
 });
 
 it('answers a throttled visitor the same way whether or not the phone is already waitlisted', function (): void {
     config()->set('sortd.waitlist.submissions_per_ip_hour', 1);
-    $submit = fn (string $phone) => Livewire::test(Wizard::class, ['trade' => $this->trade, 'service' => $this->service])
-        ->call('selectSuburb', $this->suburb->slug)->call('next')
-        ->set('waitlistFirstName', 'Andy')->set('waitlistPhone', $phone)
-        ->set('waitlistConsent', true)->call('joinWaitlist');
+    $join = fn (string $phone) => app(JoinWaitlist::class)->handle($this->service, $this->suburb, '', 'Andy', $phone, true, '10.0.0.1');
 
-    $submit('065 910 7772')->assertHasNoErrors();
+    $join('065 910 7772');
 
-    $submit('065 910 7772')->assertHasErrors(['waitlist'])->assertSet('step', 'waitlist');
-    $submit('071 234 5678')->assertHasErrors(['waitlist'])->assertSet('step', 'waitlist');
+    expect(fn () => $join('065 910 7772'))->toThrow(ValidationException::class, 'Please try again later.');
+    expect(fn () => $join('071 234 5678'))->toThrow(ValidationException::class, 'Please try again later.');
+    expect(WaitlistEntry::query()->count())->toBe(1);
+});
+
+it('shows a throttled waitlist tap as a message in the thread', function (): void {
+    config()->set('sortd.waitlist.submissions_per_ip_hour', 1);
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+    app(JoinWaitlist::class)->handle($this->service, $this->suburb, '', 'Sam', '071 234 5678', true, '127.0.0.1');
+
+    describeJob(threadFor($this->service), $this->service)->call('selectProperty', $property->public_id)
+        ->call('joinWaitlist')->assertHasErrors(['waitlist'])->assertSet('stage', 'waitlist');
     expect(WaitlistEntry::query()->count())->toBe(1);
 });
 
 it('rejects address-like suburb text and never displays an unlisted suburb to admins', function (): void {
-    $wizard = Livewire::test(Wizard::class, ['trade' => $this->trade, 'service' => $this->service])
-        ->set('suburbQuery', '7 Private Lane')->call('next')
-        ->set('waitlistFirstName', 'Andy')->set('waitlistPhone', '065 910 7772')
-        ->set('waitlistConsent', true)->call('joinWaitlist')->assertHasErrors(['suburb']);
+    $join = fn (string $suburb) => app(JoinWaitlist::class)->handle($this->service, null, $suburb, 'Andy', '065 910 7772', true, '10.0.0.1');
+
+    expect(fn () => $join('7 Private Lane'))->toThrow(ValidationException::class);
     expect(WaitlistEntry::query()->count())->toBe(0);
 
-    $wizard->call('back')->set('suburbQuery', 'Outer Village')->call('next')
-        ->call('joinWaitlist')->assertHasNoErrors()->assertSet('step', 'waitlist_done');
+    $join('Outer Village');
     $page = new WaitlistDemand;
     $demand = $page->demand();
     expect($demand->sole()->suburb_name)->toBe('Other suburb')
@@ -147,29 +156,26 @@ it('rejects address-like suburb text and never displays an unlisted suburb to ad
 });
 
 it('requires valid contact and consent', function (): void {
-    $wizard = Livewire::test(Wizard::class, ['trade' => $this->trade, 'service' => $this->service])
-        ->call('selectSuburb', $this->suburb->slug)->call('next')
-        ->set('waitlistFirstName', 'Andy')->set('waitlistPhone', 'not a phone')
-        ->call('joinWaitlist')->assertHasErrors(['phone', 'consent']);
+    $join = fn (string $phone, bool $consent) => app(JoinWaitlist::class)->handle($this->service, $this->suburb, '', 'Andy', $phone, $consent, '10.0.0.1');
+
+    try {
+        $join('not a phone', false);
+        $this->fail('Expected a validation error.');
+    } catch (ValidationException $exception) {
+        expect($exception->errors())->toHaveKeys(['phone', 'consent']);
+    }
 
     expect(WaitlistEntry::query()->count())->toBe(0);
-
-    $wizard->set('waitlistPhone', '065 910 7772')->set('waitlistConsent', true);
-    $wizard->call('joinWaitlist')->assertHasNoErrors();
+    $join('065 910 7772', true);
     expect(WaitlistEntry::query()->count())->toBe(1);
 });
 
 it('throttles repeated waitlist submissions from one visitor', function (): void {
     config()->set('sortd.waitlist.submissions_per_ip_hour', 1);
-    $wizard = Livewire::test(Wizard::class, ['trade' => $this->trade, 'service' => $this->service])
-        ->call('selectSuburb', $this->suburb->slug)->call('next')
-        ->set('waitlistFirstName', 'Andy')->set('waitlistPhone', '065 910 7772')
-        ->set('waitlistConsent', true)->call('joinWaitlist')->assertHasNoErrors();
+    app(JoinWaitlist::class)->handle($this->service, $this->suburb, '', 'Andy', '065 910 7772', true, '10.0.0.1');
 
-    Livewire::test(Wizard::class, ['trade' => $this->trade, 'service' => $this->service])
-        ->call('selectSuburb', $this->suburb->slug)->call('next')
-        ->set('waitlistFirstName', 'Sam')->set('waitlistPhone', '071 234 5678')
-        ->set('waitlistConsent', true)->call('joinWaitlist')->assertHasErrors(['waitlist']);
+    expect(fn () => app(JoinWaitlist::class)->handle($this->service, $this->suburb, '', 'Sam', '071 234 5678', true, '10.0.0.1'))
+        ->toThrow(ValidationException::class);
     expect(WaitlistEntry::query()->count())->toBe(1);
 });
 

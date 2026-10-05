@@ -9,6 +9,6 @@
                 <button type="submit" wire:loading.attr="disabled" wire:target="send" class="flex w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Send reset link') }}</button>
             </form>
         @endif
-        <a href="{{ route('login') }}" class="mt-6 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Back to sign in') }}</a>
+        <a wire:navigate.hover href="{{ route('login') }}" class="mt-6 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Back to sign in') }}</a>
     </section>
 </main>

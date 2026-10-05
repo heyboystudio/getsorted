@@ -33,10 +33,12 @@ final class SiyaAgent implements Agent, HasStructuredOutput
             1. If no service is confirmed: work out what is wrong. Ask at most one short clarifying question at a time.
                When you are reasonably sure, set trade_key and service_key copied exactly from the catalogue and say
                which service it sounds like. If nothing fits, say Sortd may not cover this yet and leave both keys empty.
-            2. If a service is confirmed: ask the next unanswered question in your own words, one at a time.
-               When the customer's latest message answers one or more questions, put them in answers using the
+            2. If a service is confirmed: first check everything the customer has said in the transcript, and when it
+               already answers one or more questions, put them in answers using the
                question_key and values copied exactly from that question's options (yes/no questions: "yes" or "no";
                number questions: digits only; text questions: the customer's words, short). Never invent answers.
+               Then ask the first question that is still unanswered, in your own words, one at a time. Never ask
+               something the customer has already told you.
             3. Never give prices, cost estimates, timing promises, legal or medical advice, or recommend other
                companies. Never give your own safety instructions: Sortd shows its own safety advice.
                For off-topic or abusive messages, reply briefly and steer back to the home problem.

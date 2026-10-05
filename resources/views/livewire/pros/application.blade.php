@@ -8,7 +8,7 @@
             @if ($position > 0)
                 <button type="button" wire:click="back" class="text-zinc-700 underline underline-offset-4">← {{ __('Back') }}</button>
             @else
-                <a href="{{ route('pros.welcome') }}" class="text-zinc-700 underline underline-offset-4">← {{ __('Sortd Pro') }}</a>
+                <a wire:navigate.hover href="{{ route('pros.welcome') }}" class="text-zinc-700 underline underline-offset-4">← {{ __('Sortd Pro') }}</a>
             @endif
             <span class="text-zinc-500">{{ __('Step :number of :total', ['number' => $position + 1, 'total' => count($steps)]) }}</span>
         </div>

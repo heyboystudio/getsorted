@@ -1,6 +1,6 @@
 # Spec 005 · Booking flow: service → questions → property → when → post
 
-Status: Done (merged in PR #23) · Phase: 2 · Owner: founder
+Status: Done (merged in PR #23) · Phase: 2 · Owner: founder · **Screens replaced by spec 017** (one Siya thread); the posting, draft and validation rules here still apply
 
 ## Goal
 A customer can describe a job by picking a trade and service, answering that service's scoping questions, choosing a property and a preferred date, and **post** it. Posted jobs appear for admins. This creates the job record and the job state machine that every later feature (coverage, AI, matching, quotes, payments) builds on.

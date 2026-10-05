@@ -15,7 +15,7 @@
             <div x-data="{ show: false }">
                 <div class="flex items-baseline justify-between">
                     <label for="password" class="block text-sm font-medium">{{ __('Password') }}</label>
-                    <a href="{{ route('password.request') }}" class="text-sm text-zinc-600 underline underline-offset-4">{{ __('Forgot password?') }}</a>
+                    <a wire:navigate.hover href="{{ route('password.request') }}" class="text-sm text-zinc-600 underline underline-offset-4">{{ __('Forgot password?') }}</a>
                 </div>
                 <div class="relative mt-1">
                     <input id="password" :type="show ? 'text' : 'password'" autocomplete="current-password" wire:model="password"

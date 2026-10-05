@@ -17,7 +17,6 @@ use App\Filament\Admin\Pages\AiUsageReport;
 use App\Filament\Admin\Resources\ServiceJobs\Pages\ViewServiceJob;
 use App\Integrations\Fakes\FakeScopingAssistant;
 use App\Livewire\Booking\JobSummaryCard;
-use App\Livewire\Booking\Wizard;
 use App\Livewire\Welcome;
 use App\Models\AiUsage;
 use App\Models\Pro;
@@ -70,22 +69,13 @@ function aiCustomer(): array
     return [$customer, $property];
 }
 
-/** Walks a signed-in customer to the review step of a leak repair booking. */
+/** Walks a signed-in customer through the booking thread to the summary (spec 017), with these notes. */
 function reviewStep(Property $property, string $notes = 'Water under the sink.', ?Service $service = null): Testable
 {
     $service ??= test()->leak;
-    $wizard = Livewire::test(Wizard::class, ['trade' => test()->plumbing, 'service' => $service])
-        ->call('selectSuburb', 'musgrave')->call('next');
+    $thread = bookUpToSummary(describeJob(threadFor($service), $service), $property);
 
-    foreach ($service->questions as $question) {
-        $wizard->call('choose', $question->options[0] ?? 'yes');
-    }
-
-    return $wizard->set('notes', $notes)->call('next')
-        ->call('next')
-        ->call('selectProperty', $property->public_id)->call('next')
-        ->set('timeWindow', 'morning')->set('preferredDate', now()->addDays(3)->toDateString())->call('next')
-        ->assertSet('step', 'review');
+    return backToReviewWithNotes($thread, $notes);
 }
 
 function summaryCard(): Testable
@@ -93,11 +83,10 @@ function summaryCard(): Testable
     return Livewire::test(JobSummaryCard::class, ['jobPublicId' => ServiceJob::query()->latest('id')->value('public_id')]);
 }
 
-/** Changes the notes from review, then walks back to review. */
-function backToReviewWithNotes(Testable $wizard, string $notes): Testable
+/** Changes the notes from the summary, which returns straight to it. */
+function backToReviewWithNotes(Testable $thread, string $notes): Testable
 {
-    return $wizard->call('change', 'notes')->set('notes', $notes)->call('next')
-        ->call('next')->call('next')->call('next')->assertSet('step', 'review');
+    return $thread->call('change', 'notes')->set('notesDraft', $notes)->call('saveNotes')->assertSet('stage', 'summary');
 }
 
 // --- Redaction (AC10) ---------------------------------------------------------------
@@ -215,41 +204,38 @@ it('asks for 10 to 500 characters before calling the assistant (AC1)', function 
     assistant()->assertNothingSent();
 })->with(['too short' => ['leak'], 'too long' => [str_repeat('a', 501)]]);
 
-it('offers the description as the starting notes once the customer confirms (AC4)', function (): void {
+it('starts the booking thread with the home-page description, used once (AC4; spec 017 AC1)', function (): void {
     assistant()->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.9));
     Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('find');
 
-    Livewire::test(Wizard::class, ['trade' => $this->plumbing, 'service' => $this->leak])
-        ->assertSet('step', 'coverage')
+    threadFor($this->leak)
+        ->assertSee('Tap drips all night long')
         ->assertSet('notes', 'Tap drips all night long')
-        ->assertSet('answers', []);
+        ->assertSet('serviceId', $this->leak->id);
 
-    // Used once, then gone.
-    Livewire::test(Wizard::class, ['trade' => $this->plumbing, 'service' => $this->leak])->assertSet('notes', '');
+    expect(session()->has(Welcome::DESCRIPTION_KEY))->toBeFalse();
 });
 
-it('puts the description into an existing draft without notes, on the notes step (AC4)', function (): void {
+it('puts the description into an existing draft without notes (AC4)', function (): void {
     [$customer, $property] = aiCustomer();
     $this->actingAs($customer);
     $draft = ServiceJob::factory()->forProperty($property)->create(['service_id' => $this->leak->id, 'customer_notes' => null]);
     assistant()->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.9));
     Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('find');
 
-    Livewire::test(Wizard::class, ['trade' => $this->plumbing, 'service' => $this->leak])
-        ->assertSet('jobPublicId', $draft->public_id)
-        ->assertSet('step', 'notes')
-        ->assertSet('notes', 'Tap drips all night long');
+    threadFor($this->leak)->assertSet('jobPublicId', $draft->public_id);
+    expect($draft->fresh()->customer_notes)->toBe('Tap drips all night long');
 });
 
 it('keeps the notes an existing draft already has (AC4)', function (): void {
     [$customer, $property] = aiCustomer();
     $this->actingAs($customer);
-    ServiceJob::factory()->forProperty($property)->create(['service_id' => $this->leak->id, 'customer_notes' => 'My own earlier notes']);
+    $draft = ServiceJob::factory()->forProperty($property)->create(['service_id' => $this->leak->id, 'customer_notes' => 'My own earlier notes']);
     assistant()->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.9));
     Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('find');
 
-    Livewire::test(Wizard::class, ['trade' => $this->plumbing, 'service' => $this->leak])
-        ->assertSet('notes', 'My own earlier notes');
+    threadFor($this->leak)->assertSet('notes', "My own earlier notes\nTap drips all night long");
+    expect($draft->fresh()->customer_notes)->toBe("My own earlier notes\nTap drips all night long");
 });
 
 it('forgets an unused description after 30 minutes (AC4)', function (): void {
@@ -258,7 +244,7 @@ it('forgets an unused description after 30 minutes (AC4)', function (): void {
 
     $this->travel(31)->minutes();
 
-    Livewire::test(Wizard::class, ['trade' => $this->plumbing, 'service' => $this->leak])->assertSet('notes', '');
+    threadFor($this->leak)->assertSet('notes', '')->assertDontSee('Tap drips all night long');
 });
 
 it('drops an expired description from the session on the next page visit (AC4, security review)', function (): void {
@@ -402,7 +388,7 @@ it('discards a summary that breaks the rules and still lets the customer post (A
     expect($job->ai_summary)->toBeNull()
         ->and(AiUsage::query()->sole()->outcome)->toBe(AiOutcome::Invalid);
 
-    $wizard->call('post')->assertHasNoErrors();
+    $wizard->call('confirmBooking')->assertHasNoErrors();
     expect($job->fresh()->ai_summary_source)->toBe(SummarySource::None);
 })->with([
     'nothing' => [null],
@@ -521,7 +507,7 @@ it('stores the shown summary at posting without calling the assistant (AC8)', fu
     $wizard = reviewStep($property);
     summaryCard()->call('load');
     assistant()->assertSummaryRequests(1);
-    $wizard->call('post');
+    $wizard->call('confirmBooking');
 
     assistant()->assertSummaryRequests(1);
     $job = ServiceJob::query()->sole();
@@ -549,7 +535,7 @@ it('posts the customer\'s edited description as written (AC8)', function (): voi
 
     $wizard = reviewStep($property);
     summaryCard()->call('load')->call('edit')->set('text', 'Kitchen tap drips.')->call('save');
-    $wizard->call('post')->assertHasNoErrors();
+    $wizard->call('confirmBooking')->assertHasNoErrors();
 
     $job = ServiceJob::query()->sole();
     expect($job->ai_summary)->toBe('Kitchen tap drips.')->and($job->ai_summary_source)->toBe(SummarySource::CustomerEdited);

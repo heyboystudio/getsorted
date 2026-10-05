@@ -403,3 +403,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Update 2026-10-05:** "All of Durban" means every eThekwini suburb: the suburb list grew from 12 to 86 (Pinetown to Umhlanga to the Bluff and Toti, all active), and any address Google places in eThekwini whose area isn't listed yet is added automatically as an active suburb.
 
 **Update 2026-10-05:** "All of Durban" means every eThekwini suburb: the suburb list grew from 12 to 86 (Pinetown to Umhlanga to the Bluff and Toti, all active), and any address Google places in eThekwini whose area isn't listed yet is added automatically as an active suburb.
+
+## 045 · Booking follows Kandua: one Siya thread (spec 017)
+
+**Date:** 2026-10-05 · **Status:** Accepted (founder)
+
+**Decision:** Booking copies Kandua's Jess flow (`docs/product/kandua-reference.md`): one Siya conversation with cards for service, questions, location, date, photos and summary. The 8-step booking wizard and the "Continue booking" hand-off are removed. When the AI is unavailable, the same thread works by taps. Kept from Sortd: up to 3 quotes in waves (specs 009/010), the date **plus** a Morning / Afternoon / Flexible window (and Urgent — today), and no prices from Siya.
+
+**Why:** The founder found the chat-then-wizard flow lost track of the customer and repeated questions (location twice, notes twice, service confirmed twice).
+
+**Next:** spec 018: after posting, the customer chats with the quoting pros and can send more photos. Pros send an estimate quote and the customer pays the deposit on it. After accepting, the pro can raise or lower the final amount, and the customer must accept the change. This brings in-app chat into v1, which the PRD had parked.
