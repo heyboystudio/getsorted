@@ -17,9 +17,10 @@ use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\Pros\Exceptions\CannotChangeApplication;
 use App\Models\Pro;
 use App\Models\ProReference;
-use App\Models\Suburb;
 use App\Models\Trade;
 use App\Models\User;
+use App\Contracts\Data\GeocodedAddress;
+use App\Livewire\Concerns\SearchesAddresses;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -37,6 +38,7 @@ use Livewire\WithFileUploads;
 #[Title('Your application')]
 final class Application extends Component
 {
+    use SearchesAddresses;
     use WithFileUploads;
 
     #[Locked]
@@ -49,10 +51,17 @@ final class Application extends Component
     public string $vatNumber = '';
 
     /** @var list<int|string> */
-    public array $serviceIds = [];
+    public array $tradeIds = [];
 
-    /** @var list<int|string> */
-    public array $suburbIds = [];
+    /** How far the pro travels for a job, in km (spec 020). */
+    public int $radiusKm = 15;
+
+    /** The address picked this session, kept until it is saved with the base step. */
+    #[Locked]
+    public ?string $pickedFormatted = null;
+
+    #[Locked]
+    public ?string $pickedArea = null;
 
     /** @var array<string, TemporaryUploadedFile|null> one slot per document type, saved as soon as a file is chosen */
     public array $uploads = [];
@@ -109,8 +118,8 @@ final class Application extends Component
 
         match ($this->step) {
             'business' => $this->saveBusiness($save, $pro),
-            'services' => $save->services($this->user(), $pro, array_map(intval(...), $this->serviceIds)),
-            'areas' => $save->areas($this->user(), $pro, array_map(intval(...), $this->suburbIds)),
+            'trades' => $save->trades($this->user(), $pro, array_map(intval(...), $this->tradeIds)),
+            'base' => $this->saveBase($save, $pro),
             'registrations' => $this->saveRegistrations($save, $pro),
             'references' => $this->saveReferences($save, $pro),
             'about' => $this->saveAbout($save, $pro),
@@ -171,21 +180,18 @@ final class Application extends Component
 
     public function render(): View
     {
-        $pro = $this->pro()->load(['services.trade', 'serviceAreas', 'documents.media', 'references']);
+        $pro = $this->pro()->load(['trades', 'documents.media', 'references']);
 
         return view('livewire.pros.application', [
             'pro' => $pro,
             'steps' => $this->steps($pro),
-            'trades' => Trade::query()->where('is_active', true)
-                ->with(['services' => fn ($query) => $query->where('is_active', true)->orderBy('sort')])
-                ->orderBy('sort')->get(),
-            'suburbsByRegion' => Suburb::query()->where('is_active', true)->orderBy('region')->orderBy('name')->get()->groupBy('region'),
+            'trades' => Trade::query()->where('is_active', true)->orderBy('sort')->get(),
             'documentTypes' => $pro->status === ProStatus::ChangesRequested
                 ? $pro->documents->whereNotNull('flag_message')->pluck('type')->filter(fn (DocumentType $type): bool => ! $type->isRegistration())->values()->all()
                 : DocumentType::required(),
             'registrationTypes' => $pro->status === ProStatus::ChangesRequested
                 ? $pro->documents->whereNotNull('flag_message')->pluck('type')->filter(fn (DocumentType $type): bool => $type->isRegistration())->values()->all()
-                : $pro->requiredRegistrations(),
+                : $pro->offeredRegistrations(),
             'referencesToReplace' => $pro->references->filter(fn (ProReference $reference): bool => $reference->outcome->needsReplacing())->values(),
             'businessTypes' => BusinessType::cases(),
         ]);
@@ -199,7 +205,7 @@ final class Application extends Component
      */
     private function steps(Pro $pro): array
     {
-        $pro->loadMissing(['services', 'documents', 'references']);
+        $pro->loadMissing(['trades', 'documents', 'references']);
 
         if ($pro->status === ProStatus::ChangesRequested) {
             // Flag messages stay until resubmission, so a fixed item can be fixed again (code review).
@@ -214,8 +220,8 @@ final class Application extends Component
         }
 
         return array_values(array_filter([
-            'business', 'services', 'areas', 'documents',
-            $pro->requiredRegistrations() === [] ? null : 'registrations',
+            'business', 'trades', 'base', 'documents',
+            $pro->offeredRegistrations() === [] ? null : 'registrations',
             'references', 'about', 'review',
         ]));
     }
@@ -241,12 +247,12 @@ final class Application extends Component
     {
         $types = $pro->status === ProStatus::ChangesRequested
             ? $pro->documents->whereNotNull('flag_message')->pluck('type')->filter(fn (DocumentType $type): bool => $type->isRegistration())->all()
-            : $pro->requiredRegistrations();
+            : $pro->offeredRegistrations();
 
         foreach ($types as $type) {
             $number = trim($this->registrationNumbers[$type->value] ?? '');
 
-            // A registration is optional: without it, that service simply is not offered (AC3).
+            // A registration is optional: without it the pro is simply shown as not verified (spec 020).
             if ($number !== '') {
                 $this->remap(fn () => $save->registration($this->user(), $pro, $type, $number), ['number' => 'registrationNumbers.'.$type->value]);
             }
@@ -282,6 +288,36 @@ final class Application extends Component
         ), [...$map, 'agreed' => 'refereesAgreed']);
     }
 
+    /** A newly picked address replaces the saved one; otherwise only the radius can change. */
+    private function saveBase(SaveApplicationStep $save, Pro $pro): void
+    {
+        $map = ['radiusKm' => 'radiusKm', 'address' => 'addressQuery'];
+
+        if ($this->pickedPlaceId !== null && $this->pickedLatitude !== null && $this->pickedLongitude !== null) {
+            $address = new GeocodedAddress((string) $this->pickedFormatted, $this->pickedArea, $this->pickedLatitude, $this->pickedLongitude, areaNames: $this->pickedArea === null ? [] : [$this->pickedArea]);
+            $this->remap(fn () => $save->base($this->user(), $pro, $address, $this->pickedPlaceId, $this->radiusKm), $map);
+            $this->forgetPickedAddress();
+            $this->pickedFormatted = null;
+            $this->pickedArea = null;
+
+            return;
+        }
+
+        if ($pro->base_location === null) {
+            throw ValidationException::withMessages(['addressQuery' => __('Search for your address and choose it from the list.')]);
+        }
+
+        $this->remap(fn () => $save->radius($this->user(), $pro, $this->radiusKm), $map);
+    }
+
+    /** Keeps what Places returned until the step is saved. */
+    protected function addressPicked(GeocodedAddress $address): void
+    {
+        $this->pickedFormatted = $address->formattedAddress;
+        $this->pickedArea = $address->areaLabel();
+        $this->resetErrorBag('addressQuery');
+    }
+
     private function saveAbout(SaveApplicationStep $save, Pro $pro): void
     {
         $save->bio($this->user(), $pro, $this->bio);
@@ -310,12 +346,12 @@ final class Application extends Component
 
     private function fillFrom(Pro $pro): void
     {
-        $pro->load(['services', 'serviceAreas', 'documents', 'references']);
+        $pro->load(['trades', 'documents', 'references']);
         $this->businessName = (string) $pro->business_name;
         $this->businessType = (string) $pro->business_type?->value;
         $this->vatNumber = (string) $pro->vat_number;
-        $this->serviceIds = $pro->services->pluck('id')->all();
-        $this->suburbIds = $pro->serviceAreas->pluck('id')->all();
+        $this->tradeIds = $pro->trades->pluck('id')->all();
+        $this->radiusKm = $pro->service_radius_km;
         $this->bio = (string) $pro->bio;
         $this->consent = $pro->vetting_consent_at !== null;
 

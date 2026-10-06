@@ -20,4 +20,12 @@ final readonly class GeocodedAddress
         /** Google's district, e.g. "eThekwini Metropolitan Municipality". */
         public ?string $municipality = null,
     ) {}
+
+    /** The approximate area ("Musgrave", "Umhlanga"): safe to show pros before a quote is accepted. */
+    public function areaLabel(): ?string
+    {
+        $label = trim((string) ($this->areaNames[0] ?? $this->suburb ?? ''));
+
+        return $label === '' ? null : mb_substr($label, 0, 160);
+    }
 }

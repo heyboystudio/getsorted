@@ -14,7 +14,6 @@ use App\Domain\Pros\Support\Vetting;
 use App\Jobs\SendProStatusMessage;
 use App\Models\Pro;
 use App\Models\ProReference;
-use App\Models\Service;
 use App\Models\User;
 use App\Settings\VettingSettings;
 
@@ -26,7 +25,7 @@ final readonly class DecideApplication
     public function approve(User $admin, Pro $pro): void
     {
         Vetting::locked($admin, $pro, [ProStatus::Submitted], function (Pro $locked) use ($admin): void {
-            $locked->load(['documents', 'references', 'services']);
+            $locked->load(['documents', 'references', 'trades']);
             $this->guardApproval($locked);
 
             $locked->forceFill(['approved_at' => $locked->approved_at ?? now(), 'decided_by' => $admin->id, 'decided_at' => now(), 'decision_reason' => null]);
@@ -78,18 +77,9 @@ final readonly class DecideApplication
             throw new CannotChangeApplication(__('Both references must be contacted with a positive outcome before approving.'));
         }
 
-        $workable = $pro->services->contains(function (Service $service) use ($pro): bool {
-            if ($service->requires_registration === null) {
-                return true;
-            }
-
-            $registration = $pro->document(DocumentType::forRegistration($service->requires_registration));
-
-            return $registration?->status === DocumentStatus::Verified && ! $registration->isExpired();
-        });
-
-        if (! $workable) {
-            throw new CannotChangeApplication(__('Verify a registration for at least one service before approving.'));
+        // A registration is never a gate (spec 020): an unverified pro can still be matched.
+        if ($pro->trades->isEmpty() || $pro->base_location === null) {
+            throw new CannotChangeApplication(__('The pro needs at least one trade and a base address before approval.'));
         }
     }
 }

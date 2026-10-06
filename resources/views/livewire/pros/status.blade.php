@@ -18,7 +18,7 @@
                 <p class="mt-4 text-zinc-700">{{ __('Our vetting team is checking your details and will phone your references. We will WhatsApp you when we decide.') }}</p>
                 @break
             @case($S::Approved)
-                <p class="mt-4 text-zinc-700">{{ __("You're approved. You will receive jobs in your suburbs for the services we could verify.") }}</p>
+                <p class="mt-4 text-zinc-700">{{ __("You're approved. You will receive jobs for your trades within your travel radius.") }}</p>
                 @break
             @case($S::Draft)
                 <p class="mt-4 text-zinc-700">{{ __('Your application is not sent yet.') }}</p>
@@ -48,7 +48,7 @@
                     <div class="flex justify-between gap-3">
                         <span>{{ $type->label() }}</span>
                         <span class="text-zinc-600">
-                            @if (! $document?->file()) {{ $type->isRegistration() ? __('Not provided: those services are not offered') : __('Missing') }}
+                            @if (! $document?->file()) {{ $type->isRegistration() ? __('Not provided: you will show as not verified') : __('Missing') }}
                             @elseif ($document->isExpired()) {{ __('Expired') }}
                             @else {{ $document->status->label() }}
                             @endif

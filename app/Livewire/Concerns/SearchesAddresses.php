@@ -6,15 +6,14 @@ namespace App\Livewire\Concerns;
 
 use App\Contracts\Data\AddressSuggestion;
 use App\Contracts\Data\GeocodedAddress;
-use App\Domain\Properties\Queries\MatchSuburbQuery;
 use App\Domain\Properties\Support\AddressLookup;
-use App\Models\Suburb;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
 
 /**
- * Address search for Livewire forms (spec 015): suggestions while typing, a
- * resolved address and Sortd suburb on pick, and manual entry as the fallback.
+ * Address search for Livewire forms (spec 015, 020): suggestions while typing and a
+ * resolved, geocoded address on pick. There is no manual entry: matching is by
+ * distance, so an address without a Places location is of no use.
  */
 trait SearchesAddresses
 {
@@ -24,9 +23,9 @@ trait SearchesAddresses
     #[Locked]
     public array $addressSuggestions = [];
 
-    /** True once the provider failed, hit a limit, or the customer chose to type it in. */
+    /** True once the provider failed or hit a limit; the form asks the person to try again shortly. */
     #[Locked]
-    public bool $addressManual = false;
+    public bool $addressUnavailable = false;
 
     #[Locked]
     public string $placesToken = '';
@@ -40,23 +39,22 @@ trait SearchesAddresses
     #[Locked]
     public ?float $pickedLongitude = null;
 
-    /** Called after a successful pick; $suburb is null when no Sortd suburb matched (AC7). */
-    abstract protected function addressPicked(GeocodedAddress $address, ?Suburb $suburb): void;
+    /** Called after a successful pick. */
+    abstract protected function addressPicked(GeocodedAddress $address): void;
 
     public function updatedAddressQuery(): void
     {
-        if ($this->addressManual) {
-            return;
-        }
-
         $this->placesToken = $this->placesToken !== '' ? $this->placesToken : (string) Str::uuid();
         $suggestions = app(AddressLookup::class)->suggest($this->addressQuery, $this->placesToken, $this->addressVisitorKey());
 
         if ($suggestions === null) {
-            $this->enterAddressManually();
+            $this->addressUnavailable = true;
+            $this->addressSuggestions = [];
 
             return;
         }
+
+        $this->addressUnavailable = false;
 
         $this->addressSuggestions = array_map(
             fn (AddressSuggestion $suggestion): array => ['id' => $suggestion->placeId, 'text' => $suggestion->description],
@@ -72,7 +70,8 @@ trait SearchesAddresses
         $address = app(AddressLookup::class)->resolve($placeId, $this->placesToken, $this->addressVisitorKey());
 
         if (! $address instanceof GeocodedAddress) {
-            $this->enterAddressManually();
+            $this->addressUnavailable = true;
+            $this->addressSuggestions = [];
 
             return;
         }
@@ -85,16 +84,11 @@ trait SearchesAddresses
         // A new search after a pick is a new billing session (AC2).
         $this->placesToken = '';
 
-        $this->addressPicked($address, app(MatchSuburbQuery::class)->handle($address));
+        $this->addressUnavailable = false;
+        $this->addressPicked($address);
     }
 
-    public function enterAddressManually(): void
-    {
-        $this->addressManual = true;
-        $this->addressSuggestions = [];
-    }
-
-    /** Forget the picked point, e.g. when the customer changes the suburb by hand. */
+    /** Forget the picked point, e.g. when the person edits the address text again. */
     protected function forgetPickedAddress(): void
     {
         $this->pickedPlaceId = null;

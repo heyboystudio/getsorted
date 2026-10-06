@@ -38,11 +38,11 @@ final class Status extends Component
     public function render(): View
     {
         $pro = Pro::query()->where('user_id', $this->user()->id)
-            ->with(['documents.media', 'references', 'services'])->firstOrFail();
+            ->with(['documents.media', 'references', 'trades'])->firstOrFail();
 
         return view('livewire.pros.status', [
             'pro' => $pro,
-            'documentTypes' => [...DocumentType::required(), ...$pro->requiredRegistrations()],
+            'documentTypes' => [...DocumentType::required(), ...$pro->offeredRegistrations()],
         ]);
     }
 

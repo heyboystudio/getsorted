@@ -45,40 +45,37 @@
             <input id="vatNumber" type="text" inputmode="numeric" wire:model="vatNumber" maxlength="12" class="{{ $input }}">
             @error('vatNumber') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
 
-        @elseif ($step === 'services')
+        @elseif ($step === 'trades')
             <h1 class="text-2xl font-semibold tracking-tight">{{ __('What work do you do?') }}</h1>
-            <p class="mt-2 text-zinc-600">{{ __('Choose every service you want jobs for. Some need a registration, which we ask for next.') }}</p>
-            @foreach ($trades as $trade)
-                <fieldset class="mt-6">
-                    <legend class="font-medium">{{ $trade->name }}</legend>
-                    <div class="mt-2 space-y-2">
-                        @foreach ($trade->services as $service)
-                            <label wire:key="service-{{ $service->id }}" class="flex items-start gap-3 rounded-lg border border-zinc-200 bg-white p-3 has-[:checked]:border-emerald-700">
-                                <input type="checkbox" wire:model="serviceIds" value="{{ $service->id }}" class="mt-1 size-5 rounded text-emerald-700">
-                                <span>{{ $service->name }}@if ($service->requires_registration) <span class="block text-xs text-zinc-500">{{ __('Needs: :registration', ['registration' => $service->requires_registration->label()]) }}</span>@endif</span>
-                            </label>
-                        @endforeach
-                    </div>
-                </fieldset>
-            @endforeach
-            @error('serviceIds') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
+            <p class="mt-2 text-zinc-600">{{ __('Choose every trade you want jobs for. You decide for each job whether you can help.') }}</p>
+            <div class="mt-6 space-y-2">
+                @foreach ($trades as $trade)
+                    <label wire:key="trade-{{ $trade->id }}" class="flex items-start gap-3 rounded-lg border border-zinc-200 bg-white p-3 has-[:checked]:border-emerald-700">
+                        <input type="checkbox" wire:model="tradeIds" value="{{ $trade->id }}" class="mt-1 size-5 rounded text-emerald-700">
+                        <span>{{ $trade->name }}@if ($trade->registration) <span class="block text-xs text-zinc-500">{{ __('Optional: :registration, shown as a verified badge', ['registration' => $trade->registration->label()]) }}</span>@endif</span>
+                    </label>
+                @endforeach
+            </div>
+            @error('tradeIds') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
 
-        @elseif ($step === 'areas')
-            <h1 class="text-2xl font-semibold tracking-tight">{{ __('Where do you work?') }}</h1>
-            <p class="mt-2 text-zinc-600">{{ __('Choose the suburbs you can travel to for jobs.') }}</p>
-            @foreach ($suburbsByRegion as $region => $suburbs)
-                <fieldset class="mt-6">
-                    <legend class="font-medium">{{ $region }}</legend>
-                    <div class="mt-2 grid grid-cols-2 gap-2">
-                        @foreach ($suburbs as $suburb)
-                            <label wire:key="suburb-{{ $suburb->id }}" class="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-3 text-sm has-[:checked]:border-emerald-700">
-                                <input type="checkbox" wire:model="suburbIds" value="{{ $suburb->id }}" class="size-5 rounded text-emerald-700"> {{ $suburb->name }}
-                            </label>
-                        @endforeach
-                    </div>
-                </fieldset>
-            @endforeach
-            @error('suburbIds') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
+        @elseif ($step === 'base')
+            <h1 class="text-2xl font-semibold tracking-tight">{{ __('Where do you work from?') }}</h1>
+            <p class="mt-2 text-zinc-600">{{ __('We send you jobs near this address. Customers only see the area name, never your street address.') }}</p>
+            @if ($pro->base_location !== null && $pickedPlaceId === null)
+                <p class="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{{ __('Saved: :area. Search again to change it.', ['area' => $pro->base_area_label ?? __('your address')]) }}</p>
+            @endif
+            <div class="mt-4">
+                @include('livewire.partials.address-search', ['label' => __('Your address')])
+                @error('addressQuery') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
+                @error('address') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
+            </div>
+            <label for="radiusKm" class="mt-6 block text-sm font-medium">{{ __('How far will you travel for a job?') }}</label>
+            <div class="mt-1 flex items-center gap-3">
+                <input id="radiusKm" type="range" min="5" max="50" step="1" wire:model.live="radiusKm" class="w-full accent-emerald-700">
+                <span class="w-16 text-right font-medium">{{ $radiusKm }} km</span>
+            </div>
+            <p class="mt-1 text-xs text-zinc-500">{{ __('Jobs up to :soft km away may also reach you when fewer pros are closer.', ['soft' => $radiusKm + app(\App\Settings\MatchingSettings::class)->soft_edge_km]) }}</p>
+            @error('radiusKm') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
 
         @elseif ($step === 'documents')
             <h1 class="text-2xl font-semibold tracking-tight">{{ __('Your documents') }}</h1>
@@ -111,7 +108,7 @@
 
         @elseif ($step === 'registrations')
             <h1 class="text-2xl font-semibold tracking-tight">{{ __('Registrations') }}</h1>
-            <p class="mt-2 text-zinc-600">{{ __('Some of your services need a registration. Without it, we cannot send you those jobs.') }}</p>
+            <p class="mt-2 text-zinc-600">{{ __('Optional. A verified registration shows as a badge on your quotes. Without it you can still receive jobs, shown to customers as not verified.') }}</p>
             @foreach ($registrationTypes as $type)
                 @php($document = $pro->document($type))
                 <div wire:key="reg-{{ $type->value }}" class="mt-6 rounded-xl border border-zinc-200 bg-white p-4">
@@ -178,8 +175,8 @@
             <h1 class="text-2xl font-semibold tracking-tight">{{ __('Check and send') }}</h1>
             <dl class="mt-6 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white text-sm">
                 <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Business') }}@if (in_array('business', $steps, true))<button type="button" wire:click="goTo('business')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->business_name }} · {{ $pro->business_type?->label() }}@if ($pro->vat_number) · {{ __('VAT') }} {{ $pro->vat_number }}@endif</dd></div>
-                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Services') }}@if (in_array('services', $steps, true))<button type="button" wire:click="goTo('services')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->services->pluck('name')->implode(', ') }}</dd></div>
-                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Suburbs') }}@if (in_array('areas', $steps, true))<button type="button" wire:click="goTo('areas')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->serviceAreas->pluck('name')->implode(', ') }}</dd></div>
+                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Trades') }}@if (in_array('trades', $steps, true))<button type="button" wire:click="goTo('trades')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->trades->pluck('name')->implode(', ') }}</dd></div>
+                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Works from') }}@if (in_array('base', $steps, true))<button type="button" wire:click="goTo('base')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->base_area_label ?? '—' }} · {{ $pro->service_radius_km }} km</dd></div>
                 <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Documents') }}@if (in_array('documents', $steps, true))<button type="button" wire:click="goTo('documents')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt>
                     <dd class="mt-1 text-zinc-700">
                         @foreach ([...\App\Domain\Pros\Enums\DocumentType::required(), ...$registrationTypes] as $type)
