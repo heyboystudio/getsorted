@@ -92,6 +92,18 @@
       </div>
     </section>
 
+    <div class="gs-logos" aria-label="Durban organisations">
+      <p class="gs-logos-lbl">Made for Durban homes</p>
+      <div class="gs-marquee">
+        @foreach ([false, true] as $copy)
+        <ul class="gs-track" @if ($copy) aria-hidden="true" @endif>
+          @foreach ([['mr-price.png', 'Mr Price Group', 15], ['tongaat-hulett.png', 'Tongaat Hulett', 40], ['illovo.png', 'Illovo Sugar Africa', 44], ['ushaka.png', 'uShaka Marine World', 58], ['gateway.jpg', 'Gateway Theatre of Shopping', 80], ['amazulu.svg', 'AmaZulu FC', 58], ['comrades.svg', 'Comrades Marathon', 52], ['dut.jpg', 'Durban University of Technology', 98]] as [$file, $name, $height])
+          <li><img src="{{ asset('images/partners/'.$file) }}" alt="{{ $copy ? '' : $name }}" style="height:{{ $height }}px" loading="lazy"></li>
+          @endforeach
+        </ul>
+        @endforeach
+      </div>
+    </div>
 
     <section class="gs-sec" aria-labelledby="trades-h">
       <div class="gs-wrap">
@@ -245,7 +257,7 @@
           <div><h3>Pros</h3><ul><li><a href="{{ route('pros.join') }}" wire:navigate.hover>Join as a pro</a></li><li><a href="{{ route('pros.agreement') }}" wire:navigate.hover>Pro agreement</a></li><li><a href="{{ route('login') }}" wire:navigate.hover>Pro sign in</a></li></ul></div>
           <div><h3>Company</h3><ul><li><a href="{{ route('about') }}" wire:navigate.hover>About</a></li><li><a href="{{ route('contact') }}" wire:navigate.hover>Contact</a></li><li><a href="{{ route('terms') }}" wire:navigate.hover>Terms</a></li><li><a href="{{ route('privacy') }}" wire:navigate.hover>Privacy</a></li></ul></div>
         </div>
-        <div class="gs-legal"><span>© 2026 Get Sorted, Durban, South Africa</span><span>Photos are illustrative. Sample pros, prices and reviews are examples.</span></div>
+        <div class="gs-legal"><span>© 2026 Get Sorted, Durban, South Africa</span><span>Photos are illustrative. Sample pros, prices and reviews are examples. Partner logos are placeholders.</span></div>
       </div>
     </footer>
   </main>
