@@ -129,7 +129,7 @@ Settings: `job_timers.quote_window_hours` (72), `job_timers.draft_expiry_days` (
 
 ## Siya conversation state (spec 019)
 
-No new tables. The existing booking session stores a pending question key, retry flag and stage before an emergency pause alongside the transcript and booking fields. Only customer job facts are copied to draft notes; product questions and off-topic exchanges stay in the session. Note excerpts proposed by the model must occur verbatim in scrubbed customer context.
+No new tables. Ordinary conversation, unsupported work and product questions do not apply service, answer or note proposals. The visible progress mapping has been removed; internal stages still guard booking controls. The existing booking session stores a pending question key, retry flag and stage before an emergency pause alongside the transcript and booking fields. Only customer job facts are copied to draft notes; product questions and off-topic exchanges stay in the session. Note excerpts proposed by the model must occur verbatim in scrubbed customer context.
 
 A customer correction can change the service on the same policy-authorised `service_jobs` draft. Its incompatible answers are dropped, coverage is rechecked, unsupported urgent windows are cleared and a service change clears prior AI summary metadata. Property, valid schedule and existing photos are retained where applicable. The existing draft ownership, retention and explicit posting rules continue to apply.
 

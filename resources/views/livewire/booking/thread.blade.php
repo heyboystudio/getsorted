@@ -16,16 +16,6 @@
                 </div>
                 <button type="button" wire:click="restart" wire:confirm="{{ __('Start over? This clears the chat.') }}" class="text-sm text-zinc-600 underline underline-offset-4">{{ __('Restart') }}</button>
             </div>
-
-            <ol class="mt-3 grid grid-cols-4 gap-2" aria-label="{{ __('Booking progress') }}">
-                @foreach (\App\Livewire\Booking\Thread::PROGRESS as $key => $label)
-                    @php($reached = array_search($key, array_keys(\App\Livewire\Booking\Thread::PROGRESS), true) <= array_search($progress, array_keys(\App\Livewire\Booking\Thread::PROGRESS), true))
-                    <li @if ($key === $progress) aria-current="step" @endif>
-                        <span @class(['block h-1.5 rounded-full', 'bg-emerald-700' => $reached, 'bg-zinc-200' => ! $reached])></span>
-                        <span @class(['mt-1 block text-xs', 'font-medium text-emerald-800' => $key === $progress, 'text-zinc-500' => $key !== $progress])>{{ __($label) }}</span>
-                    </li>
-                @endforeach
-            </ol>
         </header>
 
         <ol class="flex-1 space-y-3 py-4" aria-live="polite" aria-label="{{ __('Conversation') }}">

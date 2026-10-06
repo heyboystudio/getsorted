@@ -310,3 +310,28 @@ it('answers a product question from a service link without putting it in notes',
 
     threadFor($service)->assertSet('notes', '')->assertSee('You may receive up to three itemised quotes.');
 });
+
+it('handles ordinary conversation without turning it into a service request', function (string $text, string $reply): void {
+    $service = conversationCatalogue();
+    conversationAssistant()->willChat($reply, 'painting', 'interior_paint', ['leak_location' => ['Toilet']], intent: ConversationIntent::Conversation, jobNotes: [$text]);
+    $thread = threadFor($service)->call('answer', 'leak_location', 'Tap');
+
+    $thread->set('message', $text)->call('send')
+        ->assertSee($reply)->assertSet('serviceId', $service->id)->assertSet('stage', 'questions')
+        ->assertSet('answers', ['leak_location' => 'Tap'])->assertSet('notes', '');
+    expect(ServiceJob::query()->count())->toBe(0);
+})->with([
+    'greeting' => ['Hey Siya, how are you?', 'Hi! I’m ready to help. How are you doing?'],
+    'thanks' => ['Thanks, you have been helpful', 'You’re welcome!'],
+    'frustration' => ['This has been a really frustrating day', 'That sounds like a tough day. I’m here to listen.'],
+    'unrelated question' => ['Who won the rugby yesterday?', 'I don’t have live match results, so I can’t confirm that.'],
+]);
+
+it('keeps an unsupported request conversational instead of displaying unrelated trade choices', function (): void {
+    conversationCatalogue();
+    conversationAssistant()->willChat('Get Sorted doesn’t currently offer garden services. You would need a gardening service for that.', intent: ConversationIntent::Unsupported);
+
+    Livewire::test(Thread::class)->set('message', 'I need someone to mow my lawn')->call('send')
+        ->assertSee('garden services')->assertSet('serviceId', null)->assertSet('notes', '')
+        ->assertDontSee('Electrical')->assertDontSee('Booking progress');
+});

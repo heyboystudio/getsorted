@@ -72,9 +72,6 @@ final class Thread extends Component
     /** Text typed into the account home's "What's going on at home?" box, read once. */
     public const string START_KEY = 'booking_start';
 
-    /** The four steps of the progress bar (AC4). */
-    public const array PROGRESS = ['describe' => 'Describe', 'where' => 'Where & when', 'photos' => 'Photos', 'confirm' => 'Confirm'];
-
     private const int MIN_LENGTH = 2;
 
     private const int MAX_LENGTH = 1000;
@@ -747,7 +744,6 @@ final class Thread extends Component
 
         return view('livewire.booking.thread', [
             'available' => app(ChatWithSiya::class)->available(),
-            'progress' => $this->progressStep(),
             'trades' => in_array($this->stage, ['trade', 'describe'], true) && ($this->showTradeShortcuts || $this->retryPending || ! app(ChatWithSiya::class)->available()) ? $this->activeTrades() : new Collection,
             'trade' => $this->tradeId === null ? null : Trade::query()->find($this->tradeId),
             'tradeServices' => $this->stage === 'service' && $this->tradeId !== null && ($this->showTradeShortcuts || $this->retryPending || ! app(ChatWithSiya::class)->available())
@@ -1300,16 +1296,6 @@ final class Thread extends Component
         }
 
         return $date instanceof CarbonImmutable ? $date->startOfDay() : null;
-    }
-
-    private function progressStep(): string
-    {
-        return match ($this->stage) {
-            'signin', 'where', 'add_property', 'waitlist', 'when' => 'where',
-            'photos' => 'photos',
-            'summary', 'notes', 'posted' => 'confirm',
-            default => 'describe',
-        };
     }
 
     /** @return Collection<int, Trade> */

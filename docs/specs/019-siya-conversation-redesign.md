@@ -3,7 +3,7 @@
 Status: Built — awaiting founder preview and live synthetic Gemini evaluation (2026-10-06) · Phase: 2 · Owner: founder
 
 ## Goal
-Siya understands what a person needs before trying to book a trade. Replace the questionnaire-driven conversation with an intent-aware assistant that recognises possible emergencies, remembers supplied details, asks useful follow-ups and helps the customer reach a clear, reviewable booking.
+Siya responds to what a person actually says, including messages outside the trade catalogue, before trying to book a job. Ordinary conversation should not be treated as a failed service match. Replace the questionnaire-driven conversation with an intent-aware assistant that recognises possible emergencies, remembers supplied details, asks useful follow-ups and helps the customer reach a clear, reviewable booking.
 
 This proposes behavioural changes to specs 016 and 017. Their existing posting, ownership, coverage, matching and payment safeguards continue to apply. The homepage visual treatment comes later.
 
@@ -14,7 +14,7 @@ This proposes behavioural changes to specs 016 and 017. Their existing posting, 
 - As the founder, I want a repeatable way to assess Siya's judgment across many conversations and providers.
 
 ## Proposed workflow
-1. **Understand the request.** Start with a short invitation to explain the problem. Trade choices remain optional shortcuts. Classify the request as possible emergency, supported home problem, unclear home problem, unsupported request, or a Get Sorted product question. Answer product questions using approved product content, then resume the customer's task without forcing a booking.
+1. **Understand the request.** Start with a short invitation to explain the problem. Trade choices remain optional shortcuts. Classify the request as possible emergency, supported home problem, unclear home problem, unsupported request, ordinary conversation, or a Get Sorted product question. Answer product questions using approved product content, then resume the customer's task without forcing a booking.
 2. **Handle safety first.** Explicit requests for a fire brigade or emergency help, and credible descriptions of immediate danger, take precedence at any booking stage. Show reviewed emergency guidance and contacts from application-owned content. Do not continue selling or collecting booking details. Ambiguous historical or figurative references get a brief clarification where appropriate; a credible immediate threat gets guidance without waiting for more answers.
 3. **Understand the job.** Use the active catalogue and descriptions to identify a service; ask one relevant question at a time when uncertain. Extract all supported answers from what the customer has already said. Never invent a cause, diagnosis, answer or service.
 4. **Collect only missing details.** Required scoping fields remain enforced by the server. Questions should serve the job, rather than repeat a form. Handle corrections and interruptions throughout the flow. Identify the service in the background, without a separate confirmation card; show it in the editable review. This is a founder-approved trial to evaluate before making it permanent. Low confidence still requires clarification.
@@ -33,7 +33,7 @@ This proposes behavioural changes to specs 016 and 017. Their existing posting, 
 9. Given a correction such as “actually it is the kitchen sink, not the toilet”, when submitted, then affected answers and any incompatible service state are corrected without dropping unrelated booking details; invalidated coverage is rechecked before posting.
 10. Given “I don't know” for a field, when submitted, then Siya uses an allowed Not sure value where one exists; otherwise it explains what is needed without inventing an answer or looping over the same question. Changes to required fields or options require explicit catalogue approval.
 11. Given a question or relevant new detail during location, date, photos or review, when typed, then Siya handles it in context rather than blindly appending it to pro notes. Only relevant job facts belong in notes; off-topic exchanges and product questions do not.
-12. Given a request outside the supported catalogue without immediate danger, when submitted, then Siya acknowledges the need honestly and explains the limit without pretending another trade can solve it.
+12. Given a request outside the supported catalogue without immediate danger, when submitted, then Siya responds to the actual need, explains the relevant limit and optionally identifies the kind of service needed; it does not suggest an unrelated trade, invent a referral or force booking. Greetings, thanks, casual chat and unrelated questions receive a brief natural response without changing job facts or asking unnecessary scoping questions.
 13. Given collected scoping answers, when ready to proceed, then the thread offers the next necessary booking control without a redundant scoping-completion gate or repeated questions.
 14. Given a guest, when personal booking details are needed, then sign-in and phone verification use existing controls and the conversation resumes afterward. Address selection, ownership checks and coverage remain application-controlled.
 15. Given address, schedule or payment information in application state, when constructing a model request, then those values and account identifiers are excluded; typed input is redacted under the existing privacy rules before storage and transmission.
@@ -55,7 +55,7 @@ The founder explicitly identifies Siya Kolisi as Siya's character reference (202
 - Clarification: one contextual question, with actual allowed answer chips where helpful.
 - Emergency: prominent reviewed guidance; ordinary booking controls paused. Recovery behaviour needs founder approval below.
 - Unsupported: clear explanation; no forced suggestion of an unrelated trade.
-- Booking: show only the next relevant secure control, with editable completed details and an accurate progress indicator.
+- Booking: show only the next relevant secure control, with editable completed details and no visible step counter or wizard progress bar.
 - Review: editable facts, photos and description, followed by explicit confirmation.
 - Failure: retain state, show retry/manual options and explain the limit without claiming to have understood new text.
 - Existing keyboard access, screen-reader announcements and mobile usability remain acceptance requirements.
@@ -118,6 +118,10 @@ Approve the workflow first, then plan focused changes: (1) safety routing and co
 
 - Independent code, security and spec reviews completed with no remaining material findings after regression fixes. Focused assistant/provider coverage passed: 76 tests, 312 assertions. Blade compilation and production Vite build passed. Live Gemini quality evaluation and founder preview remain outstanding.
 - Full quality gate passed: `PGOPTIONS='-c timezone=UTC' COMPOSER_PROCESS_TIMEOUT=0 composer check` (701 tests, 3,037 assertions; formatter, static analysis and dependency audit passed). The local PostgreSQL session otherwise used a timezone that made existing phone OTP tests expire two hours early; the per-run UTC setting resolved all 34 phone tests without changing application code. The first full run also exceeded Composer’s default 300-second subprocess timeout; the completed run took 588 seconds for tests. No live provider request or deployment was made.
+
+- Founder clarification 2026-10-06: the screenshot illustrated poor responses beyond supported trades generally, not a fire-brigade-specific feature. Added an explicit ordinary-conversation intent and broader response instructions; removed the visible wizard/progress header and unused progress mapping. Booking controls still appear only when needed. Homepage styling remains deferred.
+
+- Follow-up verification passed: full `composer check` with the same local UTC/timeout settings (707 tests, 3,070 assertions; formatting, static analysis and audit clean), focused conversation/provider tests (69 tests, 290 assertions) and production asset build. Follow-up reviewed directly; live Gemini evaluation and deployment remain outstanding.
 
 ## Emergency content sources
 Reviewed 2026-10-06: [eThekwini Public Safety and Emergency Services](https://www.durban.gov.za/page/public-safety-emergency-services) lists 031 361 0000 and fire evacuation guidance; [South African Government emergency guidance](https://www.gov.za/news/media-statements/western-cape-weather-warning-23-jun-2015) lists 112 from a cellphone. These are application-owned contacts and guidance, never generated model output. Existing 080 131 3111 wording is removed from Siya's emergency response; it is an electricity fault line, not the fire response number.
