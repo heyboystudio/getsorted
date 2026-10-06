@@ -1,6 +1,6 @@
-<main class="flex min-h-dvh items-start justify-center px-5 py-10">
+<main class="flex items-start justify-center px-5 py-8">
     <section class="w-full max-w-xl">
-        <a wire:navigate.hover href="{{ route('pros.welcome') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('Sortd Pro') }}</a>
+        <a wire:navigate.hover href="{{ route('pros.welcome') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('Get Sorted Pro') }}</a>
         <h1 class="mt-6 text-2xl font-semibold tracking-tight">{{ __('Your jobs') }}</h1>
 
         <div class="mt-6 grid grid-cols-2 rounded-lg bg-zinc-100 p-1 text-sm font-medium" role="tablist">

@@ -14,7 +14,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /** Pro landing page: start, continue or check the application (spec 011, AC6; spec 008). */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.panel', ['panel' => 'pro'])]
 #[Title('Welcome, pro')]
 final class Welcome extends Component
 {
@@ -32,7 +32,6 @@ final class Welcome extends Component
 
         return view('livewire.pros.welcome', [
             'firstName' => $user->first_name,
-            'isCustomer' => $user->hasRole(Role::Customer->value),
             'status' => $pro?->status,
             'canReapply' => $pro?->status === ProStatus::Rejected && $pro->reapply_after?->isFuture() !== true,
         ]);

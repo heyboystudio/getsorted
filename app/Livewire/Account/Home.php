@@ -19,7 +19,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /** Customer account home: describe a problem to Siya, your jobs, properties and waitlist requests. */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.panel', ['panel' => 'customer'])]
 #[Title('Your account')]
 final class Home extends Component
 {

@@ -1,5 +1,5 @@
 @php($R = \App\Support\Rand::class)
-<main class="flex min-h-dvh items-start justify-center px-5 pb-40 pt-10">
+<main class="flex items-start justify-center px-5 pb-40 pt-8">
     <section class="w-full max-w-xl">
         <a wire:navigate.hover href="{{ route('pros.jobs') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('Your jobs') }}</a>
 

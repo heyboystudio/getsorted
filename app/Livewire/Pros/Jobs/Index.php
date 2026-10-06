@@ -15,7 +15,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /** A pro's invites: new ones to answer, and past ones (spec 009, AC7). */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.panel', ['panel' => 'pro'])]
 #[Title('Your jobs')]
 final class Index extends Component
 {

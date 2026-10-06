@@ -1,6 +1,6 @@
-<main class="flex min-h-dvh items-start justify-center px-5 py-12">
+<main class="flex items-start justify-center px-5 py-8">
     <section class="w-full max-w-sm">
-        <a wire:navigate.hover href="{{ route('properties.index') }}" class="mb-10 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Saved properties') }}</a>
+        <a wire:navigate.hover href="{{ route('properties.index') }}" class="mb-6 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Saved properties') }}</a>
         <h1 class="text-2xl font-semibold tracking-tight">{{ $publicId === null ? __('Add property') : __('Edit property') }}</h1>
         <p class="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{{ __('We only share your street address with the pro you choose.') }}</p>
 

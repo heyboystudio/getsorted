@@ -21,7 +21,7 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /** A customer's own job: details, estimates to compare (spec 010) and chats with pros (spec 018). */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.panel', ['panel' => 'customer'])]
 final class Show extends Component
 {
     #[Locked]
