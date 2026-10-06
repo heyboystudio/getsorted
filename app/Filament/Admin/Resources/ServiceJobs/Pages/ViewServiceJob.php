@@ -61,11 +61,11 @@ final class ViewServiceJob extends ViewRecord
     {
         $job = ServiceJob::query()->with(['trade', 'customer'])->findOrFail($this->job()->id);
 
-        if ($job->property?->suburb === null) {
+        if ($job->location === null) {
             return [];
         }
 
-        return app(EligibleProsQuery::class)->for($job->service, $job->property->suburb, $job->customer)
+        return app(EligibleProsQuery::class)->near($job->trade, $job->location, $job->customer)
             ->whereDoesntHave('invites', fn ($invites) => $invites->where('service_job_id', $job->id))
             ->orderBy('business_name')->limit(100)->pluck('business_name', 'id')->all();
     }

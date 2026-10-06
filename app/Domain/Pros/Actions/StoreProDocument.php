@@ -50,11 +50,11 @@ final readonly class StoreProDocument
         [$bytes, $extension, $mime] = $this->process($type, $upload);
 
         return DB::transaction(function () use ($user, $pro, $type, $bytes, $extension, $mime): ProDocument {
-            $locked = Pro::query()->with('services')->lockForUpdate()->findOrFail($pro->id);
+            $locked = Pro::query()->with('trades')->lockForUpdate()->findOrFail($pro->id);
             Gate::forUser($user)->authorize('update', $locked);
 
-            if ($type->isRegistration() && ! in_array($type, $locked->requiredRegistrations(), true)) {
-                throw ValidationException::withMessages(['upload' => __('None of your chosen services needs this registration.')]);
+            if ($type->isRegistration() && ! in_array($type, $locked->offeredRegistrations(), true)) {
+                throw ValidationException::withMessages(['upload' => __('None of your chosen trades has this registration.')]);
             }
 
             $document = $locked->documents()->firstOrNew(['type' => $type]);

@@ -1,6 +1,6 @@
 # Spec 020 · Trades, extracted job facts and distance matching (and the Siya agent engine)
 
-Status: DRAFT for founder approval (2026-10-06) · Phase: 2 · Owner: founder
+Status: Approved by founder, in build (2026-10-06) · Phase: 2–3 · Owner: founder · Decision: 051
 Supersedes the service/scoping model in specs 003, 005, 006, 009 (matching) and 016/017/019 where they conflict.
 Absorbs the Siya engine redesign from the Siya audit (see "Siya" below).
 
@@ -90,7 +90,7 @@ Emergency routing stays deterministic. Only the customer's tap on Confirm bookin
 10. Admin can manage trades, pros, jobs; the Services/Questions/Suburbs admin screens are removed in the contract phase.
 
 ## Delivery phases
-1. Foundation: spec + ADR 050, worktree from `deploy/combined`, expand migrations + backfill, settings.
+1. Foundation: spec + decision 051, worktree from `deploy/combined`, expand migrations + backfill, settings.
 2. Pro side: trades, Places base address, radius, admin views, badges.
 3. Matching: distance query, 10-at-once invites, 5-quote cap, job-full, pro job view with highlighted facts.
 4. Customer + Siya: agent engine, thread simplification, address via Places, review with editable facts, waitlist by coordinates.

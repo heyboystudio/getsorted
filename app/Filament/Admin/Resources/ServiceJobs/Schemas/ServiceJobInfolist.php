@@ -13,7 +13,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
-/** Shows suburb only — never the street address or customer contact details. */
+/** Shows the approximate area only — never the street address or customer contact details. */
 final class ServiceJobInfolist
 {
     public static function configure(Schema $schema): Schema

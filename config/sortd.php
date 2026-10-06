@@ -47,9 +47,6 @@ return [
 
     'places' => [
         'municipality' => 'eThekwini',
-        // Rough bounding box used to sanity-check admin-entered suburb centres.
-        'latitude' => ['min' => -30.5, 'max' => -29.3],
-        'longitude' => ['min' => 30.5, 'max' => 31.3],
     ],
 
     'properties' => [

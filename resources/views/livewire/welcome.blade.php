@@ -130,10 +130,10 @@
               <li><span class="gs-ic"><i class="ph ph-credit-card"></i></span><div><h3>Book and pay</h3><p>Pick a slot, pay a deposit, and settle the rest when the work is done. Updates arrive on WhatsApp.</p></div></li>
             </ul>
           </div>
-          <div class="gs-thread" role="img" aria-label="Example conversation: a customer reports a dripping tap, the assistant asks for the suburb, then example quotes arrive.">
+          <div class="gs-thread" role="img" aria-label="Example conversation: a customer reports a dripping tap, the assistant asks a couple of questions, then example quotes arrive.">
             <div class="gs-thread-top"><span>Dripping kitchen tap</span><span class="gs-tag">Example</span></div>
             <div class="gs-b gs-u">The kitchen tap will not stop dripping. It started yesterday.</div>
-            <div class="gs-b gs-s"><small>Siya</small>Sounds like a worn cartridge. Which suburb are you in?</div>
+            <div class="gs-b gs-s"><small>Siya</small>Sounds like a worn cartridge. Does it drip when the tap is fully closed?</div>
             <div class="gs-b gs-u">Morningside</div>
             <div class="gs-b gs-s"><small>Siya</small>We cover Morningside for plumbing. I have sent your job to vetted plumbers nearby.</div>
             <div class="gs-qlist">

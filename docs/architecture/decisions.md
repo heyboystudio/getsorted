@@ -451,3 +451,18 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Implementation:** Structured intents and proposals are validated against the active catalogue, question schemas and verbatim customer note excerpts. The model cannot post jobs or change payment/status state. Corrected services update the existing authorised draft, preserve photos and recheck coverage. Product questions and ordinary conversation do not become pro notes. After founder clarification, greetings, casual chat and unrelated questions have a separate conversation intent; unsupported work receives a relevant explanation instead of unrelated trade suggestions. The visible wizard progress bar is removed so the thread presents a continuous conversation. Conversation state remains in the existing session/draft boundaries; no new transcript table or dependency is introduced.
 
 **Validation:** Deterministic fakes cover safety, corrections, booking, privacy and provider schema failures. Live Gemini conversation quality must still be evaluated with synthetic examples on a configured preview before judging the trial successful. Homepage UI alignment is deferred.
+
+## 051 · Trades, extracted job facts and distance matching (supersedes the service/suburb model)
+
+**Date:** 2026-10-06 · **Status:** Accepted (founder; spec 020)
+
+**Decision:** Services, scoping questions, suburbs and suburb coverage are removed. A job is a trade plus the customer's own words, short facts Siya extracts from natural conversation, photos, a time preference and a Google Places address. Customers and pros both give a geocoded address. A posted job is offered to up to 10 approved pros of that trade, nearest first, within each pro's travel radius (default 15 km, soft edge 2 km that only fills open invites). The first 5 submitted quotes are accepted. Registrations (PIRB, registered electrician) are never a gate: verified pros show a badge, unverified pros can still quote and are labelled to the customer.
+
+**Why:** Fixed sub-services and questions limited what a customer could say and caused Siya to repeat questions and reject answers. Pros are better placed to judge from the facts whether they can help, and distance matches how tradespeople actually work.
+
+**Consequences:**
+- **Siya** is a tool-using agent: the app owns `BookingState`; the model changes it only through validated tools (`set_trade`, `add_job_fact` with an exact customer quote as evidence, `remove_job_fact`, `set_urgency`, `park_job`, `offer_next_step`, `flag_emergency`) and replies in plain text. A reply that breaks a rule is regenerated once, then replaced by a deterministic reply built from the state.
+- **Privacy:** pros see the area name and an approximate distance, never the street address or exact coordinates, until their quote is accepted. Pro base addresses are encrypted. The privacy notice must mention Google Places for pro addresses before launch.
+- **Data:** one irreversible migration (`2026_10_07_000001`) carries existing rows over and drops `services`, `scoping_questions`, `pro_services`, `pro_service_areas` and `suburbs`. The "Today" window is open to every trade. Safety advice lives on the trade.
+- **Settings:** `matching.invite_count` (10), `max_quotes` (5), `default_radius_km` (15), `soft_edge_km` (2); invite waves are retired.
+- **Deferred:** the quality gate was deferred by founder instruction while this was built; see `docs/engineering/handoff.md`.
