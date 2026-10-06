@@ -413,3 +413,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** The founder found the chat-then-wizard flow lost track of the customer and repeated questions (location twice, notes twice, service confirmed twice).
 
 **Next:** spec 018: after posting, the customer chats with the quoting pros and can send more photos. Pros send an estimate quote and the customer pays the deposit on it. After accepting, the pro can raise or lower the final amount, and the customer must accept the change. This brings in-app chat into v1, which the PRD had parked.
+
+## 048 · Home page redesign and the name "Get Sorted"
+
+**Date:** 2026-10-06 · **Status:** Accepted (founder)
+
+**Decision:** The public home page (`/`) is redesigned as a dark, app-like page with a collapsible left sidebar on desktop, a serif headline, a "What needs sorting?" box and gallery-style sections (trades, popular jobs, one-thread explainer, sample quotes, sample pros, sample reviews, pros sign-up, FAQ). It is called **Get Sorted** on this page, including the browser title and description. Styles live in `resources/css/home.css`, scoped under `.gs-home`. Geist, Libre Caslon Display and a trimmed Phosphor icon set are self-hosted in `public/fonts/` (the CSP only allows our own fonts). Other pages keep the shared header, footer and styles.
+
+**Why:** The founder wanted a fuller, more modern home page modelled on refero.design's layout, and "Get Sorted" as the product name (usesorted.co.za).
+
+**Watch:** Prices, sample pros, sample reviews and the "now covering Umhlanga and Durban North" banner are invented placeholders and need founder approval or real data before launch. The name still reads "Sortd" on every other page, in emails and in the footer of those pages until the founder decides to rename the whole site. The box on the page sends the typed description to the Siya booking thread (spec 017); it does not call the older suggest-a-service step. Photos are the existing generated images.

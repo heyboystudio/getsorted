@@ -44,7 +44,7 @@ function siya(): FakeScopingAssistant
 }
 
 it('greets as an AI assistant called Siya and is linked from the home page', function (): void {
-    $this->get('/')->assertSee(route('book'), false)->assertSee('Get help with a job');
+    $this->get('/')->assertSee(route('book'), false)->assertSee('Start a job');
     $this->get(route('book'))->assertOk()->assertSee('I’m Siya, Sortd’s AI assistant');
 });
 

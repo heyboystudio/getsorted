@@ -6,13 +6,13 @@ use App\Models\User;
 use App\Policies\UserPolicy;
 use Illuminate\Support\Facades\Gate;
 
-it('serves the Sortd public home page', function (): void {
+it('serves the Get Sorted public home page', function (): void {
     $this->withoutVite();
 
     $this->get('/')
         ->assertOk()
-        ->assertSeeText('Sortd')
-        ->assertSee('Home jobs,<br><em>handled</em> properly', false)
+        ->assertSeeText('Get Sorted')
+        ->assertSeeText('Get your home sorted, properly')
         ->assertSee(route('register'), false);
 });
 
