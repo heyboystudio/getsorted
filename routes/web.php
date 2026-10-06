@@ -42,7 +42,6 @@ Route::get('/trades/{trade}', ShowTradeController::class)->name('trades.show');
 // Booking is one Siya thread (spec 017). Guests describe the problem, then sign in before Where & when.
 Route::get('/book', BookingThread::class)->name('book');
 Route::get('/book/{trade}', BookingThread::class)->name('book.trade');
-Route::get('/book/{trade}/{service:key}', BookingThread::class)->scopeBindings()->name('booking.start');
 Route::redirect('/help', '/book')->name('assistant');
 
 Route::view('/terms', 'pages.terms')->name('terms');

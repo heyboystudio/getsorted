@@ -1,7 +1,7 @@
 {{-- Spec 017: booking in one Siya thread. Every message is escaped text; nothing is rendered as HTML. --}}
 @php($chip = 'rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm hover:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-600 disabled:opacity-60')
 @php($primary = 'w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60')
-@php($tapped = 'answer,pickTrade,pickService,describeOther,send,continueAfterEmergency,retry,selectProperty,chooseWhen,finishPhotos,confirmBooking,joinWaitlist,noThanks,differentService,skipQuestion')
+@php($tapped = 'pickTrade,send,continueAfterEmergency,retry,startBooking,selectProperty,chooseWhen,finishPhotos,confirmBooking,joinWaitlist,noThanks,differentTrade,removeFact')
 <main class="flex min-h-dvh justify-center" x-data="{ pending: '' }">
     <section class="flex w-full max-w-2xl flex-col px-4">
         <header class="sticky top-0 z-10 -mx-4 border-b border-zinc-200 bg-stone-50/95 px-4 pb-3 pt-4 backdrop-blur">
@@ -31,8 +31,6 @@
                             <div><p class="text-xs font-medium text-emerald-800">{{ $item['label'] ?? '' }}</p><p class="text-sm font-medium text-emerald-950">{{ $item['text'] }}</p></div>
                             <span class="text-emerald-700" aria-hidden="true">✓</span>
                         </div>
-                    @elseif ($kind === 'suggest')
-                        <p class="max-w-[85%] rounded-2xl bg-white px-4 py-2 text-[15px] shadow-sm ring-1 ring-zinc-200">{{ __('Sounds like') }} <strong>{{ $item['text'] }}</strong> ({{ $item['label'] ?? '' }}). {{ __('Is that right?') }}</p>
                     @elseif ($kind === 'error')
                         <div class="rounded-lg bg-zinc-100 px-4 py-3 text-sm text-zinc-700">{{ $item['text'] }}</div>
                     @else
@@ -61,61 +59,44 @@
             <p class="mb-3 text-sm text-zinc-600">{{ __('This conversation has reached its message limit. Restart to continue booking. Emergency guidance is still available.') }}</p>
         @endif
 
+        @if (($trade || $facts !== []) && ! in_array($stage, ['emergency', 'posted', 'closed', 'notes'], true))
+            <details class="mb-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm" @if ($stage === 'chat') open @endif>
+                <summary class="cursor-pointer font-medium">{{ __('What I’ve got so far') }}</summary>
+                <p class="mt-2"><span class="text-zinc-500">{{ __('Trade') }}:</span> {{ $trade?->name ?? __('Not sure yet') }}</p>
+                @if ($facts !== [])
+                    <ul class="mt-2 flex flex-wrap gap-2">
+                        @foreach ($facts as $fact)
+                            <li wire:key="fact-{{ $fact['id'] }}" class="flex items-center gap-1 rounded-full bg-amber-100 py-1 pl-3 pr-1 text-amber-950">
+                                {{ $fact['text'] }}
+                                <button type="button" wire:click="removeFact(@js($fact['id']))" wire:loading.attr="disabled" class="flex size-6 items-center justify-center rounded-full hover:bg-amber-200" aria-label="{{ __('Remove: :fact', ['fact' => $fact['text']]) }}">×</button>
+                            </li>
+                        @endforeach
+                    </ul>
+                    <p class="mt-2 text-xs text-zinc-500">{{ __('Pros see this. Tell me if anything is wrong, or tap × to remove it.') }}</p>
+                @endif
+            </details>
+        @endif
+
         {{-- The current card --}}
         <div class="pb-4" wire:loading.class="opacity-60" wire:target="{{ $tapped }}">
             @if ($stage === 'emergency')
                 <p class="mb-3 text-sm text-red-900">{{ __('Contact emergency services first. Get Sorted can only help plan later repair work.') }}</p>
                 <button type="button" wire:click="continueAfterEmergency" wire:loading.attr="disabled" class="{{ $chip }}">{{ __('Discuss a later repair') }}</button>
-            @elseif (in_array($stage, ['trade', 'describe'], true) && $trades->isNotEmpty())
-                <div class="grid grid-cols-2 gap-2">
-                    @foreach ($trades as $tradeOption)
-                        <button type="button" wire:key="trade-{{ $tradeOption->key }}" wire:click="pickTrade(@js($tradeOption->key))" x-on:click="pending = @js($tradeOption->name)"
-                            class="rounded-xl border border-zinc-200 bg-white px-4 py-4 text-left font-medium hover:border-emerald-700">{{ $tradeOption->name }} <span class="float-right text-zinc-400" aria-hidden="true">›</span></button>
-                    @endforeach
-                </div>
-            @elseif ($stage === 'service' && $tradeServices->isNotEmpty())
-                <div class="flex flex-wrap gap-2">
-                    @foreach ($tradeServices as $option)
-                        <button type="button" wire:key="service-{{ $option->key }}" wire:click="pickService(@js($option->key))" x-on:click="pending = @js($option->name)" class="{{ $chip }}">{{ $option->name }}</button>
-                    @endforeach
-                    <button type="button" wire:click="describeOther" x-on:click="pending = @js(__('Something else'))" class="{{ $chip }}">{{ __('Other') }}</button>
-                </div>
-            @elseif (in_array($stage, ['trade', 'describe', 'service'], true))
-                <button type="button" wire:click="showTrades" wire:loading.attr="disabled" class="text-sm text-emerald-800 underline">{{ __('Choose a trade or service instead') }}</button>
-            @elseif ($stage === 'suggested')
-                <div class="flex flex-wrap gap-2">
-                    <button type="button" wire:click="confirmService" x-on:click="pending = @js(__('Yes'))" class="rounded-full bg-emerald-700 px-5 py-2 text-sm font-medium text-white">{{ __('Yes') }}</button>
-                    <button type="button" wire:click="rejectService" x-on:click="pending = @js(__('Something else'))" class="{{ $chip }}">{{ __('Something else') }}</button>
-                </div>
-            @elseif ($stage === 'questions' && $question)
-                <div wire:key="q-{{ $question->key }}">
-                    @if (in_array($question->type->value, ['single_choice', 'yes_no'], true))
-                        <div class="flex flex-wrap gap-2">
-                            @foreach ($question->type->value === 'yes_no' ? ['yes' => __('Yes'), 'no' => __('No')] : array_combine($question->options, $question->options) as $value => $label)
-                                <button type="button" wire:key="chip-{{ $question->key }}-{{ $loop->index }}" wire:click="answer(@js($question->key), @js($value))" x-on:click="pending = @js($label)" class="{{ $chip }}">{{ $label }}</button>
-                            @endforeach
-                        </div>
-                    @elseif ($question->type->value === 'multi_choice')
-                        <div x-data="{ picked: [] }">
-                            <div class="flex flex-wrap gap-2">
-                                @foreach ($question->options as $option)
-                                    <button type="button" wire:key="multi-{{ $question->key }}-{{ $loop->index }}" x-on:click="picked.includes(@js($option)) ? picked = picked.filter(o => o !== @js($option)) : picked.push(@js($option))"
-                                        x-bind:aria-pressed="picked.includes(@js($option))" x-bind:class="picked.includes(@js($option)) && 'border-emerald-700 bg-emerald-50'" class="{{ $chip }}">{{ $option }}</button>
-                                @endforeach
-                            </div>
-                            <button type="button" x-bind:disabled="picked.length === 0" x-on:click="pending = picked.join(', '); $wire.answer(@js($question->key), picked)" class="mt-3 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{{ __('Done') }}</button>
-                        </div>
-                    @else
-                        <form x-data="{ value: '' }" x-on:submit.prevent="pending = value; $wire.answer(@js($question->key), value)" class="flex gap-2">
-                            <input x-model="value" @if ($question->type->value === 'number') type="number" inputmode="numeric" min="0" @else type="text" maxlength="500" @endif aria-label="{{ $question->prompt }}" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2">
-                            <button type="submit" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white">{{ __('OK') }}</button>
-                        </form>
-                    @endif
-                    @unless ($question->required)
-                        <button type="button" wire:click="skipQuestion" x-on:click="pending = @js(__('Skip'))" class="mt-3 text-sm text-zinc-600 underline underline-offset-4">{{ __('Skip') }}</button>
-                    @endunless
-                    @error('answer') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
-                </div>
+            @elseif ($stage === 'chat')
+                @if ($trades->isNotEmpty())
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach ($trades as $tradeOption)
+                            <button type="button" wire:key="trade-{{ $tradeOption->key }}" wire:click="pickTrade(@js($tradeOption->key))" x-on:click="pending = @js($tradeOption->name)"
+                                class="rounded-xl border border-zinc-200 bg-white px-4 py-4 text-left font-medium hover:border-emerald-700">{{ $tradeOption->name }} <span class="float-right text-zinc-400" aria-hidden="true">›</span></button>
+                        @endforeach
+                    </div>
+                @elseif (! $trade)
+                    <button type="button" wire:click="showTrades" wire:loading.attr="disabled" class="text-sm text-emerald-800 underline">{{ __('Choose a trade instead') }}</button>
+                @endif
+                @if ($ready)
+                    <button type="button" wire:click="startBooking" wire:loading.attr="disabled" x-on:click="pending = @js(__('Continue to book'))" class="mt-3 {{ $primary }}">{{ __('Continue to book') }}</button>
+                    <p class="mt-2 text-center text-xs text-zinc-500">{{ __('Or keep chatting. You can add more detail any time before you confirm.') }}</p>
+                @endif
             @elseif ($stage === 'signin')
                 <div class="rounded-xl border border-zinc-200 bg-white p-4">
                     @if ($isGuest)
@@ -137,10 +118,10 @@
                     <p class="text-sm text-zinc-500">{{ __('We only share your street address with the pro whose quote you accept.') }}</p>
                     <div class="mt-3 space-y-2">
                         @foreach ($properties as $property)
-                            <button type="button" wire:key="property-{{ $property->public_id }}" wire:click="selectProperty(@js($property->public_id))" x-on:click="pending = @js($property->label.', '.$property->suburb->name)"
+                            <button type="button" wire:key="property-{{ $property->public_id }}" wire:click="selectProperty(@js($property->public_id))" x-on:click="pending = @js($property->label.($property->area_label ? ', '.$property->area_label : ''))"
                                 class="block w-full rounded-xl border border-zinc-200 px-4 py-3 text-left hover:border-emerald-700">
                                 <span class="block font-medium">{{ $property->label }}</span>
-                                <span class="block text-sm text-zinc-600">{{ $property->street_address }}, {{ $property->suburb->name }}</span>
+                                <span class="block text-sm text-zinc-600">{{ $property->street_address }}@if ($property->area_label), {{ $property->area_label }}@endif</span>
                             </button>
                         @endforeach
                     </div>
@@ -152,20 +133,9 @@
                 <div class="rounded-xl border border-zinc-200 bg-white p-4">
                     <p class="font-medium">{{ __('Add an address') }}</p>
                     <div class="mt-3">@include('livewire.partials.address-search')</div>
-                    @if ($addressManual || $pickedPlaceId !== null)
-                        <label for="new-street" class="mt-4 block text-sm font-medium">{{ __('Street address') }}</label>
-                        <input id="new-street" type="text" wire:model="newStreet" maxlength="200" class="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3">
-                        @error('newStreet') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
-                        <label for="new-suburb" class="mt-4 block text-sm font-medium">{{ __('Suburb') }}</label>
-                        <input id="new-suburb" type="text" wire:model.live.debounce.300ms="newSuburbQuery" autocomplete="off" class="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3">
-                        @if ($newSuburbSuggestions->isNotEmpty())
-                            <div class="mt-1 space-y-1" role="listbox">
-                                @foreach ($newSuburbSuggestions as $suggestion)
-                                    <button type="button" wire:key="new-suburb-{{ $suggestion->slug }}" wire:click="selectNewSuburb(@js($suggestion->slug))" class="block w-full rounded-lg border border-zinc-200 px-3 py-2 text-left hover:border-emerald-700">{{ $suggestion->name }}</button>
-                                @endforeach
-                            </div>
-                        @endif
-                        @error('newSuburb') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                    @error('addressQuery') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                    @if ($newStreet !== '')
+                        <p class="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">{{ $newStreet }}@if ($newArea), {{ $newArea }}@endif</p>
                     @endif
                     <fieldset class="mt-4">
                         <legend class="text-sm font-medium">{{ __('Type of property') }}</legend>
@@ -187,41 +157,86 @@
             @elseif ($stage === 'waitlist')
                 <div class="flex flex-wrap gap-2">
                     <button type="button" wire:click="joinWaitlist" x-on:click="pending = @js(__('Yes, keep me updated'))" class="rounded-full bg-emerald-700 px-5 py-2 text-sm font-medium text-white">{{ __('Yes, keep me updated') }}</button>
-                    <button type="button" wire:click="differentService" x-on:click="pending = @js(__('Choose a different service'))" class="{{ $chip }}">{{ __('Choose a different service') }}</button>
+                    <button type="button" wire:click="differentTrade" x-on:click="pending = @js(__('Choose a different trade'))" class="{{ $chip }}">{{ __('Choose a different trade') }}</button>
                     <button type="button" wire:click="noThanks" x-on:click="pending = @js(__('No thanks'))" class="{{ $chip }}">{{ __('No thanks') }}</button>
                 </div>
-                <p class="mt-2 text-xs text-zinc-500">{{ __('“Keep me updated” lets Sortd contact you about this service in your suburb.') }} <a href="{{ route('privacy') }}" wire:navigate class="underline">{{ __('Privacy notice') }}</a></p>
+                <p class="mt-2 text-xs text-zinc-500">{{ __('“Keep me updated” lets Sortd contact you about this trade near your address.') }} <a href="{{ route('privacy') }}" wire:navigate class="underline">{{ __('Privacy notice') }}</a></p>
                 @error('waitlist') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
             @elseif ($stage === 'closed')
-                <button type="button" wire:click="differentService" x-on:click="pending = @js(__('Choose a different service'))" class="{{ $chip }}">{{ __('Choose a different service') }}</button>
+                <button type="button" wire:click="differentTrade" x-on:click="pending = @js(__('Choose a different trade'))" class="{{ $chip }}">{{ __('Choose a different trade') }}</button>
             @elseif ($stage === 'when')
-                <div class="rounded-xl border border-zinc-200 bg-white p-4" x-data="{ date: $wire.entangle('preferredDate') }">
+                <div class="rounded-xl border border-zinc-200 bg-white p-4"
+                    x-data="{
+                        open: false, date: $wire.entangle('preferredDate'), min: @js($minDate), max: @js($maxDate), view: null,
+                        init() { const d = new Date((this.date || this.min) + 'T00:00:00'); this.view = new Date(d.getFullYear(), d.getMonth(), 1) },
+                        iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') },
+                        get title() { return this.view.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' }) },
+                        get cells() {
+                            const y = this.view.getFullYear(), m = this.view.getMonth(), out = [];
+                            for (let i = 0; i < new Date(y, m, 1).getDay(); i++) out.push(null);
+                            for (let d = 1; d <= new Date(y, m + 1, 0).getDate(); d++) { const iso = this.iso(new Date(y, m, d)); out.push({ d, iso, off: iso < this.min || iso > this.max }) }
+                            return out;
+                        },
+                        get canPrev() { return this.iso(new Date(this.view.getFullYear(), this.view.getMonth(), 0)) >= this.min },
+                        get canNext() { return this.iso(new Date(this.view.getFullYear(), this.view.getMonth() + 1, 1)) <= this.max },
+                        shift(n) { this.view = new Date(this.view.getFullYear(), this.view.getMonth() + n, 1) },
+                        pick(iso) { this.date = iso },
+                        quick(offset) { const d = new Date(this.min + 'T00:00:00'); d.setDate(d.getDate() + offset); const iso = this.iso(d); if (iso <= this.max) { this.date = iso; this.view = new Date(d.getFullYear(), d.getMonth(), 1) } },
+                        weekend() { const d = new Date(this.min + 'T00:00:00'); d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7)); const iso = this.iso(d); if (iso <= this.max) { this.date = iso; this.view = new Date(d.getFullYear(), d.getMonth(), 1) } },
+                        get pretty() { return this.date ? new Date(this.date + 'T00:00:00').toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' }) : '' }
+                    }"
+                    x-on:keydown.escape.window="open = false">
+                    <p class="font-medium">{{ __('When do you need help?') }}</p>
                     @if (in_array(\App\Domain\ServiceJobs\Enums\TimeWindow::Today, $windows, true))
-                        <button type="button" wire:click="chooseWhen('today')" x-on:click="pending = @js(__('Urgent — today'))" class="mb-4 w-full rounded-lg border border-red-300 bg-red-50 px-4 py-3 font-medium text-red-900">{{ __('Urgent — today') }}</button>
+                        <button type="button" wire:click="chooseWhen('today')" x-on:click="pending = @js(__('Urgent — today'))" class="mt-3 w-full rounded-lg border border-red-300 bg-red-50 px-4 py-3 font-medium text-red-900">{{ __('Urgent — today') }}</button>
                     @endif
-                    <p class="text-sm font-medium">{{ __('Pick a day') }}</p>
-                    <div class="mt-2 grid grid-cols-7 gap-1 text-center text-xs text-zinc-500" aria-hidden="true">
-                        @foreach ([__('Su'), __('Mo'), __('Tu'), __('We'), __('Th'), __('Fr'), __('Sa')] as $weekday) <span>{{ $weekday }}</span> @endforeach
-                    </div>
-                    <div class="mt-1 grid grid-cols-7 gap-1" role="group" aria-label="{{ __('Pick a day') }}">
-                        @foreach ($days as $day)
-                            @if ($day['date'] === null)
-                                <span></span>
-                            @else
-                                <button type="button" wire:key="day-{{ $day['date'] }}" x-on:click="date = @js($day['date'])" aria-label="{{ $day['label'] }}"
-                                    x-bind:aria-pressed="date === @js($day['date'])" x-bind:class="date === @js($day['date']) ? 'bg-emerald-700 text-white' : 'hover:bg-emerald-50'"
-                                    class="rounded-lg py-2 text-sm">{{ $day['day'] }}</button>
-                            @endif
-                        @endforeach
-                    </div>
-                    <p class="mt-4 text-sm font-medium">{{ __('What time suits you?') }}</p>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                        @foreach ($windows as $window)
-                            @continue($window === \App\Domain\ServiceJobs\Enums\TimeWindow::Today)
-                            <button type="button" wire:click="chooseWhen(@js($window->value))" x-bind:disabled="! date" x-on:click="pending = @js($window->label())" class="{{ $chip }}">{{ $window->label() }}</button>
-                        @endforeach
-                    </div>
+                    <button type="button" x-on:click="open = true" class="mt-3 flex w-full items-center justify-between rounded-lg border border-zinc-300 bg-white px-4 py-3 text-left hover:border-emerald-700" aria-haspopup="dialog">
+                        <span x-text="date ? pretty : @js(__('Choose a date and time'))" x-bind:class="date ? 'font-medium' : 'text-zinc-500'"></span>
+                        <span class="text-zinc-400" aria-hidden="true">▾</span>
+                    </button>
                     @error('when') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+
+                    <template x-teleport="body">
+                        <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="{{ __('Choose a date and time') }}">
+                            <div class="absolute inset-0 bg-black/40" x-on:click="open = false" x-transition.opacity></div>
+                            <div x-show="open" x-trap.noscroll="open" x-transition:enter="transition duration-200 ease-out" x-transition:enter-start="translate-y-6 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
+                                class="relative w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl">
+                                <div class="flex items-center justify-between">
+                                    <button type="button" x-on:click="shift(-1)" x-bind:disabled="! canPrev" class="flex size-10 items-center justify-center rounded-full hover:bg-zinc-100 disabled:opacity-30" aria-label="{{ __('Previous month') }}">‹</button>
+                                    <p class="font-semibold" x-text="title" aria-live="polite"></p>
+                                    <button type="button" x-on:click="shift(1)" x-bind:disabled="! canNext" class="flex size-10 items-center justify-center rounded-full hover:bg-zinc-100 disabled:opacity-30" aria-label="{{ __('Next month') }}">›</button>
+                                </div>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <button type="button" x-on:click="quick(0)" class="rounded-full border border-zinc-300 px-3 py-1 text-sm hover:border-emerald-700">{{ __('Today') }}</button>
+                                    <button type="button" x-on:click="quick(1)" class="rounded-full border border-zinc-300 px-3 py-1 text-sm hover:border-emerald-700">{{ __('Tomorrow') }}</button>
+                                    <button type="button" x-on:click="weekend()" class="rounded-full border border-zinc-300 px-3 py-1 text-sm hover:border-emerald-700">{{ __('This weekend') }}</button>
+                                </div>
+                                <div class="mt-4 grid grid-cols-7 gap-1 text-center text-xs text-zinc-500" aria-hidden="true">
+                                    @foreach ([__('Su'), __('Mo'), __('Tu'), __('We'), __('Th'), __('Fr'), __('Sa')] as $weekday) <span>{{ $weekday }}</span> @endforeach
+                                </div>
+                                <div class="mt-1 grid grid-cols-7 gap-1" role="grid" aria-label="{{ __('Pick a day') }}">
+                                    <template x-for="(cell, index) in cells" :key="index">
+                                        <div class="aspect-square">
+                                            <template x-if="cell">
+                                                <button type="button" x-on:click="pick(cell.iso)" x-bind:disabled="cell.off" x-bind:aria-pressed="date === cell.iso"
+                                                    x-bind:class="date === cell.iso ? 'bg-emerald-700 text-white' : (cell.off ? 'text-zinc-300' : 'hover:bg-emerald-50')"
+                                                    class="size-full rounded-full text-sm disabled:cursor-not-allowed" x-text="cell.d"></button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                                <p class="mt-4 text-sm font-medium">{{ __('What time suits you?') }}</p>
+                                <div class="mt-2 grid grid-cols-3 gap-2">
+                                    @foreach ($windows as $window)
+                                        @continue($window === \App\Domain\ServiceJobs\Enums\TimeWindow::Today)
+                                        <button type="button" wire:click="chooseWhen(@js($window->value))" x-bind:disabled="! date" x-on:click="pending = pretty + ', ' + @js($window->label())"
+                                            class="rounded-xl border border-zinc-300 px-2 py-3 text-sm font-medium hover:border-emerald-700 disabled:opacity-40">{{ $window->label() }}</button>
+                                    @endforeach
+                                </div>
+                                <button type="button" x-on:click="open = false" class="mt-4 w-full rounded-lg px-4 py-2 text-sm text-zinc-600 underline underline-offset-4">{{ __('Close') }}</button>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             @elseif ($stage === 'photos')
                 <div class="rounded-xl border border-zinc-200 bg-white p-4">
@@ -253,7 +268,18 @@
                 </div>
             @elseif ($stage === 'notes')
                 <div class="rounded-xl border border-zinc-200 bg-white p-4">
-                    <label for="notes-draft" class="text-sm font-medium">{{ __('Notes for your pro') }}</label>
+                    <p class="text-sm font-medium">{{ __('What pros will see') }}</p>
+                    @if ($facts !== [])
+                        <ul class="mt-2 flex flex-wrap gap-2">
+                            @foreach ($facts as $fact)
+                                <li wire:key="edit-fact-{{ $fact['id'] }}" class="flex items-center gap-1 rounded-full bg-amber-100 py-1 pl-3 pr-1 text-sm text-amber-950">
+                                    {{ $fact['text'] }}
+                                    <button type="button" wire:click="removeFact(@js($fact['id']))" class="flex size-6 items-center justify-center rounded-full hover:bg-amber-200" aria-label="{{ __('Remove: :fact', ['fact' => $fact['text']]) }}">×</button>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                    <label for="notes-draft" class="mt-4 block text-sm font-medium">{{ __('Notes for your pro') }}</label>
                     <textarea id="notes-draft" rows="4" maxlength="{{ config('sortd.jobs.notes_max_length') }}" wire:model="notesDraft" class="mt-2 block w-full rounded-lg border border-zinc-300 px-3 py-2"></textarea>
                     @error('notesDraft') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                     <button type="button" wire:click="saveNotes" class="mt-3 {{ $primary }}">{{ __('Save') }}</button>
@@ -263,24 +289,21 @@
                     <p class="px-4 pt-4 text-xs font-medium uppercase tracking-widest text-emerald-800">{{ __('Booking summary') }}</p>
                     <dl class="divide-y divide-zinc-100">
                         <div class="p-4">
-                            <div class="flex justify-between"><dt class="text-xs text-zinc-500">{{ __('Need help with') }}</dt><button type="button" wire:click="change('service')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>
-                            <dd class="font-medium">{{ $service?->name }} · {{ $service?->trade->name }} @if ($summary['urgent']) <span class="ml-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800">{{ __('Urgent') }}</span> @endif</dd>
+                            <div class="flex justify-between"><dt class="text-xs text-zinc-500">{{ __('Need help with') }}</dt><button type="button" wire:click="change('trade')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>
+                            <dd class="font-medium">{{ $trade?->name }} @if ($summary['urgent']) <span class="ml-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800">{{ __('Urgent') }}</span> @endif</dd>
                         </div>
-                        @if ($summary['answers'] !== [])
-                            <div class="p-4">
-                                <div class="flex justify-between"><dt class="text-xs text-zinc-500">{{ __('What’s wrong') }}</dt><button type="button" wire:click="change('answers')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>
-                                <dd class="mt-1 space-y-0.5 text-sm">
-                                    @foreach ($summary['answers'] as $answer) <p><span class="text-zinc-500">{{ $answer['prompt'] }}</span> {{ $answer['answer'] }}</p> @endforeach
-                                </dd>
-                            </div>
-                        @endif
                         <div class="p-4">
-                            <div class="flex justify-between"><dt class="text-xs text-zinc-500">{{ __('Notes for your pro') }}</dt><button type="button" wire:click="change('notes')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>
-                            <dd class="mt-1 whitespace-pre-line text-sm">{{ $notes !== '' ? $notes : __('None') }}</dd>
+                            <div class="flex justify-between"><dt class="text-xs text-zinc-500">{{ __('What pros will see') }}</dt><button type="button" wire:click="change('details')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>
+                            <dd class="mt-2">
+                                @if ($summary['facts'] !== [])
+                                    <ul class="flex flex-wrap gap-2">@foreach ($summary['facts'] as $fact)<li class="rounded-full bg-amber-100 px-3 py-1 text-sm text-amber-950">{{ $fact }}</li>@endforeach</ul>
+                                @endif
+                                @if ($notes !== '')<p class="mt-2 whitespace-pre-line text-sm">{{ $notes }}</p>@elseif ($summary['facts'] === [])<p class="text-sm">{{ __('None') }}</p>@endif
+                            </dd>
                         </div>
                         <div class="p-4">
                             <div class="flex justify-between"><dt class="text-xs text-zinc-500">{{ __('Address') }}</dt><button type="button" wire:click="change('where')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>
-                            <dd class="mt-1 text-sm">@if ($summary['property']){{ $summary['property']->street_address }}, {{ $summary['property']->suburb->name }}@endif</dd>
+                            <dd class="mt-1 text-sm">@if ($summary['property']){{ $summary['property']->street_address }}@if ($summary['property']->area_label), {{ $summary['property']->area_label }}@endif@endif</dd>
                         </div>
                         <div class="p-4">
                             <div class="flex justify-between"><dt class="text-xs text-zinc-500">{{ __('When') }}</dt><button type="button" wire:click="change('when')" class="text-sm text-emerald-800 underline">{{ __('Change') }}</button></div>
@@ -318,7 +341,7 @@
                             <span wire:loading.remove wire:target="confirmBooking">{{ __('Confirm booking') }}</span>
                             <span wire:loading wire:target="confirmBooking">{{ __('Booking…') }}</span>
                         </button>
-                        <p class="mt-2 text-center text-xs text-zinc-500">{{ __('By confirming, you agree to the') }} <a href="{{ route('terms') }}" wire:navigate class="underline">{{ __('Terms') }}</a> {{ __('and allow us to share your job (without your street address) with up to 3 vetted pros.') }}</p>
+                        <p class="mt-2 text-center text-xs text-zinc-500">{{ __('By confirming, you agree to the') }} <a href="{{ route('terms') }}" wire:navigate class="underline">{{ __('Terms') }}</a> {{ __('and allow us to share your job (without your street address) with vetted pros near you.') }}</p>
                     </div>
                 </div>
             @elseif ($stage === 'posted' && $jobPublicId)

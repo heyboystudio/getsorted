@@ -15,7 +15,6 @@ final class ShowTradeController
 
         return view('pages.trades.show', [
             'trade' => $trade,
-            'services' => $trade->services()->where('is_active', true)->get(),
         ]);
     }
 }
