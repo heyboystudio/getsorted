@@ -1,0 +1,45 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+@source '../../../../app/Filament/**/*.php';
+@source '../../../../resources/views/filament/**/*.blade.php';
+
+.fi-body:has(.gs-admin-login-brand) {
+    --gs-bg: #13151a;
+    --gs-panel: #1a1d24;
+    --gs-line: rgb(255 255 255 / .1);
+    --gs-text: #f3f4f6;
+    --gs-muted: #9aa2b6;
+    --gs-accent: #e98a5b;
+    background: var(--gs-bg);
+    color: var(--gs-text);
+    font-family: "Geist", system-ui, sans-serif;
+}
+
+.fi-body:has(.gs-admin-login-brand) .fi-simple-layout {
+    background: radial-gradient(ellipse at 50% 10%, #252932 0, var(--gs-bg) 58%);
+    padding: 28px 20px;
+}
+
+.fi-body:has(.gs-admin-login-brand) .fi-simple-main {
+    max-width: 460px;
+    border: 1px solid var(--gs-line);
+    border-radius: 20px;
+    background: var(--gs-panel);
+    color: var(--gs-text);
+    box-shadow: 0 28px 90px rgb(0 0 0 / .34);
+    ring: none;
+}
+
+.gs-admin-login-brand { margin-bottom: 28px; }
+.gs-admin-login-logo { display: inline-flex; align-items: center; gap: 10px; color: var(--gs-text); font-size: 17px; font-weight: 600; }
+.gs-admin-login-mark { display: grid; width: 36px; height: 36px; place-items: center; border: 2px solid currentColor; border-radius: 50%; }
+.gs-admin-login-eyebrow { margin: 30px 0 8px; color: var(--gs-accent); font-size: 11px; font-weight: 600; letter-spacing: .16em; }
+.gs-admin-login-title { margin: 0; color: var(--gs-text); font-family: "Libre Caslon Display", Georgia, serif; font-size: 42px; font-weight: 400; letter-spacing: -.03em; line-height: 1.05; }
+.gs-admin-login-copy { margin: 12px 0 0; color: var(--gs-muted); font-size: 14px; }
+.fi-body:has(.gs-admin-login-brand) .fi-simple-main h1:not(.gs-admin-login-title),
+.fi-body:has(.gs-admin-login-brand) .fi-simple-main label { color: var(--gs-text); }
+.fi-body:has(.gs-admin-login-brand) .fi-simple-main input { color: var(--gs-text); }
+.fi-body:has(.gs-admin-login-brand) .fi-simple-main button[type="submit"] { background: var(--gs-accent); color: #1c0f08; font-weight: 600; }
+.fi-body:has(.gs-admin-login-brand) .fi-simple-main a { color: var(--gs-accent); }
+
+@font-face { font-family: "Geist"; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/geist.woff2) format("woff2"); }
+@font-face { font-family: "Libre Caslon Display"; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/libre-caslon-display.woff2) format("woff2"); }

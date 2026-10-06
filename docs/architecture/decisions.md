@@ -456,3 +456,6 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 
 
 Spec 019 text-first refinement (6 October 2026, uncommitted): answer choices become customer-requested aids rather than default chat content. An explicit booking-readiness proposal, accepted only for validated home-problem turns, separates discussing a job from progressing into secure booking controls. Missing readiness defaults to false; malformed readiness invalidates the proposal. Final posting still requires the confirmation action.
+
+
+Admin sign-in visual update (6 October 2026): the Filament admin login uses a dedicated panel theme matching Get Sorted homepage colors and typography. The existing Filament password, rate limiting and mandatory MFA flow remains in place.
