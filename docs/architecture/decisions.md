@@ -413,3 +413,17 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** The founder found the chat-then-wizard flow lost track of the customer and repeated questions (location twice, notes twice, service confirmed twice).
 
 **Next:** spec 018: after posting, the customer chats with the quoting pros and can send more photos. Pros send an estimate quote and the customer pays the deposit on it. After accepting, the pro can raise or lower the final amount, and the customer must accept the change. This brings in-app chat into v1, which the PRD had parked.
+
+## 049 · Google Gemini API for the AI assistant (supersedes the provider in 043)
+
+**Date:** 2026-10-06 · **Status:** Accepted (founder)
+
+**Decision:** Siya, the service suggestion and the job summaries can run on the Google Gemini API through the Laravel AI SDK's Gemini driver. Set `SORTD_AI_PROVIDER=gemini`, `SORTD_AI_MODEL` (a Gemini model id, for example `gemini-2.5-flash`) and `GEMINI_API_KEY`. Bedrock and the direct Anthropic API stay available by changing the same settings. No new dependency.
+
+**Why:** The founder prefers Gemini over Bedrock/Nova for Siya.
+
+**Watch:**
+- **POPIA and data location:** unlike Bedrock in the EU (decision 043), Gemini API requests are processed by Google and may leave South Africa and the EU. The privacy notice must name Google before a live launch (spec 007 decision 1), and the cross-border transfer basis needs checking against `docs/security/popia.md`.
+- **Training on data:** use a **paid** (billing-enabled) Gemini API project. On the free tier Google may use prompts to improve its products. The assistant only receives the stripped description, service and answers (domain rules), never names, addresses, IDs or payment data.
+- **Key handling:** `GEMINI_API_KEY` lives only in the server's `.env`; never commit it.
+- **Quality:** check that Gemini keeps to the structured-reply schemas (spec 007 AC11); replies are still validated before use.

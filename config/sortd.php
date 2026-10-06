@@ -116,7 +116,8 @@ return [
 
     'ai' => [
         // Spec 007. Switch, confidence threshold and daily budget are admin settings (AiSettings).
-        // anthropic (direct API) or bedrock (Amazon Bedrock, EU; decision 043). Bedrock uses the server's IAM role.
+        // anthropic (direct API), bedrock (Amazon Bedrock, EU; decision 043) or gemini (Google Gemini API; decision 049).
+        // Bedrock uses the server's IAM role; Gemini needs GEMINI_API_KEY.
         'provider' => env('SORTD_AI_PROVIDER', 'anthropic'),
         'model' => env('SORTD_AI_MODEL', 'claude-haiku-4-5-20251001'),
         'timeout_seconds' => 8,
