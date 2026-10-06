@@ -427,3 +427,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 - **Training on data:** use a **paid** (billing-enabled) Gemini API project. On the free tier Google may use prompts to improve its products. The assistant only receives the stripped description, service and answers (domain rules), never names, addresses, IDs or payment data.
 - **Key handling:** `GEMINI_API_KEY` lives only in the server's `.env`; never commit it.
 - **Quality:** check that Gemini keeps to the structured-reply schemas (spec 007 AC11); replies are still validated before use.
+
+## 048 · Home page redesign and the name "Get Sorted"
+
+**Date:** 2026-10-06 · **Status:** Accepted (founder)
+
+**Decision:** The public home page (`/`) is redesigned as a dark, app-like page with a collapsible left sidebar on desktop, a serif headline, a "What needs sorting?" box and gallery-style sections (trades, popular jobs, one-thread explainer, sample quotes, sample pros, sample reviews, pros sign-up, FAQ). It is called **Get Sorted** on this page, including the browser title and description. Styles live in `resources/css/home.css`, scoped under `.gs-home`. Geist, Libre Caslon Display and a trimmed Phosphor icon set are self-hosted in `public/fonts/` (the CSP only allows our own fonts). Other pages keep the shared header, footer and styles.
+
+**Why:** The founder wanted a fuller, more modern home page modelled on refero.design's layout, and "Get Sorted" as the product name (usesorted.co.za).
+
+**Watch:** Prices, sample pros, sample reviews and the "now covering Umhlanga and Durban North" banner are invented placeholders and need founder approval or real data before launch. The name still reads "Sortd" on every other page, in emails and in the footer of those pages until the founder decides to rename the whole site. The box on the page sends the typed description to the Siya booking thread (spec 017); it does not call the older suggest-a-service step. Photos are the existing generated images.

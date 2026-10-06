@@ -1,0 +1,310 @@
+/* Phosphor icons (MIT), trimmed to the icons the home page uses. */
+@font-face {
+  font-family: "Phosphor";
+  src: url("./Phosphor.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+.ph {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: "Phosphor" !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Enable Ligatures ================ */
+  letter-spacing: 0;
+  -webkit-font-feature-settings: "liga";
+  -moz-font-feature-settings: "liga=1";
+  -moz-font-feature-settings: "liga";
+  -ms-font-feature-settings: "liga" 1;
+  font-feature-settings: "liga";
+  -webkit-font-variant-ligatures: discretionary-ligatures;
+  font-variant-ligatures: discretionary-ligatures;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.ph.ph-arrow-elbow-down-right:before {
+  content: "\e046";
+}
+.ph.ph-arrow-right:before {
+  content: "\e06c";
+}
+.ph.ph-arrow-up:before {
+  content: "\e08e";
+}
+.ph.ph-arrow-up-right:before {
+  content: "\e092";
+}
+.ph.ph-chat-circle:before {
+  content: "\e168";
+}
+.ph.ph-chat-circle-text:before {
+  content: "\e16e";
+}
+.ph.ph-check:before {
+  content: "\e182";
+}
+.ph.ph-credit-card:before {
+  content: "\e1d2";
+}
+.ph.ph-drop:before {
+  content: "\e210";
+}
+.ph.ph-hard-hat:before {
+  content: "\ed46";
+}
+.ph.ph-house-line:before {
+  content: "\e2c4";
+}
+.ph.ph-lightning:before {
+  content: "\e2de";
+}
+.ph.ph-map-pin:before {
+  content: "\e316";
+}
+.ph.ph-paint-roller:before {
+  content: "\e6f4";
+}
+.ph.ph-plus:before {
+  content: "\e3d4";
+}
+.ph.ph-scales:before {
+  content: "\e750";
+}
+.ph.ph-shield-check:before {
+  content: "\e40c";
+}
+.ph.ph-sidebar-simple:before {
+  content: "\ec24";
+}
+.ph.ph-sign-in:before {
+  content: "\e428";
+}
+.ph.ph-sparkle:before {
+  content: "\e6a2";
+}
+.ph.ph-squares-four:before {
+  content: "\e464";
+}
+.ph.ph-star:before {
+  content: "\e46a";
+}
+.ph.ph-user:before {
+  content: "\e4c2";
+}
+.ph.ph-user-plus:before {
+  content: "\e4d0";
+}
+@font-face {
+  font-family: "Phosphor-Fill";
+  src: url("./Phosphor-Fill.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+.ph-fill {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: "Phosphor-Fill" !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Enable Ligatures ================ */
+  letter-spacing: 0;
+  -webkit-font-feature-settings: "liga";
+  -moz-font-feature-settings: "liga=1";
+  -moz-font-feature-settings: "liga";
+  -ms-font-feature-settings: "liga" 1;
+  font-feature-settings: "liga";
+  -webkit-font-variant-ligatures: discretionary-ligatures;
+  font-variant-ligatures: discretionary-ligatures;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.ph-fill.ph-arrow-elbow-down-right:before {
+  content: "\e046";
+}
+.ph-fill.ph-arrow-right:before {
+  content: "\e06c";
+}
+.ph-fill.ph-arrow-up:before {
+  content: "\e08e";
+}
+.ph-fill.ph-arrow-up-right:before {
+  content: "\e092";
+}
+.ph-fill.ph-chat-circle:before {
+  content: "\e168";
+}
+.ph-fill.ph-chat-circle-text:before {
+  content: "\e16e";
+}
+.ph-fill.ph-check:before {
+  content: "\e182";
+}
+.ph-fill.ph-credit-card:before {
+  content: "\e1d2";
+}
+.ph-fill.ph-drop:before {
+  content: "\e210";
+}
+.ph-fill.ph-hard-hat:before {
+  content: "\ed46";
+}
+.ph-fill.ph-house-line:before {
+  content: "\e2c4";
+}
+.ph-fill.ph-lightning:before {
+  content: "\e2de";
+}
+.ph-fill.ph-map-pin:before {
+  content: "\e316";
+}
+.ph-fill.ph-paint-roller:before {
+  content: "\e6f4";
+}
+.ph-fill.ph-plus:before {
+  content: "\e3d4";
+}
+.ph-fill.ph-scales:before {
+  content: "\e750";
+}
+.ph-fill.ph-shield-check:before {
+  content: "\e40c";
+}
+.ph-fill.ph-sidebar-simple:before {
+  content: "\ec24";
+}
+.ph-fill.ph-sign-in:before {
+  content: "\e428";
+}
+.ph-fill.ph-sparkle:before {
+  content: "\e6a2";
+}
+.ph-fill.ph-squares-four:before {
+  content: "\e464";
+}
+.ph-fill.ph-star:before {
+  content: "\e46a";
+}
+.ph-fill.ph-user:before {
+  content: "\e4c2";
+}
+.ph-fill.ph-user-plus:before {
+  content: "\e4d0";
+}
+@font-face {
+  font-family: "Phosphor-Bold";
+  src: url("./Phosphor-Bold.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+.ph-bold {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: "Phosphor-Bold" !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Enable Ligatures ================ */
+  letter-spacing: 0;
+  -webkit-font-feature-settings: "liga";
+  -moz-font-feature-settings: "liga=1";
+  -moz-font-feature-settings: "liga";
+  -ms-font-feature-settings: "liga" 1;
+  font-feature-settings: "liga";
+  -webkit-font-variant-ligatures: discretionary-ligatures;
+  font-variant-ligatures: discretionary-ligatures;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.ph-bold.ph-arrow-elbow-down-right:before {
+  content: "\e046";
+}
+.ph-bold.ph-arrow-right:before {
+  content: "\e06c";
+}
+.ph-bold.ph-arrow-up:before {
+  content: "\e08e";
+}
+.ph-bold.ph-arrow-up-right:before {
+  content: "\e092";
+}
+.ph-bold.ph-chat-circle:before {
+  content: "\e168";
+}
+.ph-bold.ph-chat-circle-text:before {
+  content: "\e16e";
+}
+.ph-bold.ph-check:before {
+  content: "\e182";
+}
+.ph-bold.ph-credit-card:before {
+  content: "\e1d2";
+}
+.ph-bold.ph-drop:before {
+  content: "\e210";
+}
+.ph-bold.ph-hard-hat:before {
+  content: "\ed46";
+}
+.ph-bold.ph-house-line:before {
+  content: "\e2c4";
+}
+.ph-bold.ph-lightning:before {
+  content: "\e2de";
+}
+.ph-bold.ph-map-pin:before {
+  content: "\e316";
+}
+.ph-bold.ph-paint-roller:before {
+  content: "\e6f4";
+}
+.ph-bold.ph-plus:before {
+  content: "\e3d4";
+}
+.ph-bold.ph-scales:before {
+  content: "\e750";
+}
+.ph-bold.ph-shield-check:before {
+  content: "\e40c";
+}
+.ph-bold.ph-sidebar-simple:before {
+  content: "\ec24";
+}
+.ph-bold.ph-sign-in:before {
+  content: "\e428";
+}
+.ph-bold.ph-sparkle:before {
+  content: "\e6a2";
+}
+.ph-bold.ph-squares-four:before {
+  content: "\e464";
+}
+.ph-bold.ph-star:before {
+  content: "\e46a";
+}
+.ph-bold.ph-user:before {
+  content: "\e4c2";
+}
+.ph-bold.ph-user-plus:before {
+  content: "\e4d0";
+}
