@@ -22,9 +22,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $user_id
  * @property string $label
  * @property string $street_address
- * @property int $suburb_id
+ * @property string|null $area_label approximate area name from Places, safe to show pros
  * @property Point|null $location
- * @property string $location_source places|suburb_centroid
+ * @property string $location_source places
  * @property string|null $google_place_id
  * @property string|null $postal_code
  * @property PropertyType $property_type
@@ -55,12 +55,6 @@ final class Property extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    /** @return BelongsTo<Suburb, $this> */
-    public function suburb(): BelongsTo
-    {
-        return $this->belongsTo(Suburb::class);
     }
 
     /** @return array<string, string> */

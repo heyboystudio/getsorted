@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Pros\Enums\BusinessType;
+use App\Domain\Pros\Enums\DocumentStatus;
 use App\Domain\Pros\Enums\DocumentType;
 use App\Domain\Pros\Enums\ProStatus;
 use Carbon\CarbonImmutable;
+use Clickbar\Magellan\Data\Geometries\Point;
 use Database\Factories\ProFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,6 +31,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $vat_number
  * @property string|null $bio
  * @property int|null $weekly_job_cap
+ * @property Point|null $base_location where the pro works from (Google Places); jobs are matched by distance from here
+ * @property string|null $base_address
+ * @property string|null $base_place_id
+ * @property string|null $base_area_label approximate area name, safe to show customers
+ * @property int $service_radius_km
  * @property CarbonImmutable|null $vetting_consent_at
  * @property CarbonImmutable|null $submitted_at
  * @property int|null $decided_by
@@ -76,16 +83,10 @@ final class Pro extends Model
         return $this->belongsTo(User::class, 'decided_by');
     }
 
-    /** @return BelongsToMany<Service, $this> */
-    public function services(): BelongsToMany
+    /** @return BelongsToMany<Trade, $this> */
+    public function trades(): BelongsToMany
     {
-        return $this->belongsToMany(Service::class, 'pro_services');
-    }
-
-    /** @return BelongsToMany<Suburb, $this> */
-    public function serviceAreas(): BelongsToMany
-    {
-        return $this->belongsToMany(Suburb::class, 'pro_service_areas');
+        return $this->belongsToMany(Trade::class, 'pro_trades');
     }
 
     /** @return HasMany<ProDocument, $this> */
@@ -136,15 +137,31 @@ final class Pro extends Model
     }
 
     /**
-     * Registrations the chosen services need (spec 008, AC3).
+     * Registrations a pro can verify for the chosen trades. They are optional: an unverified pro
+     * can still be matched, and a verified one shows a badge (spec 020, decision 2).
      *
      * @return list<DocumentType>
      */
-    public function requiredRegistrations(): array
+    public function offeredRegistrations(): array
     {
-        return $this->services->pluck('requires_registration')->filter()->unique()
+        return $this->trades->pluck('registration')->filter()->unique()
             ->map(fn ($registration): DocumentType => DocumentType::forRegistration($registration))
             ->sortBy(fn (DocumentType $type): string => $type->value)->values()->all();
+    }
+
+    /** Holds a verified, unexpired registration for the trade; false when the trade has none to verify. */
+    public function isVerifiedFor(Trade $trade): bool
+    {
+        if ($trade->registration === null) {
+            return false;
+        }
+
+        $document = $this->documents->firstWhere('type', DocumentType::forRegistration($trade->registration));
+
+        return $document instanceof ProDocument
+            && $document->status === DocumentStatus::Verified
+            && $document->verified_at !== null
+            && ($document->expires_at === null || $document->expires_at->isFuture());
     }
 
     /** @return array<string, string> */
@@ -154,6 +171,9 @@ final class Pro extends Model
             'status' => ProStatus::class,
             'business_type' => BusinessType::class,
             'weekly_job_cap' => 'integer',
+            'base_location' => Point::class,
+            'base_address' => 'encrypted',
+            'service_radius_km' => 'integer',
             'contact_masking_count' => 'integer',
             'vetting_consent_at' => 'immutable_datetime',
             'submitted_at' => 'immutable_datetime',

@@ -9,14 +9,14 @@ use Illuminate\Database\Seeder;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * Loads docs/product/scoping/*.yaml (spec 003). Safe in every environment and
+ * Loads docs/product/trades/*.yaml (spec 003, spec 020). Safe in every environment and
  * on every run: it only adds new keys and never overwrites admin edits.
  */
 final class CatalogueSeeder extends Seeder
 {
     public function run(ImportCatalogue $importCatalogue): void
     {
-        $files = glob(base_path('docs/product/scoping/*.yaml')) ?: [];
+        $files = glob(base_path('docs/product/trades/*.yaml')) ?: [];
         sort($files);
 
         $definitions = [];

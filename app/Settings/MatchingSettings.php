@@ -6,20 +6,22 @@ namespace App\Settings;
 
 use Spatie\LaravelSettings\Settings;
 
-/** Invite waves (spec 009; defaults in docs/product/matching.md). */
+/** Distance matching (spec 020): one invite round to the nearest eligible pros; the first quotes win. */
 final class MatchingSettings extends Settings
 {
-    public int $wave_one_size;
+    /** How many pros are invited when a job is posted. */
+    public int $invite_count;
 
-    public int $later_wave_size;
+    /** Quotes a job accepts before it is full. */
+    public int $max_quotes;
 
-    /** Hours after the latest wave before the next one, while quotes are short. */
-    public int $wave_interval_hours;
+    /** A pro's service radius until they change it. */
+    public int $default_radius_km;
+
+    /** A pro just outside their radius is still eligible, only to fill the invites. */
+    public int $soft_edge_km;
 
     public int $invite_expiry_hours;
-
-    /** Later waves stop once a job has this many quotes. */
-    public int $enough_quotes;
 
     public static function group(): string
     {
