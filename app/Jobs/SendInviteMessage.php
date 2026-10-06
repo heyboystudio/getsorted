@@ -10,7 +10,7 @@ use App\Models\ServiceJobInvite;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-/** WhatsApps a pro about a new invite: service, suburb and a link only, never customer details (spec 009, AC1). */
+/** WhatsApps a pro about a new invite: trade, area and a link only, never customer details (spec 009, AC1). */
 final class SendInviteMessage implements ShouldQueue
 {
     use Queueable;
@@ -26,15 +26,15 @@ final class SendInviteMessage implements ShouldQueue
 
     public function handle(MessagingChannel $messaging): void
     {
-        $invite = ServiceJobInvite::query()->with(['pro.user', 'serviceJob.service', 'serviceJob.property.suburb'])->find($this->inviteId);
+        $invite = ServiceJobInvite::query()->with(['pro.user', 'serviceJob.trade'])->find($this->inviteId);
 
         if (! $invite instanceof ServiceJobInvite || ! $invite->isAvailable() || $invite->pro->user->phone_e164 === null) {
             return;
         }
 
         $messaging->send(new OutgoingMessage($invite->pro->user->phone_e164, 'job_invite', [
-            'service' => $invite->serviceJob->service->name,
-            'suburb' => (string) $invite->serviceJob->property?->suburb?->name,
+            'service' => $invite->serviceJob->trade->name,
+            'suburb' => (string) $invite->serviceJob->area_label,
             'link' => route('pros.jobs.show', $invite),
         ]));
     }

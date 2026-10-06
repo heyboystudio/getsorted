@@ -26,12 +26,12 @@ final class SendJobPostedMessage implements ShouldQueue
 
     public function handle(MessagingChannel $messaging): void
     {
-        $job = ServiceJob::query()->with(['customer', 'service'])->find($this->serviceJobId);
+        $job = ServiceJob::query()->with(['customer', 'trade'])->find($this->serviceJobId);
 
         if ($job === null || $job->customer->phone_e164 === null) {
             return;
         }
 
-        $messaging->send(new OutgoingMessage($job->customer->phone_e164, 'job_posted', ['service' => $job->service->name]));
+        $messaging->send(new OutgoingMessage($job->customer->phone_e164, 'job_posted', ['service' => $job->trade->name]));
     }
 }

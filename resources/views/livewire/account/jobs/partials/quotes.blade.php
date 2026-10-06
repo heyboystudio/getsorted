@@ -36,6 +36,9 @@
                             @foreach ($registrations as $registration)
                                 <p class="text-xs text-emerald-800">✓ {{ $registration->type->label() }}</p>
                             @endforeach
+                            @if ($job->trade->registration !== null && ! $pro->isVerifiedFor($job->trade))
+                                <p class="text-xs text-amber-800">{{ __(':registration not verified', ['registration' => $job->trade->registration->label()]) }}</p>
+                            @endif
                         </div>
                     </div>
                     <dl class="mt-4 space-y-1 text-sm">
@@ -90,6 +93,6 @@
 @elseif ($job->status === $S::Expired)
     <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-4">
         <p class="font-medium">{{ __('No quote was accepted in time') }}</p>
-        <a href="{{ route('booking.start', ['trade' => $job->service->trade, 'service' => $job->service->key]) }}" class="mt-3 inline-block text-emerald-800 underline">{{ __('Post this job again') }}</a>
+        <a href="{{ route('book.trade', $job->trade) }}" class="mt-3 inline-block text-emerald-800 underline">{{ __('Post this job again') }}</a>
     </section>
 @endif

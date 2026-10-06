@@ -59,7 +59,7 @@ final class ViewServiceJob extends ViewRecord
     /** @return array<int, string> eligible pros not invited yet */
     private function invitablePros(): array
     {
-        $job = ServiceJob::query()->with(['service.trade', 'property.suburb', 'customer'])->findOrFail($this->job()->id);
+        $job = ServiceJob::query()->with(['trade', 'customer'])->findOrFail($this->job()->id);
 
         if ($job->property?->suburb === null) {
             return [];

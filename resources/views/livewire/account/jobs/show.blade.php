@@ -9,8 +9,8 @@
             </div>
         @endif
 
-        <p class="text-sm font-medium uppercase tracking-widest text-emerald-800">{{ $job->service->trade->name }}</p>
-        <h1 class="mt-1 text-3xl font-semibold tracking-tight">{{ $job->service->name }}</h1>
+        <p class="text-sm font-medium uppercase tracking-widest text-emerald-800">{{ $job->trade->name }}</p>
+        <h1 class="mt-1 text-3xl font-semibold tracking-tight">{{ $job->factTexts()[0] ?? $job->trade->name }}</h1>
         <p class="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-sm">{{ $job->status->customerLabel() }}@if ($job->urgency === \App\Domain\ServiceJobs\Enums\Urgency::Urgent) · {{ __('Urgent') }}@endif</p>
 
         @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Open)
@@ -29,14 +29,14 @@
         @endif
 
         <dl class="mt-6 space-y-4 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
-            @foreach ($job->orderedAnswers() as $answer)
-                <div><dt class="text-zinc-500">{{ $answer['prompt'] }}</dt><dd>{{ is_array($answer['answer']) ? implode(', ', $answer['answer']) : ($answer['type'] === 'yes_no' ? __(ucfirst((string) $answer['answer'])) : $answer['answer']) }}</dd></div>
-            @endforeach
+            @if ($job->facts !== [])
+                <div><dt class="text-zinc-500">{{ __('What you told us') }}</dt><dd class="mt-1 flex flex-wrap gap-2">@foreach ($job->factTexts() as $fact)<span class="rounded-full bg-amber-100 px-3 py-1 text-amber-950">{{ $fact }}</span>@endforeach</dd></div>
+            @endif
             @if ($job->customer_notes)
                 <div><dt class="text-zinc-500">{{ __('Notes') }}</dt><dd class="whitespace-pre-line">{{ $job->customer_notes }}</dd></div>
             @endif
             @if ($job->property)
-                <div><dt class="text-zinc-500">{{ __('Where') }}</dt><dd>{{ $job->property->label }} — {{ $job->property->street_address }}, {{ $job->property->suburb->name }}</dd></div>
+                <div><dt class="text-zinc-500">{{ __('Where') }}</dt><dd>{{ $job->property->label }} — {{ $job->property->street_address }}@if ($job->property->area_label), {{ $job->property->area_label }}@endif</dd></div>
             @endif
             @if ($job->time_window)
                 <div><dt class="text-zinc-500">{{ __('When') }}</dt><dd>{{ $job->time_window->label() }}@if ($job->preferred_date && $job->time_window !== \App\Domain\ServiceJobs\Enums\TimeWindow::Today), {{ $job->preferred_date->translatedFormat('D j M') }}@endif</dd></div>

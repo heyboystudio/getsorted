@@ -71,7 +71,7 @@ final class Home extends Component
             'hasWaitlistRequests' => $user->phone_e164 !== null && WaitlistEntry::query()->where('phone_e164', $user->phone_e164)->exists(),
             'jobs' => ServiceJob::query()->where('customer_id', $user->id)
                 ->whereNot('status', ServiceJobStatus::Cancelled)
-                ->with(['service', 'property.suburb'])
+                ->with(['trade', 'property'])
                 ->orderByRaw('case when status = ? then 0 else 1 end', [ServiceJobStatus::Draft->value])
                 ->latest('updated_at')
                 ->get(),

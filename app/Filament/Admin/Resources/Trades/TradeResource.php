@@ -8,7 +8,6 @@ use App\Filament\Admin\Resources\Trades\Pages\CreateTrade;
 use App\Filament\Admin\Resources\Trades\Pages\EditTrade;
 use App\Filament\Admin\Resources\Trades\Pages\ListTrades;
 use App\Filament\Admin\Resources\Trades\Pages\ViewTrade;
-use App\Filament\Admin\Resources\Trades\RelationManagers\ServicesRelationManager;
 use App\Filament\Admin\Resources\Trades\Schemas\TradeForm;
 use App\Filament\Admin\Resources\Trades\Tables\TradesTable;
 use App\Models\Trade;
@@ -43,9 +42,7 @@ final class TradeResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            ServicesRelationManager::class,
-        ];
+        return [];
     }
 
     public static function getPages(): array

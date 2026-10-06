@@ -6,6 +6,7 @@ namespace App\Domain\Assistant\Enums;
 
 enum AiPurpose: string
 {
+    /** Retired in spec 020; kept so earlier usage rows still read. */
     case SuggestService = 'suggest_service';
     case Summarise = 'summarise';
     case Chat = 'chat';

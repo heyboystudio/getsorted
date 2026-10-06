@@ -85,7 +85,7 @@ final class Show extends Component
         /** @var User $user */
         $user = auth()->user();
         $job = ServiceJob::query()->where('public_id', $this->publicId)->where('customer_id', $user->id)
-            ->with(['service.trade', 'service.questions', 'property.suburb'])->firstOrFail();
+            ->with(['trade', 'property'])->firstOrFail();
 
         return view('livewire.account.jobs.show', [
             'job' => $job,
@@ -99,7 +99,7 @@ final class Show extends Component
             'chats' => $chats = $this->chats(),
             'openChat' => $chats->first(fn (array $chat): bool => $chat['pro']->public_id === $this->chatWith)
                 ?? $chats->first(fn (array $chat): bool => $chat['writable'] && $job->accepted_quote_id !== null),
-        ])->title($job->service->name);
+        ])->title($job->trade->name);
     }
 
     /** @return Collection<int, array{pro: Pro, label: string, named: bool, conversation: ?JobConversation, writable: bool, unread: int}> */

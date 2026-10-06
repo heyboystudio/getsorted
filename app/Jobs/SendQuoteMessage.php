@@ -33,7 +33,7 @@ final class SendQuoteMessage implements ShouldQueue
 
     public function handle(MessagingChannel $messaging): void
     {
-        $quote = Quote::query()->with(['pro.user', 'serviceJob.customer', 'serviceJob.service'])->find($this->quoteId);
+        $quote = Quote::query()->with(['pro.user', 'serviceJob.customer', 'serviceJob.trade'])->find($this->quoteId);
 
         if (! $quote instanceof Quote) {
             return;
@@ -47,7 +47,7 @@ final class SendQuoteMessage implements ShouldQueue
         }
 
         $messaging->send(new OutgoingMessage($phone, $this->template, [
-            'service' => $quote->serviceJob->service->name,
+            'service' => $quote->serviceJob->trade->name,
             'pro' => (string) $quote->pro->business_name,
             'link' => $toCustomer ? route('jobs.show', $quote->serviceJob) : route('pros.jobs'),
         ]));

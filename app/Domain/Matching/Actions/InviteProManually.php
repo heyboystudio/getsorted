@@ -26,7 +26,7 @@ final readonly class InviteProManually
         Gate::forUser($admin)->authorize('manageMatching', $job);
 
         $invite = DB::transaction(function () use ($admin, $job, $pro): ServiceJobInvite {
-            $locked = ServiceJob::query()->with(['service.trade', 'property.suburb', 'customer'])->lockForUpdate()->findOrFail($job->id);
+            $locked = ServiceJob::query()->with(['trade', 'customer'])->lockForUpdate()->findOrFail($job->id);
 
             if ($locked->status !== ServiceJobStatus::Open) {
                 throw new CannotInvite(__('Only open jobs can get more invites.'));
@@ -36,8 +36,8 @@ final readonly class InviteProManually
                 throw new CannotInvite(__('This pro was already invited.'));
             }
 
-            if (! $this->eligiblePros->for($locked->service, $locked->property->suburb, $locked->customer)->whereKey($pro->id)->exists()) {
-                throw new CannotInvite(__('This pro cannot take this job (service, suburb, registration or status).'));
+            if ($locked->location === null || ! $this->eligiblePros->near($locked->trade, $locked->location, $locked->customer)->whereKey($pro->id)->exists()) {
+                throw new CannotInvite(__('This pro cannot take this job (trade, distance or status).'));
             }
 
             $invitedAt = now();

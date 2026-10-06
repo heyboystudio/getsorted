@@ -39,7 +39,7 @@ final class SendChatNotification implements ShouldQueue
         $notifiedColumn = $toCustomer ? 'customer_notified_at' : 'pro_notified_at';
 
         $send = DB::transaction(function () use ($readColumn, $notifiedColumn): ?JobConversation {
-            $conversation = JobConversation::query()->with(['serviceJob.customer', 'serviceJob.service', 'pro.user'])->lockForUpdate()->find($this->conversationId);
+            $conversation = JobConversation::query()->with(['serviceJob.customer', 'serviceJob.trade', 'pro.user'])->lockForUpdate()->find($this->conversationId);
 
             if (! $conversation instanceof JobConversation || JobChat::unreadFor($conversation, $this->recipient) === 0) {
                 return null;
@@ -70,7 +70,7 @@ final class SendChatNotification implements ShouldQueue
         }
 
         $messaging->send(new OutgoingMessage($phone, 'chat_message', [
-            'service' => $job->service->name,
+            'service' => $job->trade->name,
             'link' => $toCustomer ? route('jobs.show', $job) : route('pros.jobs.show', $invite),
         ]));
     }

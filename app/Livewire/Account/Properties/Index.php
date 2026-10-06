@@ -30,7 +30,7 @@ final class Index extends Component
     public function render(): View
     {
         return view('livewire.account.properties.index', [
-            'properties' => $this->user()->properties()->with('suburb')->latest()->get(),
+            'properties' => $this->user()->properties()->latest()->get(),
             'limit' => (int) config('sortd.properties.max_per_customer'),
         ]);
     }

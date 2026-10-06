@@ -26,15 +26,15 @@ final class SendJobExpiredMessage implements ShouldQueue
 
     public function handle(MessagingChannel $messaging): void
     {
-        $job = ServiceJob::query()->with(['customer', 'service.trade'])->find($this->serviceJobId);
+        $job = ServiceJob::query()->with(['customer', 'trade'])->find($this->serviceJobId);
 
         if (! $job instanceof ServiceJob || $job->customer->phone_e164 === null) {
             return;
         }
 
         $messaging->send(new OutgoingMessage($job->customer->phone_e164, 'job_expired', [
-            'service' => $job->service->name,
-            'link' => route('booking.start', ['trade' => $job->service->trade, 'service' => $job->service->key]),
+            'service' => $job->trade->name,
+            'link' => route('book.trade', $job->trade),
         ]));
     }
 }

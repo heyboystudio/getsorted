@@ -14,52 +14,14 @@
             </div>
 
             @include('livewire.partials.address-search')
+            @error('addressQuery') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
 
-            <div>
-                <label for="streetAddress" class="block text-sm font-medium">{{ __('Street address') }}</label>
-                <input id="streetAddress" type="text" autocomplete="street-address" wire:model="streetAddress" placeholder="{{ __('12 Innes Road') }}" maxlength="200"
-                    @class(['mt-1 block w-full rounded-lg border bg-white px-3 py-3 outline-none focus:ring-2 focus:ring-emerald-600', 'border-red-500' => $errors->has('streetAddress'), 'border-zinc-300' => ! $errors->has('streetAddress')])
-                    aria-describedby="streetAddress-error" @error('streetAddress') aria-invalid="true" @enderror>
-                @error('streetAddress') <p id="streetAddress-error" class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
-            </div>
-
-            <div class="relative">
-                <label for="suburbQuery" class="block text-sm font-medium">{{ __('Suburb') }}</label>
-                <input id="suburbQuery" type="text" autocomplete="off" wire:model.live.debounce.250ms="suburbQuery" placeholder="{{ __('Start typing, e.g. Morningside') }}"
-                    role="combobox" aria-controls="suburb-options" aria-expanded="{{ $this->suggestions->isNotEmpty() ? 'true' : 'false' }}"
-                    @class(['mt-1 block w-full rounded-lg border bg-white px-3 py-3 outline-none focus:ring-2 focus:ring-emerald-600', 'border-red-500' => $errors->has('suburb'), 'border-zinc-300' => ! $errors->has('suburb')])
-                    aria-describedby="suburb-error" @error('suburb') aria-invalid="true" @enderror>
-                @if ($this->suggestions->isNotEmpty())
-                    <ul id="suburb-options" role="listbox" class="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg">
-                        @foreach ($this->suggestions as $option)
-                            <li role="option" aria-selected="false">
-                                <button type="button" wire:click="selectSuburb('{{ $option->slug }}')" class="flex w-full items-center justify-between px-3 py-3 text-left hover:bg-zinc-50">
-                                    <span>{{ $option->name }}</span>
-                                    @unless ($option->is_active)
-                                        <span class="text-xs text-amber-800">{{ __('Coming soon') }}</span>
-                                    @endunless
-                                </button>
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
-                @error('suburb') <p id="suburb-error" class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
-                @php($open = $selected && ($selected->is_active || ! config('sortd.coverage.require_pros')))
-                @if ($open)
-                    <p class="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">{{ __('Good news, we cover :suburb.', ['suburb' => $selected->name]) }}</p>
-                @endif
-                @if ($selected && ! $open)
-                    <p class="mt-2 text-sm text-amber-800">{{ __("Sortd isn't in :suburb yet — we'll let you know when we are.", ['suburb' => $selected->name]) }}</p>
-                @endif
-            </div>
-
-            <div>
-                <label for="postalCode" class="block text-sm font-medium">{{ __('Postal code') }} <span class="font-normal text-zinc-500">({{ __('optional') }})</span></label>
-                <input id="postalCode" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="4" wire:model="postalCode"
-                    @class(['mt-1 block w-32 rounded-lg border bg-white px-3 py-3 outline-none focus:ring-2 focus:ring-emerald-600', 'border-red-500' => $errors->has('postalCode'), 'border-zinc-300' => ! $errors->has('postalCode')])
-                    aria-describedby="postalCode-error" @error('postalCode') aria-invalid="true" @enderror>
-                @error('postalCode') <p id="postalCode-error" class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
-            </div>
+            @if ($streetAddress !== '')
+                <div class="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">
+                    <p class="font-medium">{{ $streetAddress }}@if ($areaLabel), {{ $areaLabel }}@endif</p>
+                    <p class="mt-1">{{ $pickedPlaceId !== null ? __('Address confirmed.') : __('Saved address. Search above to change it.') }}</p>
+                </div>
+            @endif
 
             <fieldset>
                 <legend class="block text-sm font-medium">{{ __('Type of property') }}</legend>

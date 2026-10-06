@@ -8,23 +8,19 @@ use App\Contracts\Data\GeocodedAddress;
 use App\Domain\Properties\Actions\SaveProperty;
 use App\Domain\Properties\Enums\PropertyType;
 use App\Domain\Properties\Exceptions\PropertyLimitReached;
-use App\Domain\Properties\Queries\SuburbSearchQuery;
 use App\Domain\ServiceJobs\Support\BookingReturn;
 use App\Livewire\Concerns\SearchesAddresses;
 use App\Models\Property;
-use App\Models\Suburb;
 use App\Models\User;
 use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
-/** Add or edit a saved property (spec 004), with address search (spec 015). */
+/** Add or edit a saved property (spec 004), with Google address search (spec 015, 020). */
 #[Layout('components.layouts.app')]
 final class Form extends Component
 {
@@ -35,13 +31,14 @@ final class Form extends Component
 
     public string $label = '';
 
+    /** The street line of the address picked this session (or the saved one when editing). */
+    #[Locked]
     public string $streetAddress = '';
 
-    public string $suburbQuery = '';
+    #[Locked]
+    public ?string $areaLabel = null;
 
     #[Locked]
-    public ?string $suburb = null;
-
     public string $postalCode = '';
 
     public string $propertyType = '';
@@ -63,82 +60,28 @@ final class Form extends Component
         $this->publicId = $property->public_id;
         $this->label = $property->label;
         $this->streetAddress = $property->street_address;
-        $this->suburb = $property->suburb->slug;
-        $this->suburbQuery = $property->suburb->name;
+        $this->areaLabel = $property->area_label;
         $this->postalCode = (string) $property->postal_code;
         $this->propertyType = $property->property_type->value;
     }
 
-    /** @return Collection<int, Suburb> */
-    #[Computed]
-    public function suggestions(): Collection
-    {
-        $selected = $this->selectedSuburb();
-
-        if ($selected instanceof Suburb && $selected->name === $this->suburbQuery) {
-            return new Collection;
-        }
-
-        return app(SuburbSearchQuery::class)->handle($this->suburbQuery);
-    }
-
-    public function selectSuburb(string $slug): void
-    {
-        $suburb = Suburb::query()->where('slug', $slug)->first();
-
-        if ($suburb instanceof Suburb) {
-            if ($suburb->slug !== $this->suburb) {
-                $this->forgetPickedAddress();
-            }
-
-            $this->suburb = $suburb->slug;
-            $this->suburbQuery = $suburb->name;
-        }
-    }
-
-    public function updatedSuburbQuery(): void
-    {
-        // Typing again clears the chosen suburb until one is picked from the list.
-        if ($this->selectedSuburb()?->name !== $this->suburbQuery) {
-            $this->suburb = null;
-            $this->forgetPickedAddress();
-        }
-    }
-
-    protected function addressPicked(GeocodedAddress $address, ?Suburb $suburb): void
+    protected function addressPicked(GeocodedAddress $address): void
     {
         $this->streetAddress = mb_substr($address->streetLine ?? $address->formattedAddress, 0, 200);
-        $this->postalCode = $address->postalCode ?? $this->postalCode;
-
-        if ($suburb instanceof Suburb) {
-            $this->suburb = $suburb->slug;
-            $this->suburbQuery = $suburb->name;
-        } else {
-            // No Sortd suburb matched: the customer picks one (AC7); the point is still kept.
-            $this->suburb = null;
-            $this->suburbQuery = '';
-        }
-
-        $this->resetValidation(['streetAddress', 'suburb', 'postalCode']);
+        $this->areaLabel = $address->areaLabel();
+        $this->postalCode = $address->postalCode ?? '';
+        $this->resetValidation(['streetAddress', 'postalCode']);
     }
 
     public function save(SaveProperty $saveProperty): void
     {
         $this->label = trim($this->label);
-        $this->streetAddress = trim($this->streetAddress);
-        $this->postalCode = trim($this->postalCode);
 
         $this->validate([
             'label' => ['required', 'string', 'max:50'],
-            'streetAddress' => ['required', 'string', 'max:200'],
-            'suburb' => ['required', Rule::exists('suburbs', 'slug')],
-            'postalCode' => ['nullable', 'digits:4'],
             'propertyType' => ['required', Rule::enum(PropertyType::class)],
         ], [
             'label.required' => __('Give this property a name, like "Home".'),
-            'streetAddress.required' => __('Enter the street address.'),
-            'suburb.required' => __('Choose your suburb from the list.'),
-            'postalCode.digits' => __('Postal codes have 4 digits.'),
             'propertyType.required' => __('Choose the type of property.'),
         ]);
 
@@ -148,16 +91,22 @@ final class Form extends Component
             $property = $this->user()->properties()->where('public_id', $this->publicId)->firstOrFail();
         }
 
+        if ($property === null && $this->pickedPlaceId === null) {
+            throw ValidationException::withMessages(['addressQuery' => __('Search for your address and choose it from the list.')]);
+        }
+
+        $picked = $this->pickedPlaceId !== null && $this->pickedLatitude !== null && $this->pickedLongitude !== null;
+
         try {
             $saveProperty->handle(
                 $this->user(),
                 $property,
                 $this->label,
-                $this->streetAddress,
-                Suburb::query()->where('slug', $this->suburb)->firstOrFail(),
+                $picked ? $this->streetAddress : null,
+                $picked ? $this->areaLabel : null,
                 $this->postalCode === '' ? null : $this->postalCode,
                 PropertyType::from($this->propertyType),
-                $this->pickedLatitude !== null && $this->pickedLongitude !== null ? Point::makeGeodetic($this->pickedLatitude, $this->pickedLongitude) : null,
+                $picked ? Point::makeGeodetic($this->pickedLatitude, $this->pickedLongitude) : null,
                 $this->pickedPlaceId,
             );
         } catch (PropertyLimitReached) {
@@ -171,13 +120,7 @@ final class Form extends Component
     {
         return view('livewire.account.properties.form', [
             'types' => PropertyType::cases(),
-            'selected' => $this->selectedSuburb(),
         ])->title($this->publicId === null ? __('Add property') : __('Edit property'));
-    }
-
-    private function selectedSuburb(): ?Suburb
-    {
-        return $this->suburb === null ? null : Suburb::query()->where('slug', $this->suburb)->first();
     }
 
     private function user(): User

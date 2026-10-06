@@ -21,24 +21,20 @@ final class ServiceJobInfolist
         return $schema
             ->components([
                 Section::make(__('Job'))->columns(2)->schema([
-                    TextEntry::make('service.name')->label(__('Service')),
-                    TextEntry::make('service.trade.name')->label(__('Trade')),
+                    TextEntry::make('trade.name')->label(__('Trade')),
                     TextEntry::make('status')->label(__('Status'))->badge()->formatStateUsing(fn ($state): string => __(str($state->value)->replace('_', ' ')->ucfirst()->toString())),
                     TextEntry::make('urgency')->label(__('Urgency'))->formatStateUsing(fn ($state): string => __(ucfirst($state->value))),
-                    TextEntry::make('property.suburb.name')->label(__('Suburb'))->placeholder('—'),
+                    TextEntry::make('area_label')->label(__('Area'))->placeholder('—'),
                     TextEntry::make('time_window')->label(__('When'))
                         ->formatStateUsing(fn ($state, ServiceJob $record): string => $state->label().($record->preferred_date ? ', '.$record->preferred_date->format('D j M') : ''))
                         ->placeholder('—'),
                     TextEntry::make('posted_at')->label(__('Posted'))->dateTime('j M Y H:i')->placeholder('—'),
                     TextEntry::make('quote_window_ends_at')->label(__('Quotes close'))->dateTime('j M Y H:i')->placeholder('—'),
                 ]),
-                Section::make(__('Answers'))->schema([
-                    TextEntry::make('answers')->hiddenLabel()
-                        ->state(fn (ServiceJob $record): array => array_map(
-                            fn (array $answer): string => $answer['prompt'].' — '.(is_array($answer['answer']) ? implode(', ', $answer['answer']) : (string) $answer['answer']),
-                            $record->orderedAnswers(),
-                        ))
-                        ->listWithLineBreaks()->placeholder(__('No answers yet')),
+                Section::make(__('What the customer reported'))->schema([
+                    TextEntry::make('facts_list')->hiddenLabel()
+                        ->state(fn (ServiceJob $record): array => $record->factTexts())
+                        ->badge()->placeholder(__('No facts yet')),
                     TextEntry::make('customer_notes')->label(__('Customer notes'))->placeholder('—'),
                     TextEntry::make('ai_summary')->label(__('Description for pros'))->placeholder('—'),
                     TextEntry::make('ai_summary_source')->label(__('Description source'))->formatStateUsing(fn (SummarySource $state): string => $state->label()),

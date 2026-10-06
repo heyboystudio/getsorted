@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\Service;
+use App\Models\Trade;
 use App\Models\WaitlistEntry;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,9 +19,8 @@ class WaitlistEntryFactory extends Factory
         return [
             'first_name' => fake()->firstName(),
             'phone_e164' => '+2782'.fake()->unique()->numerify('#######'),
-            'suburb_text' => 'Musgrave',
-            'suburb_key' => 'musgrave',
-            'service_id' => Service::factory(),
+            'trade_id' => Trade::factory(),
+            'area_label' => 'Musgrave',
             'privacy_version' => config('sortd.legal.privacy_version'),
             'consented_at' => now(),
         ];

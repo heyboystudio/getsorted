@@ -15,10 +15,7 @@
                     <div class="min-w-0">
                         <h2 class="font-medium">{{ $property->label }}</h2>
                         <p class="mt-1 break-words text-zinc-600">{{ $property->street_address }}</p>
-                        <p class="text-zinc-600">{{ $property->suburb->name }}@if ($property->postal_code), {{ $property->postal_code }}@endif</p>
-                        @unless ($property->suburb->is_active)
-                            <p class="mt-2 text-sm text-amber-800">{{ __("Sortd isn't in :suburb yet — we'll let you know when we are.", ['suburb' => $property->suburb->name]) }}</p>
-                        @endunless
+                        <p class="text-zinc-600">{{ $property->area_label }}@if ($property->postal_code), {{ $property->postal_code }}@endif</p>
                     </div>
                     <div class="flex shrink-0 flex-col items-end gap-2 text-sm">
                         <a wire:navigate.hover href="{{ route('properties.edit', $property) }}" class="text-emerald-800 underline underline-offset-4">{{ __('Edit') }}</a>
