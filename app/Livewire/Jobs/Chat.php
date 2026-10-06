@@ -118,6 +118,9 @@ final class Chat extends Component
         }
 
         $accepted = $job->accepted_quote_id !== null;
+        $otherReadAt = $conversation instanceof JobConversation
+            ? ($side === MessageSender::Customer ? $conversation->pro_read_at : $conversation->customer_read_at)
+            : null;
         $writable = JobChat::canWrite($job, $pro, $conversation);
 
         return view('livewire.jobs.chat', [
@@ -129,7 +132,24 @@ final class Chat extends Component
                 ? ($side === MessageSender::Customer ? __('You chose another pro, so this chat is closed.') : __('The customer chose another pro, so this chat is closed.'))
                 : __('This chat is closed.')),
             'reasons' => MessageReportReason::cases(),
+            // Messages from this side that the other side has opened (shown as "Seen").
+            'otherReadAt' => $otherReadAt,
+            'otherOnline' => $otherReadAt?->gt(now()->subSeconds((int) config('sortd.chat.online_seconds'))) === true,
+            'maxLength' => (int) config('sortd.chat.max_length'),
+            'starters' => $this->starters($side),
         ]);
+    }
+
+    /**
+     * Tap-to-fill first messages, so an empty chat is easy to start.
+     *
+     * @return list<string>
+     */
+    private function starters(?MessageSender $side): array
+    {
+        return $side === MessageSender::Customer
+            ? [__('Can you come today?'), __('Is the price fixed or an estimate?'), __('Do you need me to send photos?'), __('Are you available this week?')]
+            : [__('Where exactly is the problem?'), __('Could you send a photo?'), __('Is there easy access?'), __('When would suit you?')];
     }
 
     /**

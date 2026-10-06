@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\ServiceJobs\Support;
 
+use App\Domain\Accounts\Enums\Role;
 use App\Domain\Matching\Enums\InviteStatus;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\ServiceJobs\Enums\MessageSender;
@@ -115,6 +116,68 @@ final class JobChat
                 'unread' => $conversation instanceof JobConversation ? self::unreadFor($conversation, MessageSender::Customer) : 0,
             ];
         })->filter()->values();
+    }
+
+    /**
+     * Every conversation this person is in, newest activity first, with what the inbox needs to show a row.
+     *
+     * @return Collection<int, array{conversation: JobConversation, job: ServiceJob, label: string, last: ?JobMessage, unread: int, url: string}>
+     */
+    public static function inboxFor(User $user): Collection
+    {
+        $asPro = $user->hasRole(Role::Pro->value);
+
+        $conversations = JobConversation::query()
+            ->with(['serviceJob.trade', 'pro'])
+            ->when($asPro, fn ($query) => $query->whereHas('pro', fn ($pro) => $pro->where('user_id', $user->id)))
+            ->when(! $asPro, fn ($query) => $query->whereHas('serviceJob', fn ($job) => $job->where('customer_id', $user->id)))
+            ->whereHas('messages')
+            ->orderByDesc('last_message_at')->orderByDesc('id')
+            ->limit(100)->get();
+
+        $labels = [];
+
+        return $conversations->map(function (JobConversation $conversation) use ($asPro, &$labels): array {
+            $job = $conversation->serviceJob()->with('trade')->firstOrFail();
+            $side = $asPro ? MessageSender::Pro : MessageSender::Customer;
+
+            if ($asPro) {
+                $label = (string) __(':trade job · :area', ['trade' => $job->trade->name, 'area' => (string) $job->area_label]);
+                $invite = self::inviteFor($job, $conversation->pro);
+                $url = $invite instanceof ServiceJobInvite ? route('pros.jobs.show', $invite).'#chat' : route('pros.jobs');
+            } else {
+                $labels[$job->id] ??= self::customerList($job)->mapWithKeys(fn (array $row): array => [$row['pro']->id => $row['label']])->all();
+                $label = (string) ($labels[$job->id][$conversation->pro_id] ?? __('Pro'));
+                $url = route('jobs.show', $job).'#chats';
+            }
+
+            return [
+                'conversation' => $conversation,
+                'job' => $job,
+                'label' => $label,
+                'last' => $conversation->messages()->with('media')->latest('id')->first(),
+                'unread' => self::unreadFor($conversation, $side),
+                'url' => $url,
+            ];
+        });
+    }
+
+    /** Unread messages across all of a person's chats (the badge on the Messages link). */
+    public static function unreadTotal(User $user): int
+    {
+        $asPro = $user->hasRole(Role::Pro->value);
+        $readColumn = $asPro ? 'pro_read_at' : 'customer_read_at';
+
+        return JobMessage::query()
+            ->whereNull('deleted_at')
+            ->where('sender_type', $asPro ? MessageSender::Customer : MessageSender::Pro)
+            ->whereHas('conversation', function ($conversation) use ($user, $asPro, $readColumn): void {
+                $conversation
+                    ->when($asPro, fn ($query) => $query->whereHas('pro', fn ($pro) => $pro->where('user_id', $user->id)))
+                    ->when(! $asPro, fn ($query) => $query->whereHas('serviceJob', fn ($job) => $job->where('customer_id', $user->id)));
+                $conversation->where(fn ($q) => $q->whereNull($readColumn)->orWhereColumn('job_messages.created_at', '>', $readColumn));
+            })
+            ->count();
     }
 
     /** Messages the other side sent after this side last looked. */
