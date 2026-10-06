@@ -328,3 +328,12 @@ it('schedules matching every five minutes (rules)', function (): void {
 
     expect($matching)->not->toBeNull()->and($matching->expression)->toBe('*/5 * * * *');
 });
+
+it('does not let an admin invite another pro once the job has all the quotes it accepts', function (): void {
+    eligiblePros(2);
+    $job = postLeakJob();
+    $extra = eligiblePros(1)[0];
+    $job->forceFill(['quotes_count' => 5])->save();
+
+    expect(fn () => app(InviteProManually::class)->handle(matchingAdmin(), $job, $extra))->toThrow(CannotInvite::class, 'all the quotes');
+});

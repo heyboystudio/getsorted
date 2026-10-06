@@ -32,6 +32,10 @@ final readonly class InviteProManually
                 throw new CannotInvite(__('Only open jobs can get more invites.'));
             }
 
+            if ($locked->quotes_count >= $this->settings->max_quotes) {
+                throw new CannotInvite(__('This job already has all the quotes it accepts.'));
+            }
+
             if ($locked->invites()->where('pro_id', $pro->id)->exists()) {
                 throw new CannotInvite(__('This pro was already invited.'));
             }

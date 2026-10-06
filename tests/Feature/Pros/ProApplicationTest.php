@@ -613,3 +613,34 @@ it('lets admins choose only active trades and a sensible radius when correcting 
     app(EditProCoverage::class)->handle(vetter(), $pro, [tradeOf('plumbing')->id, tradeOf('painting')->id], 20);
     expect($pro->fresh()->trades->pluck('key')->sort()->values()->all())->toBe(['painting', 'plumbing'])->and($pro->fresh()->service_radius_km)->toBe(20);
 });
+
+it('accepts real-world PDFs: padding before the header, and binary stream data that happens to contain "/JS"', function (): void {
+    $user = applicant();
+    $pro = app(StartApplication::class)->handle($user);
+    $store = app(StoreProDocument::class);
+    $padded = "\n\n%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\n%%EOF";
+    $binary = "%PDF-1.4\n1 0 obj<</Length 20>>\nstream\n\x00\x01/JS x\x02/Launch\n/EmbeddedFile\x03\nendstream\nendobj\n%%EOF";
+
+    expect($store->handle($user, $pro, DocumentType::IdDocument, UploadedFile::fake()->createWithContent('scan.pdf', $padded))->file()->mime_type)->toBe('application/pdf')
+        ->and($store->handle($user, $pro, DocumentType::ProofOfAddress, UploadedFile::fake()->createWithContent('bill.pdf', $binary))->file()->mime_type)->toBe('application/pdf');
+});
+
+it('refuses a PDF that really contains scripts or attachments, and says why', function (string $body): void {
+    $user = applicant();
+    $pro = app(StartApplication::class)->handle($user);
+
+    expect(fn () => app(StoreProDocument::class)->handle($user, $pro, DocumentType::IdDocument, UploadedFile::fake()->createWithContent('bad.pdf', $body)))
+        ->toThrow(ValidationException::class, 'contains scripts or attachments');
+})->with([
+    'javascript action' => ["%PDF-1.4\n1 0 obj<</S/JavaScript/JS(app.alert(1))>>endobj\n%%EOF"],
+    'launch action' => ["%PDF-1.4\n1 0 obj<</S/Launch/F(cmd.exe)>>endobj\n%%EOF"],
+    'embedded file' => ["%PDF-1.4\n1 0 obj<</Type/EmbeddedFile>>endobj\n%%EOF"],
+]);
+
+it('tells the pro that the profile photo cannot be a PDF', function (): void {
+    $user = applicant();
+    $pro = app(StartApplication::class)->handle($user);
+
+    expect(fn () => app(StoreProDocument::class)->handle($user, $pro, DocumentType::ProfilePhoto, UploadedFile::fake()->createWithContent('me.pdf', "%PDF-1.4\n%%EOF")))
+        ->toThrow(ValidationException::class, 'must be a photo');
+});

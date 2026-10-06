@@ -79,13 +79,13 @@
 
         @elseif ($step === 'documents')
             <h1 class="text-2xl font-semibold tracking-tight">{{ __('Your documents') }}</h1>
-            <p class="mt-2 text-zinc-600">{{ __('Photos or PDFs up to 10 MB. Only our vetting team can see them.') }}</p>
+            <p class="mt-2 text-zinc-600">{{ __('Up to 10 MB each. Only our vetting team can see them. Your profile photo must be a photo; the other documents can be a photo or a PDF.') }}</p>
             <div class="mt-6 space-y-4">
                 @foreach ($documentTypes as $type)
                     @php($document = $pro->document($type))
                     <div wire:key="doc-{{ $type->value }}" class="rounded-xl border border-zinc-200 bg-white p-4">
                         <div class="flex items-center justify-between gap-3">
-                            <p class="font-medium">{{ $type->label() }}</p>
+                            <p class="font-medium">{{ $type->label() }} <span class="text-sm font-normal text-zinc-500">· {{ $type->acceptsPdf() ? __('photo or PDF') : __('photo only') }}</span></p>
                             @if ($document?->file())
                                 <span class="text-sm {{ $document->status === \App\Domain\Pros\Enums\DocumentStatus::Flagged ? 'text-amber-800' : 'text-emerald-800' }}">{{ $document->status->label() }}</span>
                             @endif

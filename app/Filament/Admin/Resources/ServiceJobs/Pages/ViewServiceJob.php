@@ -24,11 +24,12 @@ final class ViewServiceJob extends ViewRecord
 {
     protected static string $resource = ServiceJobResource::class;
 
-    /** Manual invites and stopping waves, for support and super admins (spec 009, AC11). */
+    /** Extra manual invites and stopping matching, for support and super admins (spec 009, AC11; spec 020). */
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('invitePro')->label(__('Invite a pro'))
+            Action::make('invitePro')->label(__('Invite another nearby pro'))
+                ->modalDescription(__('The nearest eligible pros are invited automatically when a job is posted, and the first quotes win. Use this to add one more pro within range who has not been invited yet, for example when quotes are slow.'))
                 ->visible(fn (): bool => $this->canManageMatching() && $this->job()->status === ServiceJobStatus::Open)
                 ->schema([
                     Select::make('pro_id')->label(__('Pro'))->required()->searchable()
