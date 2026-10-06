@@ -9,10 +9,10 @@ Each journey is a list of screens/steps. Feature specs in `docs/specs/` break th
 2. Receive 6-digit code (WhatsApp; "send by SMS instead" after 30 s).
 3. Enter code → new users add first name, surname, email (optional) and accept terms + privacy notice (POPIA consent recorded with version and timestamp).
 
-### C2 · Book a pro (one Siya thread, spec 017)
+### C2 · Book a pro (one Siya thread, specs 017 and 019)
 Everything happens in one conversation at `/book`, Kandua-style (`docs/product/kandua-reference.md`). A progress bar shows **Describe → Where & when → Photos → Confirm**, and finished items collapse into green ✓ cards.
 1. Start from: "Get help with a job" on the home page, "What's going on at home?" on the account home (text or quick chips), a trade page (trade pre-selected) or a service link (service pre-selected).
-2. **Describe:** tap a trade, then a service chip, or type the problem and confirm Siya's one suggestion card. Questions already answered by what the customer typed are skipped. The rest are asked one at a time as chips. Stored safety advice shows as a card. Then Continue / Add more details (added to the notes).
+2. **Describe:** explain the problem naturally, or use optional trade/service shortcuts. Siya identifies the service in the background (spec 019 trial), uses details already supplied and asks only missing required questions. Get Sorted questions and corrections work throughout the conversation. Emergency requests pause booking and show reviewed emergency guidance; only an explicit choice to discuss a later repair resumes it. When scoping is complete, proceed directly to sign-in or location without the Continue / Add more details gate.
 3. **Sign in:** guests sign in or sign up here (spec 014, phone verified per spec 001) and come straight back to the thread with everything kept.
 4. **Where:** pick a saved property or add one inside the thread (address search, spec 015). Coverage is checked at once: covered → "Good news…", not covered → Keep me updated (waitlist with the account's details) / Choose a different service / No thanks.
 5. **When:** calendar (next 30 days), then Morning / Afternoon / Flexible; "Urgent — today" for emergency-capable services.

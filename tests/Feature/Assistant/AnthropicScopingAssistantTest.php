@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Contracts\Data\ChatRequest;
 use App\Contracts\Exceptions\AssistantUnavailable;
 use App\Contracts\ScopingAssistant;
+use App\Domain\Assistant\Enums\ConversationIntent;
 use App\Integrations\Anthropic\AnthropicScopingAssistant;
 use App\Integrations\Anthropic\JobSummaryAgent;
 use App\Integrations\Anthropic\ServiceSuggestionAgent;
+use App\Integrations\Anthropic\SiyaAgent;
 use App\Integrations\Fakes\FakeScopingAssistant;
 use App\Providers\IntegrationServiceProvider;
 use Illuminate\Http\Client\ConnectionException;
@@ -102,4 +105,35 @@ it('binds the real assistant outside local and testing only when a key is config
 })->with([
     'no key' => [null, null],
     'key set' => ['test-key', AnthropicScopingAssistant::class],
+]);
+
+it('maps a complete Gemini conversation proposal without changing the provider contract', function (): void {
+    config(['sortd.ai.provider' => 'gemini', 'sortd.ai.model' => 'gemini-2.5-flash']);
+    SiyaAgent::fake([[
+        'reply' => 'Where is the leak?', 'intent' => 'home_problem', 'trade_key' => 'plumbing',
+        'service_key' => 'leak_repair', 'answers' => [['question_key' => 'severity', 'values' => ['Dripping']]],
+        'question_key' => 'leak_location', 'job_notes' => ['My tap is dripping'],
+    ]]);
+    $request = new ChatRequest([], null, [], [], [['role' => 'customer', 'text' => 'My tap is dripping']], 'trade');
+
+    $reply = (new AnthropicScopingAssistant)->chat($request);
+
+    expect($reply->intent)->toBe(ConversationIntent::HomeProblem);
+    expect($reply->answers)->toBe(['severity' => ['Dripping']]);
+    expect($reply->questionKey)->toBe('leak_location');
+    expect($reply->jobNotes)->toBe(['My tap is dripping']);
+    expect($reply->usage->provider)->toBe('gemini');
+    SiyaAgent::assertPrompted(fn (AgentPrompt $prompt): bool => json_decode($prompt->prompt, true)['booking_stage'] === 'trade');
+});
+
+it('returns an unusable conversation proposal for a malformed schema', function (array $output): void {
+    SiyaAgent::fake([$output]);
+    $request = new ChatRequest([], null, [], [], []);
+
+    expect((new AnthropicScopingAssistant)->chat($request)->intent)->toBeNull();
+})->with([
+    'missing fields' => [['reply' => 'Hello', 'intent' => 'home_problem']],
+    'invalid intent' => [['reply' => 'Hello', 'intent' => 'send_money', 'trade_key' => '', 'service_key' => '', 'answers' => [], 'question_key' => '', 'job_notes' => []]],
+    'extra instruction' => [['reply' => 'Hello', 'intent' => 'home_problem', 'trade_key' => '', 'service_key' => '', 'answers' => [], 'question_key' => '', 'job_notes' => [], 'post_job' => true]],
+    'invalid notes type' => [['reply' => 'Hello', 'intent' => 'home_problem', 'trade_key' => '', 'service_key' => '', 'answers' => [], 'question_key' => '', 'job_notes' => [42]]],
 ]);

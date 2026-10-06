@@ -60,7 +60,7 @@ it('opens the thread from the home page, trade pages and service links (AC1, AC3
 
 it('starts with Siya’s greeting and the trades, then a trade’s services as chips (AC2, AC5)', function (): void {
     Livewire::test(Thread::class)
-        ->assertSee('I’m Siya, Sortd’s AI assistant')->assertSee('Plumbing')->assertSet('stage', 'trade')
+        ->assertSee('I’m Siya, Get Sorted’s AI assistant')->assertSee('Plumbing')->assertSet('stage', 'trade')
         ->call('pickTrade', 'plumbing')->assertSet('stage', 'service')
         ->assertSee('What’s the plumbing problem?')->assertSee('Leak repair')->assertSee('Other')
         ->call('pickService', 'leak_repair')
@@ -83,17 +83,15 @@ it('shows stored safety advice and marks the job urgent for an urgent answer (AC
 
     threadFor($this->leak)->assertSee('If water is flooding, close the main stopcock first.')
         ->call('answer', 'leak_location', 'Pipe')->call('answer', 'severity', 'Flooding')
-        ->assertSet('stage', 'details');
+        ->assertSet('stage', 'where');
 
     expect(ServiceJob::query()->sole()->urgency)->toBe(Urgency::Urgent);
 });
 
-it('offers Continue or more details once the questions are done, adding details to the notes (AC9)', function (): void {
+it('moves directly from scoping to booking details without a Continue gate (spec 019 AC13)', function (): void {
     answerQuestions(threadFor($this->leak), $this->leak)
-        ->assertSet('stage', 'details')->assertSee('Anything else your pro should know?')
-        ->call('addDetails')->set('message', 'There is a dog in the yard')->call('send')
-        ->assertSee('I’ve added that for your pro')->assertSet('notes', 'There is a dog in the yard')
-        ->call('continueDetails')->assertSet('detailsDone', true);
+        ->assertSet('stage', 'signin')->assertSet('detailsDone', true)
+        ->assertDontSee('Anything else your pro should know?')->assertSee('Sign in to book');
 });
 
 it('asks guests to sign in before Where & when and keeps everything through login (AC10)', function (): void {

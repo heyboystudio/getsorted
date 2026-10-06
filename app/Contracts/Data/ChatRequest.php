@@ -15,6 +15,8 @@ final readonly class ChatRequest
      * @param  array<string, array{name: string, services: array<string, string>}>  $catalogue  trade key => name and service key => name
      * @param  list<array{key: string, prompt: string, type: string, options: list<string>, required: bool}>  $questions
      * @param  array<string, mixed>  $answers  question key => raw answer
+     * @param  list<string>  $productFacts
+     * @param  array<string, list<array{key: string, prompt: string, type: string, options: list<string>, required: bool}>>  $serviceQuestions
      * @param  list<array{role: 'customer'|'assistant', text: string}>  $transcript
      */
     public function __construct(
@@ -23,5 +25,9 @@ final readonly class ChatRequest
         public array $questions,
         public array $answers,
         public array $transcript,
+        public string $bookingStage = 'describe',
+        public ?string $pendingQuestionKey = null,
+        public array $productFacts = [],
+        public array $serviceQuestions = [],
     ) {}
 }

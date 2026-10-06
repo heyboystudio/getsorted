@@ -56,10 +56,10 @@ function answerQuestions(Testable $thread, Service $service, array $values = [])
     return $thread;
 }
 
-/** Answers the questions and taps Continue on the details card. */
+/** Answers the questions and proceeds directly to secure booking details. */
 function describeJob(Testable $thread, Service $service, array $values = []): Testable
 {
-    return answerQuestions($thread, $service, $values)->call('continueDetails');
+    return answerQuestions($thread, $service, $values);
 }
 
 /** From Where & when to the summary: property, a day and window, then photos skipped. */

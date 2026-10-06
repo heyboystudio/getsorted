@@ -6,6 +6,7 @@ namespace App\Domain\ServiceJobs\Actions;
 
 use App\Domain\ServiceJobs\Data\BookingData;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
+use App\Domain\ServiceJobs\Enums\SummarySource;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Domain\ServiceJobs\Enums\Urgency;
 use App\Domain\ServiceJobs\Exceptions\CannotPostServiceJob;
@@ -51,6 +52,15 @@ final class SaveBookingDraft
                 $job = new ServiceJob;
                 $job->customer()->associate($customer);
                 $job->service()->associate($service);
+            }
+
+            // A corrected classification updates the same authorised draft, retaining its photos.
+            if ($job->service_id !== $service->id) {
+                $job->service()->associate($service);
+                $job->ai_summary = null;
+                $job->ai_summary_source = SummarySource::None;
+                $job->ai_summary_generated_at = null;
+                $job->ai_summary_input_hash = null;
             }
 
             $property = $data->propertyPublicId === null ? null
