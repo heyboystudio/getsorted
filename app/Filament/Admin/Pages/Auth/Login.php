@@ -41,6 +41,11 @@ final class Login extends BaseLogin
         return null;
     }
 
+    public function getSubheading(): string|Htmlable|null
+    {
+        return null;
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema

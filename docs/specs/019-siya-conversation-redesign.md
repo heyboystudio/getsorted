@@ -164,3 +164,5 @@ Founder requested updating `https://usesorted.co.za/admin/login`. Matched the Ge
 Admin login simplification, 6 October 2026: founder asked to remove the duplicate Filament “Get Sorted” logo and “Sign in” heading. The only brand heading is now a large orange “Get Sorted” wordmark in the existing display type. Password and MFA controls remain.
 
 Admin MFA screen refinement: centered the authenticator prompt, six-digit input and submit action, with tighter card spacing. Styling deployed in `5ad2307`; public login returned HTTP 200 and deployed theme CSS includes the MFA layout rules. No Playwright or full quality gates run.
+
+MFA second-screen redesign: hide the password sign-in welcome and instruction copy only while the MFA challenge is active. MFA now has its own “Verify your identity” heading and authenticator/recovery guidance beneath the centered wordmark. Remove the redundant default Filament subheading. Keep MFA challenge and recovery controls intact.

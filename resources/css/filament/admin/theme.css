@@ -30,10 +30,17 @@
     --tw-ring-shadow: 0 0 #0000;
 }
 
-.gs-admin-login-brand { display: grid; justify-items: center; gap: 14px; margin-bottom: 34px; text-align: center; }
+.gs-admin-login-brand { display: grid; justify-items: center; gap: 18px; margin-bottom: 36px; text-align: center; }
 .gs-admin-login-logo { display: inline-block; color: var(--gs-accent); font-family: "Libre Caslon Display", Georgia, serif; font-size: clamp(54px, 11vw, 66px); font-weight: 400; letter-spacing: -.045em; line-height: .98; text-decoration: none; }
-.gs-admin-login-title { margin: 12px 0 0; color: var(--gs-text); font-family: "Libre Caslon Display", Georgia, serif; font-size: 36px; font-weight: 400; letter-spacing: -.025em; line-height: 1.1; }
-.gs-admin-login-copy { margin: 0; color: var(--gs-muted); font-size: 14px; line-height: 1.55; }
+.gs-admin-login-title,
+.gs-admin-mfa-copy h1 { margin: 0; color: var(--gs-text); font-family: "Libre Caslon Display", Georgia, serif; font-size: 36px; font-weight: 400; letter-spacing: -.025em; line-height: 1.1; }
+.gs-admin-login-copy,
+.gs-admin-mfa-copy p { margin: 9px 0 0; color: var(--gs-muted); font-size: 14px; line-height: 1.55; }
+.gs-admin-mfa-copy { display: none; max-width: 34ch; }
+.fi-body:has(#multiFactorChallengeForm) .gs-admin-login-standard-copy { display: none; }
+.fi-body:has(#multiFactorChallengeForm) .gs-admin-mfa-copy { display: block; }
+.fi-body:has(#multiFactorChallengeForm) .gs-admin-login-brand { gap: 22px; margin-bottom: 30px; }
+.fi-body:has(#multiFactorChallengeForm) .gs-admin-login-logo { font-size: clamp(52px, 10vw, 60px); }
 .fi-body:has(.gs-admin-login-brand) .fi-simple-main label { justify-content: center; color: var(--gs-text); text-align: center; }
 .fi-body:has(.gs-admin-login-brand) .fi-simple-main button[type="submit"] { justify-content: center; }
 .fi-body:has(.gs-admin-login-brand) .fi-simple-main input { color: var(--gs-text); }
@@ -44,6 +51,7 @@
 @font-face { font-family: "Libre Caslon Display"; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/libre-caslon-display.woff2) format("woff2"); }
 
 .fi-body:has(#multiFactorChallengeForm) .fi-simple-header-subheading {
+    display: none;
     max-width: 34ch;
     margin: 0 auto 12px;
     color: var(--gs-muted);
@@ -52,8 +60,8 @@
 }
 
 .fi-body:has(#multiFactorChallengeForm) .fi-simple-main {
-    padding-top: 36px;
-    padding-bottom: 36px;
+    padding-top: 40px;
+    padding-bottom: 40px;
 }
 
 .fi-body:has(#multiFactorChallengeForm) #multiFactorChallengeForm .fi-fo-field-wrp {
@@ -72,4 +80,12 @@
 
 .fi-body:has(#multiFactorChallengeForm) #multiFactorChallengeForm .fi-fo-actions {
     justify-content: center;
+}
+
+.fi-body:has(#multiFactorChallengeForm) #multiFactorChallengeForm .fi-fo-field-wrp { width: 100%; }
+.fi-body:has(#multiFactorChallengeForm) #multiFactorChallengeForm .fi-fo-actions { width: 100%; }
+.fi-body:has(#multiFactorChallengeForm) #multiFactorChallengeForm a { display: block; text-align: center; }
+@media (max-width: 480px) {
+    .fi-body:has(.gs-admin-login-brand) .fi-simple-main { padding: 32px 24px; }
+    .gs-admin-login-logo { font-size: 54px; }
 }
