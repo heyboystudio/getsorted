@@ -459,3 +459,5 @@ Spec 019 text-first refinement (6 October 2026, uncommitted): answer choices bec
 
 
 Admin sign-in visual update (6 October 2026): the Filament admin login uses a dedicated panel theme matching Get Sorted homepage colors and typography. The existing Filament password, rate limiting and mandatory MFA flow remains in place.
+
+Admin login follow-up: simplify the branded header to one large orange Get Sorted wordmark and remove Filament’s duplicate logo and sign-in heading. Authentication controls and mandatory MFA stay unchanged.

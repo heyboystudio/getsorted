@@ -8,6 +8,7 @@ use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Auth\Pages\Login as BaseLogin;
 use Filament\Facades\Filament;
 use Filament\Schemas\Schema;
+use Illuminate\Contracts\Support\Htmlable;
 
 /**
  * Admin login without "remember me": admin sessions must expire after the
@@ -28,6 +29,16 @@ final class Login extends BaseLogin
         }
 
         return $response;
+    }
+
+    public function hasLogo(): bool
+    {
+        return false;
+    }
+
+    public function getHeading(): string|Htmlable|null
+    {
+        return null;
     }
 
     public function form(Schema $schema): Schema

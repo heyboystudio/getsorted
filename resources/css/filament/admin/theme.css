@@ -26,16 +26,11 @@
     background: var(--gs-panel);
     color: var(--gs-text);
     box-shadow: 0 28px 90px rgb(0 0 0 / .34);
-    ring: none;
+    --tw-ring-shadow: 0 0 #0000;
 }
 
-.gs-admin-login-brand { margin-bottom: 28px; }
-.gs-admin-login-logo { display: inline-flex; align-items: center; gap: 10px; color: var(--gs-text); font-size: 17px; font-weight: 600; }
-.gs-admin-login-mark { display: grid; width: 36px; height: 36px; place-items: center; border: 2px solid currentColor; border-radius: 50%; }
-.gs-admin-login-eyebrow { margin: 30px 0 8px; color: var(--gs-accent); font-size: 11px; font-weight: 600; letter-spacing: .16em; }
-.gs-admin-login-title { margin: 0; color: var(--gs-text); font-family: "Libre Caslon Display", Georgia, serif; font-size: 42px; font-weight: 400; letter-spacing: -.03em; line-height: 1.05; }
-.gs-admin-login-copy { margin: 12px 0 0; color: var(--gs-muted); font-size: 14px; }
-.fi-body:has(.gs-admin-login-brand) .fi-simple-main h1:not(.gs-admin-login-title),
+.gs-admin-login-brand { margin-bottom: 20px; }
+.gs-admin-login-logo { display: inline-block; color: var(--gs-accent); font-family: "Libre Caslon Display", Georgia, serif; font-size: 54px; font-weight: 400; letter-spacing: -.04em; line-height: 1; text-decoration: none; }
 .fi-body:has(.gs-admin-login-brand) .fi-simple-main label { color: var(--gs-text); }
 .fi-body:has(.gs-admin-login-brand) .fi-simple-main input { color: var(--gs-text); }
 .fi-body:has(.gs-admin-login-brand) .fi-simple-main button[type="submit"] { background: var(--gs-accent); color: #1c0f08; font-weight: 600; }

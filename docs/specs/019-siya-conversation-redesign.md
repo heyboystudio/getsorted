@@ -159,3 +159,6 @@ Contact deployment completed from `1a059bd`: asset/container build and preview m
 
 ### Admin login UI continuation — 6 October 2026
 Founder requested updating `https://usesorted.co.za/admin/login`. Matched the Get Sorted homepage palette, type and wordmark using a panel-specific Filament theme and login render hook. Preserve password and mandatory MFA behavior. Do not use Playwright. Based on the immediately prior explicit commit/deploy instruction for site UI updates, deploy this styling after the asset build and verify the public login route. Full gates remain paused.
+
+
+Admin login simplification, 6 October 2026: founder asked to remove the duplicate Filament “Get Sorted” logo and “Sign in” heading. The only brand heading is now a large orange “Get Sorted” wordmark in the existing display type. Password and MFA controls remain.
