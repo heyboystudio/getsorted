@@ -360,3 +360,26 @@
   .gs-home .gs-foot-brand{ grid-column: 1 / -1; }
   .gs-home .gs-legal{ flex-direction: column; gap: 6px; }
 }
+
+
+/* Contact shares the homepage shell and tokens. */
+.gs-home.gs-contact .gs-contact-hero{padding:88px 0 44px;max-width:760px}
+.gs-home.gs-contact .gs-contact-kicker{font-size:11px;letter-spacing:.16em;color:var(--accent);font-weight:500;margin-bottom:18px}
+.gs-home.gs-contact .gs-contact-hero h1{font-size:clamp(2.8rem,6vw,5rem);line-height:1.04}
+.gs-home.gs-contact .gs-contact-intro{max-width:48ch;margin-top:22px;color:var(--muted);font-size:17px;line-height:1.6}
+.gs-home.gs-contact .gs-contact-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.gs-home.gs-contact .gs-contact-card{display:flex;flex-direction:column;align-items:flex-start;gap:20px;padding:32px;border:1px solid var(--line);border-radius:20px;background:var(--panel)}
+.gs-home.gs-contact .gs-contact-icon{font-size:32px;color:var(--accent)}
+.gs-home.gs-contact .gs-contact-card .gs-contact-kicker{margin:0}
+.gs-home.gs-contact .gs-contact-card h2,.gs-home.gs-contact .gs-contact-direct h2{font-size:clamp(1.8rem,3vw,2.5rem)}
+.gs-home.gs-contact .gs-contact-card>p:not(.gs-contact-kicker),.gs-home.gs-contact .gs-contact-direct p:not(.gs-contact-kicker){color:var(--muted);line-height:1.6;max-width:44ch}
+.gs-home.gs-contact .gs-contact-card .gs-btn{margin-top:auto}
+.gs-home.gs-contact .gs-contact-direct{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:48px 0;margin-top:44px;border-top:1px solid var(--line)}
+.gs-home.gs-contact .gs-contact-direct h2{margin-bottom:16px}
+.gs-home.gs-contact .gs-contact-details{display:grid;gap:26px;align-content:start}
+.gs-home.gs-contact .gs-contact-details dt{display:flex;gap:8px;align-items:center;color:var(--soft);font-size:13px;margin-bottom:10px}
+.gs-home.gs-contact .gs-contact-details dd{overflow-wrap:anywhere;font-size:18px}
+.gs-home.gs-contact .gs-contact-details a:hover{color:var(--accent)}
+.gs-home.gs-contact .gs-contact-footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:20px;padding:28px 0 36px;border-top:1px solid var(--line);color:var(--soft);font-size:12px}
+.gs-home.gs-contact .gs-contact-footer nav{display:flex;gap:24px}
+@media(max-width:700px){.gs-home.gs-contact .gs-contact-hero{padding:48px 0 32px}.gs-home.gs-contact .gs-contact-grid,.gs-home.gs-contact .gs-contact-direct{grid-template-columns:1fr}.gs-home.gs-contact .gs-contact-card{padding:26px}.gs-home.gs-contact .gs-contact-direct{gap:28px;padding:32px 0;margin-top:32px}}
