@@ -93,7 +93,6 @@
     </section>
 
     <div class="gs-logos" aria-label="Durban organisations">
-      <p class="gs-logos-lbl">Made for Durban homes</p>
       <div class="gs-marquee">
         @foreach ([false, true] as $copy)
         <ul class="gs-track" @if ($copy) aria-hidden="true" @endif>
