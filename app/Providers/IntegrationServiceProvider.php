@@ -52,8 +52,8 @@ final class IntegrationServiceProvider extends ServiceProvider
             $this->registerTwilio();
             $this->registerPlaces();
 
-            // Siya on Bedrock (decision 043); the test site otherwise keeps the fake assistant.
-            if (config('sortd.ai.provider') === 'bedrock') {
+            // Siya on Bedrock (decision 043) or Gemini (decision 049); the test site otherwise keeps the fake assistant.
+            if ($this->assistantProviderConfigured(includeAnthropic: false)) {
                 $this->app->singleton(ScopingAssistant::class, AnthropicScopingAssistant::class);
             }
         }
@@ -65,9 +65,19 @@ final class IntegrationServiceProvider extends ServiceProvider
         $this->registerTwilio();
         $this->registerPlaces();
 
-        if (config('sortd.ai.provider') === 'bedrock' || filled(config('ai.providers.anthropic.key'))) {
+        if ($this->assistantProviderConfigured(includeAnthropic: true)) {
             $this->app->singleton(ScopingAssistant::class, AnthropicScopingAssistant::class);
         }
+    }
+
+    /** Bedrock needs no key (the server role); Gemini and Anthropic need theirs. */
+    private function assistantProviderConfigured(bool $includeAnthropic): bool
+    {
+        return match (config('sortd.ai.provider')) {
+            'bedrock' => true,
+            'gemini' => filled(config('ai.providers.gemini.key')),
+            default => $includeAnthropic && filled(config('ai.providers.anthropic.key')),
+        };
     }
 
     private function registerPlaces(): void

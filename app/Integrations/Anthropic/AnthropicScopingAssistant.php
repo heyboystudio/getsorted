@@ -21,8 +21,9 @@ use Laravel\Ai\Responses\StructuredAgentResponse;
 use Throwable;
 
 /**
- * ScopingAssistant on Claude through the Laravel AI SDK (spec 007, 016): the
- * Anthropic API or Amazon Bedrock (EU), per `sortd.ai.provider` (decision 043).
+ * ScopingAssistant through the Laravel AI SDK (spec 007, 016): the Anthropic API,
+ * Amazon Bedrock (EU, decision 043) or the Google Gemini API (decision 049), per
+ * `sortd.ai.provider`. The class name predates the other providers.
  * Bound only when a provider is configured; the domain still keeps it idle
  * until the `ai.enabled` setting is on (founder decision 1).
  */
@@ -127,7 +128,11 @@ final class AnthropicScopingAssistant implements ScopingAssistant
 
     private function provider(): string
     {
-        return config('sortd.ai.provider') === 'bedrock' ? 'bedrock' : 'anthropic';
+        return match (config('sortd.ai.provider')) {
+            'bedrock' => 'bedrock',
+            'gemini' => 'gemini',
+            default => 'anthropic',
+        };
     }
 
     private function model(): string
