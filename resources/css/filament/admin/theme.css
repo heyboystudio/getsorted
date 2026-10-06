@@ -42,3 +42,34 @@
 
 @font-face { font-family: "Geist"; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/geist.woff2) format("woff2"); }
 @font-face { font-family: "Libre Caslon Display"; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/libre-caslon-display.woff2) format("woff2"); }
+
+.fi-body:has(#multiFactorChallengeForm) .fi-simple-header-subheading {
+    max-width: 34ch;
+    margin: 0 auto 12px;
+    color: var(--gs-muted);
+    line-height: 1.55;
+    text-align: center;
+}
+
+.fi-body:has(#multiFactorChallengeForm) .fi-simple-main {
+    padding-top: 36px;
+    padding-bottom: 36px;
+}
+
+.fi-body:has(#multiFactorChallengeForm) #multiFactorChallengeForm .fi-fo-field-wrp {
+    text-align: center;
+}
+
+.fi-body:has(#multiFactorChallengeForm) #multiFactorChallengeForm .fi-fo-field-wrp label {
+    justify-content: center;
+    text-align: center;
+}
+
+.fi-body:has(#multiFactorChallengeForm) .fi-one-time-code-input-ctn {
+    justify-content: center;
+    width: 100%;
+}
+
+.fi-body:has(#multiFactorChallengeForm) #multiFactorChallengeForm .fi-fo-actions {
+    justify-content: center;
+}
