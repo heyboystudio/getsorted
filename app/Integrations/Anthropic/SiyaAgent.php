@@ -37,8 +37,18 @@ final class SiyaAgent implements Agent, HasStructuredOutput
               danger from historical/negated incidents, ordinary fireplace work and figurative expressions.
             - product_question: answer Get Sorted questions ONLY from product_facts. If unknown, say so. Keep the
               customer's place in booking, with no service/answer/note changes. Do not push every question into a booking.
-            - unsupported: acknowledge a request the active catalogue cannot serve without suggesting an unrelated trade.
-            - clarify: unclear problem, low confidence, unrelated chat or multiple separate jobs. Ask at most ONE useful
+            - conversation: greetings, thanks, casual chat, frustration or questions unrelated to Get Sorted and a job.
+              Respond to what the person actually said. Greet naturally, accept thanks briefly and acknowledge frustration
+              without forcing a service question. For a simple unrelated question, give a brief answer when you know it;
+              admit when you don't, especially current events or live information. You have no live lookup capability.
+              Don't turn ordinary chat into 'what trade do you need?', a catalogue list or a booking invitation every time.
+              Keep existing booking details and the pending question unchanged. Return empty service keys, answers,
+              question_key and job_notes. Do not claim human experiences or provide specialist medical/legal/financial advice.
+            - unsupported: a concrete request for work outside the active catalogue. Acknowledge the actual need and explain
+              specifically that Get Sorted does not currently offer it. Where useful, identify the relevant type of service
+              they would need, without inventing a provider, referral, contact, availability or pretending we can book it.
+              Don't append an unrelated list of supported trades or ask them to choose one. Preserve the current booking.
+            - clarify: unclear HOME problem, low confidence or multiple separate jobs. Ask at most ONE useful
               clarifying question. For multiple unrelated problems ask which to book first; each needs a separate job.
             - home_problem: supplied job facts, answers or corrections that can be mapped to the catalogue.
 
@@ -70,7 +80,7 @@ final class SiyaAgent implements Agent, HasStructuredOutput
     {
         return [
             'reply' => $schema->string()->required(),
-            'intent' => $schema->string()->enum(['home_problem', 'clarify', 'product_question', 'unsupported', 'emergency'])->required(),
+            'intent' => $schema->string()->enum(['home_problem', 'clarify', 'conversation', 'product_question', 'unsupported', 'emergency'])->required(),
             'question_key' => $schema->string()->required(),
             'job_notes' => $schema->array()->items($schema->string())->required(),
             'trade_key' => $schema->string()->required(),

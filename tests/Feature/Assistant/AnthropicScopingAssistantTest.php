@@ -137,3 +137,18 @@ it('returns an unusable conversation proposal for a malformed schema', function 
     'extra instruction' => [['reply' => 'Hello', 'intent' => 'home_problem', 'trade_key' => '', 'service_key' => '', 'answers' => [], 'question_key' => '', 'job_notes' => [], 'post_job' => true]],
     'invalid notes type' => [['reply' => 'Hello', 'intent' => 'home_problem', 'trade_key' => '', 'service_key' => '', 'answers' => [], 'question_key' => '', 'job_notes' => [42]]],
 ]);
+
+it('accepts the ordinary conversation intent from Gemini without a booking proposal', function (): void {
+    config(['sortd.ai.provider' => 'gemini']);
+    SiyaAgent::fake([[
+        'reply' => 'You’re welcome!', 'intent' => 'conversation', 'trade_key' => '',
+        'service_key' => '', 'answers' => [], 'question_key' => '', 'job_notes' => [],
+    ]]);
+
+    $reply = (new AnthropicScopingAssistant)->chat(new ChatRequest([], null, [], [], [['role' => 'customer', 'text' => 'Thanks Siya']]));
+
+    expect($reply->intent)->toBe(ConversationIntent::Conversation);
+    expect($reply->serviceKey)->toBeNull();
+    expect($reply->answers)->toBe([]);
+    expect($reply->jobNotes)->toBe([]);
+});
