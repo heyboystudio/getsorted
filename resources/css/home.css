@@ -116,9 +116,6 @@
 .gs-home .gs-sec-head .gs-more{ display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; color: var(--soft); font-size: 14px; border-bottom: 1px solid var(--line-2); padding-bottom: 2px; }
 @media (hover: hover){.gs-home .gs-sec-head .gs-more:hover{ color: var(--text); }
  }
-.gs-home .gs-suburbs{ border-block: 1px solid var(--line); padding: 20px 0; margin-top: 8px; }
-.gs-home .gs-suburbs-in{ display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 40px; padding-inline: 20px; }
-.gs-home .gs-suburbs span{ font-family: var(--serif); font-size: 23px; letter-spacing: -0.02em; color: #626a7e; }
 .gs-home .gs-bento{ display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
 .gs-home .gs-cell{ min-width: 0; position: relative; border-radius: var(--r); overflow: hidden; background: var(--panel); border: 1px solid var(--line); display: flex; flex-direction: column; min-height: 280px; transition: border-color 160ms; }
 .gs-home .gs-cell .gs-pic{ flex: 1; min-height: 190px; overflow: hidden; }

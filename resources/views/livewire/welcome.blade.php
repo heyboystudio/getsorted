@@ -1,4 +1,4 @@
-<div class="gs-home" :class="{ 'gs-collapsed': collapsed }" x-data="{ collapsed: (() => { try { const v = localStorage.getItem('gs-side'); return v === null ? window.innerWidth < 1280 : v === '1'; } catch (e) { return window.innerWidth < 1280; } })(), toggle() { this.collapsed = ! this.collapsed; try { localStorage.setItem('gs-side', this.collapsed ? '1' : '0'); } catch (e) {} } }">
+<div class="gs-home" :class="{ 'gs-collapsed': collapsed }" x-data="{ collapsed: (() => { try { const v = localStorage.getItem('gs-side'); return v === null ? true : v === '1'; } catch (e) { return true; } })(), toggle() { this.collapsed = ! this.collapsed; try { localStorage.setItem('gs-side', this.collapsed ? '1' : '0'); } catch (e) {} } }">
 @vite('resources/css/home.css')
 <link rel="stylesheet" href="{{ asset('fonts/phosphor/phosphor.css') }}">
 <a class="gs-skip" href="#main">Skip to content</a>
@@ -92,9 +92,6 @@
       </div>
     </section>
 
-    <div class="gs-suburbs" aria-label="Suburbs covered">
-      <div class="gs-suburbs-in"><span>Morningside</span><span>Umhlanga</span><span>Berea</span><span>Glenwood</span><span>Westville</span><span>Musgrave</span><span>Durban North</span><span>Kloof</span><span>Hillcrest</span><span>Pinetown</span><span>Bluff</span><span>Umbilo</span></div>
-    </div>
 
     <section class="gs-sec" aria-labelledby="trades-h">
       <div class="gs-wrap">
