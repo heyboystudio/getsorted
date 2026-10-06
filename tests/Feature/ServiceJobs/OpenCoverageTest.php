@@ -3,51 +3,59 @@
 declare(strict_types=1);
 
 use App\Domain\Matching\EligibleProsQuery;
-use App\Models\Service;
-use App\Models\Suburb;
-use App\Models\Trade;
 use Database\Seeders\CatalogueSeeder;
-use Database\Seeders\SuburbSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-/** Decision 044: before launch, every eThekwini suburb takes requests even with no pros. */
+/** Decision 044 (spec 020): before launch, a customer can book anywhere, even with no pros signed up. */
 beforeEach(function (): void {
-    $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
+    $this->seed(CatalogueSeeder::class);
     config()->set('sortd.coverage.require_pros', false);
-    $this->plumbing = Trade::query()->where('key', 'plumbing')->sole();
-    $this->leak = Service::query()->where('key', 'leak_repair')->sole();
+    $this->plumbing = tradeOf('plumbing');
 });
 
-it('lets customers book in any Durban suburb, active or not, with no pros signed up', function (string $slug): void {
-    [$customer, $property] = bookingCustomer($slug);
+it('lets customers book with no pros signed up while pros are not required', function (): void {
+    [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
 
-    describeJob(threadFor($this->leak), $this->leak)->call('selectProperty', $property->public_id)
+    describeJob(threadFor($this->plumbing), $this->plumbing)->call('selectProperty', $property->public_id)
         ->assertSet('stage', 'when');
-})->with(['morningside', 'pinetown']);
+});
 
-it('still refuses inactive services and suburbs outside eThekwini', function (): void {
-    $suburb = Suburb::query()->where('slug', 'morningside')->sole();
+it('still refuses inactive trades', function (): void {
     $query = app(EligibleProsQuery::class);
 
-    expect($query->covers($this->leak, $suburb))->toBeTrue();
+    expect($query->covers($this->plumbing, durban()))->toBeTrue();
 
-    $this->leak->update(['is_active' => false]);
-    expect($query->covers($this->leak->refresh(), $suburb))->toBeFalse();
-
-    $this->leak->update(['is_active' => true]);
-    $suburb->update(['municipality' => 'Msunduzi']);
-    expect($query->covers($this->leak->refresh(), $suburb->refresh()))->toBeFalse();
+    $this->plumbing->update(['is_active' => false]);
+    expect($query->covers($this->plumbing->refresh(), durban()))->toBeFalse();
 });
 
-it('requires an eligible pro again when switched back on', function (): void {
+it('requires a pro of the trade within range again when switched back on', function (): void {
     config()->set('sortd.coverage.require_pros', true);
 
-    [$customer, $property] = bookingCustomer('morningside');
+    [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
 
-    describeJob(threadFor($this->leak), $this->leak)->call('selectProperty', $property->public_id)
+    describeJob(threadFor($this->plumbing), $this->plumbing)->call('selectProperty', $property->public_id)
         ->assertSet('stage', 'waitlist');
+});
+
+it('lets the customer carry on when a pro is within range and pros are required', function (): void {
+    config()->set('sortd.coverage.require_pros', true);
+    proNear(['plumbing'], 5);
+
+    [$customer, $property] = bookingCustomer();
+    $this->actingAs($customer);
+
+    describeJob(threadFor($this->plumbing), $this->plumbing)->call('selectProperty', $property->public_id)
+        ->assertSet('stage', 'when');
+});
+
+it('does not count a pro beyond their radius and the soft edge', function (): void {
+    config()->set('sortd.coverage.require_pros', true);
+    proNear(['plumbing'], 25);
+
+    expect(app(EligibleProsQuery::class)->covers($this->plumbing, durban()))->toBeFalse();
 });

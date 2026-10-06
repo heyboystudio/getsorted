@@ -305,6 +305,7 @@ final class Thread extends Component
         abort_unless($this->stage === 'chat' && $this->isReady(), 404);
         $this->bookingRequested = true;
         $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Continue to book')];
+        $this->autosave();
         $this->advance();
     }
 
@@ -335,7 +336,9 @@ final class Thread extends Component
         abort_unless(! in_array($this->stage, ['posted', 'closed', 'emergency'], true), 404);
         $this->facts = array_values(array_filter($this->facts, fn (array $fact): bool => $fact['id'] !== $id));
         $this->autosave();
-        $this->advance(speak: false);
+
+        // Stay in the details editor while the customer is still tidying up.
+        $this->stage === 'notes' ? $this->persist() : $this->advance(speak: false);
     }
 
     // ── Sign in ─────────────────────────────────────────────────────────
@@ -611,7 +614,7 @@ final class Thread extends Component
             $this->waitlistPropertyPublicId = $this->propertyPublicId;
             $this->propertyPublicId = null;
             $this->stage = 'waitlist';
-            $this->say(__('Sorry, we don’t have :trade pros near you yet. Want us to let you know when we do?', ['trade' => mb_strtolower($this->trade()?->name ?? '')]));
+            $this->say(__('Sorry, we don’t have :trade pros near you yet. Want us to let you know when we do?', ['trade' => mb_strtolower($this->trade()->name ?? '')]));
 
             return;
         } catch (CannotPostServiceJob $exception) {
@@ -622,6 +625,19 @@ final class Thread extends Component
         $this->stage = 'posted';
         $parked = $this->parked !== [] ? ' '.__('Once this one is sorted, we can book “:job” too.', ['job' => $this->parked[0]]) : '';
         $this->say(__('Your job is booked. I’m sharing it with vetted pros near you now, and up to 5 of them can send you quotes to compare. We’ll WhatsApp you as they come in.').$parked);
+    }
+
+    /** After a job is posted: carry on with the next job the customer mentioned, starting a fresh conversation for it. */
+    public function startNextJob(): void
+    {
+        abort_unless($this->stage === 'posted' && $this->parked !== [], 404);
+
+        $next = $this->parked[0];
+        $remaining = array_slice($this->parked, 1);
+        session()->forget(self::SESSION_KEY);
+        $this->startOver();
+        $this->parked = $remaining;
+        $this->say(__('Let’s sort out: :job. Tell me a bit more about it.', ['job' => $next]));
     }
 
     public function restart(): void
@@ -810,7 +826,7 @@ final class Thread extends Component
 
     private function showSafetyAdvice(): void
     {
-        foreach ($this->trade()?->safety_advice ?? [] as $advice) {
+        foreach ($this->trade()->safety_advice ?? [] as $advice) {
             $this->messages[] = ['role' => 'assistant', 'kind' => 'safety', 'text' => $advice];
         }
     }
@@ -1009,7 +1025,7 @@ final class Thread extends Component
             'property' => $this->selectedProperty(),
             'when' => $this->whenLabel(),
             'urgent' => $urgent,
-            'advice' => $urgent && $trade instanceof Trade ? $trade->safety_advice : [],
+            'advice' => $trade instanceof Trade ? $trade->safety_advice : [],
             'guidance' => $trade instanceof Trade && ($trade->safety_advice !== [] || $trade->registration === RegistrationType::ElectricalRegisteredPerson),
         ];
     }

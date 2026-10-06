@@ -19,13 +19,11 @@ use App\Models\JobMessage;
 use App\Models\Pro;
 use App\Models\Property;
 use App\Models\Quote;
-use App\Models\Service;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobInvite;
-use App\Models\Suburb;
+use App\Models\Trade;
 use App\Models\User;
 use Database\Seeders\CatalogueSeeder;
-use Database\Seeders\SuburbSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -42,11 +40,11 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
+    $this->seed(CatalogueSeeder::class);
     Storage::fake('media');
     $this->customer = User::factory()->customer()->create(['first_name' => 'Thandi']);
-    $property = Property::factory()->for($this->customer)->create(['suburb_id' => Suburb::query()->where('slug', 'musgrave')->value('id')]);
-    $this->job = ServiceJob::factory()->open()->forProperty($property)->create(['service_id' => Service::query()->where('key', 'leak_repair')->value('id')]);
+    $property = Property::factory()->for($this->customer)->create();
+    $this->job = ServiceJob::factory()->open()->forProperty($property)->create(['trade_id' => Trade::query()->where('key', 'plumbing')->value('id')]);
     $this->proA = chatPro('Dlamini Plumbing');
     $this->proB = chatPro('Naidoo Plumbing');
 });
@@ -221,7 +219,7 @@ it('shows estimate cards in the chat and calls quotes estimates (AC7)', function
     chatAs($this->customer, $this->proA)->set('message', 'Thanks')->call('send')->assertSee('Estimate · R 570.50');
 
     $this->actingAs($this->customer);
-    Livewire::test(CustomerJob::class, ['job' => $this->job])->assertSee('Estimates (1 of 3)')
+    Livewire::test(CustomerJob::class, ['job' => $this->job])->assertSee('Estimates (1 of 5)')
         ->assertSee('Your pro can adjust the final amount after seeing the job. You’ll approve any change.');
 });
 

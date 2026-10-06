@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Resources\Trades\Schemas;
 
+use App\Domain\Catalogue\Enums\RegistrationType;
 use App\Domain\Catalogue\Enums\TradeStatus;
 use App\Filament\Admin\Support\CatalogueFields;
 use App\Models\Trade;
-use App\Domain\Catalogue\Enums\RegistrationType;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;

@@ -50,10 +50,14 @@ final class BookingState
     /** @return list<string> */
     public function factTexts(): array
     {
-        return array_values(array_map(fn (array $fact): string => $fact['text'], $this->facts));
+        return array_map(fn (array $fact): string => $fact['text'], $this->facts);
     }
 
-    /** What a pro needs before this can be booked: a trade and at least one concrete problem fact. */
+    /**
+     * What a pro needs before this can be booked: a trade and at least one concrete problem fact.
+     *
+     * @return list<string>
+     */
     public function missing(): array
     {
         return array_values(array_filter([

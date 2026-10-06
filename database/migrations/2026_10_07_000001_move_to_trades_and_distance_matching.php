@@ -51,6 +51,11 @@ return new class extends Migration
 
         DB::statement('insert into pro_trades (pro_id, trade_id) select distinct ps.pro_id, s.trade_id from pro_services ps join services s on s.id = ps.service_id');
 
+        Schema::table('properties', function (Blueprint $table): void {
+            $table->string('area_label', 160)->nullable();
+        });
+        DB::statement('update properties set area_label = (select su.name from suburbs su where su.id = properties.suburb_id), location = coalesce(location, (select su.centroid from suburbs su where su.id = properties.suburb_id))');
+
         Schema::table('service_jobs', function (Blueprint $table): void {
             $table->foreignId('trade_id')->nullable()->constrained()->restrictOnDelete();
             // [{id, text, turn}]: short facts Siya extracted from the customer's words, highlighted for pros.
@@ -60,7 +65,7 @@ return new class extends Migration
         });
 
         DB::statement('update service_jobs set trade_id = (select s.trade_id from services s where s.id = service_jobs.service_id)');
-        DB::statement('update service_jobs set location = (select p.location from properties p where p.id = service_jobs.property_id), area_label = (select su.name from properties p join suburbs su on su.id = p.suburb_id where p.id = service_jobs.property_id)');
+        DB::statement('update service_jobs set location = (select p.location from properties p where p.id = service_jobs.property_id), area_label = (select p.area_label from properties p where p.id = service_jobs.property_id)');
 
         Schema::table('service_jobs', function (Blueprint $table): void {
             $table->dropConstrainedForeignId('service_id');
@@ -69,10 +74,6 @@ return new class extends Migration
         });
         DB::statement('alter table service_jobs alter column trade_id set not null');
 
-        Schema::table('properties', function (Blueprint $table): void {
-            $table->string('area_label', 160)->nullable();
-        });
-        DB::statement('update properties set area_label = (select su.name from suburbs su where su.id = properties.suburb_id), location = coalesce(location, (select su.centroid from suburbs su where su.id = properties.suburb_id))');
         Schema::table('properties', fn (Blueprint $table) => $table->dropConstrainedForeignId('suburb_id'));
 
         Schema::table('waitlist_entries', function (Blueprint $table): void {

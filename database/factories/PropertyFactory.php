@@ -6,8 +6,8 @@ namespace Database\Factories;
 
 use App\Domain\Properties\Enums\PropertyType;
 use App\Models\Property;
-use Clickbar\Magellan\Data\Geometries\Point;
 use App\Models\User;
+use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /** @extends Factory<Property> */

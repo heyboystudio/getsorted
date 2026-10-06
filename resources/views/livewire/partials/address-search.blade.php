@@ -1,6 +1,6 @@
 {{-- Spec 015, 020: address search with Google suggestions. A picked address is geocoded; there is no manual entry. --}}
 <div class="relative">
-    <label for="addressQuery" class="block text-sm font-medium">{{ $label ?? __('Find your address') }}</label>
+    <label for="addressQuery" class="block text-sm font-medium">{{ $addressLabel ?? __('Find your address') }}</label>
     <input id="addressQuery" type="text" autocomplete="off" wire:model.live.debounce.300ms="addressQuery"
         placeholder="{{ __('Start typing, e.g. 12 Innes Road') }}" maxlength="200"
         role="combobox" aria-autocomplete="list" aria-controls="address-options" aria-expanded="{{ $addressSuggestions !== [] ? 'true' : 'false' }}"

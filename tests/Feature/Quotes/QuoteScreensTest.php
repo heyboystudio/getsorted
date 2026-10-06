@@ -24,14 +24,11 @@ use App\Livewire\Pros\Jobs\Show as ProJob;
 use App\Models\Pro;
 use App\Models\Property;
 use App\Models\Quote;
-use App\Models\Service;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobInvite;
-use App\Models\Suburb;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CatalogueSeeder;
-use Database\Seeders\SuburbSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -41,17 +38,14 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
+    $this->seed(CatalogueSeeder::class);
     Storage::fake('media');
-    $this->leak = Service::query()->where('key', 'leak_repair')->sole();
-    $this->musgrave = Suburb::query()->where('slug', 'musgrave')->sole();
 });
 
 function screenQuotingPro(string $name = 'Dlamini Plumbing'): Pro
 {
-    $pro = Pro::factory()->approved()->create(['business_name' => $name]);
-    $pro->services()->attach(test()->leak);
-    $pro->serviceAreas()->attach(test()->musgrave);
+    $pro = proNear(['plumbing'], 2);
+    $pro->forceFill(['business_name' => $name])->save();
 
     return $pro;
 }
@@ -59,13 +53,9 @@ function screenQuotingPro(string $name = 'Dlamini Plumbing'): Pro
 function screenQuoteJob(): ServiceJob
 {
     $customer = User::factory()->customer()->create(['first_name' => 'Nomvula', 'last_name' => 'Secretname', 'phone_e164' => '+27829990000']);
-    $property = Property::factory()->for($customer)->create(['suburb_id' => test()->musgrave->id, 'street_address' => '7 Private Lane', 'label' => 'Home']);
-    $answers = [];
-    foreach (test()->leak->questions as $question) {
-        $answers[$question->key] = ['prompt' => $question->prompt, 'type' => $question->type->value, 'answer' => $question->options[0]];
-    }
-    $draft = app(SaveBookingDraft::class)->handle($customer, test()->leak, null, new BookingData(
-        answers: $answers, notes: 'Under the sink.', propertyPublicId: $property->public_id,
+    $property = Property::factory()->for($customer)->create(['street_address' => '7 Private Lane', 'label' => 'Home']);
+    $draft = app(SaveBookingDraft::class)->handle($customer, tradeOf('plumbing'), null, new BookingData(
+        facts: [['id' => 'f1', 'text' => 'tap drips when fully closed', 'turn' => 1]], notes: 'Under the sink.', propertyPublicId: $property->public_id,
         preferredDate: now()->toImmutable()->addDays(2), timeWindow: TimeWindow::Morning,
     ));
 
@@ -140,14 +130,14 @@ it('lets the pro revise or withdraw a sent quote from the invite page (AC5)', fu
 });
 
 it('tells a pro politely when the job is already full (AC4)', function (): void {
-    $pros = [screenQuotingPro('A'), screenQuotingPro('B'), screenQuotingPro('C'), screenQuotingPro('D')];
+    $pros = array_map(fn (string $name): Pro => screenQuotingPro($name), ['A', 'B', 'C', 'D', 'E', 'F']);
     $job = screenQuoteJob();
-    foreach (array_slice($pros, 0, 3) as $pro) {
+    foreach (array_slice($pros, 0, 5) as $pro) {
         screenSubmit($job, $pro);
     }
-    $this->actingAs($pros[3]->user);
+    $this->actingAs($pros[5]->user);
 
-    Livewire::test(ProJob::class, ['invite' => screenInvite($job, $pros[3])])->assertSee('This job is full')->assertDontSee('Send an estimate');
+    Livewire::test(ProJob::class, ['invite' => screenInvite($job, $pros[5])])->assertSee('This job is full')->assertDontSee('Send an estimate');
 });
 
 it('sends a quote once even when "Send quote" is tapped twice (AC3)', function (): void {
@@ -193,7 +183,7 @@ it('shows why a withdrawal failed instead of doing nothing (AC5)', function (): 
 
 // --- Customer comparison (AC7, AC8) ------------------------------------------------------
 
-it('shows the customer up to three quotes side by side with the pro\'s details (AC7)', function (): void {
+it('shows the customer the quotes side by side with the pro\'s details (AC7)', function (): void {
     $first = screenQuotingPro('Dlamini Plumbing');
     $second = screenQuotingPro('Naidoo Plumbing');
     $job = screenQuoteJob();
@@ -202,7 +192,7 @@ it('shows the customer up to three quotes side by side with the pro\'s details (
     $this->actingAs($job->customer);
 
     Livewire::test(CustomerJob::class, ['job' => $job])
-        ->assertSee('Estimates (2 of 3)')->assertSee('Dlamini Plumbing')->assertSee('Naidoo Plumbing')
+        ->assertSee('Estimates (2 of 5)')->assertSee('Dlamini Plumbing')->assertSee('Naidoo Plumbing')
         ->assertSee('R 570.50')->assertSee('R 114.10')->assertSee('Can come tomorrow morning.')
         ->assertSee('Labour')->assertSee('Materials')->assertSee('On Sortd since');
 });

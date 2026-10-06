@@ -7,8 +7,8 @@ namespace Database\Factories;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Models\Property;
-use App\Models\Trade;
 use App\Models\ServiceJob;
+use App\Models\Trade;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

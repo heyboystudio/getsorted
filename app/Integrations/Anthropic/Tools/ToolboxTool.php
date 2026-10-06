@@ -8,7 +8,6 @@ use Closure;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
-use Stringable;
 
 /** One model-callable tool: a name, a schema and a handler that returns the toolbox's structured result as JSON. */
 final class ToolboxTool implements Tool
@@ -29,7 +28,7 @@ final class ToolboxTool implements Tool
         return $this->name;
     }
 
-    public function description(): Stringable|string
+    public function description(): string
     {
         return $this->description;
     }
@@ -39,7 +38,7 @@ final class ToolboxTool implements Tool
         return ($this->schema)($schema);
     }
 
-    public function handle(Request $request): Stringable|string
+    public function handle(Request $request): string
     {
         return (string) json_encode(($this->handler)($request), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     }

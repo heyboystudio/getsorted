@@ -1,7 +1,7 @@
 {{-- Spec 017: booking in one Siya thread. Every message is escaped text; nothing is rendered as HTML. --}}
 @php($chip = 'rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm hover:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-600 disabled:opacity-60')
 @php($primary = 'w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60')
-@php($tapped = 'pickTrade,send,continueAfterEmergency,retry,startBooking,selectProperty,chooseWhen,finishPhotos,confirmBooking,joinWaitlist,noThanks,differentTrade,removeFact')
+@php($tapped = 'startNextJob,pickTrade,send,continueAfterEmergency,retry,startBooking,selectProperty,chooseWhen,finishPhotos,confirmBooking,joinWaitlist,noThanks,differentTrade,removeFact')
 <main class="flex min-h-dvh justify-center" x-data="{ pending: '' }">
     <section class="flex w-full max-w-2xl flex-col px-4">
         <header class="sticky top-0 z-10 -mx-4 border-b border-zinc-200 bg-stone-50/95 px-4 pb-3 pt-4 backdrop-blur">
@@ -346,6 +346,9 @@
                 </div>
             @elseif ($stage === 'posted' && $jobPublicId)
                 <a href="{{ route('jobs.show', $jobPublicId) }}" wire:navigate class="block text-center {{ $primary }}">{{ __('See your job') }}</a>
+                @if ($parked !== [])
+                    <button type="button" wire:click="startNextJob" wire:loading.attr="disabled" class="mt-3 w-full {{ $chip }}">{{ __('Book “:job” next', ['job' => $parked[0]]) }}</button>
+                @endif
             @endif
             <div wire:key="end-{{ count($messages) }}-{{ $stage }}" x-init="$nextTick(() => $el.scrollIntoView({ block: 'end' }))"></div>
         </div>

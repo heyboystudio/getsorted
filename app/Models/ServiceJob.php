@@ -144,7 +144,7 @@ final class ServiceJob extends Model implements HasMedia
      */
     public function factTexts(): array
     {
-        return array_values(array_map(fn (array $fact): string => $fact['text'], $this->facts));
+        return array_map(fn (array $fact): string => $fact['text'], $this->facts);
     }
 
     /** @return array<string, string> */

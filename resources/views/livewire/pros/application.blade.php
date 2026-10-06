@@ -65,7 +65,7 @@
                 <p class="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{{ __('Saved: :area. Search again to change it.', ['area' => $pro->base_area_label ?? __('your address')]) }}</p>
             @endif
             <div class="mt-4">
-                @include('livewire.partials.address-search', ['label' => __('Your address')])
+                @include('livewire.partials.address-search', ['addressLabel' => __('Your address')])
                 @error('addressQuery') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
                 @error('address') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
             </div>

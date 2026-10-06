@@ -58,7 +58,7 @@ final class Pro extends Model
     protected $fillable = ['business_name', 'business_type', 'vat_number', 'bio', 'weekly_job_cap'];
 
     /** @var array<string, mixed> */
-    protected $attributes = ['status' => 'draft'];
+    protected $attributes = ['status' => 'draft', 'service_radius_km' => 15];
 
     /** @return list<string> */
     public function uniqueIds(): array

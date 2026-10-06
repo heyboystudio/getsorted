@@ -83,6 +83,14 @@ final class FakeScopingAssistant implements ScopingAssistant
         return $this;
     }
 
+    /** Ends a scripted outage, so a retry can succeed. */
+    public function clearFailure(): self
+    {
+        $this->failure = null;
+
+        return $this;
+    }
+
     /** Runs during a summary request, so tests can change the draft while the "model" is thinking. */
     public function whileSummarising(Closure $callback): self
     {

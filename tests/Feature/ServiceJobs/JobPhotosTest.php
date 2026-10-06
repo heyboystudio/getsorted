@@ -11,14 +11,10 @@ use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\ServiceJobStateMachine;
 use App\Filament\Admin\Pages\Auth\Login as AdminLogin;
 use App\Filament\Admin\Resources\ServiceJobs\Pages\ViewServiceJob;
-use App\Models\Pro;
 use App\Models\Property;
-use App\Models\Service;
 use App\Models\ServiceJob;
-use App\Models\Suburb;
 use App\Models\User;
 use Database\Seeders\CatalogueSeeder;
-use Database\Seeders\SuburbSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -31,10 +27,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
-    $pro = Pro::factory()->approved()->create();
-    $pro->services()->attach(Service::query()->where('key', 'leak_repair')->sole());
-    $pro->serviceAreas()->attach(Suburb::query()->where('slug', 'musgrave')->sole());
+    $this->seed(CatalogueSeeder::class);
+    proNear(['plumbing'], 2);
     Storage::fake('media');
 });
 
@@ -43,10 +37,10 @@ function photoThread(): Testable
 {
     /** @var User $customer */
     $customer = auth()->user();
-    $property = Property::factory()->for($customer)->create(['suburb_id' => Suburb::query()->where('slug', 'musgrave')->value('id')]);
-    $service = Service::query()->where('key', 'leak_repair')->sole();
+    $property = Property::factory()->for($customer)->create();
+    $trade = tradeOf('plumbing');
 
-    return describeJob(threadFor($service), $service)->call('selectProperty', $property->public_id)
+    return describeJob(threadFor($trade), $trade)->call('selectProperty', $property->public_id)
         ->set('preferredDate', now()->addDays(2)->toDateString())->call('chooseWhen', 'morning')
         ->assertSet('stage', 'photos');
 }

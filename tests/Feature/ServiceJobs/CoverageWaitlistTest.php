@@ -13,16 +13,11 @@ use App\Domain\ServiceJobs\Exceptions\NoEligiblePros;
 use App\Filament\Admin\Pages\WaitlistDemand;
 use App\Livewire\Account\Home;
 use App\Livewire\Booking\Thread;
-use App\Models\Pro;
 use App\Models\Property;
-use App\Models\Service;
 use App\Models\ServiceJob;
-use App\Models\Suburb;
-use App\Models\Trade;
 use App\Models\User;
 use App\Models\WaitlistEntry;
 use Database\Seeders\CatalogueSeeder;
-use Database\Seeders\SuburbSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -31,17 +26,16 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
-    $this->trade = Trade::query()->where('key', 'plumbing')->sole();
-    $this->service = Service::query()->where('key', 'leak_repair')->sole();
-    $this->suburb = Suburb::query()->where('slug', 'musgrave')->sole();
+    $this->seed(CatalogueSeeder::class);
+    $this->trade = tradeOf('plumbing');
+    $this->point = durban();
 });
 
-it('checks coverage when the property is picked and sends an uncovered service to the waitlist', function (): void {
+it('checks coverage when the address is picked and sends an uncovered trade to the waitlist', function (): void {
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
 
-    describeJob(threadFor($this->service), $this->service)
+    describeJob(threadFor($this->trade), $this->trade)
         ->call('selectProperty', $property->public_id)
         ->assertSet('stage', 'waitlist')->assertSet('propertyPublicId', null)
         ->assertSee('Yes, keep me updated');
@@ -52,57 +46,65 @@ it('throttles repeated coverage checks', function (): void {
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
 
-    describeJob(threadFor($this->service), $this->service)->call('selectProperty', $property->public_id)->assertSet('stage', 'waitlist');
+    describeJob(threadFor($this->trade), $this->trade)->call('selectProperty', $property->public_id)->assertSet('stage', 'waitlist');
     session()->forget(Thread::SESSION_KEY);
-    describeJob(threadFor($this->service), $this->service)->call('selectProperty', $property->public_id)
+    describeJob(threadFor($this->trade), $this->trade)->call('selectProperty', $property->public_id)
         ->assertHasErrors(['where'])->assertSet('stage', 'where');
 });
 
-it('continues to Where & when only for an eligible approved pro', function (): void {
-    $pro = Pro::factory()->approved()->create();
-    $pro->services()->attach($this->service);
-    $pro->serviceAreas()->attach($this->suburb);
+it('continues to the date only when an eligible approved pro is within range', function (): void {
+    $pro = proNear(['plumbing'], 3);
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
 
-    expect(app(EligibleProsQuery::class)->exists($this->service, $this->suburb))->toBeTrue();
+    expect(app(EligibleProsQuery::class)->exists($this->trade, $this->point))->toBeTrue();
 
-    describeJob(threadFor($this->service), $this->service)->call('selectProperty', $property->public_id)
+    describeJob(threadFor($this->trade), $this->trade)->call('selectProperty', $property->public_id)
         ->assertSet('stage', 'when')->assertSee('When do you need help?');
 
     $pro->forceFill(['status' => 'suspended'])->save();
-    expect(app(EligibleProsQuery::class)->exists($this->service, $this->suburb))->toBeFalse();
+    expect(app(EligibleProsQuery::class)->exists($this->trade, $this->point))->toBeFalse();
 });
 
-it('requires a current verified registration when the service needs one', function (): void {
-    $registered = Service::query()->whereNotNull('requires_registration')->firstOrFail();
-    $pro = Pro::factory()->approved()->create();
-    $pro->services()->attach($registered);
-    $pro->serviceAreas()->attach($this->suburb);
+it('does not count a pro of another trade or without a base address', function (): void {
+    proNear(['electrical'], 1);
+    $noBase = proNear(['plumbing'], 1);
+    $noBase->forceFill(['base_location' => null])->save();
 
-    expect(app(EligibleProsQuery::class)->exists($registered, $this->suburb))->toBeFalse();
-    $document = $pro->documents()->forceCreate(['type' => $registered->requires_registration->value, 'status' => 'verified', 'verified_at' => now(), 'expires_at' => now()->addMonth()]);
-    expect(app(EligibleProsQuery::class)->exists($registered, $this->suburb))->toBeTrue();
+    expect(app(EligibleProsQuery::class)->exists($this->trade, $this->point))->toBeFalse();
+});
+
+it('never gates on registration: unverified pros are eligible, verified ones are badged (spec 020, decision 2)', function (): void {
+    $electrical = tradeOf('electrical');
+    $pro = proNear(['electrical'], 1);
+
+    expect(app(EligibleProsQuery::class)->exists($electrical, $this->point))->toBeTrue()
+        ->and($pro->load('documents')->isVerifiedFor($electrical))->toBeFalse();
+
+    $document = $pro->documents()->forceCreate(['type' => $electrical->registration->value, 'status' => 'verified', 'verified_at' => now(), 'expires_at' => now()->addMonth()]);
+    expect($pro->refresh()->load('documents')->isVerifiedFor($electrical))->toBeTrue();
+
     $document->forceFill(['expires_at' => now()->subDay()])->save();
-    expect(app(EligibleProsQuery::class)->exists($registered, $this->suburb))->toBeFalse();
+    expect($pro->refresh()->load('documents')->isVerifiedFor($electrical))->toBeFalse()
+        ->and(app(EligibleProsQuery::class)->exists($electrical, $this->point))->toBeTrue();
 });
 
 it('excludes a pro at their weekly cap or with an upheld dispute against the customer', function (): void {
-    $pro = Pro::factory()->approved()->create(['weekly_job_cap' => 1]);
-    $pro->services()->attach($this->service);
-    $pro->serviceAreas()->attach($this->suburb);
+    $pro = proNear(['plumbing'], 1);
+    $pro->forceFill(['weekly_job_cap' => 1])->save();
     $customer = User::factory()->customer()->create();
     $another = User::factory()->customer()->create();
-    $job = ServiceJob::factory()->create(['service_id' => $this->service->id, 'customer_id' => $customer->id]);
+    $job = ServiceJob::factory()->create(['trade_id' => $this->trade->id, 'customer_id' => $customer->id]);
+    $query = app(EligibleProsQuery::class);
 
-    expect(app(EligibleProsQuery::class)->exists($this->service, $this->suburb, $customer))->toBeTrue();
+    expect($query->exists($this->trade, $this->point, $customer))->toBeTrue();
     DB::table('pro_job_allocations')->insert(['pro_id' => $pro->id, 'service_job_id' => $job->id, 'allocated_at' => now()]);
-    expect(app(EligibleProsQuery::class)->exists($this->service, $this->suburb, $customer))->toBeFalse();
+    expect($query->exists($this->trade, $this->point, $customer))->toBeFalse();
 
     DB::table('pro_job_allocations')->delete();
     DB::table('pro_customer_exclusions')->insert(['pro_id' => $pro->id, 'customer_id' => $customer->id, 'service_job_id' => $job->id, 'upheld_at' => now()]);
-    expect(app(EligibleProsQuery::class)->exists($this->service, $this->suburb, $customer))->toBeFalse()
-        ->and(app(EligibleProsQuery::class)->exists($this->service, $this->suburb, $another))->toBeTrue();
+    expect($query->exists($this->trade, $this->point, $customer))->toBeFalse()
+        ->and($query->exists($this->trade, $this->point, $another))->toBeTrue();
 });
 
 it('stores one private waitlist entry for a repeated submission from the thread', function (): void {
@@ -112,7 +114,7 @@ it('stores one private waitlist entry for a repeated submission from the thread'
 
     foreach ([1, 2] as $attempt) {
         session()->forget(Thread::SESSION_KEY);
-        describeJob(threadFor($this->service), $this->service)->call('selectProperty', $property->public_id)
+        describeJob(threadFor($this->trade), $this->trade)->call('selectProperty', $property->public_id)
             ->call('joinWaitlist')->assertSet('stage', 'closed');
     }
 
@@ -120,9 +122,17 @@ it('stores one private waitlist entry for a repeated submission from the thread'
         ->and(WaitlistEntry::query()->sole()->phone_e164)->toBe('+27659107772');
 });
 
+it('stores the waitlist request by trade, area and point, never a street address', function (): void {
+    app(JoinWaitlist::class)->handle($this->trade, 'Musgrave', $this->point, 'Andy', '065 910 7772', true, '10.0.0.1');
+
+    $entry = WaitlistEntry::query()->sole();
+    expect($entry->trade_id)->toBe($this->trade->id)->and($entry->area_label)->toBe('Musgrave')
+        ->and(DB::table('waitlist_entries')->whereNotNull('location')->count())->toBe(1);
+});
+
 it('answers a throttled visitor the same way whether or not the phone is already waitlisted', function (): void {
     config()->set('sortd.waitlist.submissions_per_ip_hour', 1);
-    $join = fn (string $phone) => app(JoinWaitlist::class)->handle($this->service, $this->suburb, '', 'Andy', $phone, true, '10.0.0.1');
+    $join = fn (string $phone) => app(JoinWaitlist::class)->handle($this->trade, 'Musgrave', $this->point, 'Andy', $phone, true, '10.0.0.1');
 
     $join('065 910 7772');
 
@@ -135,28 +145,15 @@ it('shows a throttled waitlist tap as a message in the thread', function (): voi
     config()->set('sortd.waitlist.submissions_per_ip_hour', 1);
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
-    app(JoinWaitlist::class)->handle($this->service, $this->suburb, '', 'Sam', '071 234 5678', true, '127.0.0.1');
+    app(JoinWaitlist::class)->handle($this->trade, 'Musgrave', $this->point, 'Sam', '071 234 5678', true, '127.0.0.1');
 
-    describeJob(threadFor($this->service), $this->service)->call('selectProperty', $property->public_id)
+    describeJob(threadFor($this->trade), $this->trade)->call('selectProperty', $property->public_id)
         ->call('joinWaitlist')->assertHasErrors(['waitlist'])->assertSet('stage', 'waitlist');
     expect(WaitlistEntry::query()->count())->toBe(1);
 });
 
-it('rejects address-like suburb text and never displays an unlisted suburb to admins', function (): void {
-    $join = fn (string $suburb) => app(JoinWaitlist::class)->handle($this->service, null, $suburb, 'Andy', '065 910 7772', true, '10.0.0.1');
-
-    expect(fn () => $join('7 Private Lane'))->toThrow(ValidationException::class);
-    expect(WaitlistEntry::query()->count())->toBe(0);
-
-    $join('Outer Village');
-    $page = new WaitlistDemand;
-    $demand = $page->demand();
-    expect($demand->sole()->suburb_name)->toBe('Other suburb')
-        ->and($demand->sole()->suburb_name)->not->toBe('Outer Village');
-});
-
 it('requires valid contact and consent', function (): void {
-    $join = fn (string $phone, bool $consent) => app(JoinWaitlist::class)->handle($this->service, $this->suburb, '', 'Andy', $phone, $consent, '10.0.0.1');
+    $join = fn (string $phone, bool $consent) => app(JoinWaitlist::class)->handle($this->trade, 'Musgrave', $this->point, 'Andy', $phone, $consent, '10.0.0.1');
 
     try {
         $join('not a phone', false);
@@ -172,25 +169,19 @@ it('requires valid contact and consent', function (): void {
 
 it('throttles repeated waitlist submissions from one visitor', function (): void {
     config()->set('sortd.waitlist.submissions_per_ip_hour', 1);
-    app(JoinWaitlist::class)->handle($this->service, $this->suburb, '', 'Andy', '065 910 7772', true, '10.0.0.1');
+    app(JoinWaitlist::class)->handle($this->trade, 'Musgrave', $this->point, 'Andy', '065 910 7772', true, '10.0.0.1');
 
-    expect(fn () => app(JoinWaitlist::class)->handle($this->service, $this->suburb, '', 'Sam', '071 234 5678', true, '10.0.0.1'))
+    expect(fn () => app(JoinWaitlist::class)->handle($this->trade, 'Musgrave', $this->point, 'Sam', '071 234 5678', true, '10.0.0.1'))
         ->toThrow(ValidationException::class);
     expect(WaitlistEntry::query()->count())->toBe(1);
 });
 
 it('refuses posting when the last eligible pro becomes unavailable', function (): void {
     $customer = User::factory()->customer()->create();
-    $property = Property::factory()->for($customer)->create(['suburb_id' => $this->suburb->id]);
-    $pro = Pro::factory()->approved()->create();
-    $pro->services()->attach($this->service);
-    $pro->serviceAreas()->attach($this->suburb);
-    $answers = [];
-    foreach ($this->service->questions as $question) {
-        $answers[$question->key] = ['prompt' => $question->prompt, 'type' => $question->type->value, 'answer' => $question->options[0]];
-    }
-    $job = app(SaveBookingDraft::class)->handle($customer, $this->service, null, new BookingData(
-        answers: $answers, notes: null, propertyPublicId: $property->public_id,
+    $property = Property::factory()->for($customer)->create();
+    $pro = proNear(['plumbing'], 2);
+    $job = app(SaveBookingDraft::class)->handle($customer, $this->trade, null, new BookingData(
+        facts: [['id' => 'f1', 'text' => 'tap drips', 'turn' => 1]], notes: null, propertyPublicId: $property->public_id,
         preferredDate: now()->toImmutable()->addDays(2), timeWindow: TimeWindow::Morning,
     ));
     $pro->forceFill(['status' => 'suspended'])->save();
@@ -200,18 +191,19 @@ it('refuses posting when the last eligible pro becomes unavailable', function ()
 });
 
 it('keeps waitlist demand inside the admin panel and out of customer views', function (): void {
-    WaitlistEntry::factory()->create(['service_id' => $this->service->id, 'first_name' => 'Private Name', 'phone_e164' => '+27659107772']);
+    WaitlistEntry::factory()->create(['trade_id' => $this->trade->id, 'first_name' => 'Private Name', 'phone_e164' => '+27659107772']);
     $customer = User::factory()->customer()->create();
     $this->actingAs($customer)->get('/admin/waitlist-demand')->assertForbidden();
     $this->assertFalse(WaitlistDemand::canAccess());
     $row = (new WaitlistDemand)->demand()->sole();
-    expect($row->getAttributes())->not->toHaveKeys(['first_name', 'phone_e164', 'suburb_text']);
+    expect($row->getAttributes())->not->toHaveKeys(['first_name', 'phone_e164', 'area_label'])
+        ->and($row->area_name)->toBe('Musgrave')->and($row->trade_name)->toBe('Plumbing');
 });
 
 it('lets a verified customer remove only waitlist requests for their phone', function (): void {
     $customer = User::factory()->customer()->create(['phone_e164' => '+27659107772']);
-    $own = WaitlistEntry::factory()->create(['service_id' => $this->service->id, 'phone_e164' => $customer->phone_e164]);
-    $other = WaitlistEntry::factory()->create(['service_id' => $this->service->id]);
+    $own = WaitlistEntry::factory()->create(['trade_id' => $this->trade->id, 'phone_e164' => $customer->phone_e164]);
+    $other = WaitlistEntry::factory()->create(['trade_id' => $this->trade->id]);
 
     $this->actingAs($customer);
     Livewire::test(Home::class)->assertSee('Remove my waitlist requests')->call('removeWaitlistRequests')->assertSee('were removed');

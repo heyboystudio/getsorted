@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Pros;
 
+use App\Contracts\Data\GeocodedAddress;
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Pros\Actions\SaveApplicationStep;
 use App\Domain\Pros\Actions\StartApplication;
@@ -15,12 +16,11 @@ use App\Domain\Pros\Enums\BusinessType;
 use App\Domain\Pros\Enums\DocumentType;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\Pros\Exceptions\CannotChangeApplication;
+use App\Livewire\Concerns\SearchesAddresses;
 use App\Models\Pro;
 use App\Models\ProReference;
 use App\Models\Trade;
 use App\Models\User;
-use App\Contracts\Data\GeocodedAddress;
-use App\Livewire\Concerns\SearchesAddresses;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -351,7 +351,7 @@ final class Application extends Component
         $this->businessType = (string) $pro->business_type?->value;
         $this->vatNumber = (string) $pro->vat_number;
         $this->tradeIds = $pro->trades->pluck('id')->all();
-        $this->radiusKm = $pro->service_radius_km;
+        $this->radiusKm = $pro->service_radius_km ?? 15;
         $this->bio = (string) $pro->bio;
         $this->consent = $pro->vetting_consent_at !== null;
 

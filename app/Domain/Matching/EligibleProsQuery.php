@@ -80,9 +80,18 @@ final readonly class EligibleProsQuery
         $inside = $candidates->filter(fn (Pro $pro): bool => $this->withinRadius($pro));
         $edge = $candidates->reject(fn (Pro $pro): bool => $this->withinRadius($pro));
 
-        $ranked = fn (Collection $pros): Collection => $pros->shuffle()->sortBy([['recent_invites', 'asc'], ['distance_m', 'asc']])->values();
+        return new Collection(array_slice([...$this->rank($inside), ...$this->rank($edge)], 0, $limit));
+    }
 
-        return new Collection($ranked($inside)->concat($ranked($edge))->take($limit)->all());
+    /**
+     * Fewest recent invites first, then nearest; ties between equals are random.
+     *
+     * @param  Collection<int, Pro>  $pros
+     * @return list<Pro>
+     */
+    private function rank(Collection $pros): array
+    {
+        return array_values($pros->shuffle()->sortBy([['recent_invites', 'asc'], ['distance_m', 'asc']])->all());
     }
 
     /** Whether any eligible pro could take a job of this trade at this point. */

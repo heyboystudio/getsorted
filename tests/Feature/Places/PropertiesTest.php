@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Contracts\Data\GeocodedAddress;
+use App\Contracts\Exceptions\GeocoderUnavailable;
+use App\Contracts\Geocoder;
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Properties\Enums\PropertyType;
 use App\Livewire\Account\Properties\Form;
 use App\Livewire\Account\Properties\Index;
 use App\Models\Property;
-use App\Models\Suburb;
 use App\Models\User;
-use Database\Seeders\SuburbSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\DB;
@@ -22,18 +23,17 @@ use Spatie\Activitylog\Models\Activity;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed(SuburbSeeder::class);
     $this->customer = User::factory()->customer()->create();
     $this->actingAs($this->customer);
 });
 
+/** Adds a property the way customers do: search, pick a Google suggestion, choose the type and save. */
 function addProperty(array $fields = []): Testable
 {
     return Livewire::test(Form::class)
         ->set('label', $fields['label'] ?? 'Home')
-        ->set('streetAddress', $fields['streetAddress'] ?? '12 Innes Road')
-        ->call('selectSuburb', $fields['suburb'] ?? 'morningside')
-        ->set('postalCode', $fields['postalCode'] ?? '4001')
+        ->set('addressQuery', $fields['query'] ?? 'Innes')
+        ->call('pickAddress', $fields['place'] ?? 'fake-morningside')
         ->set('propertyType', $fields['propertyType'] ?? PropertyType::House->value)
         ->call('save');
 }
@@ -48,34 +48,32 @@ it('lists my properties, with an empty state (AC5)', function (): void {
     $this->get('/app')->assertSee('Saved properties');
 });
 
-it('adds a property linked to its suburb with the suburb centre as location (AC6, AC7)', function (): void {
+it('adds a property from a picked Google address with its point and area name (AC6, AC7, spec 020)', function (): void {
     addProperty()->assertHasNoErrors()->assertRedirect(route('properties.index'));
 
     $property = Property::query()->sole();
-    $suburb = Suburb::query()->where('slug', 'morningside')->sole();
 
     expect($property->user_id)->toBe($this->customer->id)
         ->and($property->label)->toBe('Home')
         ->and($property->street_address)->toBe('12 Innes Road')
-        ->and($property->suburb_id)->toBe($suburb->id)
+        ->and($property->area_label)->toBe('Morningside')
+        ->and($property->location_source)->toBe('places')
+        ->and($property->google_place_id)->toBe('fake-morningside')
         ->and($property->property_type)->toBe(PropertyType::House)
         ->and($property->public_id)->toHaveLength(26)
-        ->and($property->location->getLatitude())->toEqualWithDelta($suburb->centroid->getLatitude(), 0.000001);
+        ->and($property->location->getLatitude())->toEqualWithDelta(-29.827, 0.0001);
 });
 
-it('shows the privacy note and suggests suburbs as you type (AC6)', function (): void {
-    Suburb::query()->where('slug', 'westville')->update(['is_active' => false]);
-
+it('shows the privacy note and the address search (AC6)', function (): void {
     Livewire::test(Form::class)
         ->assertSee('We only share your street address with the pro you choose')
-        ->set('suburbQuery', 'west')
-        ->assertSee('Westville')
-        ->assertSee('Coming soon');
+        ->assertSee('Find your address');
 });
 
-it('requires a label, street address, suburb and type (AC6)', function (): void {
-    Livewire::test(Form::class)->call('save')
-        ->assertHasErrors(['label', 'streetAddress', 'suburb', 'propertyType']);
+it('requires a name, a type and a picked address, and has no manual entry (AC6)', function (): void {
+    Livewire::test(Form::class)->call('save')->assertHasErrors(['label', 'propertyType']);
+    Livewire::test(Form::class)->set('label', 'Home')->set('propertyType', 'house')->call('save')->assertHasErrors(['addressQuery'])
+        ->assertDontSee('Enter address manually');
 
     expect(Property::query()->count())->toBe(0);
 });
@@ -91,9 +89,9 @@ it('edits and soft-deletes my property (AC8)', function (): void {
     $property = Property::factory()->for($this->customer)->create(['label' => 'Home']);
 
     Livewire::test(Form::class, ['property' => $property])
-        ->set('label', 'Old home')->call('selectSuburb', 'glenwood')->call('save')
+        ->set('label', 'Old home')->set('addressQuery', 'Musgrave')->call('pickAddress', 'fake-berea')->call('save')
         ->assertHasNoErrors();
-    expect($property->fresh())->label->toBe('Old home')->suburb->slug->toBe('glenwood');
+    expect($property->fresh())->label->toBe('Old home')->area_label->toBe('Berea')->and($property->fresh()->street_address)->toBe('10 Musgrave Road');
 
     Livewire::test(Index::class)->call('delete', $property->public_id);
 
@@ -110,11 +108,12 @@ it("never shows or changes another customer's property (AC9)", function (): void
     expect($theirs->fresh()->trashed())->toBeFalse();
 });
 
-it('saves a property in an inactive suburb with a note (AC10)', function (): void {
-    Suburb::query()->where('slug', 'westville')->update(['is_active' => false]);
-    addProperty(['suburb' => 'westville'])->assertHasNoErrors();
+it('keeps the saved address when only the name changes', function (): void {
+    $property = Property::factory()->for($this->customer)->create(['label' => 'Home', 'street_address' => '7 Private Lane', 'area_label' => 'Musgrave']);
 
-    Livewire::test(Index::class)->assertSee("Sortd isn't in Westville yet");
+    Livewire::test(Form::class, ['property' => $property])->set('label', 'Flat')->call('save')->assertHasNoErrors();
+
+    expect($property->fresh())->label->toBe('Flat')->and($property->fresh()->street_address)->toBe('7 Private Lane')->and($property->fresh()->area_label)->toBe('Musgrave');
 });
 
 it('limits customers to 10 properties', function (): void {
@@ -130,14 +129,14 @@ it('keeps the street address encrypted and out of logs and the audit log (AC12)'
         $logged[] = $event->message.' '.json_encode($event->context);
     });
 
-    addProperty(['streetAddress' => '99 Secret Street']);
+    addProperty();
 
     $raw = DB::table('properties')->value('street_address');
-    expect($raw)->not->toContain('Secret')
-        ->and(collect($logged)->filter(fn (string $line): bool => str_contains($line, 'Secret'))->all())->toBe([]);
+    expect($raw)->not->toContain('Innes')
+        ->and(collect($logged)->filter(fn (string $line): bool => str_contains($line, 'Innes'))->all())->toBe([]);
 
     $entry = Activity::query()->where('description', 'property created')->sole();
-    expect(json_encode($entry->toArray()))->not->toContain('Secret');
+    expect(json_encode($entry->toArray()))->not->toContain('Innes');
 });
 
 it('keeps pros and admins out of the properties pages', function (): void {
@@ -160,10 +159,21 @@ it('cannot point the form at another property from the browser (AC9)', function 
     Livewire::test(Form::class)->set('publicId', $theirs->public_id);
 })->throws(CannotUpdateLockedPropertyException::class);
 
-it('forgets the chosen suburb when the suburb text is changed', function (): void {
-    Livewire::test(Form::class)
-        ->call('selectSuburb', 'morningside')->assertSet('suburb', 'morningside')
-        ->set('suburbQuery', 'Morningsid')->assertSet('suburb', null)
-        ->set('label', 'Home')->set('streetAddress', '1 Road')->set('propertyType', 'house')
-        ->call('save')->assertHasErrors(['suburb']);
+it('shows a retry message, not a manual form, when address search is unavailable', function (): void {
+    config()->set('sortd.places.unavailable_for_test', true);
+    app()->instance(Geocoder::class, new class implements Geocoder
+    {
+        public function autocomplete(string $query, string $sessionToken): array
+        {
+            throw new GeocoderUnavailable('down');
+        }
+
+        public function resolve(string $placeId, string $sessionToken): ?GeocodedAddress
+        {
+            return null;
+        }
+    });
+
+    Livewire::test(Form::class)->set('addressQuery', 'Innes')->assertSet('addressUnavailable', true)
+        ->assertSee('Address search isn’t available right now')->assertDontSee('manually');
 });

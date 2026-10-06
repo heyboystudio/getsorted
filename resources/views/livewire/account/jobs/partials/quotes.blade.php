@@ -16,7 +16,7 @@
     </section>
 @elseif ($job->status === $S::Open && $quotes->isNotEmpty())
     <section class="mt-6">
-        <h2 class="font-semibold">{{ __('Estimates (:count of 3)', ['count' => $quotes->count()]) }}</h2>
+        <h2 class="font-semibold">{{ __('Estimates (:count of :max)', ['count' => $quotes->count(), 'max' => \App\Domain\Quotes\Support\QuoteFlow::maxQuotes()]) }}</h2>
         <p class="mt-1 text-sm text-zinc-600">{{ __('Your pro can adjust the final amount after seeing the job. You’ll approve any change.') }}</p>
         @error('accept') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
         <div class="mt-3 grid gap-4 lg:grid-cols-3">

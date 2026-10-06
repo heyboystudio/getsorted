@@ -16,7 +16,7 @@ final class Welcome extends Component
     /** Session key the booking wizard reads to prefill its notes step (spec 007, AC4). */
     public const string DESCRIPTION_KEY = 'booking.description';
 
-    private const int MIN_LENGTH = 3;
+    private const int MIN_LENGTH = 10;
 
     private const int MAX_LENGTH = 500;
 

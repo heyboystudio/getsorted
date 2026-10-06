@@ -12,44 +12,23 @@ Branch `feat/020-trade-distance-matching` in worktree `/Users/andymichaels/Docum
 - Siya: `BookingState`, `BookingToolbox` (the only way the model changes state), `SiyaAgent` (tool-using, plain-text reply), `ChatWithSiya` (reply guard, one regeneration, deterministic fallback), 8 tools in `app/Integrations/Anthropic/Tools`.
 - Docs: data model, matching.md, decisions 051, spec index. Written but **not run**: `tests/Unit/BookingToolboxTest.php`.
 
-### Checks run so far (only these)
-PHP lint of changed files, Blade compile (`view:cache`), `route:list` boots. **Nothing else**: no migration was run, no tests, no Pint, no PHPStan, no live Gemini, no browser.
+### Quality gate results (2026-10-06, run on a throwaway local PostGIS database)
+- Migration: run against seeded old-schema data; backfill verified (this found and fixed an ordering bug: job locations were empty). Old tables confirmed dropped.
+- Pest: **681 passed, 0 failed** (full suite, before the last small additions). Since then each added/changed file was run on its own and passed: BookingFlowTest (52), SiyaChatTest (13), SiyaGeminiWireTest (2). The suite was not re-run in full after those additions.
+- Pint passed; PHPStan: no errors (it caught a stale type reference); `composer audit`: clean; frontend build passed.
+- `npm audit --audit-level=high`: **2 critical, dev-only and already present** (`concurrently` → `shell-quote`, lockfile unchanged by spec 020). Needs a dependency decision (`npm audit fix` bumps `concurrently`).
+- Rector (`composer rector:check`) reports style rewrites in 35 files; it is not part of `composer check` and was not applied.
+- Bugs found and fixed by running things: matching settings admin page still had wave fields; a new pro's application page crashed (null radius); removing a fact kicked the customer out of the editor; Continue-to-book did not save the draft; address partial `$label` collided with the form's `label`; "of 3" quotes hard-coded on the customer page.
+- Obsolete tests removed: `tests/Feature/Places/SuburbsTest.php` (suburbs no longer exist). Old service/scoping tests were rewritten for trades, facts and distance, not deleted.
 
-### Deferred checks (do before preview approval, merge or live use)
-1. Run the migration on a throwaway local database (needs PostGIS) and confirm the backfill: trades registration/safety advice, pro_trades, job trade_id/location, properties area_label/location, waitlist.
-2. `PGOPTIONS='-c timezone=UTC' COMPOSER_PROCESS_TIMEOUT=0 composer check`, `npm audit --audit-level=high`, `vendor/bin/pint`.
-3. **Rewrite the tests that still describe services/suburbs/scoping** (they will fail or not load); do not delete them without approval, port them:
-- tests/Feature/Assistant/AnthropicScopingAssistantTest.php
-- tests/Feature/Assistant/ScopingAssistantTest.php
-- tests/Feature/Assistant/SiyaChatTest.php
-- tests/Feature/Assistant/SiyaConversationTest.php
-- tests/Feature/Catalogue/CatalogueAdminTest.php
-- tests/Feature/Catalogue/ImportCatalogueTest.php
-- tests/Feature/Matching/InviteWavesTest.php
-- tests/Feature/Matching/MatchingScreensTest.php
-- tests/Feature/Places/AddressAutocompleteTest.php
-- tests/Feature/Places/PropertiesTest.php
-- tests/Feature/Places/SuburbsTest.php
-- tests/Feature/Pros/ProApplicationTest.php
-- tests/Feature/Pros/ProVettingScreensTest.php
-- tests/Feature/Quotes/QuoteScreensTest.php
-- tests/Feature/Quotes/QuotesTest.php
-- tests/Feature/ServiceJobs/BookingFlowTest.php
-- tests/Feature/ServiceJobs/CoverageWaitlistTest.php
-- tests/Feature/ServiceJobs/JobChatTest.php
-- tests/Feature/ServiceJobs/JobPhotosTest.php
-- tests/Feature/ServiceJobs/OpenCoverageTest.php
-- tests/Feature/ServiceJobs/ServiceJobDomainTest.php
-- tests/Support/booking.php
-   Also `tests/Support/booking.php` (helpers still use Service/Suburb) and `database/factories` users of removed models.
-4. Live Siya evaluation on a configured preview with synthetic conversations (the 13 cases from the audit, esp. repeated-question, "bathroom light keeps tripping", dead-end, multi-job). Confirm Gemini accepts function calling with the installed SDK, set the model id/thinking, and check latency (a turn is now several model calls).
-5. Check the unit-of-budget: `AssistantCalls` counts one call per turn; the SDK makes up to 6 HTTP calls per turn.
-6. Privacy notice + POPIA: Google Places is now used for pro base addresses (stored encrypted); update the notice before launch (decision 049, 051).
-7. Manual pass: pro application (trades, base address, radius), job post → 10 invites → 5 quotes → "job full", unverified electrician label, calendar sheet on a phone, emergency pause.
+### Still not verified
+- **Live Gemini**: no key was used. `SiyaGeminiWireTest` proves the SDK/Gemini wire loop with HTTP faked (tool calls run, results returned, plain-text answer). Judgement and tone need `php artisan siya:eval --live` on a preview (8 synthetic cases from the audit; checks state, not wording). Also set the model id / thinking and check latency and the per-turn budget unit.
+- No browser pass: pro application, job → 10 invites → 5 quotes → "job full", the calendar sheet on a phone, emergency pause.
+- Privacy notice gained one sentence on Google Places and encrypted pro addresses; the legal text is still placeholder and needs lawyer review.
 
 ### Known gaps / follow-ups
-- Class `AnthropicScopingAssistant` still has its legacy name (it is the provider-neutral Gemini/Bedrock/Anthropic adapter).
-- `App\Domain\Assistant\Enums\AiPurpose::SuggestService` kept so old usage rows still read.
-- Parked second jobs are remembered and mentioned after posting but there is no one-tap "start the next job" yet.
+- Class `AnthropicScopingAssistant` keeps its legacy name (provider-neutral adapter).
+- `AiPurpose::SuggestService` kept so old usage rows still read.
 - Timing stated in chat ("tomorrow morning") is not captured (spec decision D1 default OFF).
-- Node/Vite assets were not rebuilt; `vendor/` was copied from `sortd-gemini` (same composer.lock).
+- "Book the next job" after posting exists (`startNextJob`); parked jobs are limited to 3.
+- `vendor/` was copied from `sortd-gemini` and `node_modules` is a symlink to it; `.env` and `public/build` are local and git-ignored.

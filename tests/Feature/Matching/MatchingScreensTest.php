@@ -18,13 +18,10 @@ use App\Livewire\Pros\Jobs\Index as ProJobs;
 use App\Livewire\Pros\Jobs\Show as ProJob;
 use App\Models\Pro;
 use App\Models\Property;
-use App\Models\Service;
 use App\Models\ServiceJob;
-use App\Models\Suburb;
 use App\Models\User;
 use App\Settings\MatchingSettings;
 use Database\Seeders\CatalogueSeeder;
-use Database\Seeders\SuburbSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -34,17 +31,14 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
+    $this->seed(CatalogueSeeder::class);
     Storage::fake('media');
-    $this->leak = Service::query()->where('key', 'leak_repair')->sole();
-    $this->musgrave = Suburb::query()->where('slug', 'musgrave')->sole();
 });
 
 function screenPro(): Pro
 {
-    $pro = Pro::factory()->approved()->create(['business_name' => 'Dlamini Plumbing']);
-    $pro->services()->attach(test()->leak);
-    $pro->serviceAreas()->attach(test()->musgrave);
+    $pro = proNear(['plumbing'], 2);
+    $pro->forceFill(['business_name' => 'Dlamini Plumbing'])->save();
 
     return $pro;
 }
@@ -53,13 +47,9 @@ function screenPro(): Pro
 function screenJob(): ServiceJob
 {
     $customer = User::factory()->customer()->create(['first_name' => 'Nomvula', 'last_name' => 'Secretname', 'phone_e164' => '+27829990000']);
-    $property = Property::factory()->for($customer)->create(['suburb_id' => test()->musgrave->id, 'street_address' => '7 Private Lane']);
-    $answers = [];
-    foreach (test()->leak->questions as $question) {
-        $answers[$question->key] = ['prompt' => $question->prompt, 'type' => $question->type->value, 'answer' => $question->options[0]];
-    }
-    $draft = app(SaveBookingDraft::class)->handle($customer, test()->leak, null, new BookingData(
-        answers: $answers, notes: 'Behind the fridge. WhatsApp me on 082 123 4567 or mail me@example.com, 7 Private Lane.',
+    $property = Property::factory()->for($customer)->create(['street_address' => '7 Private Lane']);
+    $draft = app(SaveBookingDraft::class)->handle($customer, tradeOf('plumbing'), null, new BookingData(
+        facts: [['id' => 'f1', 'text' => 'tap drips when fully closed', 'turn' => 1]], notes: 'Behind the fridge. WhatsApp me on 082 123 4567 or mail me@example.com, 7 Private Lane.',
         propertyPublicId: $property->public_id, preferredDate: now()->toImmutable()->addDays(2), timeWindow: TimeWindow::Morning,
     ));
     app(StoreJobPhoto::class)->handle($customer, $draft, UploadedFile::fake()->image('leak.jpg', 40, 30));
@@ -75,12 +65,12 @@ it('lists a pro\'s new and past invites (AC7)', function (): void {
     $job = screenJob();
     $this->actingAs($pro->user);
 
-    Livewire::test(ProJobs::class)->assertSee('Leak repair')->assertSee('Musgrave')->assertSee('left')
+    Livewire::test(ProJobs::class)->assertSee('Plumbing')->assertSee('tap drips when fully closed')->assertSee('Musgrave')->assertSee('km away')->assertSee('left')
         ->assertDontSee('No new jobs right now');
 
     $job->invites()->update(['status' => InviteStatus::Expired->value]);
     Livewire::test(ProJobs::class)->assertSee('No new jobs right now')
-        ->set('tab', 'past')->assertSee('Leak repair')->assertSee('Expired');
+        ->set('tab', 'past')->assertSee('Plumbing')->assertSee('Expired');
 });
 
 it('sends pros who are not approved to their application instead (AC7)', function (): void {
@@ -92,16 +82,14 @@ it('sends pros who are not approved to their application instead (AC7)', functio
 it('shows the job without the customer\'s identity, address or contact details (AC8, decision 3)', function (): void {
     $pro = screenPro();
     $job = screenJob();
-    $answers = $job->scoping_answers;
-    $answers['leak_location'] = ['prompt' => 'Where is the leak coming from?', 'type' => 'text', 'answer' => 'Behind the fridge. Call 082 123 4567.'];
-    $job->forceFill(['scoping_answers' => $answers])->save();
+    $job->forceFill(['facts' => [['id' => 'f1', 'text' => 'leak behind the fridge. Call 082 123 4567.', 'turn' => 1]]])->save();
     $invite = $job->invites()->sole();
     $this->actingAs($pro->user);
 
     Livewire::test(ProJob::class, ['invite' => $invite])
-        ->assertSee('Leak repair')->assertSee('Musgrave')->assertSee('Where is the leak coming from?')
-        ->assertSee('Behind the fridge.')->assertSee('Leaking tap.')
-        ->assertSee('1 pro invited')->assertSee('0 quotes in')
+        ->assertSee('Plumbing')->assertSee('Musgrave')->assertSee('What the customer reported')
+        ->assertSee('leak behind the fridge.')->assertSee('Leaking tap.')
+        ->assertSee('1 pro invited')->assertSee('0 quotes in')->assertSee('about 2 km away')
         ->assertSee('Send an estimate') // Spec 010 replaced the "Quoting opens soon" placeholder.
         ->assertDontSee('Nomvula')->assertDontSee('Secretname')->assertDontSee('7 Private Lane')
         ->assertDontSee('082 123 4567')->assertDontSee('me@example.com')->assertDontSee('071 222 3333')->assertDontSee('829990000');
@@ -209,15 +197,15 @@ it('lets only super admins change the matching settings (AC12)', function (): vo
     $this->actingAs($super);
 
     Livewire::test(MatchingSettingsPage::class)
-        ->fillForm(['wave_one_size' => 4, 'later_wave_size' => 2, 'wave_interval_hours' => 6, 'invite_expiry_hours' => 12, 'enough_quotes' => 3])
+        ->fillForm(['invite_count' => 8, 'max_quotes' => 4, 'default_radius_km' => 20, 'soft_edge_km' => 3, 'invite_expiry_hours' => 12])
         ->call('save')->assertHasNoFormErrors();
 
     $settings = app(MatchingSettings::class)->refresh();
-    expect([$settings->wave_one_size, $settings->later_wave_size, $settings->wave_interval_hours, $settings->invite_expiry_hours, $settings->enough_quotes])->toBe([4, 2, 6, 12, 3]);
+    expect([$settings->invite_count, $settings->max_quotes, $settings->default_radius_km, $settings->soft_edge_km, $settings->invite_expiry_hours])->toBe([8, 4, 20, 3, 12]);
 
     Livewire::test(MatchingSettingsPage::class)
-        ->fillForm(['wave_one_size' => 0, 'later_wave_size' => 0, 'wave_interval_hours' => 0, 'invite_expiry_hours' => 0, 'enough_quotes' => 0])
-        ->call('save')->assertHasFormErrors(['wave_one_size', 'wave_interval_hours', 'invite_expiry_hours', 'enough_quotes']);
+        ->fillForm(['invite_count' => 0, 'max_quotes' => 0, 'default_radius_km' => 0, 'soft_edge_km' => -1, 'invite_expiry_hours' => 0])
+        ->call('save')->assertHasFormErrors(['invite_count', 'max_quotes', 'default_radius_km', 'soft_edge_km', 'invite_expiry_hours']);
 });
 
 // --- Customer (AC13) ---------------------------------------------------------------------
@@ -232,7 +220,7 @@ it('tells the customer how many pros were invited, without names (AC13)', functi
 });
 
 it('tells the customer when no pro could be invited yet (AC13, rules)', function (): void {
-    $job = ServiceJob::factory()->open()->create(['service_id' => $this->leak->id]);
+    $job = ServiceJob::factory()->open()->create(['trade_id' => tradeOf('plumbing')->id]);
     $this->actingAs($job->customer);
 
     Livewire::test(CustomerJob::class, ['job' => $job])->assertSee("We're still looking");

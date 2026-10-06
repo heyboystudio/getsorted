@@ -52,7 +52,7 @@ final readonly class ChatWithSiya
             AiPurpose::Chat,
             'assistant:chat-rate:'.$visitorKey,
             (int) config('sortd.ai.chat_messages_per_hour'),
-            function (ScopingAssistant $assistant) use ($request, $toolbox, $transcript, $working, $bookingStage): ChatReply {
+            function (ScopingAssistant $assistant) use ($request, $toolbox, $transcript, $bookingStage): ChatReply {
                 $reply = $assistant->chat($request);
 
                 if (! self::acceptable($reply->reply)) {

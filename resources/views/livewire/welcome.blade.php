@@ -126,7 +126,7 @@
             <ul class="gs-steps">
               <li><span class="gs-ic"><i class="ph ph-chat-circle-text"></i></span><div><h3>Describe it</h3><p>Chat with Siya or tap through a few questions. Add photos when you are ready.</p></div></li>
               <li><span class="gs-ic"><i class="ph ph-shield-check"></i></span><div><h3>Meet vetted pros</h3><p>We invite vetted pros near you. Your street address stays private until you choose.</p></div></li>
-              <li><span class="gs-ic"><i class="ph ph-scales"></i></span><div><h3>Compare quotes</h3><p>Up to three itemised quotes side by side. Ask a pro a question before you decide.</p></div></li>
+              <li><span class="gs-ic"><i class="ph ph-scales"></i></span><div><h3>Compare quotes</h3><p>Up to five itemised quotes side by side. Ask a pro a question before you decide.</p></div></li>
               <li><span class="gs-ic"><i class="ph ph-credit-card"></i></span><div><h3>Book and pay</h3><p>Pick a slot, pay a deposit, and settle the rest when the work is done. Updates arrive on WhatsApp.</p></div></li>
             </ul>
           </div>
