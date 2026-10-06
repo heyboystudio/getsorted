@@ -291,15 +291,14 @@
 .gs-home .gs-foot{ margin-top: clamp(88px, 11vw, 136px); }
 .gs-home .gs-close{ margin-top: clamp(88px, 11vw, 136px); }
 
-/* partner logo carousel (placeholder logos, to be replaced with approved partners) */
-.gs-home .gs-logos{ position: relative; overflow: hidden; padding: 30px 0 34px; border-block: 1px solid var(--line-2); background: linear-gradient(180deg, #171a21, #1b1f27); }
-.gs-home .gs-logos-lbl{ margin-bottom: 20px; text-align: center; color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; }
+/* partner logo carousel: sits straight on the page background and separates the hero from the first section (placeholder logos) */
+.gs-home .gs-logos{ position: relative; overflow: hidden; padding: clamp(48px, 6vw, 72px) 0; }
 .gs-home .gs-marquee{ display: flex; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); }
 .gs-home .gs-track{ flex: none; min-width: 100%; display: flex; align-items: center; justify-content: space-around; animation: gs-scroll 55s linear infinite; }
-.gs-home .gs-track li{ flex: none; display: grid; place-items: center; width: 176px; height: 76px; margin-inline: 8px; overflow: hidden; border-radius: 14px; background: #f4f4f3; }
-.gs-home .gs-track img{ width: auto; max-width: 144px; object-fit: contain; filter: grayscale(1) contrast(1.15); opacity: .8; mix-blend-mode: multiply; transition: filter 200ms, opacity 200ms; }
+.gs-home .gs-track li{ flex: none; display: grid; place-items: center; width: 176px; height: 76px; margin-inline: 8px; overflow: hidden; border-radius: 14px; background: #fff; }
+.gs-home .gs-track img{ width: auto; max-width: 144px; object-fit: contain; mix-blend-mode: multiply; filter: brightness(1.06); }
 @media (hover: hover){ .gs-home .gs-marquee:hover .gs-track{ animation-play-state: paused; }
-.gs-home .gs-track li:hover img{ filter: none; opacity: 1; } }
+}
 @keyframes gs-scroll{ to{ transform: translateX(-100%); } }
 @media (prefers-reduced-motion: reduce){
   .gs-home .gs-marquee{ -webkit-mask-image: none; mask-image: none; }
@@ -327,7 +326,7 @@
   .gs-home .gs-tabs::-webkit-scrollbar{ display: none; }
   .gs-home .gs-tab{ flex: none; min-height: 40px; white-space: nowrap; }
   .gs-home .gs-sugs a{ padding: 11px 4px; }
-  .gs-home .gs-logos{ padding: 22px 0 26px; }
+  .gs-home .gs-logos{ padding: 40px 0; }
   .gs-home .gs-track li{ width: 140px; height: 64px; margin-inline: 6px; }
   .gs-home .gs-track img{ max-width: 118px; zoom: .85; }
   .gs-home .gs-sec{ padding-top: 76px; }
