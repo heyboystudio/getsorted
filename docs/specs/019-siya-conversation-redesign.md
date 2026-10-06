@@ -1,6 +1,6 @@
 # Spec 019 · Reinvent Siya's conversation and booking workflow
 
-Status: Built — awaiting founder preview and live synthetic Gemini evaluation (2026-10-06) · Phase: 2 · Owner: founder
+Status: Deployed to preview — conversational trial in progress (2026-10-06) · Phase: 2 · Owner: founder
 
 ## Goal
 Siya responds to what a person actually says, including messages outside the trade catalogue, before trying to book a job. Ordinary conversation should not be treated as a failed service match. Replace the questionnaire-driven conversation with an intent-aware assistant that recognises possible emergencies, remembers supplied details, asks useful follow-ups and helps the customer reach a clear, reviewable booking.
@@ -122,6 +122,8 @@ Approve the workflow first, then plan focused changes: (1) safety routing and co
 - Founder clarification 2026-10-06: the screenshot illustrated poor responses beyond supported trades generally, not a fire-brigade-specific feature. Added an explicit ordinary-conversation intent and broader response instructions; removed the visible wizard/progress header and unused progress mapping. Booking controls still appear only when needed. Homepage styling remains deferred.
 
 - Follow-up verification passed: full `composer check` with the same local UTC/timeout settings (707 tests, 3,070 assertions; formatting, static analysis and audit clean), focused conversation/provider tests (69 tests, 290 assertions) and production asset build. Follow-up reviewed directly; live Gemini evaluation and deployment remain outstanding.
+
+- Founder explicitly authorised commit and deployment. Deployed app revision `7901bfa` from `deploy/combined`, preserving the homepage redesign. The integration entry tests passed (19 tests, 73 assertions); asset/container build and deployment completed. Public `/` and `/book` returned HTTP 200; `/book` has the new AI header and no wizard progress bar. Live synthetic chat checks for a greeting, lawn mowing and Get Sorted information returned contextual replies with no selected service or retry failure. Lawn mowing was acknowledged as unavailable with a garden-service suggestion, without unrelated trade promotion. Broader multi-turn quality evaluation remains part of the trial.
 
 ## Emergency content sources
 Reviewed 2026-10-06: [eThekwini Public Safety and Emergency Services](https://www.durban.gov.za/page/public-safety-emergency-services) lists 031 361 0000 and fire evacuation guidance; [South African Government emergency guidance](https://www.gov.za/news/media-statements/western-cape-weather-warning-23-jun-2015) lists 112 from a cellphone. These are application-owned contacts and guidance, never generated model output. Existing 080 131 3111 wording is removed from Siya's emergency response; it is an electricity fault line, not the fire response number.
