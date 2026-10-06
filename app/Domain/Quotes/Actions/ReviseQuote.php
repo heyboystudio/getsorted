@@ -51,7 +51,7 @@ final readonly class ReviseQuote
                 throw new CannotQuote(__('Only your latest sent or expired quote can be revised.'));
             }
 
-            if ($current->status === QuoteStatus::Expired && $job->quotes_count >= QuoteFlow::MAX_QUOTES) {
+            if ($current->status === QuoteStatus::Expired && $job->quotes_count >= QuoteFlow::maxQuotes()) {
                 throw new CannotQuote(__('This job is full. Thanks for your interest.'));
             }
 

@@ -46,7 +46,7 @@ final readonly class SubmitQuote
                 throw new CannotQuote(__('You already sent a quote for this job. Revise it instead.'));
             }
 
-            if ($job->status !== ServiceJobStatus::Open || $job->quotes_count >= QuoteFlow::MAX_QUOTES) {
+            if ($job->status !== ServiceJobStatus::Open || $job->quotes_count >= QuoteFlow::maxQuotes()) {
                 throw new CannotQuote(__('This job is full or no longer open. Thanks for your interest.'));
             }
 

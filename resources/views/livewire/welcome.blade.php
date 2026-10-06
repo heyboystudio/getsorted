@@ -50,7 +50,6 @@
         </div>
       </form>
       @error('description')<p class="gs-err" role="alert">{{ $message }}</p>@enderror
-      @if ($showFallback)<p class="gs-fallback" aria-live="polite">{{ __('Choose the closest service') }}:</p>@endif
 
       <div class="gs-tabs" role="tablist" aria-label="Job ideas">
         <button class="gs-tab" role="tab" :aria-selected="(tab === 'popular').toString()" @click="tab = 'popular'">Popular</button>
@@ -126,12 +125,12 @@
             <div class="gs-sec-head"><h2 class="gs-serif" id="flow-h">One thread, from leak to paid</h2><p>No phone tag and no five browser tabs. Every step happens in the same place.</p></div>
             <ul class="gs-steps">
               <li><span class="gs-ic"><i class="ph ph-chat-circle-text"></i></span><div><h3>Describe it</h3><p>Chat with Siya or tap through a few questions. Add photos when you are ready.</p></div></li>
-              <li><span class="gs-ic"><i class="ph ph-shield-check"></i></span><div><h3>Meet vetted pros</h3><p>We invite pros who cover your suburb. Your street address stays private until you choose.</p></div></li>
+              <li><span class="gs-ic"><i class="ph ph-shield-check"></i></span><div><h3>Meet vetted pros</h3><p>We invite vetted pros near you. Your street address stays private until you choose.</p></div></li>
               <li><span class="gs-ic"><i class="ph ph-scales"></i></span><div><h3>Compare quotes</h3><p>Up to three itemised quotes side by side. Ask a pro a question before you decide.</p></div></li>
               <li><span class="gs-ic"><i class="ph ph-credit-card"></i></span><div><h3>Book and pay</h3><p>Pick a slot, pay a deposit, and settle the rest when the work is done. Updates arrive on WhatsApp.</p></div></li>
             </ul>
           </div>
-          <div class="gs-thread" role="img" aria-label="Example conversation: a customer reports a dripping tap, the assistant asks for the suburb, then three example quotes arrive.">
+          <div class="gs-thread" role="img" aria-label="Example conversation: a customer reports a dripping tap, the assistant asks for the suburb, then example quotes arrive.">
             <div class="gs-thread-top"><span>Dripping kitchen tap</span><span class="gs-tag">Example</span></div>
             <div class="gs-b gs-u">The kitchen tap will not stop dripping. It started yesterday.</div>
             <div class="gs-b gs-s"><small>Siya</small>Sounds like a worn cartridge. Which suburb are you in?</div>
@@ -195,7 +194,7 @@
             <h2 class="gs-serif" id="forpros-h">Are you a tradesperson in Durban?</h2>
             <p>Choose the jobs you want, set your own prices, and see the job details before you quote.</p>
             <ul class="gs-checks">
-              <li><i class="ph-bold ph-check"></i> Local work that fits your trade and your suburbs</li>
+              <li><i class="ph-bold ph-check"></i> Local work that fits your trade and how far you travel</li>
               <li><i class="ph-bold ph-check"></i> An itemised quote builder that works on your phone</li>
               <li><i class="ph-bold ph-check"></i> Deposits held securely and payouts tracked in one place</li>
               <li><i class="ph-bold ph-check"></i> Free to join</li>
@@ -212,14 +211,14 @@
         <div class="gs-sec-head"><h2 class="gs-serif" id="faq-h">Good to know</h2></div>
         <div class="gs-faq">
           <div>
-            <details><summary>Where is Get Sorted available? <i class="ph ph-plus"></i></summary><p>We are starting in selected Durban and eThekwini suburbs and adding more over time. If you are outside the area, join the waitlist and we will tell you when we arrive.</p></details>
+            <details><summary>Where is Get Sorted available? <i class="ph ph-plus"></i></summary><p>We are starting in Durban and eThekwini and adding more over time. If there are no pros near you yet, join the waitlist and we will tell you when we arrive.</p></details>
             <details><summary>What does it cost to join? <i class="ph ph-plus"></i></summary><p>Creating a customer account is free. Tradespeople can also join for free.</p></details>
             <details><summary>How do you choose pros? <i class="ph ph-plus"></i></summary><p>Pros apply to join and go through checks before they can take on work through Get Sorted.</p></details>
             <details><summary>Can I sign up with Google? <i class="ph ph-plus"></i></summary><p>Yes. Use Google or your email address, then verify a South African mobile number.</p></details>
           </div>
           <div>
-            <details><summary>Who sees my address? <i class="ph ph-plus"></i></summary><p>Pros see your suburb only. Your street address and contact details are shared once you accept a quote.</p></details>
-            <details><summary>How many quotes will I get? <i class="ph ph-plus"></i></summary><p>Up to three, from pros who cover your suburb and offer the service you need.</p></details>
+            <details><summary>Who sees my address? <i class="ph ph-plus"></i></summary><p>Pros see your area and roughly how far away you are, never your street. Your street address and contact details are shared once you accept a quote.</p></details>
+            <details><summary>How many quotes will I get? <i class="ph ph-plus"></i></summary><p>Up to five, from vetted pros near you who do the trade you need.</p></details>
             <details><summary>How do payments work? <i class="ph ph-plus"></i></summary><p>You pay a deposit when you accept a quote and settle the final amount when the work is done. Any change to the price needs your approval first.</p></details>
             <details><summary>What if something goes wrong? <i class="ph ph-plus"></i></summary><p>Message your pro in the thread first. If it cannot be resolved, our support team steps in and can review the job record.</p></details>
           </div>

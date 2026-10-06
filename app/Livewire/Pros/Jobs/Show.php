@@ -21,6 +21,7 @@ use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Exceptions\CannotQuote;
 use App\Domain\Quotes\Support\ContactMasker;
 use App\Domain\Quotes\Support\QuoteCalculator;
+use App\Domain\Matching\Support\Distance;
 use App\Domain\Quotes\Support\QuoteFlow;
 use App\Domain\Quotes\Support\QuoteRules;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
@@ -229,13 +230,13 @@ final class Show extends Component
     {
         $invite = $this->invite();
         $quote = $this->myQuote()?->load('lines');
-        $job = ServiceJob::query()->with(['service.trade', 'service.questions', 'property.suburb', 'customer', 'media'])->findOrFail($invite->service_job_id);
+        $job = ServiceJob::query()->with(['trade', 'property', 'customer', 'media'])->findOrFail($invite->service_job_id);
         $accepted = $quote instanceof Quote && $quote->status === QuoteStatus::Accepted && $job->accepted_quote_id === $quote->id;
         $canQuote = ! $quote instanceof Quote && ! $this->unavailable && $invite->isAvailable();
         $hasOpenQuote = $quote instanceof Quote && in_array($quote->status, [QuoteStatus::Submitted, QuoteStatus::Expired], true) && $job->status === ServiceJobStatus::Open;
 
         if (! $accepted && ! $canQuote && ! $hasOpenQuote && ! $this->sent) {
-            $full = $invite->status === InviteStatus::Closed && $job->status === ServiceJobStatus::Open && $job->quotes_count >= QuoteFlow::MAX_QUOTES;
+            $full = $invite->status === InviteStatus::Closed && $job->status === ServiceJobStatus::Open && $job->quotes_count >= QuoteFlow::maxQuotes();
 
             return view('livewire.pros.jobs.show', ['invite' => $invite, 'job' => null, 'full' => $full]);
         }
@@ -246,13 +247,9 @@ final class Show extends Component
         return view('livewire.pros.jobs.show', [
             'invite' => $invite,
             'job' => $job,
-            'answers' => array_map(static function (array $answer): array {
-                $answer['answer'] = is_array($answer['answer'])
-                    ? array_map(static fn (mixed $value): string => Redactor::strip((string) $value), $answer['answer'])
-                    : Redactor::strip((string) $answer['answer']);
-
-                return $answer;
-            }, $job->orderedAnswers()),
+            // The facts Siya extracted, highlighted so the pro can decide whether they can help (spec 020).
+            'facts' => array_map(static fn (string $fact): string => Redactor::strip($fact), $job->factTexts()),
+            'distance' => $invite->pro->base_location !== null && $job->location !== null ? Distance::label($invite->pro->base_location, $job->location) : null,
             'description' => $description === '' ? null : $description,
             // Not "notes": that name is the quote builder's own field on this component.
             'customerNotes' => $notes === '' || $notes === $description ? null : $notes,
@@ -269,7 +266,7 @@ final class Show extends Component
                 'phone' => $job->customer->phone_e164,
                 'label' => $job->property?->label,
                 'address' => $job->property?->street_address,
-                'suburb' => $job->property?->suburb?->name,
+                'suburb' => $job->area_label,
             ] : null,
             'previewTotals' => $this->building && $this->previewing ? $this->previewTotals($calculator) : null,
             'previewText' => $this->building && $this->previewing ? $this->previewText() : null,

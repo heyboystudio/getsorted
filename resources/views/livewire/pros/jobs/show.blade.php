@@ -7,16 +7,16 @@
             <div class="mt-8 rounded-xl border border-zinc-200 bg-white p-6 text-center">
                 @if ($full ?? false)
                     <p class="text-lg font-medium">{{ __('This job is full') }}</p>
-                    <p class="mt-2 text-zinc-600">{{ __('The customer already has three quotes. We\'ll WhatsApp you about the next job that fits.') }}</p>
+                    <p class="mt-2 text-zinc-600">{{ __('The customer already has all the quotes they asked for. We\'ll WhatsApp you about the next job that fits.') }}</p>
                 @else
                     <p class="text-lg font-medium">{{ __('This job is no longer available') }}</p>
                     <p class="mt-2 text-zinc-600">{{ __('It may have expired, been filled, or you already answered it.') }}</p>
                 @endif
             </div>
         @else
-            <p class="mt-6 text-sm font-medium uppercase tracking-widest text-emerald-800">{{ $job->service->trade->name }}</p>
-            <h1 class="mt-1 text-2xl font-semibold tracking-tight">{{ $job->service->name }}</h1>
-            <p class="mt-2 text-zinc-700">{{ $job->property?->suburb?->name }} · {{ $job->time_window?->label() }}@if ($job->preferred_date && $job->time_window !== \App\Domain\ServiceJobs\Enums\TimeWindow::Today), {{ $job->preferred_date->translatedFormat('D j M') }}@endif
+            <p class="mt-6 text-sm font-medium uppercase tracking-widest text-emerald-800">{{ $job->trade->name }}</p>
+            <h1 class="mt-1 text-2xl font-semibold tracking-tight">{{ $facts[0] ?? __('New job') }}</h1>
+            <p class="mt-2 text-zinc-700">{{ $job->area_label }}@if ($distance) · {{ $distance }}@endif · {{ $job->time_window?->label() }}@if ($job->preferred_date && $job->time_window !== \App\Domain\ServiceJobs\Enums\TimeWindow::Today), {{ $job->preferred_date->translatedFormat('D j M') }}@endif
                 @if ($job->urgency === \App\Domain\ServiceJobs\Enums\Urgency::Urgent) <span class="ml-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800">{{ __('Urgent') }}</span> @endif
             </p>
             @unless ($accepted)
@@ -48,14 +48,23 @@
                 </section>
             @endif
 
-            <dl class="mt-4 space-y-3 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
-                @foreach ($answers as $answer)
-                    <div><dt class="text-zinc-500">{{ $answer['prompt'] }}</dt><dd>{{ is_array($answer['answer']) ? implode(', ', $answer['answer']) : ($answer['type'] === 'yes_no' ? __(ucfirst((string) $answer['answer'])) : $answer['answer']) }}</dd></div>
-                @endforeach
-                @if ($customerNotes)
-                    <div><dt class="text-zinc-500">{{ __("Customer's notes") }}</dt><dd class="whitespace-pre-line">{{ $customerNotes }}</dd></div>
-                @endif
-            </dl>
+            @if ($facts !== [])
+                <section class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-labelledby="job-facts">
+                    <h2 id="job-facts" class="text-sm font-medium text-amber-900">{{ __('What the customer reported') }}</h2>
+                    <ul class="mt-2 flex flex-wrap gap-2">
+                        @foreach ($facts as $fact)
+                            <li class="rounded-full bg-amber-200 px-3 py-1 text-sm font-medium text-amber-950">{{ $fact }}</li>
+                        @endforeach
+                    </ul>
+                    <p class="mt-2 text-xs text-amber-900">{{ __('Quote only if you can help with this.') }}</p>
+                </section>
+            @endif
+
+            @if ($customerNotes)
+                <dl class="mt-4 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
+                    <dt class="text-zinc-500">{{ __("Customer's notes") }}</dt><dd class="whitespace-pre-line">{{ $customerNotes }}</dd>
+                </dl>
+            @endif
 
             @if ($photoUrls !== [] && ! $accepted)
                 <div class="mt-4 grid grid-cols-2 gap-3">

@@ -35,7 +35,7 @@ final class Index extends Component
 
         $invites = ServiceJobInvite::query()
             ->where('pro_id', $this->currentPro()->id)
-            ->with(['serviceJob.service', 'serviceJob.property.suburb'])
+            ->with(['serviceJob.trade', 'pro'])
             ->when($new, fn (Builder $query) => $query->whereIn('status', InviteStatus::open())->where('expires_at', '>', now()))
             ->when(! $new, fn (Builder $query) => $query->where(fn (Builder $past) => $past->whereNotIn('status', InviteStatus::open())->orWhere('expires_at', '<=', now())))
             ->latest('invited_at')
