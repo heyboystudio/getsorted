@@ -24,6 +24,13 @@ final class SendQuoteMessage implements ShouldQueue
 
     public int $tries = 3;
 
+    /**
+     * Twilio rate-limits bursts (429), so retry after a pause rather than at once.
+     *
+     * @var list<int>
+     */
+    public array $backoff = [30, 120];
+
     public function __construct(
         public readonly int $quoteId,
         public readonly string $template,
