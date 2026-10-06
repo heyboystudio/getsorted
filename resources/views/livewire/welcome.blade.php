@@ -107,21 +107,6 @@
       </div>
     </section>
 
-    <section class="gs-sec" aria-labelledby="pop-h">
-      <div class="gs-wrap">
-        <div class="gs-sec-head"><h2 class="gs-serif" id="pop-h">What Durban homes ask for most</h2><p>Typical prices and how long each job takes. Your quotes show the real numbers.</p></div>
-        <div class="gs-row">
-          <a class="gs-job" href="{{ route('book.trade', ['trade' => 'plumbing']) }}" wire:navigate.hover><div class="gs-pic"><img src="{{ asset('images/trade-plumbing-v2.webp') }}" alt="" loading="lazy" style="object-position:20% 30%"></div><div class="gs-meta"><h3>Replace a kitchen mixer tap</h3><small>Plumbing, 1 to 2 hours</small><p class="gs-price">R450 to R900</p></div></a>
-          <a class="gs-job" href="{{ route('book.trade', ['trade' => 'electrical']) }}" wire:navigate.hover><div class="gs-pic"><img src="{{ asset('images/trade-electrical-v2.webp') }}" alt="" loading="lazy" style="object-position:60% 40%"></div><div class="gs-meta"><h3>Electrical certificate of compliance</h3><small>Electrical, half a day</small><p class="gs-price">R1,200 to R2,500</p></div></a>
-          <a class="gs-job" href="{{ route('book.trade', ['trade' => 'painting']) }}" wire:navigate.hover><div class="gs-pic"><img src="{{ asset('images/trade-painting-v2.webp') }}" alt="" loading="lazy" style="object-position:70% 50%"></div><div class="gs-meta"><h3>Repaint a bedroom</h3><small>Painting, 1 to 2 days</small><p class="gs-price">R2,800 to R5,500</p></div></a>
-          <a class="gs-job" href="{{ route('book.trade', ['trade' => 'tiling']) }}" wire:navigate.hover><div class="gs-pic"><img src="{{ asset('images/trade-tiling-v2.webp') }}" alt="" loading="lazy" style="object-position:50% 70%"></div><div class="gs-meta"><h3>Regrout and reseal a shower</h3><small>Tiling, 1 day</small><p class="gs-price">R900 to R1,800</p></div></a>
-          <a class="gs-job" href="{{ route('book.trade', ['trade' => 'plumbing']) }}" wire:navigate.hover><div class="gs-pic"><img src="{{ asset('images/trade-plumbing-v2.webp') }}" alt="" loading="lazy" style="object-position:80% 70%"></div><div class="gs-meta"><h3>Geyser replacement</h3><small>Plumbing, 4 to 6 hours</small><p class="gs-price">R6,500 to R11,000</p></div></a>
-          <a class="gs-job" href="{{ route('book.trade', ['trade' => 'electrical']) }}" wire:navigate.hover><div class="gs-pic"><img src="{{ asset('images/pro-electrician.webp') }}" alt="" loading="lazy" style="object-position:50% 30%"></div><div class="gs-meta"><h3>Add double plug points</h3><small>Electrical, 1 to 3 hours</small><p class="gs-price">R550 to R950 <span>each</span></p></div></a>
-          <a class="gs-job" href="{{ route('book.trade', ['trade' => 'painting']) }}" wire:navigate.hover><div class="gs-pic"><img src="{{ asset('images/trade-painting-v2.webp') }}" alt="" loading="lazy" style="object-position:10% 80%"></div><div class="gs-meta"><h3>Exterior wall repaint</h3><small>Painting, 4 to 8 days</small><p class="gs-price">R14,000 to R38,000</p></div></a>
-          <a class="gs-job" href="{{ route('book.trade', ['trade' => 'tiling']) }}" wire:navigate.hover><div class="gs-pic"><img src="{{ asset('images/trade-tiling-v2.webp') }}" alt="" loading="lazy" style="object-position:20% 20%"></div><div class="gs-meta"><h3>Tile a kitchen floor</h3><small>Tiling, 2 to 4 days</small><p class="gs-price">R180 to R320 <span>per m²</span></p></div></a>
-        </div>
-      </div>
-    </section>
 
     <section class="gs-sec" aria-labelledby="flow-h" id="how">
       <div class="gs-wrap">
