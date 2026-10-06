@@ -1,7 +1,7 @@
 {{-- Spec 017: booking in one Siya thread. Every message is escaped text; nothing is rendered as HTML. --}}
 @php($chip = 'rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm hover:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-600 disabled:opacity-60')
 @php($primary = 'w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60')
-@php($tapped = 'answer,pickTrade,pickService,describeOther,send,confirmService,rejectService,addDetails,continueDetails,selectProperty,chooseWhen,finishPhotos,confirmBooking,joinWaitlist,noThanks,differentService,skipQuestion')
+@php($tapped = 'answer,pickTrade,pickService,describeOther,send,continueAfterEmergency,retry,selectProperty,chooseWhen,finishPhotos,confirmBooking,joinWaitlist,noThanks,differentService,skipQuestion')
 <main class="flex min-h-dvh justify-center" x-data="{ pending: '' }">
     <section class="flex w-full max-w-2xl flex-col px-4">
         <header class="sticky top-0 z-10 -mx-4 border-b border-zinc-200 bg-stone-50/95 px-4 pb-3 pt-4 backdrop-blur">
@@ -11,7 +11,7 @@
                     <span class="flex size-10 items-center justify-center rounded-full bg-emerald-700 font-semibold text-white" aria-hidden="true">S</span>
                     <div>
                         <h1 class="font-semibold leading-tight">{{ __('Siya') }}</h1>
-                        <p class="text-xs text-zinc-500">{{ __('Sortd’s AI assistant · can make mistakes') }}</p>
+                        <p class="text-xs text-zinc-500">{{ __('Get Sorted’s AI assistant · can make mistakes') }}</p>
                     </div>
                 </div>
                 <button type="button" wire:click="restart" wire:confirm="{{ __('Start over? This clears the chat.') }}" class="text-sm text-zinc-600 underline underline-offset-4">{{ __('Restart') }}</button>
@@ -63,22 +63,35 @@
             </li>
         </ol>
 
+        @if ($retryPending && $stage !== 'emergency')
+            <button type="button" wire:click="retry" wire:loading.attr="disabled" wire:target="retry" class="mb-3 {{ $chip }}">{{ __('Try again') }}</button>
+        @endif
+
+        @if ($limitReached)
+            <p class="mb-3 text-sm text-zinc-600">{{ __('This conversation has reached its message limit. Restart to continue booking. Emergency guidance is still available.') }}</p>
+        @endif
+
         {{-- The current card --}}
         <div class="pb-4" wire:loading.class="opacity-60" wire:target="{{ $tapped }}">
-            @if (in_array($stage, ['trade', 'describe'], true) && $trades->isNotEmpty())
+            @if ($stage === 'emergency')
+                <p class="mb-3 text-sm text-red-900">{{ __('Contact emergency services first. Get Sorted can only help plan later repair work.') }}</p>
+                <button type="button" wire:click="continueAfterEmergency" wire:loading.attr="disabled" class="{{ $chip }}">{{ __('Discuss a later repair') }}</button>
+            @elseif (in_array($stage, ['trade', 'describe'], true) && $trades->isNotEmpty())
                 <div class="grid grid-cols-2 gap-2">
                     @foreach ($trades as $tradeOption)
                         <button type="button" wire:key="trade-{{ $tradeOption->key }}" wire:click="pickTrade(@js($tradeOption->key))" x-on:click="pending = @js($tradeOption->name)"
                             class="rounded-xl border border-zinc-200 bg-white px-4 py-4 text-left font-medium hover:border-emerald-700">{{ $tradeOption->name }} <span class="float-right text-zinc-400" aria-hidden="true">›</span></button>
                     @endforeach
                 </div>
-            @elseif ($stage === 'service')
+            @elseif ($stage === 'service' && $tradeServices->isNotEmpty())
                 <div class="flex flex-wrap gap-2">
                     @foreach ($tradeServices as $option)
                         <button type="button" wire:key="service-{{ $option->key }}" wire:click="pickService(@js($option->key))" x-on:click="pending = @js($option->name)" class="{{ $chip }}">{{ $option->name }}</button>
                     @endforeach
                     <button type="button" wire:click="describeOther" x-on:click="pending = @js(__('Something else'))" class="{{ $chip }}">{{ __('Other') }}</button>
                 </div>
+            @elseif (in_array($stage, ['trade', 'describe', 'service'], true))
+                <button type="button" wire:click="showTrades" wire:loading.attr="disabled" class="text-sm text-emerald-800 underline">{{ __('Choose a trade or service instead') }}</button>
             @elseif ($stage === 'suggested')
                 <div class="flex flex-wrap gap-2">
                     <button type="button" wire:click="confirmService" x-on:click="pending = @js(__('Yes'))" class="rounded-full bg-emerald-700 px-5 py-2 text-sm font-medium text-white">{{ __('Yes') }}</button>
@@ -112,11 +125,6 @@
                         <button type="button" wire:click="skipQuestion" x-on:click="pending = @js(__('Skip'))" class="mt-3 text-sm text-zinc-600 underline underline-offset-4">{{ __('Skip') }}</button>
                     @endunless
                     @error('answer') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
-                </div>
-            @elseif ($stage === 'details')
-                <div class="flex flex-wrap gap-2">
-                    <button type="button" wire:click="continueDetails" x-on:click="pending = @js(__('Continue'))" class="rounded-full bg-emerald-700 px-5 py-2 text-sm font-medium text-white">{{ __('Continue') }}</button>
-                    <button type="button" wire:click="addDetails" x-on:click="pending = @js(__('Add more details'))" class="{{ $chip }}">{{ __('Add more details') }}</button>
                 </div>
             @elseif ($stage === 'signin')
                 <div class="rounded-xl border border-zinc-200 bg-white p-4">
@@ -329,13 +337,13 @@
             <div wire:key="end-{{ count($messages) }}-{{ $stage }}" x-init="$nextTick(() => $el.scrollIntoView({ block: 'end' }))"></div>
         </div>
 
-        @if (! in_array($stage, ['posted', 'closed', 'summary', 'add_property', 'notes'], true))
+        @if (! in_array($stage, ['posted', 'closed'], true))
             <form wire:submit="send" x-on:submit="pending = $wire.message" class="sticky bottom-0 -mx-4 flex gap-2 border-t border-zinc-200 bg-stone-50 px-4 py-3">
                 <label for="siya-message" class="sr-only">{{ __('Message Siya') }}</label>
-                <input id="siya-message" type="text" wire:model="message" maxlength="1000" autocomplete="off" @disabled($limitReached)
-                    placeholder="{{ $available || ! in_array($stage, ['trade', 'service', 'describe', 'suggested', 'questions'], true) ? __('Type here…') : __('Tap an option to continue') }}"
+                <input id="siya-message" type="text" wire:model="message" maxlength="1000" autocomplete="off"
+                    placeholder="{{ $available ? __('Message Siya…') : __('Tap an option to continue') }}"
                     class="block w-full rounded-full border border-zinc-300 bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-600">
-                <button type="submit" wire:loading.attr="disabled" wire:target="send" @disabled($limitReached) class="rounded-full bg-emerald-700 px-5 py-3 font-medium text-white disabled:opacity-60" aria-label="{{ __('Send') }}">↑</button>
+                <button type="submit" wire:loading.attr="disabled" wire:target="send" class="rounded-full bg-emerald-700 px-5 py-3 font-medium text-white disabled:opacity-60" aria-label="{{ __('Send') }}">↑</button>
             </form>
             @error('message') <p class="pb-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
             <p class="pb-3 text-center text-xs text-zinc-500">{{ __('Don’t share phone numbers or addresses in the chat.') }}</p>

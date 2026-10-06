@@ -12,6 +12,7 @@ use App\Contracts\Data\ScopingSuggestionReply;
 use App\Contracts\Data\ScopingSummaryReply;
 use App\Contracts\Exceptions\AssistantUnavailable;
 use App\Contracts\ScopingAssistant;
+use App\Domain\Assistant\Enums\ConversationIntent;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Laravel\Ai\Contracts\Agent;
@@ -66,9 +67,16 @@ final class AnthropicScopingAssistant implements ScopingAssistant
             'questions' => $request->questions,
             'answers' => $request->answers,
             'transcript' => $request->transcript,
+            'booking_stage' => $request->bookingStage,
+            'pending_question_key' => $request->pendingQuestionKey,
+            'product_facts' => $request->productFacts,
+            'service_questions' => $request->serviceQuestions,
         ]), (int) config('sortd.ai.chat_timeout_seconds'));
 
-        $data = $this->structured($response, ['reply', 'trade_key', 'service_key', 'answers']);
+        $data = $this->structured($response, ['reply', 'trade_key', 'service_key', 'answers', 'intent', 'question_key', 'job_notes']);
+        if (array_diff(['reply', 'trade_key', 'service_key', 'answers', 'intent', 'question_key', 'job_notes'], array_keys($data)) !== [] || ! is_array($data['job_notes'] ?? null) || count(array_filter($data['job_notes'], is_string(...))) !== count($data['job_notes'])) {
+            $data = [];
+        }
         $answers = [];
 
         foreach ((array) ($data['answers'] ?? []) as $item) {
@@ -82,7 +90,9 @@ final class AnthropicScopingAssistant implements ScopingAssistant
 
         $text = fn (string $field): ?string => is_string($data[$field] ?? null) && trim($data[$field]) !== '' ? trim($data[$field]) : null;
 
-        return new ChatReply($text('reply'), $text('trade_key'), $text('service_key'), $answers, $this->usage($response));
+        return new ChatReply($text('reply'), $text('trade_key'), $text('service_key'), $answers, $this->usage($response),
+            ConversationIntent::tryFrom($text('intent') ?? ''), $text('question_key'),
+            is_array($data['job_notes'] ?? null) ? array_values($data['job_notes']) : null);
     }
 
     /**

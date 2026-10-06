@@ -12,6 +12,7 @@ use App\Contracts\Data\ScopingSuggestionReply;
 use App\Contracts\Data\ScopingSummaryReply;
 use App\Contracts\Exceptions\AssistantUnavailable;
 use App\Contracts\ScopingAssistant;
+use App\Domain\Assistant\Enums\ConversationIntent;
 use Closure;
 use PHPUnit\Framework\Assert;
 
@@ -46,10 +47,11 @@ final class FakeScopingAssistant implements ScopingAssistant
      * Queue Siya replies, used in order; with none queued Siya just says hello.
      *
      * @param  array<string, mixed>  $answers
+     * @param  list<string>|null  $jobNotes
      */
-    public function willChat(?string $reply, ?string $tradeKey = null, ?string $serviceKey = null, array $answers = []): self
+    public function willChat(?string $reply, ?string $tradeKey = null, ?string $serviceKey = null, array $answers = [], ?ConversationIntent $intent = ConversationIntent::HomeProblem, ?string $questionKey = null, ?array $jobNotes = null): self
     {
-        $this->chatReplies[] = new ChatReply($reply, $tradeKey, $serviceKey, $answers, $this->usage());
+        $this->chatReplies[] = new ChatReply($reply, $tradeKey, $serviceKey, $answers, $this->usage(), $intent, $questionKey, $jobNotes);
 
         return $this;
     }

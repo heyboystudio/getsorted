@@ -427,3 +427,18 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 - **Training on data:** use a **paid** (billing-enabled) Gemini API project. On the free tier Google may use prompts to improve its products. The assistant only receives the stripped description, service and answers (domain rules), never names, addresses, IDs or payment data.
 - **Key handling:** `GEMINI_API_KEY` lives only in the server's `.env`; never commit it.
 - **Quality:** check that Gemini keeps to the structured-reply schemas (spec 007 AC11); replies are still validated before use.
+
+
+## 050 · Siya understands the conversation before booking
+
+**Date:** 2026-10-06 · **Status:** Accepted (founder; spec 019)
+
+**Decision:** Siya supports natural text throughout booking and answers Get Sorted questions from approved public product facts. Service classification happens in the background as a trial; the editable review replaces the separate service confirmation card (supersedes spec 017 AC6 for the trial). Required scoping, secure property/date controls and explicit Confirm booking still run through the existing server-side rules. Gemini support follows decision 049.
+
+**Character:** The founder chose Siya Kolisi as inspiration, then explicitly confirmed inspiration only. The assistant has a warm, grounded, encouraging voice and identifies itself as Get Sorted’s AI assistant. It does not impersonate him, use a likeness or quotes, invent personal experiences or claim endorsement.
+
+**Safety:** Possible emergencies pause ordinary booking. Application-owned, reviewed guidance appears even when the model is unavailable. Only explicit selection of “Discuss a later repair” resumes booking; that action does not establish safety. Multiple unrelated home problems are scoped as separate jobs.
+
+**Implementation:** Structured intents and proposals are validated against the active catalogue, question schemas and verbatim customer note excerpts. The model cannot post jobs or change payment/status state. Corrected services update the existing authorised draft, preserve photos and recheck coverage. Product questions do not become pro notes. Conversation state remains in the existing session/draft boundaries; no new transcript table or dependency is introduced.
+
+**Validation:** Deterministic fakes cover safety, corrections, booking, privacy and provider schema failures. Live Gemini conversation quality must still be evaluated with synthetic examples on a configured preview before judging the trial successful. Homepage UI alignment is deferred.
