@@ -31,7 +31,8 @@ final class AdminPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('admin')
-            ->path('admin')
+            ->domain(config('sortd.admin_domain'))
+            ->path(config('sortd.admin_domain') === null ? 'admin' : '')
             ->brandName('Sortd Admin')
             ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)

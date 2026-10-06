@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Notifications\Notify;
 use App\Models\ServiceJob;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -28,7 +29,15 @@ final class SendJobExpiredMessage implements ShouldQueue
     {
         $job = ServiceJob::query()->with(['customer', 'trade'])->find($this->serviceJobId);
 
-        if (! $job instanceof ServiceJob || $job->customer->phone_e164 === null) {
+        if (! $job instanceof ServiceJob) {
+            return;
+        }
+
+        if ($this->attempts() === 1) {
+            Notify::user($job->customer, 'job_expired', __('Your :trade job ran out of time', ['trade' => mb_strtolower($job->trade->name)]), __('No quote was accepted in time. You can post it again whenever you are ready.'), route('book.trade', $job->trade), email: true);
+        }
+
+        if ($job->customer->phone_e164 === null) {
             return;
         }
 

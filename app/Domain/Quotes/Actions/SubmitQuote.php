@@ -54,6 +54,10 @@ final readonly class SubmitQuote
                 throw new CannotQuote(__('This job is no longer available.'));
             }
 
+            if ($locked->status !== InviteStatus::Accepted) {
+                throw new CannotQuote(__('Accept the job first, then send your estimate.'));
+            }
+
             $quote = $this->writer->write($job, $pro, $draft, $totals, version: 1, supersedes: null);
             $locked->forceFill(['status' => InviteStatus::Quoted, 'responded_at' => now()])->save();
             QuoteFlow::refreshCount($job);

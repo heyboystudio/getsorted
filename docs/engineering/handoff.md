@@ -32,3 +32,12 @@ Branch `feat/020-trade-distance-matching` in worktree `/Users/andymichaels/Docum
 - Timing stated in chat ("tomorrow morning") is not captured (spec decision D1 default OFF).
 - "Book the next job" after posting exists (`startNextJob`); parked jobs are limited to 3.
 - `vendor/` was copied from `sortd-gemini` and `node_modules` is a symlink to it; `.env` and `public/build` are local and git-ignored.
+
+## Cancel, notifications, admin host (2026-10-07)
+
+- **Why pros were never alerted:** the queue worker only read the `default` queue; matching and notification jobs sit on `matching` and `notifications`. The worker now runs `--queue=matching,notifications,default` (`deploy/preview/compose.yaml`). Redeploying the `queue` service processes the backlog.
+- **Notifications:** `Notify::user()` → `UserNotice` (database always; email only for key events and only to verified emails). Inbox at `/notifications`, bell with unread count in the app layout. No contact details or street addresses in any notice. WhatsApp still goes as before.
+- **Client cancel:** `CancelJobByCustomer` (open job, no accepted quote): invites closed, quotes declined, invited pros told. After acceptance the client is told to contact support.
+- **Messages cannot be deleted** by clients or pros any more (`delete_within_minutes` removed). Older deleted rows still render as "Message deleted".
+- **Admin host:** set `SORTD_ADMIN_DOMAIN=admin.usesorted.co.za` (panel moves to the host root, `/admin` on the main host redirects). Add the host to `SERVER_NAME` so Caddy issues its certificate. Test: `SORTD_ADMIN_DOMAIN=admin.sorted.test vendor/bin/pest tests/Feature/Admin`.
+- **Cloudflare:** set `SORTD_BEHIND_CLOUDFLARE=true` before turning the proxy on (trusts Cloudflare ranges for real visitor IPs) and use SSL mode Full (strict). The pgsql connection now pins its session timezone to UTC.

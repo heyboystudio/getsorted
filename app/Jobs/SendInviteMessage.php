@@ -6,6 +6,8 @@ namespace App\Jobs;
 
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Matching\Support\Distance;
+use App\Domain\Notifications\Notify;
 use App\Models\ServiceJobInvite;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -28,7 +30,25 @@ final class SendInviteMessage implements ShouldQueue
     {
         $invite = ServiceJobInvite::query()->with(['pro.user', 'serviceJob.trade'])->find($this->inviteId);
 
-        if (! $invite instanceof ServiceJobInvite || ! $invite->isAvailable() || $invite->pro->user->phone_e164 === null) {
+        if (! $invite instanceof ServiceJobInvite || ! $invite->isAvailable()) {
+            return;
+        }
+
+        // The in-app notice and email go once, even if the WhatsApp send is retried.
+        if ($this->attempts() === 1) {
+            $job = $invite->serviceJob;
+            $near = $invite->pro->base_location !== null && $job->location !== null ? ' · '.Distance::label($invite->pro->base_location, $job->location) : '';
+            Notify::user(
+                $invite->pro->user,
+                'job_invite',
+                __('New :trade job near you', ['trade' => mb_strtolower($job->trade->name)]),
+                trim(implode(' · ', array_filter([implode(', ', array_slice($job->factTexts(), 0, 2)), (string) $job->area_label])).$near, ' ·').'. '.__('Quote if you can help. The first quotes win.'),
+                route('pros.jobs.show', $invite),
+                email: true,
+            );
+        }
+
+        if ($invite->pro->user->phone_e164 === null) {
             return;
         }
 

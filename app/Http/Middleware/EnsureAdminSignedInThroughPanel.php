@@ -27,7 +27,7 @@ final class EnsureAdminSignedInThroughPanel
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->to(Filament::getLoginUrl() ?? '/admin/login');
+            return redirect()->to(Filament::getLoginUrl() ?? route('filament.admin.auth.login'));
         }
 
         return $next($request);

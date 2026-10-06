@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Pros\Jobs;
 
 use App\Domain\Assistant\Support\Redactor;
+use App\Domain\Matching\Actions\AcceptInvite;
 use App\Domain\Matching\Actions\DeclineInvite;
 use App\Domain\Matching\Actions\OpenInvite;
 use App\Domain\Matching\Enums\DeclineReason;
@@ -125,9 +126,22 @@ final class Show extends Component
         $this->redirectRoute('pros.jobs');
     }
 
+    public function acceptJob(AcceptInvite $acceptInvite): void
+    {
+        $this->resetErrorBag();
+
+        try {
+            $acceptInvite->handle($this->currentUser(), $this->invite());
+        } catch (CannotInvite $exception) {
+            $this->unavailable = true;
+            throw ValidationException::withMessages(['accept' => $exception->getMessage()]);
+        }
+    }
+
     public function startQuote(QuoteSettings $settings): void
     {
         $this->resetErrorBag();
+        abort_unless($this->invite()->status === InviteStatus::Accepted, 403);
         $this->lines = [['kind' => LineKind::Labour->value, 'description' => '', 'quantity' => '1', 'unitPrice' => '']];
         $this->depositPercent = 0;
         $this->earliestStartDate = LocalTime::today()->addDay()->toDateString();
@@ -258,6 +272,7 @@ final class Show extends Component
             'quotesCount' => $job->quotes_count,
             'reasons' => DeclineReason::cases(),
             'canQuote' => $canQuote,
+            'jobAccepted' => $invite->status === InviteStatus::Accepted,
             'quote' => $quote,
             'accepted' => $accepted,
             // Contact details only for the pro whose quote was accepted (AC9).

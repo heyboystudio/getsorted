@@ -7,6 +7,8 @@ namespace App\Livewire\Account\Jobs;
 use App\Domain\Quotes\Actions\AcceptQuote;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Exceptions\CannotQuote;
+use App\Domain\ServiceJobs\Actions\CancelJobByCustomer;
+use App\Domain\ServiceJobs\Exceptions\CannotCancelJob;
 use App\Domain\ServiceJobs\Support\JobChat;
 use App\Models\JobConversation;
 use App\Models\Pro;
@@ -78,6 +80,41 @@ final class Show extends Component
         } finally {
             $this->acceptingQuote = null;
         }
+    }
+
+    public bool $confirmingCancel = false;
+
+    public string $cancelReason = '';
+
+    public function confirmCancel(): void
+    {
+        $this->resetErrorBag();
+        $this->confirmingCancel = true;
+    }
+
+    public function keepJob(): void
+    {
+        $this->confirmingCancel = false;
+    }
+
+    public function cancelJob(CancelJobByCustomer $cancel): void
+    {
+        $this->validate(['cancelReason' => ['nullable', 'string', 'max:300']]);
+
+        /** @var User $user */
+        $user = auth()->user();
+        $job = ServiceJob::query()->where('public_id', $this->publicId)->where('customer_id', $user->id)->firstOrFail();
+
+        try {
+            $cancel->handle($user, $job, $this->cancelReason);
+        } catch (CannotCancelJob $exception) {
+            $this->confirmingCancel = false;
+
+            throw ValidationException::withMessages(['cancel' => $exception->getMessage()]);
+        }
+
+        $this->confirmingCancel = false;
+        $this->cancelReason = '';
     }
 
     public function render(): View

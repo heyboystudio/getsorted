@@ -28,6 +28,12 @@
             </div>
         @endif
 
+        @error('cancel') <p class="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
+
+        @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Cancelled)
+            <div class="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm" role="status">{{ __('This job was cancelled. You can post a new one any time.') }}</div>
+        @endif
+
         <dl class="mt-6 space-y-4 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
             @if ($job->facts !== [])
                 <div><dt class="text-zinc-500">{{ __('What you told us') }}</dt><dd class="mt-1 flex flex-wrap gap-2">@foreach ($job->factTexts() as $fact)<span class="rounded-full bg-amber-100 px-3 py-1 text-amber-950">{{ $fact }}</span>@endforeach</dd></div>
@@ -83,5 +89,27 @@
         @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Draft)
             <a wire:navigate.hover href="{{ route('booking.continue', $job) }}" class="mt-6 block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white hover:bg-emerald-800">{{ __('Finish your request') }}</a>
         @endif
+
+        @can('cancel', $job)
+            <section class="mt-10 border-t border-zinc-200 pt-6">
+                @if ($confirmingCancel)
+                    <div class="rounded-xl border border-red-200 bg-red-50 p-4" role="alertdialog" aria-labelledby="cancel-title">
+                        <p id="cancel-title" class="font-semibold text-red-900">{{ __('Cancel this job?') }}</p>
+                        <p class="mt-1 text-sm text-red-900">{{ __('Pros who were sent the job will be told. You can post a new job later.') }}</p>
+                        <label for="cancelReason" class="mt-3 block text-sm text-red-900">{{ __('Reason (optional)') }}</label>
+                        <input id="cancelReason" type="text" wire:model="cancelReason" maxlength="300" class="mt-1 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-base">
+                        @error('cancelReason') <p class="mt-1 text-sm text-red-800">{{ $message }}</p> @enderror
+                        <div class="mt-4 flex gap-3">
+                            <button type="button" wire:click="cancelJob" wire:loading.attr="disabled" class="rounded-lg bg-red-700 px-4 py-3 font-medium text-white hover:bg-red-800">{{ __('Yes, cancel job') }}</button>
+                            <button type="button" wire:click="keepJob" class="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium">{{ __('Keep job') }}</button>
+                        </div>
+                    </div>
+                @else
+                    <button type="button" wire:click="confirmCancel" class="text-sm text-red-700 underline underline-offset-4">{{ __('Cancel this job') }}</button>
+                @endif
+            </section>
+        @elseif (in_array($job->status, [\App\Domain\ServiceJobs\Enums\ServiceJobStatus::AwaitingDeposit, \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Scheduled, \App\Domain\ServiceJobs\Enums\ServiceJobStatus::InProgress], true))
+            <p class="mt-10 border-t border-zinc-200 pt-6 text-sm text-zinc-600">{{ __('A pro has been chosen for this job. To cancel or change it, please contact support.') }}</p>
+        @endcan
     </section>
 </main>

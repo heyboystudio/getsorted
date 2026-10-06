@@ -14,6 +14,7 @@ use App\Http\Controllers\ShowTradeController;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsurePhoneIsVerified;
 use App\Livewire\Account\Home;
+use App\Livewire\Account\Inbox;
 use App\Livewire\Account\Jobs\Show as JobShow;
 use App\Livewire\Account\Properties\Form as PropertyForm;
 use App\Livewire\Account\Properties\Index as PropertyIndex;
@@ -31,6 +32,11 @@ use App\Livewire\Pros\Status as ProStatusPage;
 use App\Livewire\Pros\Welcome as ProWelcome;
 use App\Livewire\Welcome;
 use Illuminate\Support\Facades\Route;
+
+if (config('sortd.admin_domain') !== null) {
+    // The admin panel moved to its own host; old /admin links land there.
+    Route::get('/admin/{any?}', fn () => redirect()->away('https://'.config('sortd.admin_domain')))->where('any', '.*');
+}
 
 Route::get('/', Welcome::class)->name('home');
 Route::view('/customers', 'pages.customers')->name('customers');
@@ -79,6 +85,7 @@ Route::middleware('auth')->group(function (): void {
             Route::get('/app/jobs/{job}', JobShow::class)->name('jobs.show');
             Route::get('/app/jobs/{job}/continue', BookingThread::class)->name('booking.continue');
         });
+        Route::get('/notifications', Inbox::class)->name('notifications');
         Route::get('/pros/welcome', ProWelcome::class)->name('pros.welcome');
         Route::get('/pros/apply', ProApplication::class)->name('pros.apply');
         Route::get('/pros/status', ProStatusPage::class)->name('pros.status');

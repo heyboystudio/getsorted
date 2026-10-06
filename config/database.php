@@ -44,6 +44,8 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
+            // The app stores UTC; make the session agree so timestamptz values are never shifted by the server's own zone.
+            'timezone' => 'UTC',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 

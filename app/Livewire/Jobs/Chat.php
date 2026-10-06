@@ -86,11 +86,6 @@ final class Chat extends Component
         }
     }
 
-    public function deleteMessage(string $publicId, ManageJobMessage $manage): void
-    {
-        $manage->delete($this->user(), $this->messageOnChat($publicId));
-    }
-
     public function startReport(string $publicId): void
     {
         // Not found unless the message is in this chat.
@@ -134,7 +129,6 @@ final class Chat extends Component
                 ? ($side === MessageSender::Customer ? __('You chose another pro, so this chat is closed.') : __('The customer chose another pro, so this chat is closed.'))
                 : __('This chat is closed.')),
             'reasons' => MessageReportReason::cases(),
-            'deleteWithin' => now()->subMinutes((int) config('sortd.chat.delete_within_minutes')),
         ]);
     }
 

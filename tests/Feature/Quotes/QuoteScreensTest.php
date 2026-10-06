@@ -64,7 +64,14 @@ function screenQuoteJob(): ServiceJob
 
 function screenInvite(ServiceJob $job, Pro $pro): ServiceJobInvite
 {
-    return ServiceJobInvite::query()->where('service_job_id', $job->id)->where('pro_id', $pro->id)->sole();
+    $invite = ServiceJobInvite::query()->where('service_job_id', $job->id)->where('pro_id', $pro->id)->sole();
+
+    // Pros accept the job before they can quote; most screens here start from that point.
+    if ($invite->status->isOpen()) {
+        $invite->forceFill(['status' => 'accepted'])->save();
+    }
+
+    return $invite->refresh();
 }
 
 function screenSubmit(ServiceJob $job, Pro $pro, int $deposit = 0): Quote

@@ -188,19 +188,16 @@ it('queues notifications on the notifications queue after the message is saved (
     Queue::assertPushedOn('notifications', SendChatNotification::class, fn (SendChatNotification $job): bool => $job->recipient === MessageSender::Pro);
 });
 
-it('lets senders delete their own message for a few minutes, and the other side report it (AC6)', function (): void {
+it('never lets anyone delete a message, but the other side can report it (AC6)', function (): void {
     chatAs($this->customer, $this->proA)->set('message', 'Oops wrong job')->call('send');
     $message = JobMessage::query()->sole();
 
-    chatAs($this->proA->user, $this->proA, 'Thandi')->call('deleteMessage', $message->public_id)->assertNotFound();
-    chatAs($this->customer, $this->proA)->call('deleteMessage', $message->public_id)->assertSee('Message deleted');
-    expect($message->fresh()->body)->toBeNull()->and($message->fresh()->deleted_at)->not->toBeNull();
+    chatAs($this->customer, $this->proA)->assertDontSee('Delete');
+    expect(fn () => chatAs($this->customer, $this->proA)->call('deleteMessage', $message->public_id))->toThrow(Exception::class);
+    expect($message->fresh()->body)->toBe('Oops wrong job')->and($message->fresh()->deleted_at)->toBeNull();
 
     chatAs($this->proA->user, $this->proA, 'Thandi')->set('message', 'Pay me cash, cheaper')->call('send');
     $proMessage = JobMessage::query()->where('sender_type', 'pro')->sole();
-    $this->travel(6)->minutes();
-    chatAs($this->proA->user, $this->proA, 'Thandi')->call('deleteMessage', $proMessage->public_id)->assertHasErrors('message');
-
     chatAs($this->proA->user, $this->proA, 'Thandi')->call('startReport', $proMessage->public_id)->call('report', 'off_platform')->assertNotFound();
     chatAs($this->customer, $this->proA)->call('startReport', $proMessage->public_id)->call('report', 'off_platform')->assertSee('Reported');
     expect($proMessage->fresh()->reported_at)->not->toBeNull()->and($proMessage->fresh()->report_reason->value)->toBe('off_platform');

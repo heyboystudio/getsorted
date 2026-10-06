@@ -36,6 +36,12 @@ final class ServiceJobPolicy
         return $this->owns($user, $job) && $job->status === ServiceJobStatus::Draft;
     }
 
+    /** Clients cancel their own job until a quote is accepted; afterwards support handles it. */
+    public function cancel(User $user, ServiceJob $job): bool
+    {
+        return $this->owns($user, $job) && $job->status === ServiceJobStatus::Open && $job->accepted_quote_id === null;
+    }
+
     /** Manual invites and stopping waves (spec 009, AC11). */
     public function manageMatching(User $user, ServiceJob $job): bool
     {

@@ -47,9 +47,7 @@
                     </div>
                     <p class="mt-1 flex gap-3 text-xs text-zinc-500">
                         <span>{{ $message->created_at->translatedFormat('D j M, H:i') }}</span>
-                        @if ($message->deleted_at === null && $item['mine'] && $message->created_at->gt($deleteWithin))
-                            <button type="button" wire:click="deleteMessage(@js($message->public_id))" wire:confirm="{{ __('Delete this message?') }}" class="underline">{{ __('Delete') }}</button>
-                        @elseif ($message->deleted_at === null && ! $item['mine'] && $message->reported_at === null)
+                        @if ($message->deleted_at === null && ! $item['mine'] && $message->reported_at === null)
                             <button type="button" wire:click="startReport(@js($message->public_id))" class="underline">{{ __('Report') }}</button>
                         @elseif ($message->reported_at !== null && ! $item['mine'])
                             <span>{{ __('Reported') }}</span>

@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Notifications\Notify;
 use App\Domain\ServiceJobs\Enums\MessageSender;
 use App\Domain\ServiceJobs\Support\JobChat;
 use App\Models\JobConversation;
@@ -65,7 +66,15 @@ final class SendChatNotification implements ShouldQueue
         $phone = $toCustomer ? $job->customer->phone_e164 : $send->pro->user->phone_e164;
         $invite = JobChat::inviteFor($job, $send->pro);
 
-        if ($phone === null || (! $toCustomer && $invite === null)) {
+        if (! $toCustomer && $invite === null) {
+            return;
+        }
+
+        if ($this->attempts() === 1) {
+            Notify::user($toCustomer ? $job->customer : $send->pro->user, 'chat_message', __('New message about your :trade job', ['trade' => mb_strtolower($job->trade->name)]), __('Open the chat to read and reply.'), $toCustomer ? route('jobs.show', $job) : route('pros.jobs.show', $invite));
+        }
+
+        if ($phone === null) {
             return;
         }
 

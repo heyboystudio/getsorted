@@ -9,6 +9,12 @@ declare(strict_types=1);
 
 return [
 
+    // Host the admin panel lives on (e.g. admin.usesorted.co.za). Null keeps it at /admin on the main host (local and tests).
+    'admin_domain' => env('SORTD_ADMIN_DOMAIN') ?: null,
+
+    // Set to true once the site sits behind the Cloudflare proxy, so visitors' real IPs are used.
+    'behind_cloudflare' => (bool) env('SORTD_BEHIND_CLOUDFLARE', false),
+
     // Customers' local time for "today" and booking dates; storage stays UTC.
     'timezone' => 'Africa/Johannesburg',
 
@@ -78,7 +84,6 @@ return [
         'notify_every_minutes' => 15,
         // Someone who looked at the chat this recently is treated as "on the page": no notification.
         'online_seconds' => 30,
-        'delete_within_minutes' => 5,
         'retention_months' => 24,
     ],
 

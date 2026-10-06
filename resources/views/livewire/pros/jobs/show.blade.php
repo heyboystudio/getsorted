@@ -188,6 +188,10 @@
             @endif
 
             @if ($canQuote && ! $building)
+                @error('accept') <p class="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
+                @if ($jobAccepted)
+                    <p class="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900" role="status">{{ __('You accepted this job. Send your estimate so the client can compare quotes.') }}</p>
+                @endif
                 <p class="mt-6 text-xs text-zinc-500">{{ __("You'll see the customer's name, contact details and address if they accept your quote.") }}</p>
                 <div class="fixed inset-x-0 bottom-0 border-t border-zinc-200 bg-white px-5 py-4" x-data="{ open: false }">
                     <div class="mx-auto max-w-xl">
@@ -203,7 +207,11 @@
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <button type="button" x-on:click="open = ! open" class="rounded-lg border border-zinc-300 px-4 py-3 font-medium">{{ __('Not for me') }}</button>
-                            <button type="button" wire:click="startQuote" class="rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white">{{ __('Send an estimate') }}</button>
+                            @if ($jobAccepted)
+                                <button type="button" wire:click="startQuote" class="rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white">{{ __('Send an estimate') }}</button>
+                            @else
+                                <button type="button" wire:click="acceptJob" wire:loading.attr="disabled" wire:target="acceptJob" class="rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white disabled:opacity-60">{{ __('Accept job') }}</button>
+                            @endif
                         </div>
                     </div>
                 </div>

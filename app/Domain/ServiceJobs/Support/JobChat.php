@@ -24,7 +24,7 @@ use Illuminate\Support\Collection;
 final class JobChat
 {
     /** Invites a customer can message, or that can message the customer, while the job collects quotes. */
-    private const array CHATTY_INVITES = [InviteStatus::Invited, InviteStatus::Viewed, InviteStatus::Quoted];
+    private const array CHATTY_INVITES = [InviteStatus::Invited, InviteStatus::Viewed, InviteStatus::Accepted, InviteStatus::Quoted];
 
     /** The side this user is on in a job's chat with this pro, or null if they're not part of it. */
     public static function sideOf(User $user, ServiceJob $job, Pro $pro): ?MessageSender

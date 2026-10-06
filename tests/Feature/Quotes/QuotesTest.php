@@ -95,7 +95,14 @@ function draftQuote(int $depositPercent = 20, ?string $notes = null, int $validi
 
 function inviteFor(ServiceJob $job, Pro $pro): ServiceJobInvite
 {
-    return ServiceJobInvite::query()->where('service_job_id', $job->id)->where('pro_id', $pro->id)->with('pro.user')->sole();
+    $invite = ServiceJobInvite::query()->where('service_job_id', $job->id)->where('pro_id', $pro->id)->with('pro.user')->sole();
+
+    // Pros accept the job before they can quote; most tests here start from that point.
+    if ($invite->status->isOpen()) {
+        $invite->forceFill(['status' => 'accepted'])->save();
+    }
+
+    return $invite->refresh();
 }
 
 function submitFor(ServiceJob $job, Pro $pro, ?QuoteDraft $draft = null): Quote
