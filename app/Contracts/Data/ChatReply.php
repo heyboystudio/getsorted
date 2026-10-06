@@ -20,5 +20,6 @@ final readonly class ChatReply
         public ?ConversationIntent $intent = ConversationIntent::HomeProblem,
         public ?string $questionKey = null,
         public ?array $jobNotes = null,
+        public bool $readyToBook = false,
     ) {}
 }

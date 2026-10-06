@@ -152,3 +152,17 @@ it('accepts the ordinary conversation intent from Gemini without a booking propo
     expect($reply->answers)->toBe([]);
     expect($reply->jobNotes)->toBe([]);
 });
+
+it('accepts booking readiness only as a boolean and passes existing intent to Gemini', function (mixed $ready, bool $expected): void {
+    SiyaAgent::fake([[
+        'reply' => 'Let’s get quotes.', 'intent' => 'home_problem', 'trade_key' => 'plumbing',
+        'service_key' => 'leak_repair', 'answers' => [], 'question_key' => '', 'job_notes' => [],
+        'booking_ready' => $ready,
+    ]]);
+    $reply = (new AnthropicScopingAssistant)->chat(new ChatRequest([], null, [], [], [], bookingRequested: true));
+    expect($reply->readyToBook)->toBe($expected);
+    if (! is_bool($ready)) {
+        expect($reply->reply)->toBeNull();
+    }
+    SiyaAgent::assertPrompted(fn (AgentPrompt $prompt): bool => json_decode($prompt->prompt, true)['booking_requested'] === true);
+})->with([[true, true], [false, false], ['true', false]]);

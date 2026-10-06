@@ -39,9 +39,9 @@ final readonly class ChatWithSiya
     /**
      * @param  list<array{role: 'customer'|'assistant', text: string}>  $transcript  customer text already scrubbed
      * @param  array<string, mixed>  $answers
-     * @return array{outcome: AiOutcome, reply: ?string, suggested: ?Service, answers: array<string, mixed>, intent: ?ConversationIntent, questionKey: ?string, jobNotes: ?list<string>}
+     * @return array{outcome: AiOutcome, reply: ?string, suggested: ?Service, answers: array<string, mixed>, intent: ?ConversationIntent, questionKey: ?string, jobNotes: ?list<string>, readyToBook: bool}
      */
-    public function handle(array $transcript, ?Service $confirmed, array $answers, string $visitorKey, string $bookingStage = 'describe', ?string $pendingQuestionKey = null): array
+    public function handle(array $transcript, ?Service $confirmed, array $answers, string $visitorKey, string $bookingStage = 'describe', ?string $pendingQuestionKey = null, bool $bookingRequested = false): array
     {
         $services = $this->activeServices();
         $transcript = array_map(fn (array $turn): array => ['role' => $turn['role'], 'text' => self::scrub($turn['text'])], $transcript);
@@ -61,9 +61,10 @@ final readonly class ChatWithSiya
             $pendingQuestionKey,
             ProductFacts::all(),
             $services->mapWithKeys(fn (Service $service): array => [$service->trade->key.':'.$service->key => $this->questionData($service->questions)])->all(),
+            $bookingRequested,
         );
 
-        $result = ['outcome' => AiOutcome::Error, 'reply' => null, 'suggested' => null, 'answers' => [], 'intent' => null, 'questionKey' => null, 'jobNotes' => null];
+        $result = ['outcome' => AiOutcome::Error, 'reply' => null, 'suggested' => null, 'answers' => [], 'intent' => null, 'questionKey' => null, 'jobNotes' => null, 'readyToBook' => false];
 
         [$outcome] = $this->calls->call(
             AiPurpose::Chat,
@@ -121,6 +122,7 @@ final readonly class ChatWithSiya
                 $result['answers'] = $valid;
                 $result['questionKey'] = $isJob && $answerQuestions->contains('key', $reply->questionKey) && ! array_key_exists((string) $reply->questionKey, $valid) ? $reply->questionKey : null;
                 $result['jobNotes'] = $notes;
+                $result['readyToBook'] = $isJob && $reply->readyToBook;
 
                 return true;
             },

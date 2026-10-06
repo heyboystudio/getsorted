@@ -49,9 +49,9 @@ final class FakeScopingAssistant implements ScopingAssistant
      * @param  array<string, mixed>  $answers
      * @param  list<string>|null  $jobNotes
      */
-    public function willChat(?string $reply, ?string $tradeKey = null, ?string $serviceKey = null, array $answers = [], ?ConversationIntent $intent = ConversationIntent::HomeProblem, ?string $questionKey = null, ?array $jobNotes = null): self
+    public function willChat(?string $reply, ?string $tradeKey = null, ?string $serviceKey = null, array $answers = [], ?ConversationIntent $intent = ConversationIntent::HomeProblem, ?string $questionKey = null, ?array $jobNotes = null, bool $readyToBook = false): self
     {
-        $this->chatReplies[] = new ChatReply($reply, $tradeKey, $serviceKey, $answers, $this->usage(), $intent, $questionKey, $jobNotes);
+        $this->chatReplies[] = new ChatReply($reply, $tradeKey, $serviceKey, $answers, $this->usage(), $intent, $questionKey, $jobNotes, $readyToBook);
 
         return $this;
     }

@@ -61,7 +61,7 @@ use Throwable;
  * job when the customer taps Confirm booking. The thread lives in the session
  * (scrubbed text) and, once signed in, on the customer's draft job.
  */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.app', ['brand' => 'Get Sorted'])]
 final class Thread extends Component
 {
     use SearchesAddresses;
@@ -80,7 +80,7 @@ final class Thread extends Component
     private const array PERSISTED = [
         'messages', 'stage', 'tradeId', 'serviceId', 'suggestedServiceId', 'answers', 'notes', 'detailsDone',
         'photosDone', 'propertyPublicId', 'preferredDate', 'chosenDate', 'timeWindow', 'jobPublicId', 'customerMessages',
-        'failures', 'emergencyShown', 'returnToSummary', 'waitlistSuburbId', 'stageBeforeEmergency', 'pendingQuestionKey', 'retryPending', 'showTradeShortcuts',
+        'failures', 'emergencyShown', 'returnToSummary', 'waitlistSuburbId', 'stageBeforeEmergency', 'pendingQuestionKey', 'retryPending', 'showTradeShortcuts', 'answerOptionsRequested', 'bookingRequested',
     ];
 
     public string $message = '';
@@ -151,7 +151,13 @@ final class Thread extends Component
     public bool $retryPending = false;
 
     #[Locked]
-    public bool $showTradeShortcuts = true;
+    public bool $showTradeShortcuts = false;
+
+    #[Locked]
+    public bool $answerOptionsRequested = false;
+
+    #[Locked]
+    public bool $bookingRequested = false;
 
     /** A "Change" from the summary: go back to the summary once that card is done. */
     #[Locked]
@@ -238,6 +244,13 @@ final class Thread extends Component
     }
 
     // ── Describe ────────────────────────────────────────────────────────
+
+    public function toggleAnswerOptions(): void
+    {
+        abort_unless($this->stage === 'questions', 404);
+        $this->answerOptionsRequested = ! $this->answerOptionsRequested;
+        $this->persist();
+    }
 
     public function showTrades(): void
     {
@@ -738,13 +751,20 @@ final class Thread extends Component
     public function render(): View
     {
         $service = $this->service();
+        $navigationTrades = $this->activeTrades()->sortBy(fn (Trade $trade): int => ['plumbing' => 0, 'electrical' => 1, 'painting' => 2, 'tiling' => 3][$trade->key] ?? 4)->values();
         $question = $this->stage === 'questions' ? $this->nextQuestion() : null;
         $draft = in_array($this->stage, ['photos', 'summary'], true) ? $this->draft() : null;
         $photos = $draft?->getMedia(ServiceJob::PHOTO_COLLECTION) ?? collect();
 
         return view('livewire.booking.thread', [
+            'navigationTrades' => $navigationTrades->map(fn (Trade $trade): array => [
+                'name' => $trade->name, 'url' => route('book.trade', $trade),
+                'icon' => match ($trade->key) {
+                    'plumbing' => 'drop', 'electrical' => 'lightning', 'painting' => 'paint-roller', 'tiling' => 'squares-four', default => 'sparkle'
+                },
+            ])->all(),
             'available' => app(ChatWithSiya::class)->available(),
-            'trades' => in_array($this->stage, ['trade', 'describe'], true) && ($this->showTradeShortcuts || $this->retryPending || ! app(ChatWithSiya::class)->available()) ? $this->activeTrades() : new Collection,
+            'trades' => in_array($this->stage, ['trade', 'describe'], true) && ($this->showTradeShortcuts || $this->retryPending || ! app(ChatWithSiya::class)->available()) ? $navigationTrades : new Collection,
             'trade' => $this->tradeId === null ? null : Trade::query()->find($this->tradeId),
             'tradeServices' => $this->stage === 'service' && $this->tradeId !== null && ($this->showTradeShortcuts || $this->retryPending || ! app(ChatWithSiya::class)->available())
                 ? Service::query()->where('trade_id', $this->tradeId)->where('is_active', true)->orderBy('sort')->get() : new Collection,
@@ -773,7 +793,7 @@ final class Thread extends Component
     /** One Siya turn on typed text: suggest a service, or map answers for the confirmed one. */
     private function turn(ChatWithSiya $siya): void
     {
-        $result = $siya->handle($this->transcript(), $this->service(), $this->knownAnswers(), (string) (auth()->id() ?? request()->ip()), $this->stage, $this->nextQuestion()?->key);
+        $result = $siya->handle($this->transcript(), $this->service(), $this->knownAnswers(), (string) (auth()->id() ?? request()->ip()), $this->stage, $this->nextQuestion()?->key, $this->bookingRequested);
 
         if ($result['outcome'] !== AiOutcome::Ok || $result['reply'] === null) {
             $this->failures++;
@@ -802,6 +822,7 @@ final class Thread extends Component
             return;
         }
 
+        $this->bookingRequested = $this->bookingRequested || $result['readyToBook'];
         $before = $this->stage;
         $changedService = $result['suggested'] instanceof Service && $result['suggested']->id !== $this->serviceId;
 
@@ -830,7 +851,7 @@ final class Thread extends Component
         $this->autosave();
         $this->say($result['reply']);
 
-        if ($changedService || in_array($before, ['trade', 'service', 'describe', 'suggested', 'questions', 'details'], true) || $this->nextQuestion() !== null) {
+        if ($changedService || in_array($before, ['trade', 'service', 'describe', 'suggested', 'questions', 'details', 'conversation'], true) || $this->nextQuestion() !== null) {
             $this->advance(speak: $this->nextQuestion() === null);
         }
     }
@@ -871,6 +892,7 @@ final class Thread extends Component
 
     private function setService(Service $service, bool $extract = true): void
     {
+        $this->bookingRequested = true;
         $this->applyService($service);
 
         // What the customer already typed answers some questions: those are skipped (AC7).
@@ -896,6 +918,7 @@ final class Thread extends Component
         $this->stage = match (true) {
             $this->serviceId === null => $this->tradeId === null ? 'trade' : 'service',
             $question instanceof ScopingQuestion => 'questions',
+            ! $this->bookingRequested && app(ChatWithSiya::class)->available() => 'conversation',
             $this->waitlistSuburbId !== null && $this->propertyPublicId === null => 'waitlist',
             ! $this->isCustomer() => 'signin',
             $this->propertyPublicId === null || ! $this->selectedProperty() instanceof Property => 'where',
@@ -1016,6 +1039,11 @@ final class Thread extends Component
 
         if (! is_array($saved)) {
             return;
+        }
+
+        // Older chats predate text-first controls; do not restore their automatic trade menu.
+        if (! array_key_exists('answerOptionsRequested', $saved)) {
+            unset($saved['showTradeShortcuts']);
         }
 
         foreach (self::PERSISTED as $field) {

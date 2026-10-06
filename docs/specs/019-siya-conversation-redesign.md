@@ -78,7 +78,7 @@ Customer ownership and draft policies still apply to every action. Guests access
 Retain structured, validated output; delimited untrusted input; escaping; redaction; configurable rate/budget limits; and usage metadata without raw customer text. No autonomous posting, external messaging, payments or job-status transitions. Gemini processing and cross-border/privacy requirements follow decision 049 and the POPIA checklist; verify those requirements before live customer use.
 
 ## Out of scope
-- Homepage visual redesign of the thread (explicitly deferred by the founder).
+- Broader redesign of unrelated account, pro and admin pages. Homepage styling of Siya was initially deferred and is now authorised by the founder’s follow-up below.
 - Emergency dispatch, contacting services for the customer, medical advice, repair instructions or guaranteed diagnosis.
 - Invented prices, availability or new services; changes to payments, matching or quoting.
 - Image understanding, voice, WhatsApp assistant, multilingual expansion or unrestricted general-purpose chat.
@@ -128,3 +128,22 @@ Approve the workflow first, then plan focused changes: (1) safety routing and co
 ## Emergency content sources
 Reviewed 2026-10-06: [eThekwini Public Safety and Emergency Services](https://www.durban.gov.za/page/public-safety-emergency-services) lists 031 361 0000 and fire evacuation guidance; [South African Government emergency guidance](https://www.gov.za/news/media-statements/western-cape-weather-warning-23-jun-2015) lists 112 from a cellphone. These are application-owned contacts and guidance, never generated model output. Existing 080 131 3111 wording is removed from Siya's emergency response; it is an electricity fault line, not the fire response number.
 
+
+## Homepage UI follow-up — approved direction, 2026-10-06
+
+Founder requests that Siya match the deployed homepage very closely, using the original Refero reference (https://refero.design/). Reuse the homepage's exact charcoal palette, Geist/Caslon fonts, collapsible navigation, Phosphor icons, white controls, warm accents and panel geometry. The conversation remains continuous without wizard progress.
+
+Plan: share the existing homepage sidebar, add a scoped chat stylesheet, redesign the header/conversation/composer, and apply the same dark presentation to every booking card and its embedded controls. Check desktop and 360–390px mobile rendering, navigation/sidebar behaviour, typing/loading and send controls; run booking regressions, asset build and quality gate. No changes to scoping, ownership, confirmation, provider contracts or privacy boundaries.
+
+Acceptance: (1) matching shell and typography; (2) dark cards, readable customer/assistant distinction and safety/error contrast; (3) composer usable on small screens with no horizontal overflow; (4) booking controls, sign-in, photos, review/edit and explicit confirmation still work; (5) accessible labels, focus states, keyboard operation and reduced-motion support; (6) homepage retains its existing appearance.
+
+
+### Text-first refinement — 6 October 2026 (local draft)
+
+Founder requested natural conversation before booking controls, and explicitly paused full quality gates, commits and pushes for this iteration. Trade cards are opt-in; scoping answer buttons are hidden until requested, with automatic manual fallback when AI is unavailable or a turn fails. Required facts still validate against the catalogue. Complete facts alone do not start sign-in: Gemini proposes booking readiness only for a request to book, arrange a pro or get quotes. The validated home-problem intent can retain that request across turns; manual service selection starts the existing booking path. Explicit confirmation remains required to post.
+
+Verification exclusions for this refinement: full `composer check`, complete test suite, static analysis, dependency audit, independent review and live Gemini evaluation are intentionally not repeated. The earlier UI gate (714 tests / 3,092 assertions) completed before this refinement and does not validate these new flow changes. Focused assistant tests, formatter and frontend build are checked separately. Account quota is not exposed to the agent, so an approaching-limit alert cannot be promised. The subsequent founder instruction “commit and deploy” authorises committing, pushing and deploying this draft; full quality gates remain paused.
+
+Focused verification: 76 assistant/conversation/provider tests passed (316 assertions); Pint, Vite production build, Blade compilation and whitespace checks passed. The session-restore compatibility adjustment and final prompt wording were reviewed directly; live model evaluation remains skipped.
+
+- 2026-10-06: founder authorised commit and deployment of the homepage UI and text-first refinement. Target verified as the existing usesorted.co.za preview environment. Deployment result is recorded after execution.

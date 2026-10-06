@@ -134,3 +134,5 @@ No new tables. Ordinary conversation, unsupported work and product questions do 
 A customer correction can change the service on the same policy-authorised `service_jobs` draft. Its incompatible answers are dropped, coverage is rechecked, unsupported urgent windows are cleared and a service change clears prior AI summary metadata. Property, valid schedule and existing photos are retained where applicable. The existing draft ownership, retention and explicit posting rules continue to apply.
 
 Model requests contain scrubbed conversation/job facts, active catalogue questions, validated answers, a pending question and a non-personal booking stage. Private property/location cards and account identifiers are excluded. Usage rows remain metadata only.
+
+Siya’s homepage UI follow-up changes presentation only: shared navigation plus a scoped dark chat stylesheet. It introduces no schema or conversation-state changes.

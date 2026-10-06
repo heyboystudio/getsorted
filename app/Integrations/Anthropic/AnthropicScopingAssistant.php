@@ -68,13 +68,14 @@ final class AnthropicScopingAssistant implements ScopingAssistant
             'answers' => $request->answers,
             'transcript' => $request->transcript,
             'booking_stage' => $request->bookingStage,
+            'booking_requested' => $request->bookingRequested,
             'pending_question_key' => $request->pendingQuestionKey,
             'product_facts' => $request->productFacts,
             'service_questions' => $request->serviceQuestions,
         ]), (int) config('sortd.ai.chat_timeout_seconds'));
 
-        $data = $this->structured($response, ['reply', 'trade_key', 'service_key', 'answers', 'intent', 'question_key', 'job_notes']);
-        if (array_diff(['reply', 'trade_key', 'service_key', 'answers', 'intent', 'question_key', 'job_notes'], array_keys($data)) !== [] || ! is_array($data['job_notes'] ?? null) || count(array_filter($data['job_notes'], is_string(...))) !== count($data['job_notes'])) {
+        $data = $this->structured($response, ['reply', 'trade_key', 'service_key', 'answers', 'intent', 'question_key', 'job_notes', 'booking_ready']);
+        if ((array_key_exists('booking_ready', $data) && ! is_bool($data['booking_ready'])) || array_diff(['reply', 'trade_key', 'service_key', 'answers', 'intent', 'question_key', 'job_notes'], array_keys($data)) !== [] || ! is_array($data['job_notes'] ?? null) || count(array_filter($data['job_notes'], is_string(...))) !== count($data['job_notes'])) {
             $data = [];
         }
         $answers = [];
@@ -92,7 +93,8 @@ final class AnthropicScopingAssistant implements ScopingAssistant
 
         return new ChatReply($text('reply'), $text('trade_key'), $text('service_key'), $answers, $this->usage($response),
             ConversationIntent::tryFrom($text('intent') ?? ''), $text('question_key'),
-            is_array($data['job_notes'] ?? null) ? array_values($data['job_notes']) : null);
+            is_array($data['job_notes'] ?? null) ? array_values($data['job_notes']) : null,
+            $data['booking_ready'] ?? false);
     }
 
     /**

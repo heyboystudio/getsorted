@@ -81,7 +81,7 @@ it('identifies the service quietly and extracts several answers in the first tur
     Livewire::test(Thread::class)->set('message', 'My kitchen tap is dripping')->call('send')
         ->assertSet('serviceId', $service->id)->assertSet('suggestedServiceId', null)
         ->assertSet('answers', ['leak_location' => 'Tap', 'severity' => 'Dripping'])
-        ->assertSet('stage', 'signin')->assertSee('I can help with that dripping tap.')
+        ->assertSet('stage', 'conversation')->assertSee('I can help with that dripping tap.')
         ->assertDontSee('Is that right?')->assertDontSee('Anything else your pro should know?');
 
     expect(conversationAssistant()->chatRequests())->toHaveCount(1);
@@ -167,7 +167,7 @@ it('keeps only verified job excerpts and removes superseded notes after a correc
     Livewire::test(Thread::class)->set('message', 'The toilet leaks. The kitchen is upstairs')->call('send')
         ->set('message', 'Actually the tap is dripping')->call('send')
         ->assertSet('notes', "The kitchen is upstairs\nActually the tap is dripping")
-        ->assertSet('stage', 'signin');
+        ->assertSet('stage', 'conversation');
 });
 
 it('rejects invented job excerpts and unknown questions without applying any proposed facts', function (array $notes, ?string $question): void {
@@ -265,7 +265,7 @@ it('clarifies multiple jobs and unsupported needs without adding them to pro not
 
     Livewire::test(Thread::class)->set('message', $text)->call('send')
         ->assertSee($reply)->assertSet('serviceId', null)->assertSet('answers', [])->assertSet('notes', '')
-        ->assertDontSee('Electrical')->call('showTrades')->assertSee('Electrical');
+        ->assertDontSee('wire:click="pickTrade', false)->call('showTrades')->assertSee('wire:click="pickTrade', false);
 })->with([
     'multiple jobs' => ['A leaking tap and I need a bedroom painted', ConversationIntent::Clarify, 'Which problem would you like to book first? Each needs a separate job.'],
     'unsupported job' => ['Can you repair my laptop?', ConversationIntent::Unsupported, 'We do not offer laptop repairs.'],
@@ -333,5 +333,40 @@ it('keeps an unsupported request conversational instead of displaying unrelated 
 
     Livewire::test(Thread::class)->set('message', 'I need someone to mow my lawn')->call('send')
         ->assertSee('garden services')->assertSet('serviceId', null)->assertSet('notes', '')
-        ->assertDontSee('Electrical')->assertDontSee('Booking progress');
+        ->assertDontSee('wire:click="pickTrade', false)->assertDontSee('Booking progress');
+});
+
+it('starts text first and shows answer buttons only when requested', function (): void {
+    conversationCatalogue();
+    conversationAssistant()->willChat('Where is the leak coming from?', 'plumbing', 'leak_repair', questionKey: 'leak_location');
+
+    $thread = Livewire::test(Thread::class)->assertDontSee('wire:click="pickTrade', false)
+        ->set('message', 'I have a leak')->call('send')->assertSee('Where is the leak coming from?')
+        ->assertDontSee('wire:click="answer', false)->assertSee('Show answer options')
+        ->call('toggleAnswerOptions')->assertSee('wire:click="answer', false);
+    Livewire::test(Thread::class)->assertSee('wire:click="answer', false)
+        ->call('toggleAnswerOptions')->assertDontSee('wire:click="answer', false);
+});
+
+it('keeps complete job facts in conversation until the customer wants quotes', function (): void {
+    conversationCatalogue();
+    conversationAssistant()->willChat('I understand — a slowly dripping tap. What would you like to know?', 'plumbing', 'leak_repair',
+        ['leak_location' => ['Tap'], 'severity' => ['Dripping']], readyToBook: false);
+    $thread = Livewire::test(Thread::class)->set('message', 'My tap is dripping slowly, I am just asking for now')->call('send')
+        ->assertSet('stage', 'conversation')->assertDontSee('Sign in to book')
+        ->assertSet('answers', ['leak_location' => 'Tap', 'severity' => 'Dripping']);
+    conversationAssistant()->willChat('Let’s arrange quotes for that tap.', 'plumbing', 'leak_repair', readyToBook: true);
+
+    $thread->set('message', 'Yes, please get me quotes')->call('send')->assertSet('stage', 'signin')->assertSee('Sign in to book');
+    expect(ServiceJob::query()->count())->toBe(0);
+});
+
+it('retains tap-based scoping when AI is unavailable', function (): void {
+    $service = conversationCatalogue();
+    $settings = app(AiSettings::class);
+    $settings->enabled = false;
+    $settings->save();
+
+    threadFor($service)->assertSee('wire:click="answer', false)->call('answer', 'leak_location', 'Tap')
+        ->assertSet('answers', ['leak_location' => 'Tap']);
 });

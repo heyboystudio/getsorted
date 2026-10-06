@@ -29,5 +29,6 @@ final readonly class ChatRequest
         public ?string $pendingQuestionKey = null,
         public array $productFacts = [],
         public array $serviceQuestions = [],
+        public bool $bookingRequested = false,
     ) {}
 }
