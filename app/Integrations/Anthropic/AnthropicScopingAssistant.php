@@ -7,12 +7,9 @@ namespace App\Integrations\Anthropic;
 use App\Contracts\Data\AssistantUsage;
 use App\Contracts\Data\ChatReply;
 use App\Contracts\Data\ChatRequest;
-use App\Contracts\Data\ScopingSuggestion;
-use App\Contracts\Data\ScopingSuggestionReply;
 use App\Contracts\Data\ScopingSummaryReply;
 use App\Contracts\Exceptions\AssistantUnavailable;
 use App\Contracts\ScopingAssistant;
-use App\Domain\Assistant\Enums\ConversationIntent;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Laravel\Ai\Contracts\Agent;
@@ -30,28 +27,10 @@ use Throwable;
  */
 final class AnthropicScopingAssistant implements ScopingAssistant
 {
-    public function suggestService(string $description, array $catalogue): ScopingSuggestionReply
+    public function summarise(string $tradeName, array $facts, string $description): ScopingSummaryReply
     {
-        $response = $this->ask(new ServiceSuggestionAgent, 'Catalogue: '.$this->json($catalogue)
-            ."\n<customer_description>".$this->json($description).'</customer_description>');
-
-        $data = $this->structured($response, ['trade_key', 'service_key', 'confidence']);
-        $trade = $data['trade_key'] ?? null;
-        $service = $data['service_key'] ?? null;
-        $confidence = $data['confidence'] ?? null;
-
-        $suggestion = is_string($trade) && is_string($service) && $trade !== '' && $service !== ''
-            && is_numeric($confidence) && $confidence >= 0 && $confidence <= 1
-            ? new ScopingSuggestion($trade, $service, (float) $confidence)
-            : null;
-
-        return new ScopingSuggestionReply($suggestion, $this->usage($response));
-    }
-
-    public function summarise(string $serviceKey, array $answers, string $description): ScopingSummaryReply
-    {
-        $response = $this->ask(new JobSummaryAgent, 'Service: '.$this->json($serviceKey)
-            ."\nAnswers: ".$this->json($answers)
+        $response = $this->ask(new JobSummaryAgent, 'Trade: '.$this->json($tradeName)
+            ."\nFacts: ".$this->json($facts)
             ."\n<customer_notes>".$this->json($description).'</customer_notes>');
 
         $summary = $this->structured($response, ['summary'])['summary'] ?? null;
@@ -61,38 +40,19 @@ final class AnthropicScopingAssistant implements ScopingAssistant
 
     public function chat(ChatRequest $request): ChatReply
     {
-        $response = $this->ask(new SiyaAgent, $this->json([
-            'catalogue' => $request->catalogue,
-            'confirmed_service' => $request->confirmedServiceKey,
-            'questions' => $request->questions,
-            'answers' => $request->answers,
-            'transcript' => $request->transcript,
-            'booking_stage' => $request->bookingStage,
-            'pending_question_key' => $request->pendingQuestionKey,
-            'product_facts' => $request->productFacts,
-            'service_questions' => $request->serviceQuestions,
-        ]), (int) config('sortd.ai.chat_timeout_seconds'));
+        $transcript = $request->transcript;
+        $latest = array_pop($transcript);
+        $toolbox = $request->toolbox;
+        $state = $toolbox->digest();
 
-        $data = $this->structured($response, ['reply', 'trade_key', 'service_key', 'answers', 'intent', 'question_key', 'job_notes']);
-        if (array_diff(['reply', 'trade_key', 'service_key', 'answers', 'intent', 'question_key', 'job_notes'], array_keys($data)) !== [] || ! is_array($data['job_notes'] ?? null) || count(array_filter($data['job_notes'], is_string(...))) !== count($data['job_notes'])) {
-            $data = [];
-        }
-        $answers = [];
+        $prompt = '<booking_state>'.$this->json($state).'</booking_state>'
+            ."\n<booking_stage>".$this->json($request->bookingStage).'</booking_stage>'
+            ."\n<customer_message>".$this->json($latest['text'] ?? '').'</customer_message>'
+            .($request->guardFeedback === null ? '' : "\n<reviewer_note>".$this->json($request->guardFeedback).'</reviewer_note>');
 
-        foreach ((array) ($data['answers'] ?? []) as $item) {
-            $key = data_get($item, 'question_key');
-            $values = array_values(array_filter((array) data_get($item, 'values', []), is_string(...)));
+        $response = $this->ask(new SiyaAgent($toolbox, $transcript, $request->productFacts), $prompt, (int) config('sortd.ai.chat_timeout_seconds'));
 
-            if (is_string($key) && $key !== '' && $values !== []) {
-                $answers[$key] = $values;
-            }
-        }
-
-        $text = fn (string $field): ?string => is_string($data[$field] ?? null) && trim($data[$field]) !== '' ? trim($data[$field]) : null;
-
-        return new ChatReply($text('reply'), $text('trade_key'), $text('service_key'), $answers, $this->usage($response),
-            ConversationIntent::tryFrom($text('intent') ?? ''), $text('question_key'),
-            is_array($data['job_notes'] ?? null) ? array_values($data['job_notes']) : null);
+        return new ChatReply(trim($response->text) === '' ? null : trim($response->text), $this->usage($response), max(1, $response->steps->count()), $response->toolCalls->count());
     }
 
     /**
