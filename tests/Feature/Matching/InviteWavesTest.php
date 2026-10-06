@@ -94,6 +94,7 @@ it('invites up to ten eligible pros at once after posting, each with a WhatsApp 
 });
 
 it('uses the invite count and expiry from settings', function (): void {
+    $this->freezeTime();
     $settings = app(MatchingSettings::class);
     $settings->invite_count = 2;
     $settings->invite_expiry_hours = 6;

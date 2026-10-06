@@ -25,7 +25,6 @@ use App\Livewire\Auth\VerifyEmail;
 use App\Livewire\Auth\VerifyPhone;
 use App\Livewire\Booking\Thread as BookingThread;
 use App\Livewire\Pros\Application as ProApplication;
-use App\Livewire\Pros\BecomePro;
 use App\Livewire\Pros\Jobs\Index as ProJobs;
 use App\Livewire\Pros\Jobs\Show as ProJob;
 use App\Livewire\Pros\Status as ProStatusPage;
@@ -52,6 +51,7 @@ Route::view('/pros/agreement', 'pages.pros.agreement')->name('pros.agreement');
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', Login::class)->name('login');
     Route::get('/register', Register::class)->name('register');
+    Route::get('/pros/register', Register::class)->defaults('as', 'pro')->name('pros.register');
     Route::get('/forgot-password', ForgotPassword::class)->name('password.request');
     Route::get('/reset-password/{token}', ResetPassword::class)->name('password.reset');
     Route::get('/auth/google', [GoogleController::class, 'redirect'])->middleware('throttle:20,1')->name('auth.google');
@@ -80,7 +80,6 @@ Route::middleware('auth')->group(function (): void {
             Route::get('/app/jobs/{job}/continue', BookingThread::class)->name('booking.continue');
         });
         Route::get('/pros/welcome', ProWelcome::class)->name('pros.welcome');
-        Route::get('/pros/become', BecomePro::class)->name('pros.become');
         Route::get('/pros/apply', ProApplication::class)->name('pros.apply');
         Route::get('/pros/status', ProStatusPage::class)->name('pros.status');
         Route::get('/pros/jobs', ProJobs::class)->name('pros.jobs');

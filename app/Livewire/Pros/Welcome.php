@@ -32,7 +32,6 @@ final class Welcome extends Component
 
         return view('livewire.pros.welcome', [
             'firstName' => $user->first_name,
-            'isCustomer' => $user->hasRole(Role::Customer->value),
             'status' => $pro?->status,
             'canReapply' => $pro?->status === ProStatus::Rejected && $pro->reapply_after?->isFuture() !== true,
         ]);

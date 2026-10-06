@@ -89,56 +89,70 @@ it('offers to start, continue or check an application from the pro welcome page 
     $this->actingAs($submitted->user)->get(route('pros.welcome'))->assertSee('Check your application')->assertSee(route('pros.status'), false);
 });
 
-it('walks a pro through the application on one screen per step and submits it (AC1, AC4)', function (): void {
+it('shows the whole application on one natural page, with no steps or progress bar (founder 2026-10-07)', function (): void {
+    $this->actingAs(screensApplicant());
+
+    Livewire::test(Application::class)
+        ->assertSee('Tell us about your business')->assertSee('Your business')->assertSee('What work do you do?')->assertSee('Where do you work from?')
+        ->assertSee('Your documents')->assertSee('References')->assertSee('About you')
+        ->assertSee('Save progress')->assertSee('Send for review')
+        ->assertDontSee('Step 1')->assertDontSee('Save and continue')->assertDontSee('Back');
+});
+
+it('fills in the application on one page, saves progress quietly and submits it (AC1, AC4)', function (): void {
     $user = screensApplicant();
     $this->actingAs($user);
-    $wizard = Livewire::test(Application::class)
-        ->assertSet('step', 'business')
-        ->call('next')->assertHasErrors(['businessName'])
-        ->set('businessName', 'Bongani Fix-It')->set('businessType', 'sole_trader')->call('next')
-        ->assertSet('step', 'trades')
-        ->set('tradeIds', [tradeOf('plumbing')->id])->call('next')
-        ->assertSet('step', 'base')
-        ->call('next')->assertHasErrors(['addressQuery'])
-        ->set('addressQuery', 'Musgrave')->call('pickAddress', 'fake-berea')->set('radiusKm', 15)->call('next')
-        ->assertSet('step', 'documents');
+    $page = Livewire::test(Application::class);
+
+    // Nothing started yet: saving progress asks for nothing, but sending for review lists everything missing at once.
+    $page->call('saveProgress')->assertHasNoErrors()->assertSee('Saved.')
+        ->call('submit')->assertHasErrors(['businessName', 'businessType', 'tradeIds', 'addressQuery', 'bio']);
+
+    $page->set('businessName', 'Bongani Fix-It')->set('businessType', 'sole_trader')->call('saveProgress')->assertHasNoErrors();
+    expect(Pro::query()->sole()->business_name)->toBe('Bongani Fix-It');
+
+    $page->set('tradeIds', [tradeOf('plumbing')->id])
+        ->set('addressQuery', 'Musgrave')->call('pickAddress', 'fake-berea')->set('radiusKm', 15)
+        ->call('saveProgress')->assertHasNoErrors();
 
     foreach (['id_document', 'proof_of_address', 'profile_photo'] as $type) {
-        $wizard->set('uploads.'.$type, UploadedFile::fake()->image($type.'.jpg', 40, 30))->assertHasNoErrors();
+        $page->set('uploads.'.$type, UploadedFile::fake()->image($type.'.jpg', 40, 30))->assertHasNoErrors();
     }
 
-    // Plumbing has an optional PIRB registration: the step is offered, and can be skipped (spec 020).
-    $wizard->call('next')->assertSet('step', 'registrations')->assertSee('Optional')
-        ->call('next')->assertSet('step', 'references')
-        ->set('references', [
-            ['name' => 'Thandi Mkhize', 'phone' => '082 123 4567', 'relationship' => 'Customer'],
-            ['name' => 'Sipho Ndlovu', 'phone' => '071 234 5678', 'relationship' => 'Supplier'],
-        ])->set('refereesAgreed', true)->call('next')
-        ->assertSet('step', 'about')
-        ->set('bio', 'Reliable plumber.')->set('consent', true)->call('next')
-        ->assertSet('step', 'review')
-        ->assertSee('Bongani Fix-It')->assertSee('Plumbing')->assertSee('Berea')
-        ->call('submit')->assertRedirect(route('pros.status'));
+    $page->set('references', [
+        ['name' => 'Thandi Mkhize', 'phone' => '082 123 4567', 'relationship' => 'Customer'],
+        ['name' => 'Sipho Ndlovu', 'phone' => '071 234 5678', 'relationship' => 'Supplier'],
+    ])->set('refereesAgreed', true)->set('bio', 'Reliable plumber.')->set('consent', true)
+        ->call('submit')->assertHasNoErrors()->assertRedirect(route('pros.status'));
 
     expect(Pro::query()->sole()->status)->toBe(ProStatus::Submitted);
 });
 
-it('skips the registrations step unless a chosen trade has one (AC3)', function (): void {
+it('shows the registration part only when a saved trade has one, and describes it neutrally (AC3)', function (): void {
     $user = screensApplicant();
     $this->actingAs($user);
-    $electrical = tradeOf('electrical');
+    $page = Livewire::test(Application::class)->assertDontSee('Your registration');
 
-    Livewire::test(Application::class)
-        ->set('businessName', 'Spark')->set('businessType', 'company')->call('next')
-        ->set('tradeIds', [$electrical->id])->call('next')
-        ->set('addressQuery', 'Musgrave')->call('pickAddress', 'fake-berea')->call('next')
-        ->call('next')->assertSet('step', 'registrations')
-        ->assertSee('Registered electrician')
+    $page->set('tradeIds', [tradeOf('painting')->id])->call('saveProgress')->assertDontSee('Your registration');
+    $page->set('tradeIds', [tradeOf('electrical')->id])->call('saveProgress')
+        ->assertSee('Your registration')->assertSee('Registered electrician')->assertSee('You can skip this and add it later')
+        ->assertDontSee('badge')->assertDontSee('verified')->assertDontSee('not verified')
         ->set('registrationNumbers.electrical_registered_person', 'ER-555')
         ->set('uploads.electrical_registered_person', UploadedFile::fake()->image('er.jpg', 20, 20))
-        ->call('next')->assertSet('step', 'references');
+        ->call('saveProgress')->assertHasNoErrors();
 
     expect(Pro::query()->sole()->documents()->where('type', DocumentType::ElectricalRegisteredPerson)->sole()->number)->toBe('ER-555');
+});
+
+it('shows the pro their own saved address in words, without internal wording, and only offers the search after Change', function (): void {
+    $user = screensApplicant();
+    $this->actingAs($user);
+    $pro = app(StartApplication::class)->handle($user);
+    app(SaveApplicationStep::class)->base($user, $pro, new GeocodedAddress('10 Musgrave Road, Berea, Durban', 'Berea', -29.8460, 31.0050, '10 Musgrave Road', '4001', ['Berea']), 'fake-berea', 15);
+
+    Livewire::test(Application::class)
+        ->assertSee('10 Musgrave Road, Berea, Durban')->assertDontSee('Saved:')->assertDontSee('Search again')->assertDontSee('Your address')
+        ->call('$set', 'changingAddress', true)->assertSee('Your address');
 });
 
 it('keeps customers and guests out of the application (AC1)', function (): void {
@@ -180,7 +194,7 @@ it('lets a pro fix only flagged documents from the form after changes are reques
     $this->actingAs($pro->user);
 
     Livewire::test(Application::class)
-        ->assertSet('step', 'documents')
+        ->assertSee('Your documents')->assertDontSee('Tell us about your business')->assertSee('Update your application')
         ->set('uploads.proof_of_address', UploadedFile::fake()->image('poa.jpg', 20, 20))->assertForbidden();
 
     Livewire::test(Application::class)
@@ -372,15 +386,6 @@ it('shows an expired registration as expired on the status page (AC12)', functio
     Livewire::test(Status::class)->assertSee('Expired');
 });
 
-it('links each part of the review step back to its step (screens)', function (): void {
-    $user = screensApplicant();
-    $this->actingAs($user);
-    app(StartApplication::class)->handle($user);
-
-    Livewire::test(Application::class)->call('goTo', 'review')->assertSeeHtml("wire:click=\"goTo('trades')\"")
-        ->call('goTo', 'trades')->assertSet('step', 'trades');
-});
-
 it('lets a pro fix a flagged registration from the form, even after re-uploading first (code review, AC6)', function (): void {
     $user = screensApplicant();
     $electrical = tradeOf('electrical');
@@ -404,10 +409,10 @@ it('lets a pro fix a flagged registration from the form, even after re-uploading
     $this->actingAs($user);
 
     Livewire::test(Application::class)
-        ->assertSet('step', 'registrations')
+        ->assertSee('Your registration')
         ->set('uploads.electrical_registered_person', UploadedFile::fake()->image('new.jpg', 30, 30))->assertHasNoErrors()
         ->set('registrationNumbers.electrical_registered_person', 'ER-NEW')
-        ->call('next')->assertHasNoErrors()->assertSet('step', 'review')
+        ->call('saveProgress')->assertHasNoErrors()
         ->call('submit')->assertRedirect(route('pros.status'));
 
     $registration = $pro->documents()->where('type', DocumentType::ElectricalRegisteredPerson)->sole();

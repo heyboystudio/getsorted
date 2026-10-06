@@ -56,7 +56,7 @@ final class GoogleController extends Controller
             Auth::login($linked);
             $request->session()->regenerate();
 
-            return redirect()->intended(route($linked->homeRoute($asPro)));
+            return redirect()->intended(route($linked->homeRoute()));
         }
 
         $existing = User::withTrashed()->where('email', $email)->first();

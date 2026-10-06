@@ -41,8 +41,12 @@ final class Application extends Component
     use SearchesAddresses;
     use WithFileUploads;
 
+    /** The saved address is shown as text; the search box only appears after "Change". */
+    public bool $changingAddress = false;
+
+    /** Set after "Save progress" so the page can confirm it quietly. */
     #[Locked]
-    public string $step = 'business';
+    public bool $justSaved = false;
 
     public string $businessName = '';
 
@@ -107,44 +111,15 @@ final class Application extends Component
         }
 
         $this->fillFrom($pro);
-        $this->step = $this->steps($pro)[0];
     }
 
-    public function next(SaveApplicationStep $save): void
+    /** Saves whatever the pro has filled in so far, so they can leave and come back. Uploads already save themselves. */
+    public function saveProgress(): void
     {
         $this->resetErrorBag();
-        $pro = $this->pro();
-        $before = $this->steps($pro);
-
-        match ($this->step) {
-            'business' => $this->saveBusiness($save, $pro),
-            'trades' => $save->trades($this->user(), $pro, array_map(intval(...), $this->tradeIds)),
-            'base' => $this->saveBase($save, $pro),
-            'registrations' => $this->saveRegistrations($save, $pro),
-            'references' => $this->saveReferences($save, $pro),
-            'about' => $this->saveAbout($save, $pro),
-            default => null,
-        };
-
-        // Saving can change which steps apply (a registration step appears; a fixed item drops out).
-        $index = array_search($this->step, $before, true);
-        $target = $before[min(($index === false ? -1 : $index) + 1, count($before) - 1)];
-        $this->step = in_array($target, $this->steps($pro->refresh()), true) ? $target : 'review';
-    }
-
-    public function back(): void
-    {
-        $this->resetErrorBag();
-        $steps = $this->steps($this->pro());
-        $index = array_search($this->step, $steps, true);
-        $this->step = $steps[max(($index === false ? 0 : $index) - 1, 0)];
-    }
-
-    public function goTo(string $step): void
-    {
-        if (in_array($step, $this->steps($this->pro()), true)) {
-            $this->step = $step;
-        }
+        $this->justSaved = false;
+        $this->saveAll(strict: false);
+        $this->justSaved = true;
     }
 
     /** A chosen file is stored straight away under the document it was chosen for. */
@@ -169,6 +144,9 @@ final class Application extends Component
 
     public function submit(SubmitApplication $submitApplication): void
     {
+        $this->resetErrorBag();
+        $this->saveAll(strict: true);
+
         try {
             $submitApplication->handle($this->user(), $this->pro());
         } catch (CannotChangeApplication $exception) {
@@ -184,7 +162,7 @@ final class Application extends Component
 
         return view('livewire.pros.application', [
             'pro' => $pro,
-            'steps' => $this->steps($pro),
+            'sections' => $this->sections($pro),
             'trades' => Trade::query()->where('is_active', true)->orderBy('sort')->get(),
             'documentTypes' => $pro->status === ProStatus::ChangesRequested
                 ? $pro->documents->whereNotNull('flag_message')->pluck('type')->filter(fn (DocumentType $type): bool => ! $type->isRegistration())->values()->all()
@@ -198,12 +176,12 @@ final class Application extends Component
     }
 
     /**
-     * The steps this application shows: everything for a draft; only what was
+     * The sections this application shows, in order: everything for a draft; only what was
      * flagged once changes are requested (AC6).
      *
      * @return list<string>
      */
-    private function steps(Pro $pro): array
+    private function sections(Pro $pro): array
     {
         $pro->loadMissing(['trades', 'documents', 'references']);
 
@@ -215,15 +193,65 @@ final class Application extends Component
                 $flagged->contains(fn ($document): bool => ! $document->type->isRegistration()) ? 'documents' : null,
                 $flagged->contains(fn ($document): bool => $document->type->isRegistration()) ? 'registrations' : null,
                 $pro->references->contains(fn (ProReference $reference): bool => $reference->outcome->needsReplacing()) ? 'references' : null,
-                'review',
             ]));
         }
 
         return array_values(array_filter([
             'business', 'trades', 'base', 'documents',
             $pro->offeredRegistrations() === [] ? null : 'registrations',
-            'references', 'about', 'review',
+            'references', 'about',
         ]));
+    }
+
+    /**
+     * Saves every section. Strict (on submit) saves all of them; otherwise only sections the pro has started.
+     * Every problem is reported at once, so nobody is sent back and forth.
+     */
+    private function saveAll(bool $strict): void
+    {
+        $pro = $this->pro();
+        $save = app(SaveApplicationStep::class);
+        $errors = [];
+
+        foreach ($this->sections($pro) as $section) {
+            if (! $strict && ! $this->started($section, $pro)) {
+                continue;
+            }
+
+            try {
+                match ($section) {
+                    'business' => $this->saveBusiness($save, $pro),
+                    'trades' => $save->trades($this->user(), $pro, array_map(intval(...), $this->tradeIds)),
+                    'base' => $this->saveBase($save, $pro),
+                    'registrations' => $this->saveRegistrations($save, $pro),
+                    'references' => $this->saveReferences($save, $pro),
+                    'about' => $this->saveAbout($save, $pro),
+                    default => null,
+                };
+            } catch (ValidationException $exception) {
+                $errors = [...$errors, ...$exception->errors()];
+            }
+
+            $pro = $pro->refresh()->load(['trades', 'documents', 'references']);
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+    }
+
+    /** Whether the pro has put anything into a section yet (so an untouched section does not complain on "Save progress"). */
+    private function started(string $section, Pro $pro): bool
+    {
+        return match ($section) {
+            'business' => trim($this->businessName) !== '' || $this->businessType !== '' || trim($this->vatNumber) !== '',
+            'trades' => $this->tradeIds !== [],
+            'base' => $this->pickedPlaceId !== null,
+            'registrations' => array_filter(array_map('trim', $this->registrationNumbers)) !== [],
+            'references' => collect($this->references)->contains(fn (array $row): bool => trim($row['name']) !== '' || trim($row['phone']) !== '' || trim($row['relationship']) !== ''),
+            'about' => trim($this->bio) !== '' || $this->consent,
+            default => false,
+        };
     }
 
     private function saveBusiness(SaveApplicationStep $save, Pro $pro): void
@@ -299,6 +327,7 @@ final class Application extends Component
             $this->forgetPickedAddress();
             $this->pickedFormatted = null;
             $this->pickedArea = null;
+            $this->changingAddress = false;
 
             return;
         }

@@ -16,15 +16,14 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
- * Create an account with email + password, or finish a Google sign-up by
- * accepting the terms (spec 014, AC1–AC3). Pros arrive with `?as=pro` (spec 011).
+ * Create an account with email + password, or finish a Google sign-up by accepting the terms (spec 014, AC1–AC3).
+ * Client accounts register at /register and pro accounts at /pros/register: two separate pages and two separate
+ * kinds of account (spec 011, founder 2026-10-07). Nobody gets both roles from one sign-up.
  */
 #[Layout('components.layouts.app')]
-#[Title('Create your account')]
 final class Register extends Component
 {
     #[Locked]
@@ -50,9 +49,14 @@ final class Register extends Component
 
     public bool $marketing = false;
 
-    public function mount(): void
+    public function mount(string $as = ''): mixed
     {
-        $this->asPro = request()->query('as') === 'pro' || session()->get('auth.as_pro') === true;
+        // Old links used /register?as=pro; pros have their own page now.
+        if ($as !== 'pro' && request()->query('as') === 'pro') {
+            return $this->redirectRoute('pros.register', array_filter(['with' => request()->query('with')]), navigate: false);
+        }
+
+        $this->asPro = $as === 'pro';
         $google = request()->query('with') === 'google' ? GoogleSignIn::pendingSignUp() : null;
 
         if ($google !== null) {
@@ -61,6 +65,8 @@ final class Register extends Component
             $this->lastName = $google['last_name'];
             $this->email = $google['email'];
         }
+
+        return null;
     }
 
     public function register(RegisterAccount $registerAccount, SendEmailVerification $sendEmailVerification): void
@@ -134,11 +140,12 @@ final class Register extends Component
         }
 
         // The verification gate sends them through email and mobile checks, then on (AC3, AC6).
-        $this->redirectIntended(route($user->homeRoute($this->asPro)));
+        $this->redirectIntended(route($user->homeRoute()));
     }
 
     public function render(): View
     {
-        return view('livewire.auth.register');
+        return view($this->asPro ? 'livewire.pros.register' : 'livewire.auth.register')
+            ->title($this->asPro ? __('Join as a pro') : __('Create your client account'));
     }
 }

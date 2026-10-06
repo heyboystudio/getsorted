@@ -6,7 +6,6 @@ use App\Domain\Accounts\Enums\ConsentType;
 use App\Domain\Accounts\Enums\Role;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
-use App\Livewire\Pros\BecomePro;
 use App\Models\Consent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,25 +35,35 @@ function consentTypes(User $user): array
 it('explains joining as a pro and links to the pro sign-up (AC1, spec 014)', function (): void {
     $this->get('/pros/join')->assertOk()
         ->assertSee('Free to join')
-        ->assertSee('href="'.route('register', ['as' => 'pro']).'"', false);
+        ->assertSee('href="'.route('pros.register').'"', false);
 });
 
 it('links tradespeople to the join page from the home page (AC1)', function (): void {
     $this->get('/')->assertOk()->assertSee('href="'.route('pros.join').'"', false);
 });
 
-it('sends logged-in customers from the join page to the become-a-pro step (AC1, AC5)', function (): void {
+it('tells a signed-in client that pro accounts are separate, with no way to convert theirs (founder 2026-10-07)', function (): void {
     $this->actingAs(User::factory()->customer()->create())
         ->get('/pros/join')->assertOk()
-        ->assertSee('href="'.route('pros.become').'"', false);
+        ->assertSee('Pro accounts are separate')->assertSee('action="'.route('logout').'"', false)
+        ->assertDontSee('/pros/become');
 });
 
-it('uses the sign-up page with pro wording (AC2, spec 014)', function (): void {
-    Livewire::withQueryParams(['as' => 'pro'])->test(Register::class)->assertSet('asPro', true)->assertSee('Join Sortd as a pro');
+it('has separate sign-up pages for clients and pros', function (): void {
+    $this->get('/register')->assertOk()->assertSee('Create your client account')->assertDontSee('pro agreement')->assertSee(route('pros.register'), false);
+    $this->get('/pros/register')->assertOk()->assertSee('Join Get Sorted as a pro')->assertSee('pro agreement')->assertDontSee('Create your client account');
+});
+
+it('sends old pro sign-up links to the pro page', function (): void {
+    $this->get('/register?as=pro')->assertRedirect(route('pros.register'));
+});
+
+it('uses the pro sign-up page with pro wording (AC2, spec 014)', function (): void {
+    Livewire::test(Register::class, ['as' => 'pro'])->assertSet('asPro', true)->assertSee('Join Get Sorted as a pro');
 });
 
 it('signs up a new pro with the pro role and three consents (AC3, AC4, AC6)', function (): void {
-    $component = Livewire::withQueryParams(['as' => 'pro'])->test(Register::class);
+    $component = Livewire::test(Register::class, ['as' => 'pro']);
     foreach (['firstName' => 'Sipho', 'lastName' => 'Dlamini', 'email' => 'sipho@example.com', 'password' => 'long-enough-password',
         'acceptTerms' => true, 'acceptPrivacy' => true, 'acceptProAgreement' => true] as $field => $value) {
         $component->set($field, $value);
@@ -77,40 +86,22 @@ it('does not ask customers for the pro agreement', function (): void {
     Livewire::test(Register::class)->assertDontSee('pro agreement');
 });
 
-it('sends an existing customer who joins as a pro to the agreement step (AC5)', function (): void {
+it('keeps client accounts and pro accounts apart: there is no way to add the pro role to a client (founder 2026-10-07)', function (): void {
+    $user = User::factory()->customer()->create();
+
+    $this->actingAs($user)->get('/pros/become')->assertNotFound();
+    expect($user->fresh()->hasRole(Role::Pro->value))->toBeFalse();
+});
+
+it('does not let a pro sign-up reuse a client email', function (): void {
     User::factory()->customer()->create(['email' => 'thandi@example.com']);
+    $component = Livewire::test(Register::class, ['as' => 'pro']);
+    foreach (['firstName' => 'Thandi', 'lastName' => 'M', 'email' => 'thandi@example.com', 'password' => 'long-enough-password', 'acceptTerms' => true, 'acceptPrivacy' => true, 'acceptProAgreement' => true] as $field => $value) {
+        $component->set($field, $value);
+    }
 
-    proSignIn('thandi@example.com')->assertRedirect(route('pros.become'));
-});
-
-it('adds the pro role to an existing customer who accepts the agreement (AC5)', function (): void {
-    $user = User::factory()->customer()->create();
-
-    $this->actingAs($user);
-    Livewire::test(BecomePro::class)->set('acceptProAgreement', true)->call('confirm')->assertRedirect(route('pros.welcome'));
-
-    $user->refresh();
-    expect($user->hasRole(Role::Pro->value))->toBeTrue()
-        ->and($user->hasRole(Role::Customer->value))->toBeTrue()
-        ->and(consentTypes($user))->toBe(['pro_agreement'])
-        ->and(Activity::query()->where('description', 'pro role granted')->exists())->toBeTrue();
-});
-
-it('leaves a customer unchanged if they do not accept the agreement (AC5)', function (): void {
-    $user = User::factory()->customer()->create();
-
-    $this->actingAs($user);
-    Livewire::test(BecomePro::class)->call('confirm')->assertHasErrors(['acceptProAgreement']);
-
-    expect($user->fresh()->hasRole(Role::Pro->value))->toBeFalse()
-        ->and(Consent::query()->count())->toBe(0);
-});
-
-it('sends existing pros straight to their welcome page', function (): void {
-    $user = User::factory()->customer()->create();
-    $user->assignRole(Role::Pro->value);
-
-    $this->actingAs($user)->get('/pros/become')->assertRedirect(route('pros.welcome'));
+    $component->call('register')->assertHasErrors(['email']);
+    expect(User::query()->where('email', 'thandi@example.com')->sole()->hasRole(Role::Pro->value))->toBeFalse();
 });
 
 it('lands a returning pro on the pro welcome page (AC6)', function (): void {
@@ -123,12 +114,9 @@ it('lands a returning pro on the pro welcome page (AC6)', function (): void {
         ->assertSee('Start your application'); // Spec 008 replaced the "opens soon" holding text.
 });
 
-it('lets a pro who is also a customer reach both areas (AC7)', function (): void {
-    $user = User::factory()->customer()->create();
-    $user->assignRole(Role::Pro->value);
-
-    $this->actingAs($user)->get('/pros/welcome')->assertOk()->assertSee('href="'.route('account.home').'"', false);
-    $this->actingAs($user)->get('/app')->assertOk();
+it('does not link the pro area to a client account (founder 2026-10-07)', function (): void {
+    $this->actingAs(User::factory()->pro()->create())->get('/pros/welcome')->assertOk()
+        ->assertDontSee('customer account')->assertDontSee('href="'.route('account.home').'"', false);
 });
 
 it('keeps the pro panel closed (AC8)', function (): void {
@@ -150,16 +138,6 @@ it('refuses admin accounts on the pro sign-in like any wrong password (AC10)', f
     $this->assertGuest();
 });
 
-it('never lets an admin become a pro', function (): void {
-    $admin = User::factory()->customer()->create();
-    $admin->assignRole(Role::AdminSupport->value);
-
-    $this->actingAs($admin);
-    Livewire::test(BecomePro::class)->set('acceptProAgreement', true)->call('confirm')->assertForbidden();
-
-    expect($admin->fresh()->hasRole(Role::Pro->value))->toBeFalse();
-});
-
 it('serves the draft pro agreement (AC11)', function (): void {
     $this->get('/pros/agreement')->assertOk()->assertSee('Draft — not yet in force')->assertSee('2026-10-draft');
 });
@@ -177,21 +155,10 @@ it('shows the welcome page with a log-out button (AC6)', function (): void {
         ->assertSee('action="'.route('logout').'"', false);
 });
 
-it('sends a logged-in customer following a join-as-pro link to the agreement step', function (): void {
-    $this->actingAs(User::factory()->customer()->create())->get('/login?as=pro')->assertRedirect(route('pros.become'));
+it('signs a client who uses the pro sign-in into their client account, nothing more', function (): void {
+    $this->actingAs(User::factory()->customer()->create())->get('/login?as=pro')->assertRedirect();
 });
 
 it('keeps pro-only accounts out of the customer area', function (): void {
     $this->actingAs(User::factory()->pro()->create())->get('/app')->assertRedirect(route('pros.welcome'));
-});
-
-it('records the pro agreement only once when confirmed twice', function (): void {
-    $user = User::factory()->customer()->create();
-    $action = app(App\Domain\Accounts\Actions\BecomePro::class);
-
-    $action->handle($user, '127.0.0.1', 'Symfony');
-    $action->handle(User::query()->find($user->id), '127.0.0.1', 'Symfony');
-
-    expect(Consent::query()->where('type', ConsentType::ProAgreement)->count())->toBe(1)
-        ->and(Activity::query()->where('description', 'pro role granted')->count())->toBe(1);
 });

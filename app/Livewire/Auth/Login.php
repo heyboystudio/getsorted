@@ -91,7 +91,7 @@ final class Login extends Component
         Auth::login($user, $this->remember);
         session()->regenerate();
 
-        $this->redirectIntended(route($user->homeRoute($this->asPro)));
+        $this->redirectIntended(route($user->homeRoute()));
     }
 
     public function render(): View

@@ -1,20 +1,12 @@
 @php
-    $position = array_search($step, $steps, true);
     $input = 'mt-2 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-3 text-base focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/30';
+    $changes = $pro->status === \App\Domain\Pros\Enums\ProStatus::ChangesRequested;
 @endphp
-<main class="flex min-h-dvh items-start justify-center px-5 py-8">
+<main class="flex min-h-dvh items-start justify-center px-5 py-8 pb-32">
     <section class="w-full max-w-xl">
-        <div class="mb-6 flex items-center justify-between text-sm">
-            @if ($position > 0)
-                <button type="button" wire:click="back" class="text-zinc-700 underline underline-offset-4">← {{ __('Back') }}</button>
-            @else
-                <a wire:navigate.hover href="{{ route('pros.welcome') }}" class="text-zinc-700 underline underline-offset-4">← {{ __('Sortd Pro') }}</a>
-            @endif
-            <span class="text-zinc-500">{{ __('Step :number of :total', ['number' => $position + 1, 'total' => count($steps)]) }}</span>
-        </div>
-        <div class="mb-6 h-2 rounded-full bg-zinc-200" aria-hidden="true">
-            <div class="h-2 rounded-full bg-emerald-700" style="width: {{ (int) round((($position + 1) / count($steps)) * 100) }}%"></div>
-        </div>
+        <a wire:navigate.hover href="{{ route('pros.welcome') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('Sortd Pro') }}</a>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">{{ $changes ? __('Update your application') : __('Tell us about your business') }}</h1>
+        <p class="mt-2 text-zinc-600">{{ $changes ? __('Fix what is listed below, then send it back to us.') : __('Fill this in at your own pace. Everything is saved when you tap Save progress, and your uploads save as soon as you add them.') }}</p>
 
         @if ($pro->status === \App\Domain\Pros\Enums\ProStatus::ChangesRequested)
             <div class="mb-6 rounded-lg bg-amber-50 p-4 text-sm text-amber-900" role="status">
@@ -23,8 +15,9 @@
             </div>
         @endif
 
-        @if ($step === 'business')
-            <h1 class="text-2xl font-semibold tracking-tight">{{ __('Your business') }}</h1>
+        @if (in_array('business', $sections, true))
+        <div class="mt-10">
+            <h2 class="text-2xl font-semibold tracking-tight">{{ __('Your business') }}</h2>
             <label for="businessName" class="mt-6 block text-sm font-medium">{{ __('Business name') }}</label>
             <input id="businessName" type="text" wire:model="businessName" maxlength="120" class="{{ $input }}" autocomplete="organization">
             @error('businessName') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
@@ -45,40 +38,57 @@
             <input id="vatNumber" type="text" inputmode="numeric" wire:model="vatNumber" maxlength="12" class="{{ $input }}">
             @error('vatNumber') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
 
-        @elseif ($step === 'trades')
-            <h1 class="text-2xl font-semibold tracking-tight">{{ __('What work do you do?') }}</h1>
+        </div>
+        @endif
+        @if (in_array('trades', $sections, true))
+        <div class="mt-12">
+            <h2 class="text-2xl font-semibold tracking-tight">{{ __('What work do you do?') }}</h2>
             <p class="mt-2 text-zinc-600">{{ __('Choose every trade you want jobs for. You decide for each job whether you can help.') }}</p>
             <div class="mt-6 space-y-2">
                 @foreach ($trades as $trade)
                     <label wire:key="trade-{{ $trade->id }}" class="flex items-start gap-3 rounded-lg border border-zinc-200 bg-white p-3 has-[:checked]:border-emerald-700">
                         <input type="checkbox" wire:model="tradeIds" value="{{ $trade->id }}" class="mt-1 size-5 rounded text-emerald-700">
-                        <span>{{ $trade->name }}@if ($trade->registration) <span class="block text-xs text-zinc-500">{{ __('Optional: :registration, shown as a verified badge', ['registration' => $trade->registration->label()]) }}</span>@endif</span>
+                        <span>{{ $trade->name }}</span>
                     </label>
                 @endforeach
             </div>
             @error('tradeIds') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
 
-        @elseif ($step === 'base')
-            <h1 class="text-2xl font-semibold tracking-tight">{{ __('Where do you work from?') }}</h1>
-            <p class="mt-2 text-zinc-600">{{ __('We send you jobs near this address. Customers only see the area name, never your street address.') }}</p>
-            @if ($pro->base_location !== null && $pickedPlaceId === null)
-                <p class="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{{ __('Saved: :area. Search again to change it.', ['area' => $pro->base_area_label ?? __('your address')]) }}</p>
+        </div>
+        @endif
+        @if (in_array('base', $sections, true))
+        <div class="mt-12">
+            <h2 class="text-2xl font-semibold tracking-tight">{{ __('Where do you work from?') }}</h2>
+            <p class="mt-2 text-zinc-600">{{ __('We send you jobs near this address. Clients only ever see the area, never your street address.') }}</p>
+            @php($hasAddress = $pro->base_location !== null)
+            @if ($pickedPlaceId !== null)
+                <p class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-950" role="status">{{ $pickedFormatted }}</p>
+            @elseif ($hasAddress && ! $changingAddress)
+                <div class="mt-4 flex items-start justify-between gap-4 rounded-lg border border-zinc-200 bg-white px-4 py-3">
+                    <p>{{ $pro->base_address }}</p>
+                    <button type="button" wire:click="$set('changingAddress', true)" class="shrink-0 text-sm text-emerald-800 underline underline-offset-4">{{ __('Change') }}</button>
+                </div>
             @endif
-            <div class="mt-4">
-                @include('livewire.partials.address-search', ['addressLabel' => __('Your address')])
-                @error('addressQuery') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
-                @error('address') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
-            </div>
+            @if (! $hasAddress || $changingAddress || $pickedPlaceId !== null)
+                <div class="mt-4">
+                    @include('livewire.partials.address-search', ['addressLabel' => $pickedPlaceId !== null ? __('Search for a different address') : __('Your address')])
+                </div>
+            @endif
+            @error('addressQuery') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
+            @error('address') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
             <label for="radiusKm" class="mt-6 block text-sm font-medium">{{ __('How far will you travel for a job?') }}</label>
             <div class="mt-1 flex items-center gap-3">
                 <input id="radiusKm" type="range" min="5" max="50" step="1" wire:model.live="radiusKm" class="w-full accent-emerald-700">
                 <span class="w-16 text-right font-medium">{{ $radiusKm }} km</span>
             </div>
-            <p class="mt-1 text-xs text-zinc-500">{{ __('Jobs up to :soft km away may also reach you when fewer pros are closer.', ['soft' => $radiusKm + app(\App\Settings\MatchingSettings::class)->soft_edge_km]) }}</p>
+            <p class="mt-1 text-xs text-zinc-500">{{ __('You will be sent jobs within about :km km of your address.', ['km' => $radiusKm]) }}</p>
             @error('radiusKm') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
 
-        @elseif ($step === 'documents')
-            <h1 class="text-2xl font-semibold tracking-tight">{{ __('Your documents') }}</h1>
+        </div>
+        @endif
+        @if (in_array('documents', $sections, true))
+        <div class="mt-12">
+            <h2 class="text-2xl font-semibold tracking-tight">{{ __('Your documents') }}</h2>
             <p class="mt-2 text-zinc-600">{{ __('Up to 10 MB each. Only our vetting team can see them. Your profile photo must be a photo; the other documents can be a photo or a PDF.') }}</p>
             <div class="mt-6 space-y-4">
                 @foreach ($documentTypes as $type)
@@ -106,9 +116,12 @@
                 @endforeach
             </div>
 
-        @elseif ($step === 'registrations')
-            <h1 class="text-2xl font-semibold tracking-tight">{{ __('Registrations') }}</h1>
-            <p class="mt-2 text-zinc-600">{{ __('Optional. A verified registration shows as a badge on your quotes. Without it you can still receive jobs, shown to customers as not verified.') }}</p>
+        </div>
+        @endif
+        @if (in_array('registrations', $sections, true))
+        <div class="mt-12">
+            <h2 class="text-2xl font-semibold tracking-tight">{{ __('Your registration') }}</h2>
+            <p class="mt-2 text-zinc-600">{{ __('If you hold one of these registrations, add the number and a copy of your certificate. You can skip this and add it later.') }}</p>
             @foreach ($registrationTypes as $type)
                 @php($document = $pro->document($type))
                 <div wire:key="reg-{{ $type->value }}" class="mt-6 rounded-xl border border-zinc-200 bg-white p-4">
@@ -131,8 +144,11 @@
                 </div>
             @endforeach
 
-        @elseif ($step === 'references')
-            <h1 class="text-2xl font-semibold tracking-tight">{{ __('References') }}</h1>
+        </div>
+        @endif
+        @if (in_array('references', $sections, true))
+        <div class="mt-12">
+            <h2 class="text-2xl font-semibold tracking-tight">{{ __('References') }}</h2>
             <p class="mt-2 text-zinc-600">
                 {{ $pro->status === \App\Domain\Pros\Enums\ProStatus::ChangesRequested
                     ? __('We could not use one of your references. Please give someone else who knows your work.')
@@ -158,8 +174,11 @@
             </label>
             @error('refereesAgreed') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
 
-        @elseif ($step === 'about')
-            <h1 class="text-2xl font-semibold tracking-tight">{{ __('About you') }}</h1>
+        </div>
+        @endif
+        @if (in_array('about', $sections, true))
+        <div class="mt-12">
+            <h2 class="text-2xl font-semibold tracking-tight">{{ __('About you') }}</h2>
             <label for="bio" class="mt-6 block text-sm font-medium">{{ __('A short bio about your work') }}</label>
             <textarea id="bio" wire:model="bio" rows="5" maxlength="500" class="{{ $input }}" placeholder="{{ __('e.g. 15 years fixing leaks and geysers across Durban.') }}"></textarea>
             <p class="mt-1 text-right text-xs text-zinc-500" x-data x-text="$wire.bio.length + ' / 500'"></p>
@@ -171,36 +190,28 @@
             </label>
             @error('consent') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
 
-        @elseif ($step === 'review')
-            <h1 class="text-2xl font-semibold tracking-tight">{{ __('Check and send') }}</h1>
-            <dl class="mt-6 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white text-sm">
-                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Business') }}@if (in_array('business', $steps, true))<button type="button" wire:click="goTo('business')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->business_name }} · {{ $pro->business_type?->label() }}@if ($pro->vat_number) · {{ __('VAT') }} {{ $pro->vat_number }}@endif</dd></div>
-                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Trades') }}@if (in_array('trades', $steps, true))<button type="button" wire:click="goTo('trades')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->trades->pluck('name')->implode(', ') }}</dd></div>
-                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Works from') }}@if (in_array('base', $steps, true))<button type="button" wire:click="goTo('base')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->base_area_label ?? '—' }} · {{ $pro->service_radius_km }} km</dd></div>
-                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Documents') }}@if (in_array('documents', $steps, true))<button type="button" wire:click="goTo('documents')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt>
-                    <dd class="mt-1 text-zinc-700">
-                        @foreach ([...\App\Domain\Pros\Enums\DocumentType::required(), ...$registrationTypes] as $type)
-                            <p>{{ $type->label() }}: {{ $pro->document($type)?->file() ? $pro->document($type)->status->label() : __('Missing') }}</p>
-                        @endforeach
-                    </dd>
-                </div>
-                <div class="p-4"><dt class="flex justify-between font-medium">{{ __('References') }}@if (in_array('references', $steps, true))<button type="button" wire:click="goTo('references')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 text-zinc-700">{{ $pro->references->pluck('name')->implode(', ') }}</dd></div>
-                @if ($pro->bio)
-                    <div class="p-4"><dt class="flex justify-between font-medium">{{ __('Bio') }}@if (in_array('about', $steps, true))<button type="button" wire:click="goTo('about')" class="text-sm font-normal text-emerald-800 underline">{{ __('Change') }}</button>@endif</dt><dd class="mt-1 whitespace-pre-line text-zinc-700">{{ $pro->bio }}</dd></div>
-                @endif
-            </dl>
-            @error('application') <p class="mt-3 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
-            <button type="button" wire:click="submit" wire:loading.attr="disabled" wire:target="submit" class="mt-6 w-full rounded-lg bg-emerald-700 px-4 py-3 text-lg font-medium text-white hover:bg-emerald-800 disabled:opacity-60">
-                <span wire:loading.remove wire:target="submit">{{ __('Submit for review') }}</span>
-                <span wire:loading wire:target="submit">{{ __('Sending…') }}</span>
-            </button>
+        </div>
         @endif
 
-        @if ($step !== 'review')
-            <button type="button" wire:click="next" wire:loading.attr="disabled" wire:target="next" class="mt-8 w-full rounded-lg bg-emerald-700 px-4 py-3 text-lg font-medium text-white hover:bg-emerald-800 disabled:opacity-60">
-                <span wire:loading.remove wire:target="next">{{ __('Save and continue') }}</span>
-                <span wire:loading wire:target="next">{{ __('Saving…') }}</span>
-            </button>
+        @if ($errors->any())
+            <div class="mt-8 rounded-lg bg-red-50 p-4 text-sm text-red-800" role="alert">{{ __('A few things need another look. They are marked above.') }}</div>
         @endif
+        @error('application') <p class="mt-8 rounded-lg bg-red-50 p-4 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
+        @if ($justSaved && ! $errors->any())
+            <p class="mt-8 rounded-lg bg-emerald-50 p-4 text-sm text-emerald-900" role="status">{{ __('Saved. You can come back to this any time.') }}</p>
+        @endif
+
+        <div class="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-200 bg-white/95 px-5 py-3 backdrop-blur">
+            <div class="mx-auto flex max-w-xl gap-3">
+                <button type="button" wire:click="saveProgress" wire:loading.attr="disabled" wire:target="saveProgress,submit" class="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium hover:border-emerald-700 disabled:opacity-60">
+                    <span wire:loading.remove wire:target="saveProgress">{{ __('Save progress') }}</span>
+                    <span wire:loading wire:target="saveProgress">{{ __('Saving…') }}</span>
+                </button>
+                <button type="button" wire:click="submit" wire:loading.attr="disabled" wire:target="saveProgress,submit" class="flex-1 rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">
+                    <span wire:loading.remove wire:target="submit">{{ __('Send for review') }}</span>
+                    <span wire:loading wire:target="submit">{{ __('Sending…') }}</span>
+                </button>
+            </div>
+        </div>
     </section>
 </main>

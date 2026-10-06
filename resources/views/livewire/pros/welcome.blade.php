@@ -25,8 +25,5 @@
             <a wire:navigate.hover href="{{ route($canReapply ? 'pros.apply' : 'pros.status') }}" class="mt-6 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center text-lg font-medium text-white hover:bg-emerald-800">{{ $canReapply ? __('Apply again') : __('Check your application') }}</a>
         @endif
 
-        @if ($isCustomer)
-            <a wire:navigate.hover href="{{ route('account.home') }}" class="mt-8 inline-block text-emerald-800 underline underline-offset-4">{{ __('Go to my customer account') }}</a>
-        @endif
     </section>
 </main>
