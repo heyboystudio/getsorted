@@ -123,7 +123,9 @@ return [
         // Spec 016 (Siya): messages per conversation and per visitor per hour.
         'chat_messages_per_conversation' => 30,
         'chat_messages_per_hour' => 60,
-        'chat_timeout_seconds' => 15,
+        'chat_timeout_seconds' => 25,
+        // Gemini 3 reasoning effort for Siya: minimal, low, medium or high; empty leaves the model's default (slower).
+        'thinking_level' => env('SORTD_AI_THINKING_LEVEL', 'minimal'),
         // How long an unused home-page description waits in the session for a booking.
         'description_ttl_minutes' => 30,
     ],

@@ -22,7 +22,7 @@ Branch `feat/020-trade-distance-matching` in worktree `/Users/andymichaels/Docum
 - Obsolete tests removed: `tests/Feature/Places/SuburbsTest.php` (suburbs no longer exist). Old service/scoping tests were rewritten for trades, facts and distance, not deleted.
 
 ### Still not verified
-- **Live Gemini**: no key was used. `SiyaGeminiWireTest` proves the SDK/Gemini wire loop with HTTP faked (tool calls run, results returned, plain-text answer). Judgement and tone need `php artisan siya:eval --live` on a preview (8 synthetic cases from the audit; checks state, not wording). Also set the model id / thinking and check latency and the per-turn budget unit.
+- **Live Gemini**: evaluated on 2026-10-06 (see decision 051 addendum): `gemini-3.1-flash-lite`, thinking `minimal`, 7/8 cases passed in two runs; failures were provider timeouts. Set `SORTD_AI_MODEL` on the server (2.5 models are retired). Still do a human read of replies on a preview. Earlier note: `SiyaGeminiWireTest` proves the SDK/Gemini wire loop with HTTP faked (tool calls run, results returned, plain-text answer). Judgement and tone need `php artisan siya:eval --live` on a preview (8 synthetic cases from the audit; checks state, not wording). Also set the model id / thinking and check latency and the per-turn budget unit.
 - No browser pass: pro application, job → 10 invites → 5 quotes → "job full", the calendar sheet on a phone, emergency pause.
 - Privacy notice gained one sentence on Google Places and encrypted pro addresses; the legal text is still placeholder and needs lawyer review.
 

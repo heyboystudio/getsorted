@@ -14,6 +14,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Exceptions\AiException;
+use Laravel\Ai\Exceptions\ProviderOverloadedException;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use Throwable;
@@ -73,8 +74,17 @@ final class AnthropicScopingAssistant implements ScopingAssistant
     /** @throws AssistantUnavailable */
     private function ask(Agent $agent, string $prompt, ?int $timeout = null): AgentResponse
     {
+        $send = fn (): AgentResponse => $agent->prompt($prompt, provider: $this->provider(), model: $this->model(), timeout: $timeout ?? (int) config('sortd.ai.timeout_seconds'));
+
         try {
-            return $agent->prompt($prompt, provider: $this->provider(), model: $this->model(), timeout: $timeout ?? (int) config('sortd.ai.timeout_seconds'));
+            try {
+                return $send();
+            } catch (ProviderOverloadedException) {
+                // Demand spikes at the provider are usually brief; tool writes are idempotent, so one retry is safe.
+                usleep(700_000);
+
+                return $send();
+            }
         } catch (AiException|ConnectionException|RequestException $exception) {
             throw new AssistantUnavailable($this->timedOut($exception), $exception);
         }

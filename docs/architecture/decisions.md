@@ -466,3 +466,8 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 - **Data:** one irreversible migration (`2026_10_07_000001`) carries existing rows over and drops `services`, `scoping_questions`, `pro_services`, `pro_service_areas` and `suburbs`. The "Today" window is open to every trade. Safety advice lives on the trade.
 - **Settings:** `matching.invite_count` (10), `max_quotes` (5), `default_radius_km` (15), `soft_edge_km` (2); invite waves are retired.
 - **Deferred:** the quality gate was deferred by founder instruction while this was built; see `docs/engineering/handoff.md`.
+
+**Live evaluation, 2026-10-06 (addendum to 049 and 051):** `siya:eval --live` on synthetic conversations with the Gemini API.
+- `gemini-2.5-flash` and `gemini-2.5-flash-lite` are **retired for new keys** (HTTP 404). Set `SORTD_AI_MODEL` to a current model. `gemini-3.1-flash-lite` with `SORTD_AI_THINKING_LEVEL=minimal` (the default) answered in about 1.5–7 s when the API was healthy and passed 7 of 8 cases in two runs, including the breaker-tripping message that used to fail, parking a second job, refusing unsupported work and ignoring prompt injection. The larger Flash models were overloaded (503) or timed out in the same window, and Gemini 3 with default thinking took 10–24 s per turn.
+- Provider latency is spiky (the same call took 1.5 s and 15 s+). The per-call timeout is now 25 s, provider overload gets one retry, and a failed turn keeps the validated facts so the customer can tap Try again. Re-run `siya:eval --live` after any model or prompt change and read the replies; it checks state, not tone.
+
