@@ -14,7 +14,6 @@ use App\Domain\ServiceJobs\Exceptions\CannotPostServiceJob;
 use App\Domain\ServiceJobs\Exceptions\NoEligiblePros;
 use App\Domain\ServiceJobs\ServiceJobStateMachine;
 use App\Domain\ServiceJobs\Support\JobSummaryInput;
-use App\Domain\ServiceJobs\Support\ScopingAnswers;
 use App\Jobs\SendJobPostedMessage;
 use App\Jobs\StartMatching;
 use App\Models\Property;
@@ -35,9 +34,9 @@ final readonly class PostServiceJob
     ) {}
 
     /**
-     * Customer posts a draft (draft → open). Guards: verified phone, required
-     * answers, their own property in an active suburb, active service, a valid
-     * date. The "eligible pro" guard arrives with spec 006 (decision 1).
+     * Customer posts a draft (draft → open). Guards: verified phone, a described problem,
+     * their own geocoded property, active trade, a valid date, and (once pros are required)
+     * an eligible pro within range (spec 020). The job takes the property's point and area name.
      *
      * @throws CannotPostServiceJob
      */
@@ -52,11 +51,12 @@ final readonly class PostServiceJob
         }
 
         $job = DB::transaction(function () use ($customer, $job): ServiceJob {
-            $job = ServiceJob::query()->with(['service.questions', 'service.trade', 'property.suburb'])->lockForUpdate()->findOrFail($job->id);
+            $job = ServiceJob::query()->with(['trade', 'property'])->lockForUpdate()->findOrFail($job->id);
 
             $this->guard($customer, $job);
             $this->settleSummary($job);
 
+            $job->forceFill(['location' => $job->property->location, 'area_label' => $job->property->area_label]);
             $job->posted_at = now();
             $job->quote_window_ends_at = now()->addHours($this->timers->quote_window_hours);
 
@@ -101,22 +101,22 @@ final readonly class PostServiceJob
             throw new CannotPostServiceJob(__('Please verify your phone number first.'));
         }
 
-        if (! $job->service->is_active || ! $job->service->trade->is_active) {
-            throw new CannotPostServiceJob(__('This service is not available right now.'));
+        if (! $job->trade->is_active) {
+            throw new CannotPostServiceJob(__('This trade is not available right now.'));
         }
 
         if (mb_strlen((string) $job->customer_notes) > (int) config('sortd.jobs.notes_max_length')) {
             throw new CannotPostServiceJob(__('Notes can be up to :max characters.', ['max' => config('sortd.jobs.notes_max_length')]));
         }
 
-        if (ScopingAnswers::missingRequired($job->service, $job->scoping_answers) !== []) {
-            throw new CannotPostServiceJob(__('Please answer all the required questions.'));
+        if ($job->facts === [] && trim((string) $job->customer_notes) === '') {
+            throw new CannotPostServiceJob(__('Please tell us what the problem is.'));
         }
 
         $property = $job->property;
 
-        if (! $property instanceof Property || $property->trashed() || $property->user_id !== $customer->id) {
-            throw new CannotPostServiceJob(__('Please choose one of your properties.'));
+        if (! $property instanceof Property || $property->trashed() || $property->user_id !== $customer->id || $property->location === null) {
+            throw new CannotPostServiceJob(__('Please choose one of your saved addresses.'));
         }
 
         $date = $job->preferred_date;
@@ -133,12 +133,12 @@ final readonly class PostServiceJob
             throw new CannotPostServiceJob(__('Please choose a date in the next :days days.', ['days' => config('sortd.jobs.booking_days_ahead')]));
         }
 
-        if ($window === TimeWindow::Today && (! $job->service->emergency_capable || $date->toDateString() !== $today)) {
-            throw new CannotPostServiceJob(__('Urgent same-day bookings are only for emergency services, today.'));
+        if ($window === TimeWindow::Today && $date->toDateString() !== $today) {
+            throw new CannotPostServiceJob(__('Urgent same-day bookings must be for today.'));
         }
 
-        if (! $this->eligiblePros->covers($job->service, $property->suburb, $customer)) {
-            throw new NoEligiblePros(__('We’re not available in :suburb for this service yet.', ['suburb' => $property->suburb->name]));
+        if (! $this->eligiblePros->covers($job->trade, $property->location, $customer)) {
+            throw new NoEligiblePros(__('We don’t have :trade pros near you yet.', ['trade' => mb_strtolower($job->trade->name)]));
         }
     }
 }

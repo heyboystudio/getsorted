@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalogue\Support;
 
-/** Stable identifiers for trades, services and questions: they link jobs and pros and never change. */
+/** Stable identifiers for trades: they link jobs and pros and never change. */
 final class CatalogueKey
 {
     public const string PATTERN = '/^[a-z][a-z0-9_]*$/';

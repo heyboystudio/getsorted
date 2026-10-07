@@ -9,6 +9,12 @@ declare(strict_types=1);
 
 return [
 
+    // Host the admin panel lives on (e.g. admin.usesorted.co.za). Null keeps it at /admin on the main host (local and tests).
+    'admin_domain' => env('SORTD_ADMIN_DOMAIN') ?: null,
+
+    // Set to true once the site sits behind the Cloudflare proxy, so visitors' real IPs are used.
+    'behind_cloudflare' => (bool) env('SORTD_BEHIND_CLOUDFLARE', false),
+
     // Customers' local time for "today" and booking dates; storage stays UTC.
     'timezone' => 'Africa/Johannesburg',
 
@@ -47,9 +53,6 @@ return [
 
     'places' => [
         'municipality' => 'eThekwini',
-        // Rough bounding box used to sanity-check admin-entered suburb centres.
-        'latitude' => ['min' => -30.5, 'max' => -29.3],
-        'longitude' => ['min' => 30.5, 'max' => 31.3],
     ],
 
     'properties' => [
@@ -81,7 +84,6 @@ return [
         'notify_every_minutes' => 15,
         // Someone who looked at the chat this recently is treated as "on the page": no notification.
         'online_seconds' => 30,
-        'delete_within_minutes' => 5,
         'retention_months' => 24,
     ],
 
@@ -116,7 +118,8 @@ return [
 
     'ai' => [
         // Spec 007. Switch, confidence threshold and daily budget are admin settings (AiSettings).
-        // anthropic (direct API) or bedrock (Amazon Bedrock, EU; decision 043). Bedrock uses the server's IAM role.
+        // anthropic (direct API), bedrock (Amazon Bedrock, EU; decision 043) or gemini (Google Gemini API; decision 049).
+        // Bedrock uses the server's IAM role; Gemini needs GEMINI_API_KEY.
         'provider' => env('SORTD_AI_PROVIDER', 'anthropic'),
         'model' => env('SORTD_AI_MODEL', 'claude-haiku-4-5-20251001'),
         'timeout_seconds' => 8,
@@ -125,7 +128,9 @@ return [
         // Spec 016 (Siya): messages per conversation and per visitor per hour.
         'chat_messages_per_conversation' => 30,
         'chat_messages_per_hour' => 60,
-        'chat_timeout_seconds' => 15,
+        'chat_timeout_seconds' => 25,
+        // Gemini 3 reasoning effort for Siya: minimal, low, medium or high; empty leaves the model's default (slower).
+        'thinking_level' => env('SORTD_AI_THINKING_LEVEL', 'minimal'),
         // How long an unused home-page description waits in the session for a booking.
         'description_ttl_minutes' => 30,
     ],

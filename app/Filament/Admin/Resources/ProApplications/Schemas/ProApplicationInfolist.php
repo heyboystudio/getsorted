@@ -29,11 +29,15 @@ final class ProApplicationInfolist
                 TextEntry::make('submitted_at')->label(__('Submitted'))->dateTime('j M Y H:i')->placeholder('—'),
                 TextEntry::make('decision_reason')->label(__('Reason given to the pro'))->placeholder('—')->columnSpanFull(),
             ]),
-            Section::make(__('Services and suburbs'))->schema([
-                TextEntry::make('services_list')->label(__('Services'))
-                    ->state(fn (Pro $record): string => $record->services()->with('trade')->get()->map(fn ($service): string => $service->trade->name.' · '.$service->name)->implode(', ')),
-                TextEntry::make('suburbs_list')->label(__('Suburbs'))
-                    ->state(fn (Pro $record): string => $record->serviceAreas->pluck('name')->sort()->implode(', ')),
+            Section::make(__('Trades and location'))->columns(2)->schema([
+                TextEntry::make('trades_list')->label(__('Trades'))
+                    ->state(fn (Pro $record): string => $record->trades->pluck('name')->sort()->implode(', ')),
+                TextEntry::make('registrations_list')->label(__('Registrations'))
+                    ->state(fn (Pro $record): string => $record->trades->filter(fn ($trade): bool => $trade->registration !== null)
+                        ->map(fn ($trade): string => $trade->name.': '.($record->isVerifiedFor($trade) ? __('verified') : __('not verified')))->implode(', '))
+                    ->placeholder('—'),
+                TextEntry::make('base_area_label')->label(__('Works from'))->placeholder('—'),
+                TextEntry::make('service_radius_km')->label(__('Travel radius'))->suffix(' km'),
             ]),
             Section::make(__('Profile'))->columns(2)->schema([
                 ImageEntry::make('profile_photo')->label(__('Profile photo'))->height(120)

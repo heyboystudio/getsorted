@@ -20,12 +20,8 @@ erDiagram
     users ||--o| pros : "may be"
     users ||--o{ service_jobs : posts
     properties ||--o{ service_jobs : "located at"
-    suburbs ||--o{ properties : contains
-    trades ||--o{ services : has
-    services ||--o{ scoping_questions : asks
-    services ||--o{ service_jobs : "is for"
-    pros }o--o{ services : offers
-    pros }o--o{ suburbs : covers
+    trades ||--o{ service_jobs : "is for"
+    pros }o--o{ trades : offers
     service_jobs ||--o{ service_job_events : logs
     service_jobs ||--o{ service_job_invites : invites
     service_jobs ||--o{ quotes : receives
@@ -51,26 +47,22 @@ erDiagram
 ### Places
 | Table | Key columns |
 |---|---|
-| `suburbs` | slug (unique; URL key), name (unique per municipality), region (berea_central/north/west/south), municipality, centroid (geography Point 4326), boundary (geography MultiPolygon, nullable), is_active, aliases (jsonb list of other names, spec 015) — **in place** (`2026_10_04_000003`) |
-| `properties` | public_id, user_id, label, street_address (encrypted, hidden), suburb_id, location (geography Point; the picked Places address, else the suburb centre), location_source (places/suburb_centroid), google_place_id (nullable), postal_code, property_type (house/flat/townhouse/business/other), deleted_at — **in place** |
+| `properties` | public_id, user_id, label, street_address (encrypted, hidden), area_label (approximate area from Places, safe to show pros), location (geography Point from the picked Places address), location_source (places), google_place_id, postal_code, property_type (house/flat/townhouse/business/other), deleted_at — **in place**; suburb_id removed in spec 020 |
 | `geocoder_usage` | purpose (autocomplete/resolve), outcome (ok/error/throttled), latency_ms, created_at; no address text; pruned after 90 days (spec 015) — **in place** |
-| `waitlist_entries` | first_name, phone_e164, suburb_text, suburb_key, suburb_id (nullable), service_id, privacy_version, consented_at, timestamps; unique phone + suburb key + service; pruned after 12 months — **in place** (spec 006) |
+| `waitlist_entries` | first_name, phone_e164, trade_id, area_label, location (geography Point), privacy_version, consented_at, timestamps; unique phone + trade + area; pruned after 12 months — **in place** (spec 006; reworked in spec 020) |
 
 ### Catalogue (seeded from `docs/product/scoping/*.yaml`)
 | Table | Key columns |
 |---|---|
 | `trades` | key (unique; URL key), name, status (demo/live), is_active, sort — **in place** |
-| `services` | trade_id (restrict delete), key (unique within trade; URL key), name, description, requires_registration (pirb / electrical_registered_person), emergency_capable, safety_advice jsonb, is_active, sort — **in place** |
-| `scoping_questions` | service_id, key (unique within service), prompt, type (single_choice/multi_choice/yes_no/number/text), options jsonb, required, flags jsonb (`urgent_if`), sort — **in place** |
 
 Enums: `TradeStatus`, `QuestionType`, `RegistrationType` (`App\Domain\Catalogue\Enums`). Keys never change. Permissions `catalogue.view` (all admin roles) and `catalogue.edit` (super, support).
 
 ### Pros
 | Table | Key columns |
 |---|---|
-| `pros` | public_id, user_id (unique), status (draft/submitted/changes_requested/approved/rejected/suspended — only `ProStatusMachine` changes it), business_name (nullable until the business step), business_type (sole_trader/company), vat_number, bio, weekly_job_cap, vetting_consent_at, submitted_at, decided_by, decided_at, decision_reason (shown to the pro), approved_at, suspended_at, reapply_after, last_activity_at, contact_masking_count (quotes with masked contact details; flagged at 3, spec 010) — **in place** (spec 006 + `2026_10_04_130000`, spec 008); base_location, ratings and response metrics are deferred |
-| `pro_services` | pro_id, service_id (unique pair) — **in place** |
-| `pro_service_areas` | pro_id, suburb_id (unique pair) — **in place** |
+| `pros` | base_location (geography Point, the pro's Places address), base_address (encrypted), base_place_id, base_area_label (safe to show customers), service_radius_km (default 15; spec 020), public_id, user_id (unique), status (draft/submitted/changes_requested/approved/rejected/suspended — only `ProStatusMachine` changes it), business_name (nullable until the business step), business_type (sole_trader/company), vat_number, bio, weekly_job_cap, vetting_consent_at, submitted_at, decided_by, decided_at, decision_reason (shown to the pro), approved_at, suspended_at, reapply_after, last_activity_at, contact_masking_count (quotes with masked contact details; flagged at 3, spec 010) — **in place** (spec 006 + `2026_10_04_130000`, spec 008); base_location, ratings and response metrics are deferred |
+| `pro_trades` | pro_id, trade_id (unique pair) — **in place** (spec 020, `2026_10_07_000001`) |
 | `pro_documents` | public_id (ULID, used in signed URLs), pro_id, type (id_document/proof_of_address/profile_photo/pirb/electrical_registered_person; unique per pro), status (pending/verified/flagged), number (encrypted; registrations), one private media file, verified_at, verified_by, expires_at, flag_message (shown to the pro until resubmission), notes (private to vetting) — **in place** (spec 008) |
 | `pro_job_allocations` | pro_id, service_job_id (unique pair), allocated_at — rolling weekly cap input, in place (spec 006); accepted jobs will write records in spec 010 |
 | `pro_customer_exclusions` | pro_id + customer_id (unique pair), service_job_id, upheld_at — upheld dispute exclusion, in place (spec 006); dispute workflow will write records later |
@@ -82,7 +74,7 @@ Enums: `TradeStatus`, `QuestionType`, `RegistrationType` (`App\Domain\Catalogue\
 ### Jobs
 | Table | Key columns |
 |---|---|
-| `service_jobs` | public_id, customer_id, property_id, service_id, status, urgency (normal/urgent), preferred_date, time_window (morning/afternoon/flexible/today), scoping_answers jsonb (`{key: {prompt, type, answer}}` as asked), customer_notes, ai_summary (≤ 600 chars), ai_summary_source (ai/customer_edited/none), ai_summary_generated_at, ai_summary_input_hash (sha256 of service + answers + notes the description was written for), posted_at, quote_window_ends_at, cancelled_at, cancel_reason, last_wave_at, matching_stopped_at, matching_stopped_reason, quotes_count (current submitted quotes, max 3), accepted_quote_id, scheduled_for (date from the accepted quote) — **in place** (`2026_10_04_000004`; summary provenance `2026_10_04_120000`, spec 007; matching fields `2026_10_04_140000`, spec 009; quote fields `2026_10_04_150000`, spec 010). Later lifecycle fields (started/completed, cancelled_by) arrive with their specs. |
+| `service_jobs` | public_id, customer_id, property_id, trade_id, facts jsonb (`[{id, text, turn}]` extracted by Siya, highlighted for pros), location (geography Point copied from the property when posted), area_label, status, urgency (normal/urgent), preferred_date, time_window (morning/afternoon/flexible/today), customer_notes, ai_summary (≤ 600 chars), ai_summary_source (ai/customer_edited/none), ai_summary_generated_at, ai_summary_input_hash (sha256 of trade + facts + notes the description was written for), posted_at, quote_window_ends_at, cancelled_at, cancel_reason, last_wave_at, matching_stopped_at, matching_stopped_reason, quotes_count (current submitted quotes, max `matching.max_quotes`, default 5), accepted_quote_id, scheduled_for (date from the accepted quote) — **in place** (`2026_10_04_000004`; summary provenance `2026_10_04_120000`, spec 007; matching fields `2026_10_04_140000`, spec 009; quote fields `2026_10_04_150000`, spec 010). Later lifecycle fields (started/completed, cancelled_by) arrive with their specs. |
 | `service_job_events` | service_job_id, from_status, to_status, event_type, actor_type, actor_id, payload jsonb, created_at (append-only; model refuses updates/deletes) — **in place** |
 
 Settings: `job_timers.quote_window_hours` (72), `job_timers.draft_expiry_days` (7) via `App\Settings\JobTimers`.
@@ -114,7 +106,7 @@ Settings: `job_timers.quote_window_hours` (72), `job_timers.draft_expiry_days` (
 | `media` | `spatie/laravel-medialibrary` on private `media` disk. `job_photos` collection belongs to `ServiceJob`; up to 5 processed WebP images per job, source metadata stripped, SHA-256 custom property for repeat upload detection. Cancelled drafts delete their photos. Pro documents and invoice PDFs use later collections. |
 | `activity_log` | `spatie/laravel-activitylog` — admin and sensitive actions; append-only, never cleaned — **in place** |
 | `settings` | `spatie/laravel-settings` — timers, commission, deposit cap — **table in place**; settings classes arrive with their features (`job_timers`; `ai`: enabled, suggestion_min_confidence, daily_call_budget, usage_retention_days — spec 007; `vetting`: reapply_after_days, retention_months — spec 008; `matching` — spec 009; `quotes`: max_deposit_percent, default_validity_days, max_total_cents and `money`: commission_percent, vat_percent — spec 010) |
-| `ai_usage` | purpose (suggest_service/summarise), provider, model, input_tokens, output_tokens, latency_ms, outcome (ok/invalid/timeout/error/throttled), service_job_id (nullable, null on delete), created_at; index (created_at, purpose). **No customer text and no user ID.** Pruned after `ai.usage_retention_days` (default 90) — **in place** (spec 007) |
+| `ai_usage` | purpose (chat/summarise; suggest_service retired), provider, model, input_tokens, output_tokens, latency_ms, outcome (ok/invalid/timeout/error/throttled), service_job_id (nullable, null on delete), created_at; index (created_at, purpose). **No customer text and no user ID.** Pruned after `ai.usage_retention_days` (default 90) — **in place** (spec 007) |
 | `notifications` | Laravel database notifications |
 | Queue/cache/session | Laravel defaults on Postgres (`jobs`, `failed_jobs`, `cache`, `sessions`) |
 
@@ -125,3 +117,14 @@ Settings: `job_timers.quote_window_hours` (72), `job_timers.draft_expiry_days` (
 - GiST indexes on all geography columns.
 - Check constraints: `rating between 1 and 5`; all `*_cents >= 0`; `quotes.total_cents = labour + materials + callout + vat`.
 - Partial unique index: one `accepted` quote per job.
+
+
+## Siya conversation state (specs 019, 020)
+
+Spec 020 replaces the model below: the session holds a `BookingState` (trade key, facts with ids, urgency, parked jobs, turn counter) alongside the transcript. There are no scoping answers or pending question keys. Facts are validated by `BookingToolbox` and copied to the draft job's `facts`. The text below describes the earlier design and is kept for history.
+
+No new tables. Ordinary conversation, unsupported work and product questions do not apply service, answer or note proposals. The visible progress mapping has been removed; internal stages still guard booking controls. The existing booking session stores a pending question key, retry flag and stage before an emergency pause alongside the transcript and booking fields. Only customer job facts are copied to draft notes; product questions and off-topic exchanges stay in the session. Note excerpts proposed by the model must occur verbatim in scrubbed customer context.
+
+A customer correction can change the service on the same policy-authorised `service_jobs` draft. Its incompatible answers are dropped, coverage is rechecked, unsupported urgent windows are cleared and a service change clears prior AI summary metadata. Property, valid schedule and existing photos are retained where applicable. The existing draft ownership, retention and explicit posting rules continue to apply.
+
+Model requests contain scrubbed conversation/job facts, active catalogue questions, validated answers, a pending question and a non-personal booking stage. Private property/location cards and account identifiers are excluded. Usage rows remain metadata only.

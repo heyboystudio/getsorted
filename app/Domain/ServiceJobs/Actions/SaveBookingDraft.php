@@ -6,13 +6,13 @@ namespace App\Domain\ServiceJobs\Actions;
 
 use App\Domain\ServiceJobs\Data\BookingData;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
+use App\Domain\ServiceJobs\Enums\SummarySource;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Domain\ServiceJobs\Enums\Urgency;
 use App\Domain\ServiceJobs\Exceptions\CannotPostServiceJob;
-use App\Domain\ServiceJobs\Support\ScopingAnswers;
 use App\Models\Property;
-use App\Models\Service;
 use App\Models\ServiceJob;
+use App\Models\Trade;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -21,12 +21,12 @@ final class SaveBookingDraft
 {
     /**
      * Creates or updates a customer's draft job as they move through the
-     * booking wizard (autosave, spec 005). Customers may hold a limited number
-     * of drafts; urgency follows the answers and the chosen window.
+     * booking conversation (autosave, spec 005). Customers may hold a limited number
+     * of drafts; urgency follows what Siya flagged and the chosen window.
      *
      * @throws CannotPostServiceJob when the draft limit is reached
      */
-    public function handle(User $customer, Service $service, ?ServiceJob $job, BookingData $data): ServiceJob
+    public function handle(User $customer, Trade $trade, ?ServiceJob $job, BookingData $data): ServiceJob
     {
         $notes = $data->notes === null ? null : trim($data->notes);
 
@@ -34,7 +34,7 @@ final class SaveBookingDraft
             throw new CannotPostServiceJob(__('Notes can be up to :max characters.', ['max' => config('sortd.jobs.notes_max_length')]));
         }
 
-        return DB::transaction(function () use ($customer, $service, $job, $data, $notes): ServiceJob {
+        return DB::transaction(function () use ($customer, $trade, $job, $data, $notes): ServiceJob {
             if ($job instanceof ServiceJob) {
                 $job = ServiceJob::query()->lockForUpdate()->findOrFail($job->id);
                 Gate::forUser($customer)->authorize('update', $job);
@@ -50,7 +50,16 @@ final class SaveBookingDraft
 
                 $job = new ServiceJob;
                 $job->customer()->associate($customer);
-                $job->service()->associate($service);
+                $job->trade()->associate($trade);
+            }
+
+            // A corrected trade updates the same authorised draft, retaining its photos.
+            if ($job->trade_id !== $trade->id) {
+                $job->trade()->associate($trade);
+                $job->ai_summary = null;
+                $job->ai_summary_source = SummarySource::None;
+                $job->ai_summary_generated_at = null;
+                $job->ai_summary_input_hash = null;
             }
 
             $property = $data->propertyPublicId === null ? null
@@ -58,12 +67,13 @@ final class SaveBookingDraft
 
             $job->property()->associate($property instanceof Property ? $property : null);
             $job->fill([
-                'scoping_answers' => $data->answers,
+                'facts' => $data->facts,
                 'customer_notes' => $notes === '' ? null : $notes,
                 'preferred_date' => $data->preferredDate?->toDateString(),
                 'time_window' => $data->timeWindow,
-                'urgency' => $data->timeWindow === TimeWindow::Today || ScopingAnswers::isUrgent($service, $data->answers) ? Urgency::Urgent : Urgency::Normal,
+                'urgency' => $data->timeWindow === TimeWindow::Today || $data->urgent ? Urgency::Urgent : Urgency::Normal,
             ]);
+            $job->forceFill(['location' => $property?->location, 'area_label' => $property?->area_label]);
             $job->save();
 
             return $job;

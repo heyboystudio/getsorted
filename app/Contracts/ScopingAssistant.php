@@ -6,7 +6,6 @@ namespace App\Contracts;
 
 use App\Contracts\Data\ChatReply;
 use App\Contracts\Data\ChatRequest;
-use App\Contracts\Data\ScopingSuggestionReply;
 use App\Contracts\Data\ScopingSummaryReply;
 use App\Contracts\Exceptions\AssistantUnavailable;
 
@@ -19,25 +18,16 @@ use App\Contracts\Exceptions\AssistantUnavailable;
 interface ScopingAssistant
 {
     /**
-     * Suggest a trade and service from the customer's own words; the reply's suggestion is null when unsure.
-     *
-     * @param  array<string, list<string>>  $catalogue  service keys grouped by trade key
-     *
-     * @throws AssistantUnavailable
-     */
-    public function suggestService(string $description, array $catalogue): ScopingSuggestionReply;
-
-    /**
      * A neutral 2–3 sentence summary for pros; the reply's summary is null if the model output is unusable.
      *
-     * @param  array<string, string|list<string>>  $answers  keyed by scoping question key
+     * @param  list<string>  $facts  the facts extracted from the customer's words, personal data already stripped
      *
      * @throws AssistantUnavailable
      */
-    public function summarise(string $serviceKey, array $answers, string $description): ScopingSummaryReply;
+    public function summarise(string $tradeName, array $facts, string $description): ScopingSummaryReply;
 
     /**
-     * One turn of the Siya booking chat (spec 016): a reply, maybe a suggested service, maybe answers.
+     * One turn of the Siya booking chat (spec 020): the model changes the booking state through the request's toolbox and returns a reply.
      *
      * @throws AssistantUnavailable
      */

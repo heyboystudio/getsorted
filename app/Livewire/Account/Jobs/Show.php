@@ -7,6 +7,8 @@ namespace App\Livewire\Account\Jobs;
 use App\Domain\Quotes\Actions\AcceptQuote;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Exceptions\CannotQuote;
+use App\Domain\ServiceJobs\Actions\CancelJobByCustomer;
+use App\Domain\ServiceJobs\Exceptions\CannotCancelJob;
 use App\Domain\ServiceJobs\Support\JobChat;
 use App\Models\JobConversation;
 use App\Models\Pro;
@@ -80,12 +82,47 @@ final class Show extends Component
         }
     }
 
+    public bool $confirmingCancel = false;
+
+    public string $cancelReason = '';
+
+    public function confirmCancel(): void
+    {
+        $this->resetErrorBag();
+        $this->confirmingCancel = true;
+    }
+
+    public function keepJob(): void
+    {
+        $this->confirmingCancel = false;
+    }
+
+    public function cancelJob(CancelJobByCustomer $cancel): void
+    {
+        $this->validate(['cancelReason' => ['nullable', 'string', 'max:300']]);
+
+        /** @var User $user */
+        $user = auth()->user();
+        $job = ServiceJob::query()->where('public_id', $this->publicId)->where('customer_id', $user->id)->firstOrFail();
+
+        try {
+            $cancel->handle($user, $job, $this->cancelReason);
+        } catch (CannotCancelJob $exception) {
+            $this->confirmingCancel = false;
+
+            throw ValidationException::withMessages(['cancel' => $exception->getMessage()]);
+        }
+
+        $this->confirmingCancel = false;
+        $this->cancelReason = '';
+    }
+
     public function render(): View
     {
         /** @var User $user */
         $user = auth()->user();
         $job = ServiceJob::query()->where('public_id', $this->publicId)->where('customer_id', $user->id)
-            ->with(['service.trade', 'service.questions', 'property.suburb'])->firstOrFail();
+            ->with(['trade', 'property'])->firstOrFail();
 
         return view('livewire.account.jobs.show', [
             'job' => $job,
@@ -99,7 +136,7 @@ final class Show extends Component
             'chats' => $chats = $this->chats(),
             'openChat' => $chats->first(fn (array $chat): bool => $chat['pro']->public_id === $this->chatWith)
                 ?? $chats->first(fn (array $chat): bool => $chat['writable'] && $job->accepted_quote_id !== null),
-        ])->title($job->service->name);
+        ])->title($job->trade->name);
     }
 
     /** @return Collection<int, array{pro: Pro, label: string, named: bool, conversation: ?JobConversation, writable: bool, unread: int}> */

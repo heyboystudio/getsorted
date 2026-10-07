@@ -59,8 +59,8 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
     }
 
     /**
-     * Default deny. The admin panel needs an admin role (MFA is enforced by
-     * the panel itself); the pro panel stays closed until pro phone login.
+     * Default deny. The admin panel needs an admin role (MFA is optional,
+     * decision 047); the pro panel stays closed until pro phone login.
      */
     public function canAccessPanel(Panel $panel): bool
     {
@@ -92,17 +92,10 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
         return $this->phone_verified_at === null ? 'verification.phone' : null;
     }
 
-    /**
-     * Where a signed-in user lands (spec 011): pros go to the pro area; someone
-     * who came to join as a pro but isn't one yet goes to the pro-agreement step.
-     */
-    public function homeRoute(bool $joiningAsPro = false): string
+    /** Where a signed-in user lands: pros go to the pro area, clients to their account. The two kinds of account are separate. */
+    public function homeRoute(): string
     {
-        if ($this->hasRole(Role::Pro->value)) {
-            return 'pros.welcome';
-        }
-
-        return $joiningAsPro ? 'pros.become' : 'account.home';
+        return $this->hasRole(Role::Pro->value) ? 'pros.welcome' : 'account.home';
     }
 
     public function getFilamentName(): string

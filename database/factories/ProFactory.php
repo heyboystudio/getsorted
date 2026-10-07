@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Models\Pro;
 use App\Models\User;
+use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,6 +21,9 @@ class ProFactory extends Factory
             'user_id' => User::factory()->pro(),
             'business_name' => fake()->company(),
             'status' => 'draft',
+            'base_location' => Point::makeGeodetic(-29.8587, 31.0218),
+            'base_area_label' => 'Musgrave',
+            'service_radius_km' => 15,
         ];
     }
 

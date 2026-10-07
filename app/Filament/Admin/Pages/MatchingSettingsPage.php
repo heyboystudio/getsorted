@@ -16,7 +16,7 @@ use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Schema;
 
-/** Spec 009, AC12: super-admins tune invite waves. */
+/** Spec 009, AC12; spec 020: super-admins tune distance matching and the quote cap. */
 final class MatchingSettingsPage extends Page
 {
     protected static ?string $slug = 'matching-settings';
@@ -46,22 +46,22 @@ final class MatchingSettingsPage extends Page
         $settings = app(MatchingSettings::class);
 
         $this->settingsForm()->fill([
-            'wave_one_size' => $settings->wave_one_size,
-            'later_wave_size' => $settings->later_wave_size,
-            'wave_interval_hours' => $settings->wave_interval_hours,
+            'invite_count' => $settings->invite_count,
+            'max_quotes' => $settings->max_quotes,
+            'default_radius_km' => $settings->default_radius_km,
+            'soft_edge_km' => $settings->soft_edge_km,
             'invite_expiry_hours' => $settings->invite_expiry_hours,
-            'enough_quotes' => $settings->enough_quotes,
         ]);
     }
 
     public function form(Schema $schema): Schema
     {
         return $schema->statePath('data')->components([
-            TextInput::make('wave_one_size')->label(__('Pros invited when a job is posted'))->integer()->required()->minValue(1)->maxValue(20),
-            TextInput::make('later_wave_size')->label(__('Pros added in each later wave'))->integer()->required()->minValue(0)->maxValue(20),
-            TextInput::make('wave_interval_hours')->label(__('Hours before the next wave'))->integer()->required()->minValue(1)->maxValue(72),
+            TextInput::make('invite_count')->label(__('Pros invited when a job is posted'))->integer()->required()->minValue(1)->maxValue(30),
+            TextInput::make('max_quotes')->label(__('Quotes a job accepts before it is full'))->integer()->required()->minValue(1)->maxValue(10),
+            TextInput::make('default_radius_km')->label(__('Default travel radius for pros (km)'))->integer()->required()->minValue(1)->maxValue(50),
+            TextInput::make('soft_edge_km')->label(__('Soft edge beyond a pro\'s radius (km)'))->integer()->required()->minValue(0)->maxValue(10),
             TextInput::make('invite_expiry_hours')->label(__('Hours a pro has to answer an invite'))->integer()->required()->minValue(1)->maxValue(168),
-            TextInput::make('enough_quotes')->label(__('Stop later waves once a job has this many quotes'))->integer()->required()->minValue(1)->maxValue(3),
         ]);
     }
 
@@ -87,15 +87,15 @@ final class MatchingSettingsPage extends Page
     {
         abort_unless(self::canAccess(), 403);
 
-        /** @var array{wave_one_size: int|string, later_wave_size: int|string, wave_interval_hours: int|string, invite_expiry_hours: int|string, enough_quotes: int|string} $state */
+        /** @var array{invite_count: int|string, max_quotes: int|string, default_radius_km: int|string, soft_edge_km: int|string, invite_expiry_hours: int|string} $state */
         $state = $this->settingsForm()->getState();
 
         $settings = app(MatchingSettings::class);
-        $settings->wave_one_size = (int) $state['wave_one_size'];
-        $settings->later_wave_size = (int) $state['later_wave_size'];
-        $settings->wave_interval_hours = (int) $state['wave_interval_hours'];
+        $settings->invite_count = (int) $state['invite_count'];
+        $settings->max_quotes = (int) $state['max_quotes'];
+        $settings->default_radius_km = (int) $state['default_radius_km'];
+        $settings->soft_edge_km = (int) $state['soft_edge_km'];
         $settings->invite_expiry_hours = (int) $state['invite_expiry_hours'];
-        $settings->enough_quotes = (int) $state['enough_quotes'];
         $settings->save();
 
         activity()->causedBy(auth()->user())->withProperties($settings->toArray())->log('matching_settings_updated');

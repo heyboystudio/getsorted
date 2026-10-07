@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Middleware\EnsureAccountIsVerified;
 use App\Http\Middleware\SecurityHeaders;
 use App\Models\User;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -24,10 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
             $user = $request->user();
 
             if ($user instanceof User && $user->isAdmin()) {
-                return '/admin';
+                return Filament::getPanel('admin')->getUrl() ?? '/admin';
             }
 
-            return $user instanceof User ? route($user->homeRoute($request->query('as') === 'pro')) : route('account.home');
+            return $user instanceof User ? route($user->homeRoute()) : route('account.home');
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {

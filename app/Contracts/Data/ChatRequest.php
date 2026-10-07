@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace App\Contracts\Data;
 
+use App\Domain\Assistant\Support\BookingToolbox;
+
 /**
- * Everything Siya may see for one turn (spec 016): catalogue keys and names,
- * the confirmed service's questions, answers so far and the scrubbed chat.
- * Never names, addresses, phone numbers or account IDs.
+ * Everything Siya may see for one turn (spec 020): the scrubbed chat, the booking state through the toolbox the
+ * model can change it with, and approved product facts. Never names, addresses, phone numbers, schedule or account IDs.
  */
 final readonly class ChatRequest
 {
     /**
-     * @param  array<string, array{name: string, services: array<string, string>}>  $catalogue  trade key => name and service key => name
-     * @param  list<array{key: string, prompt: string, type: string, options: list<string>, required: bool}>  $questions
-     * @param  array<string, mixed>  $answers  question key => raw answer
-     * @param  list<array{role: 'customer'|'assistant', text: string}>  $transcript
+     * @param  list<array{role: 'customer'|'assistant', text: string}>  $transcript  customer text already scrubbed; the last entry is the customer's new message
+     * @param  list<string>  $productFacts
      */
     public function __construct(
-        public array $catalogue,
-        public ?string $confirmedServiceKey,
-        public array $questions,
-        public array $answers,
+        public BookingToolbox $toolbox,
         public array $transcript,
+        public array $productFacts = [],
+        public string $bookingStage = 'chat',
+        /** Set on the single regeneration when the first reply broke a rule. */
+        public ?string $guardFeedback = null,
     ) {}
 }

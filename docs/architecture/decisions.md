@@ -45,6 +45,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 039 | Email or Google sign-in, then verified email and mobile (supersedes 004 for customers and pros) | Accepted | 2026-10-05 |
 | 040 | Twilio for WhatsApp and SMS (Q5) | Accepted | 2026-10-05 |
 | 041 | Test site: mobile saved without a code while SMS is blocked | Accepted | 2026-10-05 |
+| 047 | Admin MFA optional (changes 021 and the security baseline) | Accepted | 2026-10-05 |
 
 ---
 
@@ -413,3 +414,71 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** The founder found the chat-then-wizard flow lost track of the customer and repeated questions (location twice, notes twice, service confirmed twice).
 
 **Next:** spec 018: after posting, the customer chats with the quoting pros and can send more photos. Pros send an estimate quote and the customer pays the deposit on it. After accepting, the pro can raise or lower the final amount, and the customer must accept the change. This brings in-app chat into v1, which the PRD had parked.
+
+## 049 · Google Gemini API for the AI assistant (supersedes the provider in 043)
+
+**Date:** 2026-10-06 · **Status:** Accepted (founder)
+
+**Decision:** Siya, the service suggestion and the job summaries can run on the Google Gemini API through the Laravel AI SDK's Gemini driver. Set `SORTD_AI_PROVIDER=gemini`, `SORTD_AI_MODEL` (a Gemini model id, for example `gemini-2.5-flash`) and `GEMINI_API_KEY`. Bedrock and the direct Anthropic API stay available by changing the same settings. No new dependency.
+
+**Why:** The founder prefers Gemini over Bedrock/Nova for Siya.
+
+**Watch:**
+- **POPIA and data location:** unlike Bedrock in the EU (decision 043), Gemini API requests are processed by Google and may leave South Africa and the EU. The privacy notice must name Google before a live launch (spec 007 decision 1), and the cross-border transfer basis needs checking against `docs/security/popia.md`.
+- **Training on data:** use a **paid** (billing-enabled) Gemini API project. On the free tier Google may use prompts to improve its products. The assistant only receives the stripped description, service and answers (domain rules), never names, addresses, IDs or payment data.
+- **Key handling:** `GEMINI_API_KEY` lives only in the server's `.env`; never commit it.
+- **Quality:** check that Gemini keeps to the structured-reply schemas (spec 007 AC11); replies are still validated before use.
+
+## 048 · Home page redesign and the name "Get Sorted"
+
+**Date:** 2026-10-06 · **Status:** Accepted (founder)
+
+**Decision:** The public home page (`/`) is redesigned as a dark, app-like page with a collapsible left sidebar on desktop, a serif headline, a "What needs sorting?" box and gallery-style sections (trades, popular jobs, one-thread explainer, sample quotes, sample pros, sample reviews, pros sign-up, FAQ). It is called **Get Sorted** on this page, including the browser title and description. Styles live in `resources/css/home.css`, scoped under `.gs-home`. Geist, Libre Caslon Display and a trimmed Phosphor icon set are self-hosted in `public/fonts/` (the CSP only allows our own fonts). Other pages keep the shared header, footer and styles.
+
+**Why:** The founder wanted a fuller, more modern home page modelled on refero.design's layout, and "Get Sorted" as the product name (usesorted.co.za).
+
+**Watch:** Prices, sample pros, sample reviews and the "now covering Umhlanga and Durban North" banner are invented placeholders and need founder approval or real data before launch. The name still reads "Sortd" on every other page, in emails and in the footer of those pages until the founder decides to rename the whole site. The box on the page sends the typed description to the Siya booking thread (spec 017); it does not call the older suggest-a-service step. Photos are the existing generated images. The logo carousel under the hero (replacing the suburb strip) shows placeholder logos of eight Durban-linked organisations (Mr Price Group, Tongaat Hulett, Illovo Sugar Africa, uShaka Marine World, Gateway Theatre of Shopping, AmaZulu FC, Comrades Marathon, Durban University of Technology), saved in `public/images/partners/`. They imply no partnership. Replace them with approved partners, or get permission for each logo, before launch.
+
+## 050 · Siya understands the conversation before booking
+
+**Date:** 2026-10-06 · **Status:** Accepted (founder; spec 019)
+
+**Decision:** Siya supports natural text throughout booking and answers Get Sorted questions from approved public product facts. Service classification happens in the background as a trial; the editable review replaces the separate service confirmation card (supersedes spec 017 AC6 for the trial). Required scoping, secure property/date controls and explicit Confirm booking still run through the existing server-side rules. Gemini support follows decision 049.
+
+**Character:** The founder chose Siya Kolisi as inspiration, then explicitly confirmed inspiration only. The assistant has a warm, grounded, encouraging voice and identifies itself as Get Sorted’s AI assistant. It does not impersonate him, use a likeness or quotes, invent personal experiences or claim endorsement.
+
+**Safety:** Possible emergencies pause ordinary booking. Application-owned, reviewed guidance appears even when the model is unavailable. Only explicit selection of “Discuss a later repair” resumes booking; that action does not establish safety. Multiple unrelated home problems are scoped as separate jobs.
+
+**Implementation:** Structured intents and proposals are validated against the active catalogue, question schemas and verbatim customer note excerpts. The model cannot post jobs or change payment/status state. Corrected services update the existing authorised draft, preserve photos and recheck coverage. Product questions and ordinary conversation do not become pro notes. After founder clarification, greetings, casual chat and unrelated questions have a separate conversation intent; unsupported work receives a relevant explanation instead of unrelated trade suggestions. The visible wizard progress bar is removed so the thread presents a continuous conversation. Conversation state remains in the existing session/draft boundaries; no new transcript table or dependency is introduced.
+
+**Validation:** Deterministic fakes cover safety, corrections, booking, privacy and provider schema failures. Live Gemini conversation quality must still be evaluated with synthetic examples on a configured preview before judging the trial successful. Homepage UI alignment is deferred.
+
+## 051 · Trades, extracted job facts and distance matching (supersedes the service/suburb model)
+
+**Date:** 2026-10-06 · **Status:** Accepted (founder; spec 020)
+
+**Decision:** Services, scoping questions, suburbs and suburb coverage are removed. A job is a trade plus the customer's own words, short facts Siya extracts from natural conversation, photos, a time preference and a Google Places address. Customers and pros both give a geocoded address. A posted job is offered to up to 10 approved pros of that trade, nearest first, within each pro's travel radius (default 15 km, soft edge 2 km that only fills open invites). The first 5 submitted quotes are accepted. Registrations (PIRB, registered electrician) are never a gate: verified pros show a badge, unverified pros can still quote and are labelled to the customer.
+
+**Why:** Fixed sub-services and questions limited what a customer could say and caused Siya to repeat questions and reject answers. Pros are better placed to judge from the facts whether they can help, and distance matches how tradespeople actually work.
+
+**Consequences:**
+- **Siya** is a tool-using agent: the app owns `BookingState`; the model changes it only through validated tools (`set_trade`, `add_job_fact` with an exact customer quote as evidence, `remove_job_fact`, `set_urgency`, `park_job`, `offer_next_step`, `flag_emergency`) and replies in plain text. A reply that breaks a rule is regenerated once, then replaced by a deterministic reply built from the state.
+- **Privacy:** pros see the area name and an approximate distance, never the street address or exact coordinates, until their quote is accepted. Pro base addresses are encrypted. The privacy notice must mention Google Places for pro addresses before launch.
+- **Data:** one irreversible migration (`2026_10_07_000001`) carries existing rows over and drops `services`, `scoping_questions`, `pro_services`, `pro_service_areas` and `suburbs`. The "Today" window is open to every trade. Safety advice lives on the trade.
+- **Settings:** `matching.invite_count` (10), `max_quotes` (5), `default_radius_km` (15), `soft_edge_km` (2); invite waves are retired.
+- **Deferred:** the quality gate was deferred by founder instruction while this was built; see `docs/engineering/handoff.md`.
+
+**Live evaluation, 2026-10-06 (addendum to 049 and 051):** `siya:eval --live` on synthetic conversations with the Gemini API.
+- `gemini-2.5-flash` and `gemini-2.5-flash-lite` are **retired for new keys** (HTTP 404). Set `SORTD_AI_MODEL` to a current model. `gemini-3.1-flash-lite` with `SORTD_AI_THINKING_LEVEL=minimal` (the default) answered in about 1.5–7 s when the API was healthy and passed 7 of 8 cases in two runs, including the breaker-tripping message that used to fail, parking a second job, refusing unsupported work and ignoring prompt injection. The larger Flash models were overloaded (503) or timed out in the same window, and Gemini 3 with default thinking took 10–24 s per turn.
+- Provider latency is spiky (the same call took 1.5 s and 15 s+). The per-call timeout is now 25 s, provider overload gets one retry, and a failed turn keeps the validated facts so the customer can tap Try again. Re-run `siya:eval --live` after any model or prompt change and read the replies; it checks state, not tone.
+
+
+## 047 · Admin MFA optional
+
+**Date:** 2026-10-05 · **Status:** Accepted (founder)
+
+**Decision:** Admins sign in to `/admin` with email and a strong password only. App-based MFA stays available, so any admin can switch it on in their profile, and admins who already set it up are still asked for a code. This applies everywhere, including the future live site. It changes decision 021 and the security baseline's "mandatory MFA".
+
+**Why:** The founder asked for 2FA to be turned off.
+
+**Risk:** A leaked or guessed admin password now gives full admin access. Strong passwords (12+ characters, checked against known breaches), login rate limits and panel-only sessions (`EnsureAdminSignedInThroughPanel`) still apply. Revisit before real customer data or money goes through the admin panel.

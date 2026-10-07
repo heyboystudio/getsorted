@@ -29,9 +29,7 @@ final class TradesTable
                 TextColumn::make('status')->label(__('Status'))->badge()
                     ->formatStateUsing(fn (TradeStatus $state): string => $state->label())
                     ->color(fn (TradeStatus $state): string => $state === TradeStatus::Live ? 'success' : 'warning'),
-                TextColumn::make('services_count')->label(__('Services'))->counts('services'),
-                TextColumn::make('active_services_count')->label(__('Active services'))
-                    ->counts(['services as active_services_count' => fn ($query) => $query->where('is_active', true)]),
+                TextColumn::make('pros_count')->label(__('Pros'))->counts('pros'),
                 IconColumn::make('is_active')->label(__('Active'))->boolean(),
             ])
             ->recordActions([

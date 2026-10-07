@@ -8,14 +8,14 @@ use App\Contracts\Data\GeocodedAddress;
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Assistant\Actions\ChatWithSiya;
 use App\Domain\Assistant\Enums\AiOutcome;
-use App\Domain\Catalogue\Enums\QuestionType;
+use App\Domain\Assistant\State\BookingState;
+use App\Domain\Assistant\Support\EmergencyGuidance;
 use App\Domain\Catalogue\Enums\RegistrationType;
 use App\Domain\Matching\Actions\JoinWaitlist;
 use App\Domain\Matching\EligibleProsQuery;
 use App\Domain\Properties\Actions\SaveProperty;
 use App\Domain\Properties\Enums\PropertyType;
 use App\Domain\Properties\Exceptions\PropertyLimitReached;
-use App\Domain\Properties\Queries\SuburbSearchQuery;
 use App\Domain\ServiceJobs\Actions\PostServiceJob;
 use App\Domain\ServiceJobs\Actions\RemoveJobPhoto;
 use App\Domain\ServiceJobs\Actions\SaveBookingDraft;
@@ -23,17 +23,14 @@ use App\Domain\ServiceJobs\Actions\StoreJobPhoto;
 use App\Domain\ServiceJobs\Data\BookingData;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
+use App\Domain\ServiceJobs\Enums\Urgency;
 use App\Domain\ServiceJobs\Exceptions\CannotPostServiceJob;
 use App\Domain\ServiceJobs\Exceptions\NoEligiblePros;
 use App\Domain\ServiceJobs\Support\JobSummaryInput;
-use App\Domain\ServiceJobs\Support\ScopingAnswers;
 use App\Livewire\Concerns\SearchesAddresses;
 use App\Livewire\Welcome;
 use App\Models\Property;
-use App\Models\ScopingQuestion;
-use App\Models\Service;
 use App\Models\ServiceJob;
-use App\Models\Suburb;
 use App\Models\Trade;
 use App\Models\User;
 use App\Support\LocalTime;
@@ -49,16 +46,17 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use LogicException;
 use Throwable;
 
 /**
- * Booking in one Siya conversation (spec 017, Kandua-style): service → questions →
- * details → sign in → where → when → photos → summary → Confirm booking. Every
- * step is a card in the same thread; nothing is asked twice. Siya only books the
- * job when the customer taps Confirm booking. The thread lives in the session
+ * Booking in one Siya conversation (spec 017, 020). The customer describes the problem in their own words; Siya
+ * records the trade and short facts through validated tools; the secure controls (sign in, address, date, photos)
+ * follow, then Confirm booking. The stage is derived from what is known, never stored as a script. Siya never posts
+ * a job: it is posted only when the customer taps Confirm booking. The thread lives in the session
  * (scrubbed text) and, once signed in, on the customer's draft job.
  */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.app', ['brand' => 'Get Sorted'])]
 final class Thread extends Component
 {
     use SearchesAddresses;
@@ -69,21 +67,16 @@ final class Thread extends Component
     /** Text typed into the account home's "What's going on at home?" box, read once. */
     public const string START_KEY = 'booking_start';
 
-    /** The four steps of the progress bar (AC4). */
-    public const array PROGRESS = ['describe' => 'Describe', 'where' => 'Where & when', 'photos' => 'Photos', 'confirm' => 'Confirm'];
-
     private const int MIN_LENGTH = 2;
 
     private const int MAX_LENGTH = 1000;
 
-    /** Gas, sparks, smoke or water near electrics: show the stop-first card (spec 016 AC4). */
-    private const string EMERGENCY = '/\b(gas|spark\w*|smok\w*|burning smell|electrocut\w*|shock\w*|flood\w*)\b/iu';
-
     /** State saved to the session after every action. */
     private const array PERSISTED = [
-        'messages', 'stage', 'tradeId', 'serviceId', 'suggestedServiceId', 'answers', 'notes', 'detailsDone',
+        'messages', 'stage', 'tradeId', 'facts', 'urgent', 'parked', 'bookingTurn', 'nextStepOffered', 'notes',
         'photosDone', 'propertyPublicId', 'preferredDate', 'chosenDate', 'timeWindow', 'jobPublicId', 'customerMessages',
-        'failures', 'emergencyShown', 'returnToSummary', 'waitlistSuburbId',
+        'failures', 'emergencyShown', 'returnToSummary', 'waitlistPropertyPublicId', 'stageBeforeEmergency', 'retryPending',
+        'showTradeShortcuts', 'bookingRequested',
     ];
 
     public string $message = '';
@@ -93,28 +86,32 @@ final class Thread extends Component
     public array $messages = [];
 
     #[Locked]
-    public string $stage = 'trade';
+    public string $stage = 'chat';
 
     #[Locked]
     public ?int $tradeId = null;
 
+    /** @var list<array{id: string, text: string, turn: int}> facts Siya extracted; shown highlighted to pros */
     #[Locked]
-    public ?int $serviceId = null;
+    public array $facts = [];
 
     #[Locked]
-    public ?int $suggestedServiceId = null;
+    public bool $urgent = false;
 
-    /** @var array<string, mixed> raw answers keyed by question key */
+    /** @var list<string> other jobs the customer mentioned, to book separately */
     #[Locked]
-    public array $answers = [];
+    public array $parked = [];
+
+    #[Locked]
+    public int $bookingTurn = 0;
+
+    #[Locked]
+    public bool $nextStepOffered = false;
 
     #[Locked]
     public string $notes = '';
 
     public string $notesDraft = '';
-
-    #[Locked]
-    public bool $detailsDone = false;
 
     #[Locked]
     public bool $photosDone = false;
@@ -144,25 +141,42 @@ final class Thread extends Component
     #[Locked]
     public bool $emergencyShown = false;
 
+    #[Locked]
+    public ?string $stageBeforeEmergency = null;
+
+    #[Locked]
+    public bool $retryPending = false;
+
+    #[Locked]
+    public bool $showTradeShortcuts = false;
+
+    /** The customer wants to go ahead: the secure booking controls follow. */
+    #[Locked]
+    public bool $bookingRequested = false;
+
     /** A "Change" from the summary: go back to the summary once that card is done. */
     #[Locked]
     public bool $returnToSummary = false;
 
+    /** The saved address with no pros near it, while the waitlist is offered. */
     #[Locked]
-    public ?int $waitlistSuburbId = null;
+    public ?string $waitlistPropertyPublicId = null;
 
     public ?TemporaryUploadedFile $photoUpload = null;
 
+    /** Address picked through Places while adding a property. */
+    #[Locked]
     public string $newStreet = '';
 
-    public string $newSuburbQuery = '';
+    #[Locked]
+    public ?string $newArea = null;
 
     #[Locked]
-    public ?string $newSuburb = null;
+    public string $newPostal = '';
 
     public string $newType = '';
 
-    public function mount(?Trade $trade = null, ?Service $service = null, ?ServiceJob $job = null): void
+    public function mount(?Trade $trade = null, ?ServiceJob $job = null): void
     {
         if ($job instanceof ServiceJob && $job->exists) {
             $this->resumeDraft($job);
@@ -170,48 +184,31 @@ final class Thread extends Component
             return;
         }
 
-        if ($service instanceof Service && $service->exists) {
-            abort_unless($trade instanceof Trade && $service->trade_id === $trade->id && $service->is_active && $trade->is_active, 404);
-        } elseif ($trade instanceof Trade && $trade->exists) {
+        if ($trade instanceof Trade && $trade->exists) {
             abort_unless($trade->is_active, 404);
         }
 
         $this->restore();
         $start = $this->startText();
 
-        $hasService = $service instanceof Service && $service->exists;
-        $wantsService = $hasService && $service->id !== $this->serviceId;
-        $wantsTrade = ! $hasService && $trade instanceof Trade && $trade->exists && $trade->id !== $this->tradeId;
+        $wantsTrade = $trade instanceof Trade && $trade->exists && $trade->id !== $this->tradeId;
 
-        if ($this->messages === [] || $wantsService || $wantsTrade || $this->stage === 'posted' || $start !== null) {
+        if ($this->messages === [] || $wantsTrade || $this->stage === 'posted' || $start !== null) {
             $this->startOver();
-
-            if ($hasService) {
-                // A home-page description arriving with a service link is the customer's first message (spec 007 AC4).
-                if ($start !== null) {
-                    $scrubbed = ChatWithSiya::scrub($start);
-                    $this->messages[] = ['role' => 'customer', 'text' => $scrubbed];
-                    $this->addToNotes($scrubbed);
-                }
-
-                $this->setService($service, extract: $start !== null);
-
-                return;
-            }
 
             if ($trade instanceof Trade && $trade->exists) {
                 $this->pickTrade($trade->key);
             }
         }
 
-        if ($start !== null && $this->serviceId === null) {
+        if ($start !== null) {
             $this->message = $start;
             $this->send(app(ChatWithSiya::class));
 
             return;
         }
 
-        // Coming back from sign-in: save the draft and carry on at Where & when.
+        // Coming back from sign-in: save the draft and carry on at the address.
         if ($this->stage === 'signin' && $this->isCustomer()) {
             $this->autosave();
             $this->advance();
@@ -220,36 +217,26 @@ final class Thread extends Component
         $this->persist();
     }
 
-    // ── Describe ────────────────────────────────────────────────────────
+    // ── Chat ────────────────────────────────────────────────────────────
 
+    public function showTrades(): void
+    {
+        abort_unless($this->stage === 'chat', 404);
+        $this->showTradeShortcuts = true;
+        $this->retryPending = false;
+        $this->persist();
+    }
+
+    /** An optional shortcut: the trade is set directly and Siya asks what is going on. */
     public function pickTrade(string $key): void
     {
-        abort_unless(in_array($this->stage, ['trade', 'describe'], true), 404);
+        abort_unless($this->stage === 'chat', 404);
         $trade = Trade::query()->where('key', $key)->where('is_active', true)->firstOrFail();
 
         $this->tradeId = $trade->id;
+        $this->showTradeShortcuts = false;
         $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => $trade->name];
-        $this->stage = 'service';
-        $this->say(__('What’s the :trade problem? Tap one, or tell me in your own words.', ['trade' => mb_strtolower($trade->name)]));
-    }
-
-    public function pickService(string $key): void
-    {
-        abort_unless($this->stage === 'service', 404);
-        $service = Service::query()->with(['questions', 'trade'])->where('key', $key)->where('is_active', true)
-            ->when($this->tradeId !== null, fn ($query) => $query->where('trade_id', $this->tradeId))->firstOrFail();
-
-        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => $service->name];
-        $this->setService($service);
-    }
-
-    /** "Other": the customer describes it and Siya suggests the service. */
-    public function describeOther(): void
-    {
-        abort_unless($this->stage === 'service', 404);
-        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Something else')];
-        $this->stage = 'describe';
-        $this->say(__('Tell me what’s going on, in your own words.'));
+        $this->say(__('What’s the :trade problem? Tell me in your own words.', ['trade' => mb_strtolower($trade->name)]));
     }
 
     public function send(ChatWithSiya $siya): void
@@ -266,7 +253,7 @@ final class Thread extends Component
             throw ValidationException::withMessages(['message' => __('Type a message of :min to :max characters.', ['min' => self::MIN_LENGTH, 'max' => self::MAX_LENGTH])]);
         }
 
-        if ($this->customerMessages >= (int) config('sortd.ai.chat_messages_per_conversation')) {
+        if ($this->customerMessages >= (int) config('sortd.ai.chat_messages_per_conversation') && ! EmergencyGuidance::required($text)) {
             throw ValidationException::withMessages(['message' => __('This chat is full. Tap Restart to start again.')]);
         }
 
@@ -274,22 +261,30 @@ final class Thread extends Component
         $this->customerMessages++;
         $scrubbed = ChatWithSiya::scrub($text);
         $this->messages[] = ['role' => 'customer', 'text' => $scrubbed];
-        $this->addToNotes($scrubbed);
+        $this->retryPending = false;
 
-        if (! $this->emergencyShown && preg_match(self::EMERGENCY, $text) === 1) {
-            $this->emergencyShown = true;
-            $this->messages[] = ['role' => 'assistant', 'kind' => 'emergency', 'text' => __('If you can smell gas, see sparks or smoke, or water is near electrics: switch off at the mains if it is safe, keep away, and call emergency services on 112 or the city on 080 131 3111 first.')];
-        }
-
-        if (! in_array($this->stage, ['trade', 'service', 'describe', 'suggested', 'questions'], true)) {
-            // After the questions, typing adds to the notes for the pro (AC9).
-            $this->say(__('Got it, I’ve added that for your pro.'));
+        if (EmergencyGuidance::required($text)) {
+            $this->pauseForEmergency();
 
             return;
         }
 
+        if ($this->stage === 'emergency') {
+            $this->say(__('Please contact emergency services first. Use “Discuss a later repair” only when you want to plan repair work, not emergency help.'));
+
+            return;
+        }
+
+        abort_unless(! in_array($this->stage, ['posted', 'closed'], true), 404);
+
         if (! $siya->available()) {
-            $this->say(__('I can’t read messages right now, but I’ve kept what you wrote for your pro. Tap an option to carry on.'));
+            // Without the assistant the customer's own words still reach the pro, as notes they can see and edit.
+            $this->addToNotes($scrubbed);
+            $this->say($this->tradeId === null
+                ? __('I can’t read messages right now, but your message is saved with the job. Choose a trade to carry on.')
+                : __('I can’t read messages right now, but your message is saved with the job. You can carry on to book.'));
+            $this->showTradeShortcuts = $this->tradeId === null;
+            $this->advance(speak: false);
 
             return;
         }
@@ -297,82 +292,58 @@ final class Thread extends Component
         $this->turn($siya);
     }
 
-    public function confirmService(): void
+    /** Runs the same turn again after a failure. The customer's message is already in the thread, so nothing is duplicated. */
+    public function retry(ChatWithSiya $siya): void
     {
-        $service = $this->suggestedServiceId === null ? null
-            : Service::query()->with(['questions', 'trade'])->where('is_active', true)->find($this->suggestedServiceId);
-        abort_unless($service instanceof Service, 404);
-
-        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Yes')];
-        $this->setService($service);
+        abort_unless($this->retryPending && ! in_array($this->stage, ['posted', 'closed', 'emergency'], true), 404);
+        $this->turn($siya);
     }
 
-    public function rejectService(): void
+    /** "Continue to book": the customer has what they described and wants the secure booking controls. */
+    public function startBooking(): void
     {
-        $this->suggestedServiceId = null;
-        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Something else')];
-        $this->stage = 'describe';
-        $this->say(__('No problem. Tell me a bit more, or pick a trade below.'));
-    }
-
-    /** A tapped (or, for number/text questions, typed) answer to the current question: no AI call. */
-    public function answer(string $questionKey, mixed $value): void
-    {
-        $question = $this->nextQuestion();
-        abort_unless($this->stage === 'questions' && $question instanceof ScopingQuestion && $question->key === $questionKey, 404);
-
-        $raw = $question->type === QuestionType::MultiChoice ? array_values(array_filter((array) $value, 'is_string')) : $value;
-
-        if (! ScopingAnswers::check($question, $raw)['ok']) {
-            throw ValidationException::withMessages(['answer' => __('Please choose a valid answer.')]);
-        }
-
-        $shown = match ($question->type) {
-            QuestionType::YesNo => $raw === 'yes' ? __('Yes') : __('No'),
-            QuestionType::MultiChoice => implode(', ', $raw),
-            default => (string) $raw,
-        };
-
-        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => $shown];
-        $this->answers[$question->key] = $raw;
-
-        if (ScopingAnswers::triggersUrgent($question, $raw) && ! $this->safetyShown()) {
-            $this->showSafetyAdvice($this->service());
-        }
-
+        abort_unless($this->stage === 'chat' && $this->isReady(), 404);
+        $this->bookingRequested = true;
+        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Continue to book')];
         $this->autosave();
         $this->advance();
     }
 
-    public function skipQuestion(): void
+    public function continueAfterEmergency(): void
     {
-        $question = $this->nextQuestion();
-        abort_unless($this->stage === 'questions' && $question instanceof ScopingQuestion && ! $question->required, 404);
-
-        $this->answers[$question->key] = null;
-        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Skip')];
-        $this->advance();
+        abort_unless($this->stage === 'emergency', 404);
+        $this->stage = $this->stageBeforeEmergency ?? 'chat';
+        $this->stageBeforeEmergency = null;
+        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Discuss a later repair')];
+        $this->say(__('We can plan a later repair here. This does not mean the situation is safe; follow the emergency services’ advice.'));
     }
 
-    public function addDetails(): void
+    private function pauseForEmergency(): void
     {
-        abort_unless($this->stage === 'details', 404);
-        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Add more details')];
-        $this->say(__('Go ahead. What should your pro know? For example when you’re home, pets, or how to get in.'));
+        if ($this->stage !== 'emergency') {
+            $this->stageBeforeEmergency = $this->stage;
+        }
+        $this->stage = 'emergency';
+        $this->emergencyShown = true;
+        $this->retryPending = false;
+        $this->messages[] = ['role' => 'assistant', 'kind' => 'emergency', 'text' => EmergencyGuidance::message()];
+        $this->persist();
     }
 
-    public function continueDetails(): void
+    /** A fact the customer removes from "What I've got so far", or from the summary. */
+    public function removeFact(string $id): void
     {
-        abort_unless($this->stage === 'details', 404);
-        $this->detailsDone = true;
-        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Continue')];
+        abort_unless(! in_array($this->stage, ['posted', 'closed', 'emergency'], true), 404);
+        $this->facts = array_values(array_filter($this->facts, fn (array $fact): bool => $fact['id'] !== $id));
         $this->autosave();
-        $this->advance();
+
+        // Stay in the details editor while the customer is still tidying up.
+        $this->stage === 'notes' ? $this->persist() : $this->advance(speak: false);
     }
 
     // ── Sign in ─────────────────────────────────────────────────────────
 
-    /** Guests sign in before Where & when; everything is kept (AC10). */
+    /** Guests sign in before the address step; everything is kept (AC10). */
     public function signIn(): void
     {
         $this->leaveForAuth('login');
@@ -397,24 +368,25 @@ final class Thread extends Component
     public function selectProperty(string $publicId): void
     {
         abort_unless(in_array($this->stage, ['where', 'add_property'], true) && $this->isCustomer(), 404);
-        $property = $this->user()?->properties()->with('suburb')->where('public_id', $publicId)->first();
-        abort_unless($property instanceof Property, 404);
+        $property = $this->user()?->properties()->where('public_id', $publicId)->first();
+        abort_unless($property instanceof Property && $property->location instanceof Point, 404);
 
-        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => $property->label.', '.$property->suburb->name];
+        $this->messages[] = ['role' => 'customer', 'kind' => 'private', 'text' => $property->label.($property->area_label === null ? '' : ', '.$property->area_label)];
         $this->countCoverageCheck();
 
-        if (! app(EligibleProsQuery::class)->covers($this->service(), $property->suburb, $this->user())) {
+        if (! app(EligibleProsQuery::class)->covers($this->trade() ?? throw new LogicException('No trade chosen.'), $property->location, $this->user())) {
             $this->propertyPublicId = null;
-            $this->waitlistSuburbId = $property->suburb->id;
+            $this->waitlistPropertyPublicId = $property->public_id;
             $this->stage = 'waitlist';
-            $this->say(__('Sorry, we don’t have pros for :service in :suburb yet. Want us to let you know when we do?', ['service' => $this->service()->name, 'suburb' => $property->suburb->name]));
+            $this->say(__('Sorry, we don’t have :trade pros near :area yet. Want us to let you know when we do?', ['trade' => mb_strtolower($this->trade()->name), 'area' => $property->area_label ?? __('you')]));
 
             return;
         }
 
+        $this->waitlistPropertyPublicId = null;
         $this->propertyPublicId = $property->public_id;
-        $this->messages[] = ['role' => 'assistant', 'kind' => 'done', 'label' => __('Location confirmed'), 'text' => $property->street_address.', '.$property->suburb->name];
-        $this->say(__('Good news, we have vetted pros for this in :suburb.', ['suburb' => $property->suburb->name]));
+        $this->messages[] = ['role' => 'assistant', 'kind' => 'done', 'label' => __('Location confirmed'), 'text' => $property->street_address.($property->area_label === null ? '' : ', '.$property->area_label)];
+        $this->say(__('Thanks, I’ll look for vetted pros near you.'));
         $this->autosave();
         $this->advance();
     }
@@ -422,7 +394,7 @@ final class Thread extends Component
     public function addProperty(): void
     {
         abort_unless($this->stage === 'where' && $this->isCustomer(), 404);
-        $this->reset(['newStreet', 'newSuburbQuery', 'newSuburb', 'newType', 'addressQuery', 'addressSuggestions', 'addressManual']);
+        $this->reset(['newStreet', 'newArea', 'newPostal', 'newType', 'addressQuery', 'addressSuggestions', 'addressUnavailable']);
         $this->forgetPickedAddress();
         $this->stage = 'add_property';
         $this->persist();
@@ -435,96 +407,77 @@ final class Thread extends Component
         $this->persist();
     }
 
-    public function selectNewSuburb(string $slug): void
+    /** Spec 015, 020: a picked address fills the street and area. */
+    protected function addressPicked(GeocodedAddress $address): void
     {
-        $suburb = Suburb::query()->where('slug', $slug)->first();
-
-        if ($suburb instanceof Suburb) {
-            $this->newSuburb = $suburb->slug;
-            $this->newSuburbQuery = $suburb->name;
-        }
-    }
-
-    public function updatedNewSuburbQuery(): void
-    {
-        if ($this->newSuburb !== null && Suburb::query()->where('slug', $this->newSuburb)->value('name') !== $this->newSuburbQuery) {
-            $this->newSuburb = null;
-            $this->forgetPickedAddress();
-        }
+        $this->newStreet = mb_substr($address->streetLine ?? $address->formattedAddress, 0, 200);
+        $this->newArea = $address->areaLabel();
+        $this->newPostal = $address->postalCode ?? '';
+        $this->resetValidation(['addressQuery']);
     }
 
     public function saveProperty(SaveProperty $saveProperty): void
     {
         abort_unless($this->stage === 'add_property' && $this->isCustomer(), 404);
-        $this->newStreet = trim($this->newStreet);
 
         $this->validate([
-            'newStreet' => ['required', 'string', 'max:200'],
-            'newSuburb' => ['required', Rule::exists('suburbs', 'slug')],
             'newType' => ['required', Rule::enum(PropertyType::class)],
-        ], [
-            'newStreet.required' => __('Enter the street address.'),
-            'newSuburb.required' => __('Choose your suburb from the list.'),
-            'newType.required' => __('Choose the type of property.'),
-        ]);
+        ], ['newType.required' => __('Choose the type of property.')]);
+
+        if ($this->pickedPlaceId === null || $this->pickedLatitude === null || $this->pickedLongitude === null || $this->newStreet === '') {
+            throw ValidationException::withMessages(['addressQuery' => __('Search for your address and choose it from the list.')]);
+        }
 
         /** @var User $user */
         $user = $this->user();
-        $suburb = Suburb::query()->where('slug', $this->newSuburb)->firstOrFail();
 
         try {
             $property = $saveProperty->handle(
                 $user,
                 null,
-                $user->properties()->exists() ? $suburb->name : __('Home'),
+                $user->properties()->exists() ? ($this->newArea ?? __('Home')) : __('Home'),
                 $this->newStreet,
-                $suburb,
-                null,
+                $this->newArea,
+                $this->newPostal === '' ? null : $this->newPostal,
                 PropertyType::from($this->newType),
-                $this->pickedLatitude !== null && $this->pickedLongitude !== null ? Point::makeGeodetic($this->pickedLatitude, $this->pickedLongitude) : null,
+                Point::makeGeodetic($this->pickedLatitude, $this->pickedLongitude),
                 $this->pickedPlaceId,
             );
         } catch (PropertyLimitReached) {
-            throw ValidationException::withMessages(['newStreet' => __('You can save up to :count properties. Delete one in your account to add another.', ['count' => config('sortd.properties.max_per_customer')])]);
+            throw ValidationException::withMessages(['addressQuery' => __('You can save up to :count properties. Delete one in your account to add another.', ['count' => config('sortd.properties.max_per_customer')])]);
         }
 
         $this->stage = 'where';
         $this->selectProperty($property->public_id);
     }
 
-    /** Spec 015: a picked address fills the street and suburb. */
-    protected function addressPicked(GeocodedAddress $address, ?Suburb $suburb): void
-    {
-        $this->newStreet = mb_substr($address->streetLine ?? $address->formattedAddress, 0, 200);
-        $this->newSuburb = $suburb?->slug;
-        $this->newSuburbQuery = $suburb instanceof Suburb ? $suburb->name : '';
-        $this->resetValidation(['newStreet', 'newSuburb']);
-    }
-
     public function joinWaitlist(JoinWaitlist $joinWaitlist): void
     {
-        abort_unless($this->stage === 'waitlist' && $this->waitlistSuburbId !== null, 404);
+        abort_unless($this->stage === 'waitlist' && $this->waitlistPropertyPublicId !== null && $this->trade() instanceof Trade, 404);
         /** @var User $user */
         $user = $this->user();
-        $suburb = Suburb::query()->findOrFail($this->waitlistSuburbId);
+        $property = $user->properties()->where('public_id', $this->waitlistPropertyPublicId)->first();
+        abort_unless($property instanceof Property && $property->location instanceof Point, 404);
 
         try {
-            $joinWaitlist->handle($this->service(), $suburb, $suburb->name, $user->first_name, (string) $user->phone_e164, true, request()->ip());
+            $joinWaitlist->handle($this->trade(), $property->area_label ?? __('Durban'), $property->location, $user->first_name, (string) $user->phone_e164, true, request()->ip());
         } catch (ValidationException $exception) {
             throw ValidationException::withMessages(['waitlist' => $exception->validator->errors()->first()]);
         }
 
         $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Yes, keep me updated')];
         $this->stage = 'closed';
-        $this->say(__('Done. We’ll let you know when we have pros for this in :suburb. No job has been posted.', ['suburb' => $suburb->name]));
+        $this->say(__('Done. We’ll let you know when we have pros for this near :area. No job has been posted.', ['area' => $property->area_label ?? __('you')]));
     }
 
-    public function differentService(): void
+    public function differentTrade(): void
     {
         abort_unless(in_array($this->stage, ['waitlist', 'closed'], true), 404);
-        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Choose a different service')];
-        $this->clearService();
-        $this->stage = 'trade';
+        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Choose a different trade')];
+        $this->tradeId = null;
+        $this->waitlistPropertyPublicId = null;
+        $this->bookingRequested = false;
+        $this->stage = 'chat';
         $this->say(__('Sure. What do you need help with?'));
     }
 
@@ -541,10 +494,9 @@ final class Thread extends Component
     public function chooseWhen(string $window): void
     {
         abort_unless($this->stage === 'when', 404);
-        $allowed = $this->windows();
         $chosen = TimeWindow::tryFrom($window);
 
-        if (! $chosen instanceof TimeWindow || ! in_array($chosen, $allowed, true)) {
+        if (! $chosen instanceof TimeWindow) {
             throw ValidationException::withMessages(['when' => __('Choose a time.')]);
         }
 
@@ -562,6 +514,11 @@ final class Thread extends Component
         $this->timeWindow = $chosen->value;
         $this->chosenDate = $date->toDateString();
         $this->messages[] = ['role' => 'assistant', 'kind' => 'done', 'label' => __('Date confirmed'), 'text' => $this->whenLabel()];
+
+        if ($chosen === TimeWindow::Today && ! $this->safetyShown()) {
+            $this->showSafetyAdvice();
+        }
+
         $this->autosave();
         $this->advance();
     }
@@ -611,9 +568,8 @@ final class Thread extends Component
         $this->returnToSummary = true;
 
         match ($section) {
-            'service' => $this->changeService(),
-            'answers' => $this->changeAnswers(),
-            'notes' => $this->changeNotes(),
+            'trade' => $this->changeTrade(),
+            'details' => $this->changeDetails(),
             'where' => $this->changeStage('where', __('Where do you need the work done?')),
             'when' => $this->changeStage('when', __('When do you need help?')),
             'photos' => $this->changeStage('photos', __('Add or remove photos.')),
@@ -628,7 +584,7 @@ final class Thread extends Component
         abort_unless($this->stage === 'notes', 404);
         $this->notesDraft = trim($this->notesDraft);
         $this->validate(['notesDraft' => ['nullable', 'string', 'max:'.config('sortd.jobs.notes_max_length')]]);
-        $this->notes = $this->notesDraft;
+        $this->notes = ChatWithSiya::scrub($this->notesDraft);
         $this->autosave();
         $this->advance();
     }
@@ -650,14 +606,15 @@ final class Thread extends Component
 
         abort_unless($this->stage === 'summary', 404);
         $job = $this->autosave();
+        abort_unless($job instanceof ServiceJob, 404);
 
         try {
             $postServiceJob->handle($user, $job);
         } catch (NoEligiblePros) {
-            $this->waitlistSuburbId = $job->property?->suburb_id;
+            $this->waitlistPropertyPublicId = $this->propertyPublicId;
             $this->propertyPublicId = null;
             $this->stage = 'waitlist';
-            $this->say(__('Sorry, we don’t have pros for :service there yet. Want us to let you know when we do?', ['service' => $this->service()->name]));
+            $this->say(__('Sorry, we don’t have :trade pros near you yet. Want us to let you know when we do?', ['trade' => mb_strtolower($this->trade()->name ?? '')]));
 
             return;
         } catch (CannotPostServiceJob $exception) {
@@ -666,7 +623,21 @@ final class Thread extends Component
 
         $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Confirm booking')];
         $this->stage = 'posted';
-        $this->say(__('Your job is booked. I’m sharing it with vetted pros near you now, and you’ll get up to 3 quotes to compare. We’ll WhatsApp you as they come in.'));
+        $parked = $this->parked !== [] ? ' '.__('Once this one is sorted, we can book “:job” too.', ['job' => $this->parked[0]]) : '';
+        $this->say(__('Your job is booked. I’m sharing it with vetted pros near you now, and up to 5 of them can send you quotes to compare. We’ll WhatsApp you as they come in.').$parked);
+    }
+
+    /** After a job is posted: carry on with the next job the customer mentioned, starting a fresh conversation for it. */
+    public function startNextJob(): void
+    {
+        abort_unless($this->stage === 'posted' && $this->parked !== [], 404);
+
+        $next = $this->parked[0];
+        $remaining = array_slice($this->parked, 1);
+        session()->forget(self::SESSION_KEY);
+        $this->startOver();
+        $this->parked = $remaining;
+        $this->say(__('Let’s sort out: :job. Tell me a bit more about it.', ['job' => $next]));
     }
 
     public function restart(): void
@@ -678,29 +649,23 @@ final class Thread extends Component
 
     public function render(): View
     {
-        $service = $this->service();
-        $question = $this->stage === 'questions' ? $this->nextQuestion() : null;
+        $trade = $this->trade();
+        $navigationTrades = $this->activeTrades()->sortBy(fn (Trade $trade): int => ['plumbing' => 0, 'electrical' => 1, 'painting' => 2, 'tiling' => 3][$trade->key] ?? 4)->values();
         $draft = in_array($this->stage, ['photos', 'summary'], true) ? $this->draft() : null;
         $photos = $draft?->getMedia(ServiceJob::PHOTO_COLLECTION) ?? collect();
+        $available = app(ChatWithSiya::class)->available();
 
         return view('livewire.booking.thread', [
-            'available' => app(ChatWithSiya::class)->available(),
-            'progress' => $this->progressStep(),
-            'trades' => in_array($this->stage, ['trade', 'describe'], true) ? $this->activeTrades() : new Collection,
-            'trade' => $this->tradeId === null ? null : Trade::query()->find($this->tradeId),
-            'tradeServices' => $this->stage === 'service' && $this->tradeId !== null
-                ? Service::query()->where('trade_id', $this->tradeId)->where('is_active', true)->orderBy('sort')->get() : new Collection,
-            'suggested' => $this->stage === 'suggested' && $this->suggestedServiceId !== null
-                ? Service::query()->with('trade')->where('is_active', true)->find($this->suggestedServiceId) : null,
-            'service' => $service,
-            'question' => $question,
+            'available' => $available,
+            'trades' => $this->stage === 'chat' && $trade === null && ($this->showTradeShortcuts || $this->retryPending || ! $available) ? $navigationTrades : new Collection,
+            'trade' => $trade,
+            'ready' => $this->isReady(),
             'properties' => in_array($this->stage, ['where', 'add_property'], true) && $this->isCustomer()
-                ? $this->user()?->properties()->with('suburb')->get() ?? new Collection : new Collection,
+                ? $this->user()?->properties()->latest()->get() ?? new Collection : new Collection,
             'propertyTypes' => PropertyType::cases(),
-            'newSuburbSuggestions' => $this->stage === 'add_property' && $this->newSuburb === null && mb_strlen(trim($this->newSuburbQuery)) >= 2
-                ? app(SuburbSearchQuery::class)->handle($this->newSuburbQuery) : new Collection,
-            'days' => $this->stage === 'when' ? $this->calendarDays() : [],
-            'windows' => $this->stage === 'when' ? $this->windows() : [],
+            'minDate' => LocalTime::today()->toDateString(),
+            'maxDate' => LocalTime::today()->addDays((int) config('sortd.jobs.booking_days_ahead'))->toDateString(),
+            'windows' => $this->stage === 'when' ? TimeWindow::cases() : [],
             'photos' => $photos,
             'photoUrls' => $draft === null ? [] : $photos->mapWithKeys(fn ($photo): array => [$photo->uuid => $draft->photoUrl($photo)])->all(),
             'summary' => $this->stage === 'summary' ? $this->summary($draft) : null,
@@ -712,76 +677,80 @@ final class Thread extends Component
 
     // ── Internals ───────────────────────────────────────────────────────
 
-    /** One Siya turn on typed text: suggest a service, or map answers for the confirmed one. */
+    /** One Siya turn: the model changes the booking state through validated tools, then replies. */
     private function turn(ChatWithSiya $siya): void
     {
-        $result = $siya->handle($this->transcript(), $this->service(), $this->knownAnswers(), (string) (auth()->id() ?? request()->ip()));
+        $result = $siya->handle($this->bookingState(), $this->transcript(), (string) (auth()->id() ?? request()->ip()), $this->stage);
+
+        // What the tools validated is kept even if the reply or the provider failed.
+        $this->applyState($result['state']);
 
         if ($result['outcome'] !== AiOutcome::Ok || $result['reply'] === null) {
             $this->failures++;
-            $this->messages[] = ['role' => 'assistant', 'kind' => 'error', 'text' => $result['outcome'] === AiOutcome::Throttled
-                ? __('Siya is busy right now. Tap an option to carry on.')
-                : __('Sorry, something went wrong. Try again, or tap an option.')];
+            $this->retryPending = true;
+            $this->messages[] = ['role' => 'assistant', 'kind' => 'error', 'text' => match ($result['outcome']) {
+                AiOutcome::Throttled => __('Siya is busy right now. Your message is saved; try again in a moment, or choose a trade.'),
+                AiOutcome::Timeout => __('That took too long. Your message is saved. Tap Try again.'),
+                default => __('Sorry, I couldn’t read that just now. Your message is saved. Tap Try again.'),
+            }];
             $this->persist();
 
             return;
         }
 
         $this->failures = 0;
+        $this->retryPending = false;
 
-        if ($this->serviceId === null) {
-            if ($result['suggested'] instanceof Service) {
-                // One confirmation only: our card, not the model's own "is that right?" (AC6).
-                $this->suggestedServiceId = $result['suggested']->id;
-                $this->stage = 'suggested';
-                $this->messages[] = ['role' => 'assistant', 'kind' => 'suggest', 'text' => $result['suggested']->name, 'label' => $result['suggested']->trade->name];
-                $this->persist();
-
-                return;
-            }
-
-            $this->say($result['reply']);
+        if ($result['emergency']) {
+            $this->pauseForEmergency();
 
             return;
         }
 
-        $this->answers = array_merge($this->answers, $result['answers']);
-        $this->autosave();
-
-        // Siya's reply already asks the next question in its own words.
         $this->say($result['reply']);
-        $this->advance(speak: $this->nextQuestion() === null);
+
+        if ($this->urgent && ! $this->safetyShown()) {
+            $this->showSafetyAdvice();
+        }
+
+        if ($result['nextStepOffered']) {
+            $this->bookingRequested = true;
+        }
+
+        $this->autosave();
+        $this->advance(speak: false);
     }
 
-    private function setService(Service $service, bool $extract = true): void
+    private function bookingState(): BookingState
     {
-        $service->loadMissing(['questions', 'trade']);
+        return new BookingState($this->trade()?->key, $this->facts, $this->urgent, $this->parked, $this->bookingTurn, $this->nextStepOffered);
+    }
 
-        if ($service->id !== $this->serviceId) {
-            $this->answers = [];
-            $this->jobPublicId = null;
+    private function applyState(BookingState $state): void
+    {
+        $this->facts = $state->facts;
+        $this->urgent = $state->urgent;
+        $this->parked = $state->parked;
+        $this->bookingTurn = $state->turn;
+        $this->nextStepOffered = $state->nextStepOffered;
+
+        if ($state->tradeKey !== null) {
+            $trade = Trade::query()->where('key', $state->tradeKey)->where('is_active', true)->first();
+
+            if ($trade instanceof Trade && $trade->id !== $this->tradeId) {
+                $this->tradeId = $trade->id;
+                $this->tradeCache = $trade;
+                $this->recheckProperty();
+            }
         }
+    }
 
-        $this->serviceId = $service->id;
-        $this->tradeId = $service->trade_id;
-        $this->suggestedServiceId = null;
-        $this->serviceCache = $service;
-        $this->messages[] = ['role' => 'assistant', 'kind' => 'done', 'label' => __('You selected'), 'text' => $service->name.' · '.$service->trade->name];
-
-        if ($service->safety_advice !== []) {
-            $this->showSafetyAdvice($service);
+    /** A new trade keeps the draft and photos; the saved address is checked again before posting. */
+    private function recheckProperty(): void
+    {
+        if ($this->waitlistPropertyPublicId !== null) {
+            $this->waitlistPropertyPublicId = null;
         }
-
-        // What the customer already typed answers some questions: those are skipped (AC7).
-        $siya = app(ChatWithSiya::class);
-        if ($extract && $this->hasTypedText() && $siya->available() && $this->nextQuestion() instanceof ScopingQuestion) {
-            $this->turn($siya);
-
-            return;
-        }
-
-        // No draft yet: it starts with the first answer, so opening a service link never uses up a draft.
-        $this->advance();
     }
 
     /**
@@ -790,12 +759,10 @@ final class Thread extends Component
     private function advance(bool $speak = true): void
     {
         $before = $this->stage;
-        $question = $this->serviceId === null ? null : $this->nextQuestion();
 
         $this->stage = match (true) {
-            $this->serviceId === null => $this->tradeId === null ? 'trade' : 'service',
-            $question instanceof ScopingQuestion => 'questions',
-            ! $this->detailsDone => 'details',
+            ! $this->isReady(), ! $this->bookingRequested => 'chat',
+            $this->waitlistPropertyPublicId !== null && $this->propertyPublicId === null => 'waitlist',
             ! $this->isCustomer() => 'signin',
             $this->propertyPublicId === null || ! $this->selectedProperty() instanceof Property => 'where',
             $this->timeWindow === '' => 'when',
@@ -810,8 +777,7 @@ final class Thread extends Component
 
         if ($speak) {
             $line = match ($this->stage) {
-                'questions' => $question?->prompt,
-                'details' => $before === 'details' ? null : __('Got it, I have what I need to find you the right pro. Anything else your pro should know?'),
+                'waitlist' => __('We don’t currently have pros for this near your address. Choose another trade or join the waitlist.'),
                 'signin' => $before === 'signin' ? null : __('Please sign in to book. Everything you’ve told me is kept.'),
                 'where' => __('Where do you need the work done?'),
                 'when' => __('When do you need help?'),
@@ -830,25 +796,22 @@ final class Thread extends Component
         $this->persist();
     }
 
-    private function changeService(): void
+    private function changeTrade(): void
     {
         $this->returnToSummary = false;
-        $this->clearService();
-        $this->stage = 'trade';
-        $this->say(__('Sure. What do you need help with? Your answers for the old service will be dropped.'));
+        $this->tradeId = null;
+        $this->tradeCache = null;
+        $this->bookingRequested = false;
+        $this->stage = 'chat';
+        $this->showTradeShortcuts = true;
+        $this->say(__('Sure. Which kind of pro do you need? Everything you told me is kept.'));
     }
 
-    private function changeAnswers(): void
-    {
-        $this->answers = [];
-        $this->advance();
-    }
-
-    private function changeNotes(): void
+    private function changeDetails(): void
     {
         $this->notesDraft = $this->notes;
         $this->stage = 'notes';
-        $this->say(__('Edit your notes for the pro.'));
+        $this->say(__('Check what pros will see. Remove anything that’s wrong, or add a note.'));
     }
 
     private function changeStage(string $stage, string $line): void
@@ -861,32 +824,21 @@ final class Thread extends Component
         $this->say($line);
     }
 
-    private function clearService(): void
+    private function showSafetyAdvice(): void
     {
-        $this->serviceId = null;
-        $this->serviceCache = null;
-        $this->tradeId = null;
-        $this->suggestedServiceId = null;
-        $this->answers = [];
-        $this->detailsDone = false;
-        $this->jobPublicId = null;
-    }
-
-    private function showSafetyAdvice(Service $service): void
-    {
-        foreach ($service->safety_advice as $advice) {
+        foreach ($this->trade()->safety_advice ?? [] as $advice) {
             $this->messages[] = ['role' => 'assistant', 'kind' => 'safety', 'text' => $advice];
         }
-    }
-
-    private function hasTypedText(): bool
-    {
-        return collect($this->messages)->contains(fn (array $message): bool => $message['role'] === 'customer' && ! isset($message['kind']));
     }
 
     private function safetyShown(): bool
     {
         return collect($this->messages)->contains(fn (array $message): bool => ($message['kind'] ?? null) === 'safety');
+    }
+
+    private function isReady(): bool
+    {
+        return $this->tradeId !== null && ($this->facts !== [] || trim($this->notes) !== '');
     }
 
     private function leaveForAuth(string $route): void
@@ -899,9 +851,9 @@ final class Thread extends Component
 
     private function startOver(): void
     {
-        $this->reset([...self::PERSISTED, 'message', 'notesDraft', 'photoUpload', 'newStreet', 'newSuburbQuery', 'newSuburb', 'newType']);
-        $this->serviceCache = null;
-        $this->say(__('Hi, I’m Siya, Sortd’s AI assistant. What do you need help with? Tap a trade, or tell me what’s wrong, for example "my geyser is leaking".'));
+        $this->reset([...self::PERSISTED, 'message', 'notesDraft', 'photoUpload', 'newStreet', 'newArea', 'newPostal', 'newType']);
+        $this->tradeCache = null;
+        $this->say(__('Hi, I’m Siya, Get Sorted’s AI assistant. Tell me what’s happening at home, or ask me about Get Sorted.'));
     }
 
     private function restore(): void
@@ -921,7 +873,7 @@ final class Thread extends Component
 
         // A draft saved for someone else (another sign-in on this browser) is not ours.
         if ($this->jobPublicId !== null && ! $this->draft() instanceof ServiceJob) {
-            $this->jobPublicId = null;
+            $this->startOver();
         }
     }
 
@@ -936,10 +888,14 @@ final class Thread extends Component
         $this->persist();
     }
 
+    /** The customer's own scrubbed words, kept as notes when Siya can't read them. */
     private function addToNotes(string $text): void
     {
-        $notes = trim($this->notes === '' ? $text : $this->notes."\n".$text);
-        $this->notes = mb_substr($notes, 0, (int) config('sortd.jobs.notes_max_length'));
+        if ($text === '' || str_contains($this->notes, $text)) {
+            return;
+        }
+
+        $this->notes = mb_substr(trim($this->notes === '' ? $text : $this->notes."\n".$text), 0, (int) config('sortd.jobs.notes_max_length'));
     }
 
     /** Text from the account home box or the public home (spec 007), used once as the first message. */
@@ -965,36 +921,25 @@ final class Thread extends Component
     {
         return array_values(array_map(
             fn (array $message): array => ['role' => $message['role'], 'text' => $message['text']],
-            array_filter($this->messages, fn (array $message): bool => ! isset($message['kind'])),
+            array_filter($this->messages, fn (array $message): bool => ! isset($message['kind']) || ($message['role'] === 'customer' && $message['kind'] === 'answer')),
         ));
-    }
-
-    /** @return array<string, mixed> */
-    private function knownAnswers(): array
-    {
-        return array_filter($this->answers, fn (mixed $answer): bool => ! ScopingAnswers::isBlank($answer));
-    }
-
-    private function nextQuestion(): ?ScopingQuestion
-    {
-        return $this->service()?->questions->first(fn (ScopingQuestion $question): bool => ! array_key_exists($question->key, $this->answers));
     }
 
     /** Saves the draft for a signed-in customer and returns it (a guest's thread stays in the session). */
     private function autosave(): ?ServiceJob
     {
         $user = $this->user();
-        $service = $this->service();
+        $trade = $this->trade();
 
-        if (! $user instanceof User || ! $this->isCustomer() || ! $service instanceof Service) {
+        if (! $user instanceof User || ! $this->isCustomer() || ! $trade instanceof Trade) {
             return null;
         }
 
         $job = $this->draft();
 
-        // Pick up an unfinished draft for the same service rather than start another, keeping its notes.
+        // Pick up an unfinished draft for the same trade rather than start another, keeping its notes.
         if (! $job instanceof ServiceJob) {
-            $job = ServiceJob::query()->where('customer_id', $user->id)->where('service_id', $service->id)
+            $job = ServiceJob::query()->where('customer_id', $user->id)->where('trade_id', $trade->id)
                 ->where('status', ServiceJobStatus::Draft)->latest('updated_at')->first();
             $earlier = trim((string) $job?->customer_notes);
 
@@ -1004,12 +949,13 @@ final class Thread extends Component
         }
 
         try {
-            $job = app(SaveBookingDraft::class)->handle($user, $service, $job, new BookingData(
-                answers: $this->checkedAnswers(),
+            $job = app(SaveBookingDraft::class)->handle($user, $trade, $job, new BookingData(
+                facts: $this->facts,
                 notes: $this->notes === '' ? null : $this->notes,
                 propertyPublicId: $this->propertyPublicId,
                 preferredDate: $this->timeWindow === '' ? null : $this->parseDate($this->chosenDate),
                 timeWindow: TimeWindow::tryFrom($this->timeWindow),
+                urgent: $this->urgent,
             ));
         } catch (CannotPostServiceJob $exception) {
             throw ValidationException::withMessages(['post' => $exception->getMessage()]);
@@ -1020,67 +966,36 @@ final class Thread extends Component
         return $job;
     }
 
-    /**
-     * Valid answers only, in the stored form.
-     *
-     * @return array<string, array{prompt: string, type: string, answer: string|int|list<string>}>
-     */
-    private function checkedAnswers(): array
-    {
-        $checked = [];
-        $service = $this->service();
-
-        if (! $service instanceof Service) {
-            return $checked;
-        }
-
-        foreach ($service->questions as $question) {
-            $raw = $this->answers[$question->key] ?? null;
-
-            if (! ScopingAnswers::isBlank($raw)) {
-                $result = ScopingAnswers::check($question, $raw);
-
-                if ($result['ok']) {
-                    $checked[$question->key] = $result['value'];
-                }
-            }
-        }
-
-        return $checked;
-    }
-
     private function resumeDraft(ServiceJob $job): void
     {
         abort_unless($this->user()?->can('update', $job) === true && $job->status === ServiceJobStatus::Draft, 404);
 
+        $saved = session(self::SESSION_KEY);
+        if (is_array($saved) && ($saved['jobPublicId'] ?? null) === $job->public_id) {
+            $this->restore();
+            if ($this->stage === 'signin' && $this->isCustomer()) {
+                $this->advance();
+            }
+
+            return;
+        }
+
         $this->startOver();
-        $service = Service::query()->with(['questions', 'trade'])->findOrFail($job->service_id);
-        $this->serviceId = $service->id;
-        $this->tradeId = $service->trade_id;
-        $this->serviceCache = $service;
+        $trade = Trade::query()->findOrFail($job->trade_id);
+        $this->tradeId = $trade->id;
+        $this->tradeCache = $trade;
         $this->jobPublicId = $job->public_id;
+        $this->facts = $job->facts;
+        $this->urgent = $job->urgency === Urgency::Urgent;
         $this->notes = (string) $job->customer_notes;
         $this->propertyPublicId = $job->property?->public_id;
         $this->preferredDate = (string) $job->preferred_date?->toDateString();
         $this->chosenDate = $this->preferredDate;
         $this->timeWindow = (string) $job->time_window?->value;
+        $this->bookingRequested = true;
+        $this->photosDone = $this->timeWindow !== '';
 
-        foreach ($job->scoping_answers as $key => $stored) {
-            $this->answers[$key] = $stored['answer'];
-        }
-
-        $complete = ScopingAnswers::missingRequired($service, $job->scoping_answers) === [];
-
-        // Once the required answers are in, optional questions left out count as skipped.
-        foreach ($complete ? $service->questions : [] as $question) {
-            if (! array_key_exists($question->key, $this->answers)) {
-                $this->answers[$question->key] = null;
-            }
-        }
-
-        $this->messages[] = ['role' => 'assistant', 'kind' => 'done', 'label' => __('You selected'), 'text' => $service->name.' · '.$service->trade->name];
-        $this->detailsDone = $complete;
-        $this->photosDone = $this->detailsDone && $this->timeWindow !== '';
+        $this->messages[] = ['role' => 'assistant', 'kind' => 'done', 'label' => __('You’re booking'), 'text' => $trade->name];
         $this->advance();
     }
 
@@ -1092,29 +1007,26 @@ final class Thread extends Component
             return null;
         }
 
-        return ServiceJob::query()->with(['service', 'property.suburb'])->where('public_id', $this->jobPublicId)
+        return ServiceJob::query()->with(['trade', 'property'])->where('public_id', $this->jobPublicId)
             ->where('customer_id', $user->id)->where('status', ServiceJobStatus::Draft)->first();
     }
 
     /**
-     * @return array{key: ?string, answers: list<array{prompt: string, answer: string}>, property: ?Property, when: string, urgent: bool, advice: list<string>, guidance: bool}
+     * @return array{key: ?string, facts: list<string>, property: ?Property, when: string, urgent: bool, advice: list<string>, guidance: bool}
      */
     private function summary(?ServiceJob $draft): array
     {
-        $service = $this->service();
-        $checked = $this->checkedAnswers();
+        $trade = $this->trade();
+        $urgent = $this->timeWindow === TimeWindow::Today->value || $this->urgent;
 
         return [
             'key' => $draft instanceof ServiceJob ? JobSummaryInput::hash($draft) : null,
-            'answers' => array_values(array_map(fn (array $answer): array => [
-                'prompt' => $answer['prompt'],
-                'answer' => is_array($answer['answer']) ? implode(', ', $answer['answer']) : ($answer['type'] === 'yes_no' ? __(ucfirst((string) $answer['answer'])) : (string) $answer['answer']),
-            ], $checked)),
+            'facts' => array_map(fn (array $fact): string => $fact['text'], $this->facts),
             'property' => $this->selectedProperty(),
             'when' => $this->whenLabel(),
-            'urgent' => $this->timeWindow === TimeWindow::Today->value || ($service instanceof Service && ScopingAnswers::isUrgent($service, $checked)),
-            'advice' => $service instanceof Service ? $service->safety_advice : [],
-            'guidance' => $service instanceof Service && ($service->safety_advice !== [] || $service->requires_registration === RegistrationType::ElectricalRegisteredPerson),
+            'urgent' => $urgent,
+            'advice' => $trade instanceof Trade ? $trade->safety_advice : [],
+            'guidance' => $trade instanceof Trade && ($trade->safety_advice !== [] || $trade->registration === RegistrationType::ElectricalRegisteredPerson),
         ];
     }
 
@@ -1129,30 +1041,6 @@ final class Thread extends Component
         $date = $this->parseDate($this->chosenDate)?->translatedFormat('D j M');
 
         return trim(($date ?? '').($window instanceof TimeWindow ? ' · '.$window->label() : ''), ' ·');
-    }
-
-    /** @return list<TimeWindow> */
-    private function windows(): array
-    {
-        return $this->service()?->emergency_capable === true ? TimeWindow::cases() : [TimeWindow::Morning, TimeWindow::Afternoon, TimeWindow::Flexible];
-    }
-
-    /**
-     * The calendar: today and the next booking_days_ahead days, padded to start on a Sunday.
-     *
-     * @return list<array{date: ?string, day: ?int, label: ?string}>
-     */
-    private function calendarDays(): array
-    {
-        $today = LocalTime::today();
-        $days = array_fill(0, $today->dayOfWeek, ['date' => null, 'day' => null, 'label' => null]);
-
-        for ($offset = 0; $offset <= (int) config('sortd.jobs.booking_days_ahead'); $offset++) {
-            $date = $today->addDays($offset);
-            $days[] = ['date' => $date->toDateString(), 'day' => $date->day, 'label' => $date->translatedFormat('l j F')];
-        }
-
-        return $days;
     }
 
     /** A tampered or half-typed date is treated as "not chosen yet" rather than an error page. */
@@ -1171,21 +1059,10 @@ final class Thread extends Component
         return $date instanceof CarbonImmutable ? $date->startOfDay() : null;
     }
 
-    private function progressStep(): string
-    {
-        return match ($this->stage) {
-            'signin', 'where', 'add_property', 'waitlist', 'when' => 'where',
-            'photos' => 'photos',
-            'summary', 'notes', 'posted' => 'confirm',
-            default => 'describe',
-        };
-    }
-
     /** @return Collection<int, Trade> */
     private function activeTrades(): Collection
     {
-        return Trade::query()->where('is_active', true)
-            ->whereHas('services', fn ($query) => $query->where('is_active', true))->orderBy('sort')->get();
+        return Trade::query()->where('is_active', true)->orderBy('sort')->get();
     }
 
     private function countCoverageCheck(): void
@@ -1201,26 +1078,26 @@ final class Thread extends Component
 
     private function threadUrl(): string
     {
-        $service = $this->service();
+        $trade = $this->trade();
 
-        return $service instanceof Service ? route('booking.start', [$service->trade, $service], false) : route('book', [], false);
+        return $trade instanceof Trade ? route('book.trade', $trade, false) : route('book', [], false);
     }
 
-    private ?Service $serviceCache = null;
+    private ?Trade $tradeCache = null;
 
-    private function service(): ?Service
+    private function trade(): ?Trade
     {
-        if ($this->serviceId === null) {
+        if ($this->tradeId === null) {
             return null;
         }
 
-        return $this->serviceCache ??= Service::query()->with(['questions', 'trade'])->find($this->serviceId);
+        return $this->tradeCache ??= Trade::query()->find($this->tradeId);
     }
 
     private function selectedProperty(): ?Property
     {
         return $this->propertyPublicId === null ? null
-            : $this->user()?->properties()->with('suburb')->where('public_id', $this->propertyPublicId)->first();
+            : $this->user()?->properties()->where('public_id', $this->propertyPublicId)->first();
     }
 
     private function isCustomer(): bool

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Catalogue\Enums\RegistrationType;
 use App\Domain\Catalogue\Enums\TradeStatus;
 use Database\Factories\TradeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use LogicException;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -18,6 +19,8 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $key
  * @property string $name
  * @property TradeStatus $status
+ * @property RegistrationType|null $registration the registration a pro can verify for this trade (a badge, never a gate)
+ * @property list<string> $safety_advice reviewed, static advice shown for urgent jobs
  * @property bool $is_active
  * @property int $sort
  */
@@ -27,12 +30,15 @@ final class Trade extends Model
     use HasFactory, LogsActivity;
 
     /** @var list<string> */
-    protected $fillable = ['key', 'name', 'status', 'is_active', 'sort'];
+    protected $fillable = ['key', 'name', 'status', 'registration', 'safety_advice', 'is_active', 'sort'];
 
-    /** @return HasMany<Service, $this> */
-    public function services(): HasMany
+    /** @var array<string, mixed> */
+    protected $attributes = ['safety_advice' => '[]'];
+
+    /** @return BelongsToMany<Pro, $this> */
+    public function pros(): BelongsToMany
     {
-        return $this->hasMany(Service::class)->orderBy('sort');
+        return $this->belongsToMany(Pro::class, 'pro_trades');
     }
 
     /** URLs use the stable key, never the numeric id. */
@@ -61,6 +67,8 @@ final class Trade extends Model
     {
         return [
             'status' => TradeStatus::class,
+            'registration' => RegistrationType::class,
+            'safety_advice' => 'array',
             'is_active' => 'boolean',
             'sort' => 'integer',
         ];

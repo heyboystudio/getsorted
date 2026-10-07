@@ -30,7 +30,7 @@ services:
 
   queue:
     <<: *app
-    command: ["php", "artisan", "queue:work", "--tries=3", "--max-time=3600"]
+    command: ["php", "artisan", "queue:work", "--queue=matching,notifications,default", "--tries=3", "--max-time=3600"]
     # The image's health check probes Caddy, which only the web container runs.
     healthcheck:
       disable: true

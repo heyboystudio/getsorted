@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Contracts\Data\ScopingSuggestion;
 use App\Contracts\ScopingAssistant;
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Assistant\Actions\SummariseDraft;
@@ -17,21 +16,17 @@ use App\Filament\Admin\Pages\AiUsageReport;
 use App\Filament\Admin\Resources\ServiceJobs\Pages\ViewServiceJob;
 use App\Integrations\Fakes\FakeScopingAssistant;
 use App\Livewire\Booking\JobSummaryCard;
+use App\Livewire\Booking\Thread;
 use App\Livewire\Welcome;
 use App\Models\AiUsage;
-use App\Models\Pro;
 use App\Models\Property;
-use App\Models\Service;
 use App\Models\ServiceJob;
-use App\Models\Suburb;
 use App\Models\Trade;
 use App\Models\User;
 use App\Settings\AiSettings;
 use Database\Seeders\CatalogueSeeder;
-use Database\Seeders\SuburbSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -40,14 +35,9 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
-    $this->plumbing = Trade::query()->where('key', 'plumbing')->sole();
-    $this->leak = Service::query()->where('key', 'leak_repair')->sole();
-    $this->drain = Service::query()->where('key', 'blocked_drain')->sole();
-    $musgrave = Suburb::query()->where('slug', 'musgrave')->sole();
-    $pro = Pro::factory()->approved()->create();
-    $pro->services()->attach([$this->leak->id, $this->drain->id]);
-    $pro->serviceAreas()->attach($musgrave);
+    $this->seed(CatalogueSeeder::class);
+    $this->plumbing = tradeOf('plumbing');
+    proNear(['plumbing'], 2);
 
     $settings = app(AiSettings::class);
     $settings->enabled = true;
@@ -64,16 +54,16 @@ function assistant(): FakeScopingAssistant
 function aiCustomer(): array
 {
     $customer = User::factory()->customer()->create();
-    $property = Property::factory()->for($customer)->create(['street_address' => '7 Private Lane', 'suburb_id' => Suburb::query()->where('slug', 'musgrave')->value('id')]);
+    $property = Property::factory()->for($customer)->create(['street_address' => '7 Private Lane']);
 
     return [$customer, $property];
 }
 
 /** Walks a signed-in customer through the booking thread to the summary (spec 017), with these notes. */
-function reviewStep(Property $property, string $notes = 'Water under the sink.', ?Service $service = null): Testable
+function reviewStep(Property $property, string $notes = 'Water under the sink.', ?Trade $trade = null): Testable
 {
-    $service ??= test()->leak;
-    $thread = bookUpToSummary(describeJob(threadFor($service), $service), $property);
+    $trade ??= test()->plumbing;
+    $thread = bookUpToSummary(describeJob(threadFor($trade), $trade), $property);
 
     return backToReviewWithNotes($thread, $notes);
 }
@@ -86,7 +76,21 @@ function summaryCard(): Testable
 /** Changes the notes from the summary, which returns straight to it. */
 function backToReviewWithNotes(Testable $thread, string $notes): Testable
 {
-    return $thread->call('change', 'notes')->set('notesDraft', $notes)->call('saveNotes')->assertSet('stage', 'summary');
+    return $thread->call('change', 'details')->set('notesDraft', $notes)->call('saveNotes')->assertSet('stage', 'summary');
+}
+
+/** The same walk with Siya switched off: the customer's own words become the job notes. */
+function manualReview(Property $property): Testable
+{
+    $thread = threadFor(test()->plumbing)->set('message', 'Tap drips all night long')->call('send')->call('startBooking');
+
+    return bookUpToSummary($thread, $property)->assertSet('stage', 'summary');
+}
+
+/** One chat turn from a visitor: the scripted Siya just records nothing and says hello. */
+function chatTurn(Testable $thread, string $message = 'My geyser is dripping'): Testable
+{
+    return $thread->set('message', $message)->call('send');
 }
 
 // --- Redaction (AC10) ---------------------------------------------------------------
@@ -120,135 +124,39 @@ it('keeps ordinary job details intact (AC10)', function (): void {
     expect(Redactor::strip($text))->toBe($text);
 });
 
-it('strips personal data from free-text answers before summarising (AC10, security review)', function (): void {
+it('strips personal data from facts and notes before summarising (AC10, security review)', function (): void {
     [$customer, $property] = aiCustomer();
-    $this->leak->questions()->create(['key' => 'anything_else', 'prompt' => 'Anything else?', 'type' => 'text', 'required' => false, 'sort' => 99]);
     $job = ServiceJob::factory()->forProperty($property)->create([
-        'service_id' => $this->leak->id,
-        'scoping_answers' => [
-            'severity' => ['prompt' => 'How bad is it?', 'type' => 'single_choice', 'answer' => 'Dripping'],
-            'anything_else' => ['prompt' => 'Anything else?', 'type' => 'text', 'answer' => 'Gate code 1234, call 082 123 4567 or andy@example.com'],
-        ],
+        'trade_id' => $this->plumbing->id,
+        'facts' => [['id' => 'f1', 'text' => 'Gate code 1234, call 082 123 4567 or andy@example.com', 'turn' => 1]],
     ]);
     assistant()->willSummarise('Dripping tap.');
 
     app(SummariseDraft::class)->handle($customer, $job);
 
-    expect(assistant()->summaryAnswersSeen())->toBe([[
-        'anything_else' => 'Gate code 1234, call [phone] or [email]',
-        'severity' => 'Dripping',
-    ]]);
+    expect(assistant()->summaryFactsSeen())->toBe([['Gate code 1234, call [phone] or [email]']]);
 });
 
-// --- Describe your problem (AC1–AC4) -------------------------------------------------
-
-it('suggests a valid service from a stripped description and waits for the customer to confirm (AC1, AC2, AC10)', function (): void {
-    assistant()->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.92));
-
-    Livewire::test(Welcome::class)
-        ->set('description', 'My kitchen tap is leaking, call 082 123 4567')
-        ->call('find')
-        ->assertHasNoErrors()
-        ->assertSet('suggestedServiceId', Service::query()->where('key', 'leak_repair')->value('id'))
-        ->assertNoRedirect();
-
-    expect(assistant()->descriptionsSeen())->toBe(['My kitchen tap is leaking, call [phone]'])
-        ->and(ServiceJob::query()->count())->toBe(0);
-});
-
-it('lets the customer turn down a suggestion and pick a service themselves (AC2)', function (): void {
-    assistant()->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.92));
-
-    Livewire::test(Welcome::class)->set('description', 'My kitchen tap is leaking')->call('find')
-        ->call('chooseSomethingElse')
-        ->assertSet('suggestedServiceId', null)->assertSet('showFallback', true);
-});
-
-it('falls back to choosing a service when the suggestion cannot be used (AC3)', function (?ScopingSuggestion $suggestion, AiOutcome $outcome): void {
-    if ($suggestion?->serviceKey === 'blocked_drain') {
-        $this->drain->update(['is_active' => false]);
-    }
-    assistant()->willSuggest($suggestion);
-
-    Livewire::test(Welcome::class)
-        ->set('description', 'Something is wrong in my bathroom')
-        ->call('find')
-        ->assertHasNoErrors()
-        ->assertDontSee('Is this what you need?')
-        ->assertSee('Choose the closest service')
-        ->assertSet('description', 'Something is wrong in my bathroom');
-
-    expect(AiUsage::query()->sole()->outcome)->toBe($outcome);
-})->with([
-    'no suggestion' => [null, AiOutcome::Invalid],
-    'unknown service' => [new ScopingSuggestion('plumbing', 'ignore_all_rules', 0.99), AiOutcome::Invalid],
-    'service from another trade' => [new ScopingSuggestion('electrical', 'leak_repair', 0.99), AiOutcome::Invalid],
-    'inactive service' => [new ScopingSuggestion('plumbing', 'blocked_drain', 0.99), AiOutcome::Invalid],
-    'low confidence' => [new ScopingSuggestion('plumbing', 'leak_repair', 0.3), AiOutcome::Invalid],
-]);
-
-it('falls back without an error page when the provider times out or fails (AC3, AC13)', function (bool $timedOut, AiOutcome $outcome): void {
-    assistant()->willFail($timedOut);
-
-    Livewire::test(Welcome::class)
-        ->set('description', 'My geyser is dripping')
-        ->call('find')
-        ->assertHasNoErrors()->assertSee('Choose the closest service');
-
-    expect(AiUsage::query()->sole()->outcome)->toBe($outcome);
-})->with([[true, AiOutcome::Timeout], [false, AiOutcome::Error]]);
-
-it('asks for 10 to 500 characters before calling the assistant (AC1)', function (string $description): void {
-    Livewire::test(Welcome::class)->set('description', $description)->call('find')->assertHasErrors(['description']);
-
-    assistant()->assertNothingSent();
-})->with(['too short' => ['leak'], 'too long' => [str_repeat('a', 501)]]);
+// --- The home page hands over what the customer typed (AC4; spec 017 AC1) ------------
 
 it('starts the booking thread with the home-page description, used once (AC4; spec 017 AC1)', function (): void {
-    assistant()->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.9));
-    Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('find');
+    Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('start')->assertRedirect(route('book'));
 
-    threadFor($this->leak)
-        ->assertSee('Tap drips all night long')
-        ->assertSet('notes', 'Tap drips all night long')
-        ->assertSet('serviceId', $this->leak->id);
+    threadFor()->assertSee('Tap drips all night long');
 
     expect(session()->has(Welcome::DESCRIPTION_KEY))->toBeFalse();
 });
 
-it('puts the description into an existing draft without notes (AC4)', function (): void {
-    [$customer, $property] = aiCustomer();
-    $this->actingAs($customer);
-    $draft = ServiceJob::factory()->forProperty($property)->create(['service_id' => $this->leak->id, 'customer_notes' => null]);
-    assistant()->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.9));
-    Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('find');
-
-    threadFor($this->leak)->assertSet('jobPublicId', $draft->public_id);
-    expect($draft->fresh()->customer_notes)->toBe('Tap drips all night long');
-});
-
-it('keeps the notes an existing draft already has (AC4)', function (): void {
-    [$customer, $property] = aiCustomer();
-    $this->actingAs($customer);
-    $draft = ServiceJob::factory()->forProperty($property)->create(['service_id' => $this->leak->id, 'customer_notes' => 'My own earlier notes']);
-    assistant()->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.9));
-    Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('find');
-
-    threadFor($this->leak)->assertSet('notes', "My own earlier notes\nTap drips all night long");
-    expect($draft->fresh()->customer_notes)->toBe("My own earlier notes\nTap drips all night long");
-});
-
 it('forgets an unused description after 30 minutes (AC4)', function (): void {
-    assistant()->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.9));
-    Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('find');
+    Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('start');
 
     $this->travel(31)->minutes();
 
-    threadFor($this->leak)->assertSet('notes', '')->assertDontSee('Tap drips all night long');
+    threadFor()->assertDontSee('Tap drips all night long');
 });
 
 it('drops an expired description from the session on the next page visit (AC4, security review)', function (): void {
-    Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('find');
+    Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('start');
     $this->travel(31)->minutes();
 
     Livewire::test(Welcome::class);
@@ -258,23 +166,23 @@ it('drops an expired description from the session on the next page visit (AC4, s
 
 // --- Limits and switches (AC14, AC15) ------------------------------------------------
 
-it('throttles suggestions per visitor without calling the provider (AC14)', function (): void {
-    config()->set('sortd.ai.suggestions_per_hour', 1);
-    $welcome = Livewire::test(Welcome::class)->set('description', 'My geyser is dripping');
+it('throttles chat per visitor without calling the provider (AC14)', function (): void {
+    config()->set('sortd.ai.chat_messages_per_hour', 1);
+    $thread = threadFor();
 
-    $welcome->call('find');
-    $welcome->call('find')->assertHasNoErrors()->assertSee('Choose the closest service');
+    chatTurn($thread);
+    chatTurn($thread, 'And my bath too')->assertSee('Siya is busy right now');
 
-    expect(assistant()->descriptionsSeen())->toHaveCount(1)
+    expect(assistant()->chatRequests())->toHaveCount(1)
         ->and(AiUsage::query()->where('outcome', AiOutcome::Throttled)->count())->toBe(1);
 });
 
 it('records at most one throttled row per visitor per hour (security review)', function (): void {
-    config()->set('sortd.ai.suggestions_per_hour', 1);
-    $welcome = Livewire::test(Welcome::class)->set('description', 'My geyser is dripping');
+    config()->set('sortd.ai.chat_messages_per_hour', 1);
+    $thread = threadFor();
 
     foreach (range(1, 5) as $attempt) {
-        $welcome->call('find');
+        chatTurn($thread, "Message number {$attempt}");
     }
 
     expect(AiUsage::query()->where('outcome', AiOutcome::Throttled)->count())->toBe(1)
@@ -282,14 +190,15 @@ it('records at most one throttled row per visitor per hour (security review)', f
 });
 
 it('limits signed-in customers by account rather than by network address (security review)', function (): void {
-    config()->set('sortd.ai.suggestions_per_hour', 1);
+    config()->set('sortd.ai.chat_messages_per_hour', 1);
     $this->actingAs(User::factory()->customer()->create());
-    Livewire::test(Welcome::class)->set('description', 'My geyser is dripping')->call('find');
+    chatTurn(threadFor());
 
     $this->actingAs(User::factory()->customer()->create());
-    Livewire::test(Welcome::class)->set('description', 'My geyser is dripping')->call('find');
+    session()->forget(Thread::SESSION_KEY);
+    chatTurn(threadFor());
 
-    expect(assistant()->descriptionsSeen())->toHaveCount(2);
+    expect(assistant()->chatRequests())->toHaveCount(2);
 });
 
 it('stops calling the provider once the daily budget is spent (AC14)', function (): void {
@@ -298,10 +207,10 @@ it('stops calling the provider once the daily budget is spent (AC14)', function 
     $settings->save();
     AiUsage::factory()->count(2)->create();
 
-    Livewire::test(Welcome::class)->set('description', 'My geyser is dripping')->call('find')->assertSee('Choose the closest service');
+    chatTurn(threadFor())->assertSee('Siya is busy right now');
 
-    assistant()->assertNothingSent();
-    expect(AiUsage::query()->latest('id')->first()->outcome)->toBe(AiOutcome::Throttled);
+    expect(assistant()->chatRequests())->toBe([])
+        ->and(AiUsage::query()->latest('id')->first()->outcome)->toBe(AiOutcome::Throttled);
 });
 
 it('resets the daily budget at midnight Durban time (AC14)', function (): void {
@@ -309,36 +218,37 @@ it('resets the daily budget at midnight Durban time (AC14)', function (): void {
     $settings = app(AiSettings::class);
     $settings->daily_call_budget = 1;
     $settings->save();
-    $welcome = Livewire::test(Welcome::class)->set('description', 'My geyser is dripping');
+    $thread = threadFor();
 
-    $welcome->call('find');
-    $welcome->call('find');
-    expect(assistant()->descriptionsSeen())->toHaveCount(1);
+    chatTurn($thread);
+    chatTurn($thread, 'Second message');
+    expect(assistant()->chatRequests())->toHaveCount(1);
 
     $this->travelTo(now('Africa/Johannesburg')->addDay()->setTime(0, 5));
-    $welcome->call('find');
-    expect(assistant()->descriptionsSeen())->toHaveCount(2);
+    $thread->call('retry');
+    expect(assistant()->chatRequests())->toHaveCount(2);
 });
 
-it('sends one request at a time per visitor (rules: double tap)', function (): void {
-    $lock = Cache::lock('assistant:suggest:'.hash_hmac('sha256', '127.0.0.1', (string) config('app.key')), 30);
-    $lock->get();
+it('counts one budget unit per Siya turn, however many model steps it takes (spec 020)', function (): void {
+    $settings = app(AiSettings::class);
+    $settings->daily_call_budget = 2;
+    $settings->save();
 
-    Livewire::test(Welcome::class)->set('description', 'My geyser is dripping')->call('find')->assertSee('Choose the closest service');
+    chatTurn(threadFor());
 
-    assistant()->assertNothingSent();
-    $lock->release();
+    expect(AiUsage::query()->where('outcome', '!=', AiOutcome::Throttled)->count())->toBe(1);
 });
 
-it('goes straight to manual choices when the assistant is switched off (AC15)', function (): void {
+it('keeps the booking usable by hand when the assistant is switched off (AC15)', function (): void {
     $settings = app(AiSettings::class);
     $settings->enabled = false;
     $settings->save();
     [, $property] = aiCustomer();
-
-    Livewire::test(Welcome::class)->set('description', 'My geyser is dripping')->call('find')->assertSee('Choose the closest service');
     $this->actingAs($property->user);
-    reviewStep($property);
+
+    chatTurn(threadFor($this->plumbing), 'Tap drips all night long')->assertSet('notes', 'Tap drips all night long')->assertSee('Continue to book');
+    session()->forget(Thread::SESSION_KEY);
+    manualReview($property);
     summaryCard()->assertDontSee('Job description for pros')->call('load')->assertDontSee('Written with AI help');
 
     assistant()->assertNothingSent();
@@ -372,8 +282,8 @@ it('summarises the draft at review from stripped notes and lets the customer che
         ->and($job->ai_summary_source)->toBe(SummarySource::Ai)
         ->and($job->ai_summary_generated_at)->not->toBeNull()
         ->and(assistant()->descriptionsSeen())->toBe(['Under the sink. Call [phone].'])
-        ->and(json_encode(assistant()->summaryAnswersSeen()))->not->toContain('Private Lane')->not->toContain($customer->first_name)->not->toContain($property->public_id)
-        ->and(AiUsage::query()->sole()->service_job_id)->toBe($job->id);
+        ->and(json_encode(assistant()->summaryFactsSeen()))->not->toContain('Private Lane')->not->toContain($customer->first_name)->not->toContain($property->public_id)
+        ->and(AiUsage::query()->where('purpose', AiPurpose::Summarise)->sole()->service_job_id)->toBe($job->id);
 });
 
 it('discards a summary that breaks the rules and still lets the customer post (AC6, AC11)', function (?string $summary): void {
@@ -386,7 +296,7 @@ it('discards a summary that breaks the rules and still lets the customer post (A
 
     $job = ServiceJob::query()->sole();
     expect($job->ai_summary)->toBeNull()
-        ->and(AiUsage::query()->sole()->outcome)->toBe(AiOutcome::Invalid);
+        ->and(AiUsage::query()->where('purpose', AiPurpose::Summarise)->sole()->outcome)->toBe(AiOutcome::Invalid);
 
     $wizard->call('confirmBooking')->assertHasNoErrors();
     expect($job->fresh()->ai_summary_source)->toBe(SummarySource::None);
@@ -420,7 +330,7 @@ it('shows the summary as text, never as HTML (AC12)', function (): void {
         ->assertSeeHtml('Leaking &lt;b&gt;tap&lt;/b&gt;')->assertDontSeeHtml('<script>alert(1)</script>');
 });
 
-it('only asks again when the answers or notes change (AC5)', function (): void {
+it('only asks again when the facts or notes change (AC5)', function (): void {
     [$customer, $property] = aiCustomer();
     $this->actingAs($customer);
     assistant()->willSummarise('Dripping tap under the sink.');
@@ -555,7 +465,7 @@ it('drops an AI summary written for older details at posting (AC8)', function ()
     expect($job->fresh()->ai_summary)->toBeNull()->and($job->fresh()->ai_summary_source)->toBe(SummarySource::None);
 });
 
-it('shows safety advice and a guidance note at review for safety-relevant services only (AC9)', function (): void {
+it('shows the trade’s safety advice and a guidance note at review for safety-relevant trades only (AC9)', function (): void {
     [$customer, $property] = aiCustomer();
     $this->actingAs($customer);
 
@@ -563,17 +473,19 @@ it('shows safety advice and a guidance note at review for safety-relevant servic
         ->assertSee('If water is flooding, close the main stopcock first.')
         ->assertSee('This is guidance, not a guarantee.');
 
-    reviewStep($property, 'Sink is blocked.', $this->drain)
+    proNear(['painting'], 2);
+    reviewStep($property, 'Peeling walls.', tradeOf('painting'))
         ->assertDontSee('This is guidance, not a guarantee.');
 });
 
-it('shows the guidance note for a registered-electrician service without advice (AC9)', function (): void {
+it('shows the guidance note for a registered-electrician trade even without advice (AC9)', function (): void {
     [$customer, $property] = aiCustomer();
     $this->actingAs($customer);
-    $this->drain->update(['requires_registration' => 'electrical_registered_person', 'safety_advice' => []]);
-    Pro::query()->sole()->documents()->forceCreate(['type' => 'electrical_registered_person', 'status' => 'verified', 'verified_at' => now()]);
+    $electrical = tradeOf('electrical');
+    $electrical->update(['safety_advice' => []]);
+    proNear(['electrical'], 2);
 
-    reviewStep($property, 'Sink is blocked.', $this->drain)->assertSee('This is guidance, not a guarantee.');
+    reviewStep($property, 'Light trips the breaker.', $electrical)->assertSee('This is guidance, not a guarantee.');
 });
 
 it('shows safety advice at review even when the assistant is off (AC9)', function (): void {
@@ -583,7 +495,7 @@ it('shows safety advice at review even when the assistant is off (AC9)', functio
     [$customer, $property] = aiCustomer();
     $this->actingAs($customer);
 
-    reviewStep($property)
+    manualReview($property)
         ->assertSee('If water is flooding, close the main stopcock first.')
         ->assertSee('This is guidance, not a guarantee.');
     summaryCard()->assertDontSee('Job description for pros');
@@ -605,11 +517,10 @@ it('cannot summarise or edit another customer\'s draft (security)', function ():
 // --- Usage records (AC13) -----------------------------------------------------------
 
 it('records usage without any customer text and prunes it after the retention period (AC13)', function (): void {
-    assistant()->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.9));
-    Livewire::test(Welcome::class)->set('description', 'Secret detail about my geyser leaking')->call('find');
+    chatTurn(threadFor(), 'Secret detail about my geyser leaking');
 
     $usage = AiUsage::query()->sole();
-    expect($usage->purpose)->toBe(AiPurpose::SuggestService)
+    expect($usage->purpose)->toBe(AiPurpose::Chat)
         ->and($usage->outcome)->toBe(AiOutcome::Ok)
         ->and($usage->provider)->toBe('fake')->and($usage->model)->toBe('fake-model')
         ->and($usage->input_tokens)->toBe(120)->and($usage->output_tokens)->toBe(40)
@@ -626,7 +537,7 @@ it('records usage without any customer text and prunes it after the retention pe
 // --- Admin (AC16, settings) ----------------------------------------------------------
 
 it('shows admins the stored summary and its source on the job (AC16)', function (Role $role): void {
-    $job = ServiceJob::factory()->open()->create(['service_id' => $this->leak->id]);
+    $job = ServiceJob::factory()->open()->create(['trade_id' => tradeOf('plumbing')->id]);
     $job->forceFill(['ai_summary' => 'Dripping tap under the sink.', 'ai_summary_source' => SummarySource::CustomerEdited, 'customer_notes' => 'My own words'])->save();
     $admin = User::factory()->create();
     $admin->assignRole($role->value);
@@ -638,7 +549,7 @@ it('shows admins the stored summary and its source on the job (AC16)', function 
 })->with([Role::AdminSuper, Role::AdminSupport]);
 
 it('shows AI usage totals to admins only, without customer text (AC16)', function (): void {
-    AiUsage::factory()->count(3)->create(['purpose' => AiPurpose::SuggestService, 'outcome' => AiOutcome::Ok, 'input_tokens' => 100, 'output_tokens' => 10]);
+    AiUsage::factory()->count(3)->create(['purpose' => AiPurpose::Chat, 'outcome' => AiOutcome::Ok, 'input_tokens' => 100, 'output_tokens' => 10]);
     AiUsage::factory()->create(['purpose' => AiPurpose::Summarise, 'outcome' => AiOutcome::Timeout]);
 
     $this->actingAs(User::factory()->customer()->create())->get('/admin/ai-usage')->assertForbidden();
@@ -649,10 +560,10 @@ it('shows AI usage totals to admins only, without customer text (AC16)', functio
     Filament::setCurrentPanel('admin');
 
     $rows = (new AiUsageReport)->usage();
-    $suggest = $rows->firstWhere('purpose', AiPurpose::SuggestService->value);
+    $suggest = $rows->firstWhere('purpose', AiPurpose::Chat->value);
     expect($suggest->calls)->toBe(3)->and($suggest->input_tokens)->toBe(300)
         ->and($rows->firstWhere('outcome', AiOutcome::Timeout->value)->calls)->toBe(1);
-    Livewire::test(AiUsageReport::class)->assertOk()->assertSee('Service suggestions');
+    Livewire::test(AiUsageReport::class)->assertOk()->assertSee('Siya chat');
 });
 
 it('lets only super-admins change the AI settings (decision 2)', function (): void {

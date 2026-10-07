@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Notifications\Notify;
 use App\Domain\ServiceJobs\Enums\MessageSender;
 use App\Domain\ServiceJobs\Support\JobChat;
 use App\Models\JobConversation;
@@ -24,6 +25,13 @@ final class SendChatNotification implements ShouldQueue
 
     public int $tries = 3;
 
+    /**
+     * Twilio rate-limits bursts (429), so retry after a pause rather than at once.
+     *
+     * @var list<int>
+     */
+    public array $backoff = [30, 120];
+
     public function __construct(
         public readonly int $conversationId,
         public readonly MessageSender $recipient,
@@ -39,7 +47,7 @@ final class SendChatNotification implements ShouldQueue
         $notifiedColumn = $toCustomer ? 'customer_notified_at' : 'pro_notified_at';
 
         $send = DB::transaction(function () use ($readColumn, $notifiedColumn): ?JobConversation {
-            $conversation = JobConversation::query()->with(['serviceJob.customer', 'serviceJob.service', 'pro.user'])->lockForUpdate()->find($this->conversationId);
+            $conversation = JobConversation::query()->with(['serviceJob.customer', 'serviceJob.trade', 'pro.user'])->lockForUpdate()->find($this->conversationId);
 
             if (! $conversation instanceof JobConversation || JobChat::unreadFor($conversation, $this->recipient) === 0) {
                 return null;
@@ -65,12 +73,20 @@ final class SendChatNotification implements ShouldQueue
         $phone = $toCustomer ? $job->customer->phone_e164 : $send->pro->user->phone_e164;
         $invite = JobChat::inviteFor($job, $send->pro);
 
-        if ($phone === null || (! $toCustomer && $invite === null)) {
+        if (! $toCustomer && $invite === null) {
+            return;
+        }
+
+        if ($this->attempts() === 1) {
+            Notify::user($toCustomer ? $job->customer : $send->pro->user, 'chat_message', __('New message about your :trade job', ['trade' => mb_strtolower($job->trade->name)]), __('Open the chat to read and reply.'), $toCustomer ? route('jobs.show', $job) : route('pros.jobs.show', $invite));
+        }
+
+        if ($phone === null) {
             return;
         }
 
         $messaging->send(new OutgoingMessage($phone, 'chat_message', [
-            'service' => $job->service->name,
+            'service' => $job->trade->name,
             'link' => $toCustomer ? route('jobs.show', $job) : route('pros.jobs.show', $invite),
         ]));
     }

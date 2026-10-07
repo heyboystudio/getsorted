@@ -1,6 +1,6 @@
 @include('livewire.auth.partials.shell-start')
         <h1 class="text-2xl font-semibold tracking-tight">{{ $asPro ? __('Sign in to join as a pro') : __('Sign in') }}</h1>
-        <p class="mt-2 text-zinc-600">{{ __('New to Sortd?') }} <a href="{{ route('register', $asPro ? ['as' => 'pro'] : []) }}" class="font-medium text-emerald-800 underline underline-offset-4">{{ __('Create an account') }}</a></p>
+        <p class="mt-2 text-zinc-600">{{ __('New to Sortd?') }} <a href="{{ route($asPro ? 'pros.register' : 'register') }}" class="font-medium text-emerald-800 underline underline-offset-4">{{ $asPro ? __('Create a pro account') : __('Create a client account') }}</a></p>
 
         @if (session('status'))
             <p class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">{{ session('status') }}</p>

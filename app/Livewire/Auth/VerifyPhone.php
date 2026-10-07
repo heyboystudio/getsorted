@@ -90,7 +90,7 @@ final class VerifyPhone extends Component
         }
 
         activity()->performedOn($this->user())->causedBy($this->user())->log('phone saved without code (test site)');
-        $this->redirectIntended(route($this->user()->homeRoute(session()->get('auth.as_pro') === true)));
+        $this->redirectIntended(route($this->user()->homeRoute()));
     }
 
     /** The other channel, offered after a short wait (spec 014, AC4). */
@@ -140,7 +140,7 @@ final class VerifyPhone extends Component
             throw ValidationException::withMessages(['phone' => $this->takenMessage()]);
         }
 
-        $this->redirectIntended(route($this->user()->homeRoute(session()->get('auth.as_pro') === true)));
+        $this->redirectIntended(route($this->user()->homeRoute()));
     }
 
     public function changeNumber(): void

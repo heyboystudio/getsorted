@@ -9,7 +9,7 @@ use App\Models\ServiceJob;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-/** Invites wave 1 right after a job is posted (spec 009, AC1). Thin; safe to retry. */
+/** Invites the nearest eligible pros right after a job is posted (spec 009, spec 020). Thin; safe to retry. */
 final class StartMatching implements ShouldQueue
 {
     use Queueable;
@@ -28,7 +28,7 @@ final class StartMatching implements ShouldQueue
         $job = ServiceJob::query()->find($this->serviceJobId);
 
         if ($job instanceof ServiceJob) {
-            $runInviteWave->handle($job, firstWave: true);
+            $runInviteWave->handle($job);
         }
     }
 }

@@ -7,8 +7,6 @@ namespace App\Integrations\Fakes;
 use App\Contracts\Data\AssistantUsage;
 use App\Contracts\Data\ChatReply;
 use App\Contracts\Data\ChatRequest;
-use App\Contracts\Data\ScopingSuggestion;
-use App\Contracts\Data\ScopingSuggestionReply;
 use App\Contracts\Data\ScopingSummaryReply;
 use App\Contracts\Exceptions\AssistantUnavailable;
 use App\Contracts\ScopingAssistant;
@@ -16,14 +14,12 @@ use Closure;
 use PHPUnit\Framework\Assert;
 
 /**
- * Deterministic stand-in for the AI assistant. Returns nothing unless a test
- * scripts a response, so callers' "no suggestion" fallback is the default path.
- * Tests can script invalid output (unknown keys, hostile text) or an outage to check fallbacks.
+ * Deterministic stand-in for the AI assistant. A scripted chat turn is a closure that receives the request and
+ * drives the real BookingToolbox exactly as the model would, then returns the reply text; with nothing scripted
+ * Siya just asks for more. Tests can also script an outage to check fallbacks.
  */
 final class FakeScopingAssistant implements ScopingAssistant
 {
-    private ?ScopingSuggestion $suggestion = null;
-
     private ?string $summary = null;
 
     private ?AssistantUnavailable $failure = null;
@@ -33,23 +29,23 @@ final class FakeScopingAssistant implements ScopingAssistant
     /** @var list<string> */
     private array $descriptionsSeen = [];
 
-    /** @var list<array{service: string, answers: array<string, string|list<string>>}> */
+    /** @var list<array{trade: string, facts: list<string>}> */
     private array $summaryRequests = [];
 
-    /** @var list<ChatReply> */
-    private array $chatReplies = [];
+    /** @var list<Closure(ChatRequest): ?string> */
+    private array $chatScripts = [];
 
     /** @var list<ChatRequest> */
     private array $chatRequests = [];
 
     /**
-     * Queue Siya replies, used in order; with none queued Siya just says hello.
+     * Queue a scripted Siya turn. The closure may call `$request->toolbox` methods, then returns the reply text.
      *
-     * @param  array<string, mixed>  $answers
+     * @param  Closure(ChatRequest): ?string  $script
      */
-    public function willChat(?string $reply, ?string $tradeKey = null, ?string $serviceKey = null, array $answers = []): self
+    public function willChat(Closure $script): self
     {
-        $this->chatReplies[] = new ChatReply($reply, $tradeKey, $serviceKey, $answers, $this->usage());
+        $this->chatScripts[] = $script;
 
         return $this;
     }
@@ -68,14 +64,9 @@ final class FakeScopingAssistant implements ScopingAssistant
             throw $this->failure;
         }
 
-        return array_shift($this->chatReplies) ?? new ChatReply(__('Thanks! Tell me a bit more about the problem.'), null, null, [], $this->usage());
-    }
+        $script = array_shift($this->chatScripts);
 
-    public function willSuggest(?ScopingSuggestion $suggestion): self
-    {
-        $this->suggestion = $suggestion;
-
-        return $this;
+        return new ChatReply($script instanceof Closure ? $script($request) : __('Thanks! Tell me a bit more about the problem.'), $this->usage(), 2, $request->toolbox->calls);
     }
 
     public function willSummarise(?string $summary): self
@@ -92,6 +83,14 @@ final class FakeScopingAssistant implements ScopingAssistant
         return $this;
     }
 
+    /** Ends a scripted outage, so a retry can succeed. */
+    public function clearFailure(): self
+    {
+        $this->failure = null;
+
+        return $this;
+    }
+
     /** Runs during a summary request, so tests can change the draft while the "model" is thinking. */
     public function whileSummarising(Closure $callback): self
     {
@@ -100,21 +99,10 @@ final class FakeScopingAssistant implements ScopingAssistant
         return $this;
     }
 
-    public function suggestService(string $description, array $catalogue): ScopingSuggestionReply
+    public function summarise(string $tradeName, array $facts, string $description): ScopingSummaryReply
     {
         $this->descriptionsSeen[] = $description;
-
-        if ($this->failure instanceof AssistantUnavailable) {
-            throw $this->failure;
-        }
-
-        return new ScopingSuggestionReply($this->suggestion, $this->usage());
-    }
-
-    public function summarise(string $serviceKey, array $answers, string $description): ScopingSummaryReply
-    {
-        $this->descriptionsSeen[] = $description;
-        $this->summaryRequests[] = ['service' => $serviceKey, 'answers' => $answers];
+        $this->summaryRequests[] = ['trade' => $tradeName, 'facts' => $facts];
 
         if ($this->failure instanceof AssistantUnavailable) {
             throw $this->failure;
@@ -138,13 +126,13 @@ final class FakeScopingAssistant implements ScopingAssistant
     }
 
     /**
-     * Answers passed with each summary request, so tests can prove personal data was stripped.
+     * Facts passed with each summary request, so tests can prove personal data was stripped.
      *
-     * @return list<array<string, string|list<string>>>
+     * @return list<list<string>>
      */
-    public function summaryAnswersSeen(): array
+    public function summaryFactsSeen(): array
     {
-        return array_column($this->summaryRequests, 'answers');
+        return array_column($this->summaryRequests, 'facts');
     }
 
     public function assertSummaryRequests(int $count): void

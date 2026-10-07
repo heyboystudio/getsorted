@@ -7,19 +7,18 @@ namespace App\Domain\Properties\Actions;
 use App\Domain\Properties\Enums\PropertyType;
 use App\Domain\Properties\Exceptions\PropertyLimitReached;
 use App\Models\Property;
-use App\Models\Suburb;
 use App\Models\User;
 use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use InvalidArgumentException;
 
 final class SaveProperty
 {
     /**
-     * Creates or updates a customer's property. The location is the picked
-     * address's point when the customer chose a Places suggestion (spec 015),
-     * otherwise the suburb's centre point (spec 004, decision 2). The audit
-     * entry never contains the street address.
+     * Creates or updates a customer's property. The address always comes from a Google Places
+     * pick, so a new property needs its point (spec 015, 020); an edit may leave the address
+     * alone. The audit entry never contains the street address.
      *
      * @throws PropertyLimitReached
      */
@@ -27,8 +26,8 @@ final class SaveProperty
         User $owner,
         ?Property $property,
         string $label,
-        string $streetAddress,
-        Suburb $suburb,
+        ?string $streetAddress,
+        ?string $areaLabel,
         ?string $postalCode,
         PropertyType $propertyType,
         ?Point $location = null,
@@ -38,7 +37,11 @@ final class SaveProperty
             ? Gate::forUser($owner)->authorize('update', $property)
             : Gate::forUser($owner)->authorize('create', Property::class);
 
-        return DB::transaction(function () use ($owner, $property, $label, $streetAddress, $suburb, $postalCode, $propertyType, $location, $googlePlaceId): Property {
+        if (! $property instanceof Property && ($location === null || $streetAddress === null || trim($streetAddress) === '')) {
+            throw new InvalidArgumentException('A new property needs an address picked through Places.');
+        }
+
+        return DB::transaction(function () use ($owner, $property, $label, $streetAddress, $areaLabel, $postalCode, $propertyType, $location, $googlePlaceId): Property {
             if (! $property instanceof Property) {
                 // Locking the owner serialises concurrent creates so the limit holds.
                 User::query()->lockForUpdate()->findOrFail($owner->id);
@@ -52,21 +55,20 @@ final class SaveProperty
             }
 
             $isNew = ! $property->exists;
-            $property->fill([
-                'label' => $label,
-                'street_address' => $streetAddress,
-                'postal_code' => $postalCode,
-                'property_type' => $propertyType,
-            ]);
-            $property->suburb()->associate($suburb);
-            $property->location = $location ?? $suburb->centroid;
-            $property->location_source = $location instanceof Point ? 'places' : 'suburb_centroid';
-            $property->google_place_id = $location instanceof Point ? $googlePlaceId : null;
+            $property->fill(['label' => $label, 'postal_code' => $postalCode, 'property_type' => $propertyType]);
+
+            if ($location instanceof Point && $streetAddress !== null) {
+                $property->fill(['street_address' => $streetAddress]);
+                $property->location = $location;
+                $property->location_source = 'places';
+                $property->google_place_id = $googlePlaceId;
+                $property->area_label = $areaLabel;
+            }
+
             $property->save();
 
+            // Never the address or the free-text label: either could hold an address.
             activity()->performedOn($property)->causedBy($owner)
-                // Only the suburb: free text like the label could contain an address.
-                ->withProperties(['suburb' => $suburb->slug])
                 ->log($isNew ? 'property created' : 'property updated');
 
             return $property;

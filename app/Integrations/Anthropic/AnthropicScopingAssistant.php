@@ -7,8 +7,6 @@ namespace App\Integrations\Anthropic;
 use App\Contracts\Data\AssistantUsage;
 use App\Contracts\Data\ChatReply;
 use App\Contracts\Data\ChatRequest;
-use App\Contracts\Data\ScopingSuggestion;
-use App\Contracts\Data\ScopingSuggestionReply;
 use App\Contracts\Data\ScopingSummaryReply;
 use App\Contracts\Exceptions\AssistantUnavailable;
 use App\Contracts\ScopingAssistant;
@@ -16,40 +14,24 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Exceptions\AiException;
+use Laravel\Ai\Exceptions\ProviderOverloadedException;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use Throwable;
 
 /**
- * ScopingAssistant on Claude through the Laravel AI SDK (spec 007, 016): the
- * Anthropic API or Amazon Bedrock (EU), per `sortd.ai.provider` (decision 043).
+ * ScopingAssistant through the Laravel AI SDK (spec 007, 016): the Anthropic API,
+ * Amazon Bedrock (EU, decision 043) or the Google Gemini API (decision 049), per
+ * `sortd.ai.provider`. The class name predates the other providers.
  * Bound only when a provider is configured; the domain still keeps it idle
  * until the `ai.enabled` setting is on (founder decision 1).
  */
 final class AnthropicScopingAssistant implements ScopingAssistant
 {
-    public function suggestService(string $description, array $catalogue): ScopingSuggestionReply
+    public function summarise(string $tradeName, array $facts, string $description): ScopingSummaryReply
     {
-        $response = $this->ask(new ServiceSuggestionAgent, 'Catalogue: '.$this->json($catalogue)
-            ."\n<customer_description>".$this->json($description).'</customer_description>');
-
-        $data = $this->structured($response, ['trade_key', 'service_key', 'confidence']);
-        $trade = $data['trade_key'] ?? null;
-        $service = $data['service_key'] ?? null;
-        $confidence = $data['confidence'] ?? null;
-
-        $suggestion = is_string($trade) && is_string($service) && $trade !== '' && $service !== ''
-            && is_numeric($confidence) && $confidence >= 0 && $confidence <= 1
-            ? new ScopingSuggestion($trade, $service, (float) $confidence)
-            : null;
-
-        return new ScopingSuggestionReply($suggestion, $this->usage($response));
-    }
-
-    public function summarise(string $serviceKey, array $answers, string $description): ScopingSummaryReply
-    {
-        $response = $this->ask(new JobSummaryAgent, 'Service: '.$this->json($serviceKey)
-            ."\nAnswers: ".$this->json($answers)
+        $response = $this->ask(new JobSummaryAgent, 'Trade: '.$this->json($tradeName)
+            ."\nFacts: ".$this->json($facts)
             ."\n<customer_notes>".$this->json($description).'</customer_notes>');
 
         $summary = $this->structured($response, ['summary'])['summary'] ?? null;
@@ -59,29 +41,19 @@ final class AnthropicScopingAssistant implements ScopingAssistant
 
     public function chat(ChatRequest $request): ChatReply
     {
-        $response = $this->ask(new SiyaAgent, $this->json([
-            'catalogue' => $request->catalogue,
-            'confirmed_service' => $request->confirmedServiceKey,
-            'questions' => $request->questions,
-            'answers' => $request->answers,
-            'transcript' => $request->transcript,
-        ]), (int) config('sortd.ai.chat_timeout_seconds'));
+        $transcript = $request->transcript;
+        $latest = array_pop($transcript);
+        $toolbox = $request->toolbox;
+        $state = $toolbox->digest();
 
-        $data = $this->structured($response, ['reply', 'trade_key', 'service_key', 'answers']);
-        $answers = [];
+        $prompt = '<booking_state>'.$this->json($state).'</booking_state>'
+            ."\n<booking_stage>".$this->json($request->bookingStage).'</booking_stage>'
+            ."\n<customer_message>".$this->json($latest['text'] ?? '').'</customer_message>'
+            .($request->guardFeedback === null ? '' : "\n<reviewer_note>".$this->json($request->guardFeedback).'</reviewer_note>');
 
-        foreach ((array) ($data['answers'] ?? []) as $item) {
-            $key = data_get($item, 'question_key');
-            $values = array_values(array_filter((array) data_get($item, 'values', []), is_string(...)));
+        $response = $this->ask(new SiyaAgent($toolbox, $transcript, $request->productFacts), $prompt, (int) config('sortd.ai.chat_timeout_seconds'));
 
-            if (is_string($key) && $key !== '' && $values !== []) {
-                $answers[$key] = $values;
-            }
-        }
-
-        $text = fn (string $field): ?string => is_string($data[$field] ?? null) && trim($data[$field]) !== '' ? trim($data[$field]) : null;
-
-        return new ChatReply($text('reply'), $text('trade_key'), $text('service_key'), $answers, $this->usage($response));
+        return new ChatReply(trim($response->text) === '' ? null : trim($response->text), $this->usage($response), max(1, $response->steps->count()), $response->toolCalls->count());
     }
 
     /**
@@ -102,8 +74,17 @@ final class AnthropicScopingAssistant implements ScopingAssistant
     /** @throws AssistantUnavailable */
     private function ask(Agent $agent, string $prompt, ?int $timeout = null): AgentResponse
     {
+        $send = fn (): AgentResponse => $agent->prompt($prompt, provider: $this->provider(), model: $this->model(), timeout: $timeout ?? (int) config('sortd.ai.timeout_seconds'));
+
         try {
-            return $agent->prompt($prompt, provider: $this->provider(), model: $this->model(), timeout: $timeout ?? (int) config('sortd.ai.timeout_seconds'));
+            try {
+                return $send();
+            } catch (ProviderOverloadedException) {
+                // Demand spikes at the provider are usually brief; tool writes are idempotent, so one retry is safe.
+                usleep(700_000);
+
+                return $send();
+            }
         } catch (AiException|ConnectionException|RequestException $exception) {
             throw new AssistantUnavailable($this->timedOut($exception), $exception);
         }
@@ -127,7 +108,11 @@ final class AnthropicScopingAssistant implements ScopingAssistant
 
     private function provider(): string
     {
-        return config('sortd.ai.provider') === 'bedrock' ? 'bedrock' : 'anthropic';
+        return match (config('sortd.ai.provider')) {
+            'bedrock' => 'bedrock',
+            'gemini' => 'gemini',
+            default => 'anthropic',
+        };
     }
 
     private function model(): string

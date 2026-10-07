@@ -1,28 +1,27 @@
 # Matching
 
-Goal: every posted job gets up to **3 quotes** from vetted, nearby pros without the customer reposting.
+Goal: every posted job reaches up to **10** vetted, nearby pros of the right trade, and the customer gets up to **5 quotes** without reposting (spec 020).
 
 ## Eligibility (all must be true)
 
 1. Pro status is `approved` and not `suspended` or `paused`.
-2. Pro offers the job's service (`pro_services`).
-3. Pro covers the property's suburb (`pro_service_areas`).
-4. Pro holds any registration the service requires (e.g. Electrical CoC requires a registered-person record that is verified and not expired).
-5. Pro is under their weekly job cap (optional, set by the pro).
-6. Pro was not the subject of an upheld dispute with this customer.
+2. Pro offers the job's **trade** (`pro_trades`).
+3. The job is within the pro's travel radius of their base address: `service_radius_km` (default 15 km) plus a **soft edge** of 2 km (`matching.soft_edge_km`). Distance is PostGIS geography distance between the pro's `base_location` and the job's `location`, both from Google Places.
+4. Pro is under their weekly job cap (optional, set by the pro).
+5. Pro was not the subject of an upheld dispute with this customer.
 
-The **coverage check** in booking runs the same eligibility query and stops the customer early if the count is 0 (waitlist instead).
+**Registration is never a gate.** A pro with a verified PIRB or registered-electrician document gets a badge; an unverified pro can still be invited and quote, and the customer sees "registration not verified". There are no sub-services and no scoping questions: the job carries the facts Siya extracted (spec 020).
 
-## Service areas (v1)
+The **coverage check** in booking uses the same query and stops the customer early if no pro is near (waitlist instead) once `SORTD_REQUIRE_PROS` is on; before launch a job posts regardless (decision 044).
 
-- A `suburbs` table holds eThekwini suburbs with a PostGIS point (centroid) and optional polygon.
-- Pros pick suburbs they serve (checkbox list grouped by region); admin can edit.
-- A property is assigned to a suburb when saved (polygon contains point; else nearest centroid within 5 km; else "outside launch area").
-- Later: radius-based service areas using PostGIS distance.
+## Locations (spec 020)
+
+- Customers and pros both pick an address through Google Places autocomplete; the resolved point and an approximate area name (e.g. "Musgrave") are stored. There is no manual address entry and no suburb list.
+- Pros see the area name and an approximate distance ("about 6 km away"), never the street address or exact coordinates, until their quote is accepted.
 
 ## Ranking eligible pros
 
-V1 ranks approved eligible pros by fewest invites in the last 7 days, with random tie-breaking (spec 009). The richer signals below are future work, after ratings and response data exist.
+Pros inside their own radius rank first, then fewest invites in the last 7 days (random tie-break), then nearest. Soft-edge pros (up to 2 km beyond their radius) are used only to fill invites that nearer pros leave open. The richer signals below are future work, after ratings and response data exist.
 
 Future score (weights and settings to be decided when these signals exist):
 
@@ -34,17 +33,17 @@ Future score (weights and settings to be decided when these signals exist):
 | Invites received in the last 7 days (lower is better) | Fair rotation; new pros get work |
 | Reliability strikes (cancellations, no-shows) | Trust |
 
-## Invite waves
+## Invites
 
-1. Wave 1: invite the top **5** eligible pros (configurable).
-2. Each invite expires after 24 h.
-3. If after **12 h** the job has fewer than 2 quotes, invite the next 3.
-4. Stop later waves once the configurable "enough quotes" threshold is reached (2 by default). Spec 010 will add the three-submitted-quote cap and close remaining open invites when the job is full.
-5. Admin can manually invite an eligible pro who has not been invited, or stop further matching waves. Existing open invites remain valid when matching is stopped.
+1. When a job is posted, invite up to **10** eligible pros at once (`matching.invite_count`).
+2. Each invite expires after 24 h (`matching.invite_expiry_hours`).
+3. The every-five-minutes run tops up missing invites for open jobs posted in the last 24 h, so a pro approved later can still be invited (never the same pro twice).
+4. The job accepts the first **5** submitted quotes (`matching.max_quotes`). When it is full every other open invite is closed and late pros see "This job is full".
+5. Admin can manually invite an eligible pro who has not been invited, or stop further matching. Existing open invites remain valid when matching is stopped.
 
 ## What pros see in an invite
 
-Trade, service, scoping answers, AI summary, photos, suburb (not street), preferred dates and time window, how many pros were invited, how many quotes are in. **No** customer name, phone or street address until their quote is accepted.
+Trade, the highlighted facts the customer reported, AI summary, photos, area name and approximate distance (not street), preferred dates and time window, how many pros were invited, how many quotes are in. **No** customer name, phone or street address until their quote is accepted.
 
 ## Anti-leakage
 

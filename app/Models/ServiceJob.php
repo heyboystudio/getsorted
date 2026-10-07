@@ -9,6 +9,7 @@ use App\Domain\ServiceJobs\Enums\SummarySource;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Domain\ServiceJobs\Enums\Urgency;
 use Carbon\CarbonImmutable;
+use Clickbar\Magellan\Data\Geometries\Point;
 use Database\Factories\ServiceJobFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,13 +28,15 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property int $id
  * @property string $public_id
  * @property int $customer_id
- * @property int $service_id
+ * @property int $trade_id
+ * @property list<array{id: string, text: string, turn: int}> $facts facts Siya extracted from the customer's words; highlighted for pros
+ * @property Point|null $location copied from the property when the job is posted
+ * @property string|null $area_label approximate area, safe to show pros
  * @property int|null $property_id
  * @property ServiceJobStatus $status
  * @property Urgency $urgency
  * @property CarbonImmutable|null $preferred_date
  * @property TimeWindow|null $time_window
- * @property array<string, array{prompt: string, type: string, answer: string|int|list<string>}> $scoping_answers
  * @property string|null $customer_notes
  * @property string|null $ai_summary
  * @property SummarySource $ai_summary_source
@@ -70,10 +73,10 @@ final class ServiceJob extends Model implements HasMedia
 
     /** Status is deliberately absent: only the state machine writes it. */
     /** @var list<string> */
-    protected $fillable = ['urgency', 'preferred_date', 'time_window', 'scoping_answers', 'customer_notes'];
+    protected $fillable = ['urgency', 'preferred_date', 'time_window', 'facts', 'customer_notes'];
 
     /** @var array<string, mixed> */
-    protected $attributes = ['status' => 'draft', 'urgency' => 'normal', 'scoping_answers' => '{}', 'ai_summary_source' => 'none'];
+    protected $attributes = ['status' => 'draft', 'urgency' => 'normal', 'facts' => '[]', 'ai_summary_source' => 'none'];
 
     /** @return list<string> */
     public function uniqueIds(): array
@@ -116,10 +119,10 @@ final class ServiceJob extends Model implements HasMedia
         return $this->belongsTo(User::class, 'customer_id');
     }
 
-    /** @return BelongsTo<Service, $this> */
-    public function service(): BelongsTo
+    /** @return BelongsTo<Trade, $this> */
+    public function trade(): BelongsTo
     {
-        return $this->belongsTo(Service::class);
+        return $this->belongsTo(Trade::class);
     }
 
     /** @return BelongsTo<Property, $this> */
@@ -135,24 +138,13 @@ final class ServiceJob extends Model implements HasMedia
     }
 
     /**
-     * Answers in the service's question order. The database (jsonb) doesn't keep
-     * key order; answers to questions removed since are listed last.
+     * The facts as plain text lines, in the order they were added.
      *
-     * @return list<array{prompt: string, type: string, answer: string|int|list<string>}>
+     * @return list<string>
      */
-    public function orderedAnswers(): array
+    public function factTexts(): array
     {
-        $answers = $this->scoping_answers;
-        $ordered = [];
-
-        foreach ($this->service->questions as $question) {
-            if (isset($answers[$question->key])) {
-                $ordered[] = $answers[$question->key];
-                unset($answers[$question->key]);
-            }
-        }
-
-        return [...$ordered, ...array_values($answers)];
+        return array_map(fn (array $fact): string => $fact['text'], $this->facts);
     }
 
     /** @return array<string, string> */
@@ -163,7 +155,8 @@ final class ServiceJob extends Model implements HasMedia
             'urgency' => Urgency::class,
             'preferred_date' => 'immutable_date',
             'time_window' => TimeWindow::class,
-            'scoping_answers' => 'array',
+            'facts' => 'array',
+            'location' => Point::class,
             'ai_summary_source' => SummarySource::class,
             'ai_summary_generated_at' => 'immutable_datetime',
             'posted_at' => 'immutable_datetime',

@@ -50,11 +50,11 @@ final readonly class StoreProDocument
         [$bytes, $extension, $mime] = $this->process($type, $upload);
 
         return DB::transaction(function () use ($user, $pro, $type, $bytes, $extension, $mime): ProDocument {
-            $locked = Pro::query()->with('services')->lockForUpdate()->findOrFail($pro->id);
+            $locked = Pro::query()->with('trades')->lockForUpdate()->findOrFail($pro->id);
             Gate::forUser($user)->authorize('update', $locked);
 
-            if ($type->isRegistration() && ! in_array($type, $locked->requiredRegistrations(), true)) {
-                throw ValidationException::withMessages(['upload' => __('None of your chosen services needs this registration.')]);
+            if ($type->isRegistration() && ! in_array($type, $locked->offeredRegistrations(), true)) {
+                throw ValidationException::withMessages(['upload' => __('None of your chosen trades has this registration.')]);
             }
 
             $document = $locked->documents()->firstOrNew(['type' => $type]);
@@ -98,9 +98,17 @@ final readonly class StoreProDocument
         if ($mime === 'application/pdf' && $type->acceptsPdf()) {
             $bytes = (string) file_get_contents($path);
 
-            // Vetting admins open these locally: refuse PDFs that can run scripts or carry other files.
-            if (! str_starts_with($bytes, '%PDF-') || preg_match('#/(JavaScript|JS|Launch|EmbeddedFile)\b#', $bytes) === 1) {
+            // The PDF header may follow a few bytes of padding (scanners and some apps add it), but must be near the start.
+            if (! str_contains(substr($bytes, 0, 1024), '%PDF-')) {
                 throw $this->invalid($type);
+            }
+
+            // Vetting admins open these locally: refuse PDFs that can run scripts or carry other files. Compressed
+            // stream data is skipped, because arbitrary binary can contain these letters by chance.
+            $structure = (string) preg_replace('/stream\r?\n.*?endstream/s', 'stream endstream', $bytes);
+
+            if (preg_match('#/(JavaScript|JS|Launch|EmbeddedFiles?)(?![A-Za-z0-9])#', $structure) === 1) {
+                throw ValidationException::withMessages(['upload' => __('This PDF contains scripts or attachments, so we cannot accept it. Please save it again as a plain PDF, or upload a photo of the document instead.')]);
             }
 
             return [$bytes, 'pdf', 'application/pdf'];
@@ -118,7 +126,7 @@ final readonly class StoreProDocument
     private function invalid(DocumentType $type): ValidationException
     {
         return ValidationException::withMessages(['upload' => $type->acceptsPdf()
-            ? __('Choose a photo (JPEG, PNG, WebP or HEIC) or a PDF.')
-            : __('Choose a JPEG, PNG, WebP or HEIC photo.')]);
+            ? __('We could not read that file. Choose a photo (JPEG, PNG, WebP or HEIC) or a valid PDF.')
+            : __('This one must be a photo (JPEG, PNG, WebP or HEIC), not a PDF.')]);
     }
 }

@@ -70,7 +70,7 @@ it('defines the OTP verify and sign-up limits from the security baseline', funct
         ->and(LoginThrottle::registerLimit('10.0.0.1')->maxAttempts)->toBe(5);
 });
 
-it('only lets the admin panel use sessions started on its own MFA login page', function (): void {
+it('only lets the admin panel use sessions started on its own login page', function (): void {
     $user = User::factory()->customer()->create();
     $this->actingAs($user);
     $user->assignRole(Role::AdminSupport->value);
@@ -79,7 +79,7 @@ it('only lets the admin panel use sessions started on its own MFA login page', f
     $this->assertGuest();
 });
 
-it('lets an admin who signed in on the panel login through to MFA set-up', function (): void {
+it('lets an admin who signed in on the panel login through to the dashboard', function (): void {
     $admin = User::factory()->create();
     $admin->assignRole(Role::AdminSuper->value);
     Filament::setCurrentPanel('admin');
@@ -87,7 +87,7 @@ it('lets an admin who signed in on the panel login through to MFA set-up', funct
     Livewire::test(Login::class)->fillForm(['email' => $admin->email, 'password' => 'password'])->call('authenticate');
 
     expect(session(Login::SESSION_KEY))->toBe($admin->id);
-    $this->get('/admin')->assertRedirect('/admin/multi-factor-authentication/set-up');
+    $this->get('/admin')->assertOk();
 });
 
 it('makes models strict outside production', function (): void {

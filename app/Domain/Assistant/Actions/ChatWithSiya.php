@@ -9,24 +9,21 @@ use App\Contracts\Data\ChatRequest;
 use App\Contracts\ScopingAssistant;
 use App\Domain\Assistant\Enums\AiOutcome;
 use App\Domain\Assistant\Enums\AiPurpose;
+use App\Domain\Assistant\State\BookingState;
 use App\Domain\Assistant\Support\AssistantCalls;
+use App\Domain\Assistant\Support\BookingToolbox;
+use App\Domain\Assistant\Support\ProductFacts;
 use App\Domain\Assistant\Support\Redactor;
 use App\Domain\Assistant\Support\SummaryRules;
-use App\Domain\Catalogue\Enums\QuestionType;
-use App\Domain\ServiceJobs\Support\ScopingAnswers;
-use App\Models\ScopingQuestion;
-use App\Models\Service;
-use Illuminate\Database\Eloquent\Collection;
+use App\Models\Trade;
 
 /**
- * One Siya turn (spec 016): sends the scrubbed chat to the assistant and keeps
- * only what checks out: a reply without contact details or prices, an active
- * catalogue service, and answers that are valid for the confirmed service's questions.
+ * One Siya turn (spec 020). The model changes the booking state only through BookingToolbox, which validates every
+ * proposal; this action then guards the reply text. A reply that breaks a rule is regenerated once, then replaced
+ * by a deterministic reply built from the state, so a turn never fails because of wording and the state is never lost.
  */
 final readonly class ChatWithSiya
 {
-    private const int TRANSCRIPT_TURNS = 20;
-
     private const int MAX_REPLY_LENGTH = 600;
 
     public function __construct(private AssistantCalls $calls) {}
@@ -37,52 +34,60 @@ final readonly class ChatWithSiya
     }
 
     /**
-     * @param  list<array{role: 'customer'|'assistant', text: string}>  $transcript  customer text already scrubbed
-     * @param  array<string, mixed>  $answers
-     * @return array{outcome: AiOutcome, reply: ?string, suggested: ?Service, answers: array<string, mixed>}
+     * @param  list<array{role: 'customer'|'assistant', text: string}>  $transcript  the whole chat; the last entry is the customer's new message
+     * @return array{outcome: AiOutcome, reply: ?string, state: BookingState, emergency: bool, nextStepOffered: bool, degraded: bool}
      */
-    public function handle(array $transcript, ?Service $confirmed, array $answers, string $visitorKey): array
+    public function handle(BookingState $state, array $transcript, string $visitorKey, string $bookingStage = 'chat'): array
     {
-        $services = $this->activeServices();
-        $questions = $confirmed instanceof Service ? $confirmed->questions : new Collection;
+        $trades = Trade::query()->where('is_active', true)->orderBy('sort')->pluck('name', 'key')->all();
+        $transcript = array_map(fn (array $turn): array => ['role' => $turn['role'], 'text' => self::scrub($turn['text'])], $transcript);
 
-        $request = new ChatRequest(
-            $this->catalogue($services),
-            $confirmed?->key,
-            $questions->map(fn (ScopingQuestion $question): array => [
-                'key' => $question->key, 'prompt' => $question->prompt, 'type' => $question->type->value,
-                'options' => $question->options, 'required' => $question->required,
-            ])->values()->all(),
-            $answers,
-            array_slice($transcript, -self::TRANSCRIPT_TURNS),
-        );
+        // Work on a copy: the caller keeps the original unless the turn produced a usable state.
+        $working = BookingState::fromArray($state->toArray());
+        $working->turn++;
+        $toolbox = new BookingToolbox($working, $trades, $transcript);
+        $request = new ChatRequest($toolbox, $transcript, ProductFacts::all(), $bookingStage);
 
-        $result = ['outcome' => AiOutcome::Error, 'reply' => null, 'suggested' => null, 'answers' => []];
-
-        [$outcome] = $this->calls->call(
+        [$outcome, $reply] = $this->calls->call(
             AiPurpose::Chat,
             'assistant:chat-rate:'.$visitorKey,
             (int) config('sortd.ai.chat_messages_per_hour'),
-            fn (ScopingAssistant $assistant): ChatReply => $assistant->chat($request),
-            function (ChatReply $reply) use ($services, $confirmed, $questions, &$result): bool {
-                $text = $reply->reply === null ? null : trim($reply->reply);
+            function (ScopingAssistant $assistant) use ($request, $toolbox, $transcript, $bookingStage): ChatReply {
+                $reply = $assistant->chat($request);
 
-                // Reuse spec 007's output rules: no contact details, URLs or money amounts.
-                if ($text === null || $text === '' || mb_strlen($text) > self::MAX_REPLY_LENGTH || ! SummaryRules::acceptable($text)) {
-                    return false;
+                if (! self::acceptable($reply->reply)) {
+                    $reply = $assistant->chat(new ChatRequest($toolbox, $transcript, ProductFacts::all(), $bookingStage,
+                        'Your reply broke a rule: replies must be plain text under '.self::MAX_REPLY_LENGTH.' characters with no prices, phone numbers, emails, addresses or links. Rewrite it. Tool changes you already made are saved.'));
                 }
 
-                $result['reply'] = $text;
-                $result['suggested'] = $confirmed instanceof Service ? null : $services->first(
-                    fn (Service $service): bool => $service->key === $reply->serviceKey && $service->trade->key === $reply->tradeKey,
-                );
-                $result['answers'] = $confirmed instanceof Service ? $this->validAnswers($questions, $reply->answers) : [];
-
-                return true;
+                return $reply;
             },
+            fn (ChatReply $reply): bool => self::acceptable($reply->reply),
         );
 
-        $result['outcome'] = $outcome;
+        // Tool writes were validated when made, so they are kept even when the wording or the provider failed.
+        $kept = $toolbox->calls > 0 || $outcome === AiOutcome::Ok;
+        $result = [
+            'outcome' => $outcome,
+            'reply' => null,
+            'state' => $kept ? $working : $state,
+            'emergency' => $toolbox->emergencyFlagged,
+            'nextStepOffered' => $working->nextStepOffered,
+            'degraded' => false,
+        ];
+
+        if ($outcome === AiOutcome::Ok && $reply instanceof ChatReply) {
+            $result['reply'] = trim((string) $reply->reply);
+
+            return $result;
+        }
+
+        // The reply broke a rule twice: say something true about the state instead of failing the turn.
+        if ($outcome === AiOutcome::Invalid) {
+            $result['outcome'] = AiOutcome::Ok;
+            $result['reply'] = self::fallbackReply($working, $trades);
+            $result['degraded'] = true;
+        }
 
         return $result;
     }
@@ -93,53 +98,29 @@ final readonly class ChatWithSiya
         return Redactor::strip(trim($message));
     }
 
-    /**
-     * @param  Collection<int, ScopingQuestion>  $questions
-     * @param  array<string, mixed>  $proposed
-     * @return array<string, mixed>
-     */
-    private function validAnswers(Collection $questions, array $proposed): array
+    private static function acceptable(?string $reply): bool
     {
-        $valid = [];
+        $reply = $reply === null ? '' : trim($reply);
 
-        foreach ($questions as $question) {
-            $values = $proposed[$question->key] ?? null;
-
-            if (! is_array($values) || $values === []) {
-                continue;
-            }
-
-            $raw = $question->type === QuestionType::MultiChoice ? array_values($values) : $values[0];
-
-            if (ScopingAnswers::check($question, $raw)['ok']) {
-                $valid[$question->key] = $raw;
-            }
-        }
-
-        return $valid;
-    }
-
-    /** @return Collection<int, Service> */
-    private function activeServices(): Collection
-    {
-        return Service::query()->with('trade')
-            ->where('is_active', true)->whereHas('trade', fn ($trade) => $trade->where('is_active', true))
-            ->orderBy('sort')->get();
+        // Reuse spec 007's output rules: no contact details, URLs or money amounts.
+        return $reply !== '' && mb_strlen($reply) <= self::MAX_REPLY_LENGTH && SummaryRules::acceptable($reply);
     }
 
     /**
-     * @param  Collection<int, Service>  $services
-     * @return array<string, array{name: string, services: array<string, string>}>
+     * A plain, true statement of where the booking stands, used only when the model's wording is unusable.
+     *
+     * @param  array<string, string>  $trades
      */
-    private function catalogue(Collection $services): array
+    private static function fallbackReply(BookingState $state, array $trades): string
     {
-        $catalogue = [];
-
-        foreach ($services as $service) {
-            $catalogue[$service->trade->key]['name'] = $service->trade->name;
-            $catalogue[$service->trade->key]['services'][$service->key] = $service->name;
+        if ($state->isReady()) {
+            return __('Thanks, I’ve noted that. Would you like to go ahead and book a pro?');
         }
 
-        return $catalogue;
+        if ($state->tradeKey === null && $state->facts !== []) {
+            return __('Thanks, I’ve noted that. Which kind of pro do you need: :trades?', ['trades' => implode(', ', array_map('mb_strtolower', array_values($trades)))]);
+        }
+
+        return __('Thanks. Tell me a bit more about what’s happening.');
     }
 }

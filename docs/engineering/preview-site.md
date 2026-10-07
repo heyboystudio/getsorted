@@ -30,7 +30,7 @@ On the server, run `docker compose exec web php artisan sortd:create-super-admin
 Nothing depends on it. Its database and uploads go with it.
 
 ## Public website pages
-The preview includes a multi-page public website: home, customer guide, trade directory and trade detail pages, pro guide, about, and the legal pages. Sign-up and sign-in use the application routes, including Google and pro registration. The homepage does not expose the free-text “Describe a problem” entry point yet. Terms, privacy and pro agreement are visibly marked as drafts and require legal review before a live launch.
+The preview includes a multi-page public website: home, customer guide, trade directory and trade detail pages, pro guide, about, and the legal pages. Sign-up and sign-in use the application routes, including Google and pro registration. The homepage has a "What needs sorting?" box that starts the Siya booking thread with the typed description (decision 048). Terms, privacy and pro agreement are visibly marked as drafts and require legal review before a live launch.
 
 The website's logo and photographs are generated visual assets stored in `public/images/`. They are illustrative and do not depict actual Sortd customers, pros or completed jobs.
 

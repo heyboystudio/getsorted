@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Clickbar\Magellan\Data\Geometries\Point;
 use Database\Factories\WaitlistEntryFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ final class WaitlistEntry extends Model
     use HasFactory, Prunable;
 
     /** @var list<string> */
-    protected $fillable = ['first_name', 'phone_e164', 'suburb_text', 'suburb_key', 'suburb_id', 'service_id', 'privacy_version', 'consented_at'];
+    protected $fillable = ['first_name', 'phone_e164', 'trade_id', 'area_label', 'privacy_version', 'consented_at'];
 
     /** @var list<string> */
     protected $hidden = ['phone_e164', 'first_name'];
@@ -30,6 +31,6 @@ final class WaitlistEntry extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['consented_at' => 'immutable_datetime'];
+        return ['consented_at' => 'immutable_datetime', 'location' => Point::class];
     }
 }

@@ -14,7 +14,9 @@ use App\Http\Controllers\ShowTradeController;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsurePhoneIsVerified;
 use App\Livewire\Account\Home;
+use App\Livewire\Account\Inbox;
 use App\Livewire\Account\Jobs\Show as JobShow;
+use App\Livewire\Account\Messages;
 use App\Livewire\Account\Properties\Form as PropertyForm;
 use App\Livewire\Account\Properties\Index as PropertyIndex;
 use App\Livewire\Auth\ForgotPassword;
@@ -25,13 +27,17 @@ use App\Livewire\Auth\VerifyEmail;
 use App\Livewire\Auth\VerifyPhone;
 use App\Livewire\Booking\Thread as BookingThread;
 use App\Livewire\Pros\Application as ProApplication;
-use App\Livewire\Pros\BecomePro;
 use App\Livewire\Pros\Jobs\Index as ProJobs;
 use App\Livewire\Pros\Jobs\Show as ProJob;
 use App\Livewire\Pros\Status as ProStatusPage;
 use App\Livewire\Pros\Welcome as ProWelcome;
 use App\Livewire\Welcome;
 use Illuminate\Support\Facades\Route;
+
+if (config('sortd.admin_domain') !== null) {
+    // The admin panel moved to its own host; old /admin links land there.
+    Route::get('/admin/{any?}', fn () => redirect()->away('https://'.config('sortd.admin_domain')))->where('any', '.*');
+}
 
 Route::get('/', Welcome::class)->name('home');
 Route::view('/customers', 'pages.customers')->name('customers');
@@ -42,7 +48,6 @@ Route::get('/trades/{trade}', ShowTradeController::class)->name('trades.show');
 // Booking is one Siya thread (spec 017). Guests describe the problem, then sign in before Where & when.
 Route::get('/book', BookingThread::class)->name('book');
 Route::get('/book/{trade}', BookingThread::class)->name('book.trade');
-Route::get('/book/{trade}/{service:key}', BookingThread::class)->scopeBindings()->name('booking.start');
 Route::redirect('/help', '/book')->name('assistant');
 
 Route::view('/terms', 'pages.terms')->name('terms');
@@ -53,6 +58,7 @@ Route::view('/pros/agreement', 'pages.pros.agreement')->name('pros.agreement');
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', Login::class)->name('login');
     Route::get('/register', Register::class)->name('register');
+    Route::get('/pros/register', Register::class)->defaults('as', 'pro')->name('pros.register');
     Route::get('/forgot-password', ForgotPassword::class)->name('password.request');
     Route::get('/reset-password/{token}', ResetPassword::class)->name('password.reset');
     Route::get('/auth/google', [GoogleController::class, 'redirect'])->middleware('throttle:20,1')->name('auth.google');
@@ -80,8 +86,9 @@ Route::middleware('auth')->group(function (): void {
             Route::get('/app/jobs/{job}', JobShow::class)->name('jobs.show');
             Route::get('/app/jobs/{job}/continue', BookingThread::class)->name('booking.continue');
         });
+        Route::get('/notifications', Inbox::class)->name('notifications');
+        Route::get('/messages', Messages::class)->name('messages');
         Route::get('/pros/welcome', ProWelcome::class)->name('pros.welcome');
-        Route::get('/pros/become', BecomePro::class)->name('pros.become');
         Route::get('/pros/apply', ProApplication::class)->name('pros.apply');
         Route::get('/pros/status', ProStatusPage::class)->name('pros.status');
         Route::get('/pros/jobs', ProJobs::class)->name('pros.jobs');

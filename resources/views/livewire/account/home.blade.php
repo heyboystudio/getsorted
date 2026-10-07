@@ -37,11 +37,11 @@
             <a href="{{ $job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Draft ? route('booking.continue', $job) : route('jobs.show', $job) }}" wire:key="{{ $job->public_id }}"
                class="mt-3 block rounded-xl border border-zinc-200 bg-white p-4 hover:border-emerald-700">
                 <span class="flex items-start justify-between gap-3">
-                    <span class="font-medium">{{ $job->service->name }}</span>
+                    <span class="font-medium">{{ $job->trade->name }}</span>
                     <span class="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs">{{ $job->status->customerLabel() }}</span>
                 </span>
                 <span class="mt-1 block text-sm text-zinc-600">
-                    {{ $job->property?->suburb->name ?? __('No address yet') }}@if ($job->posted_at) · {{ __('Posted :date', ['date' => $job->posted_at->translatedFormat('j M')]) }}@endif
+                    {{ $job->property?->area_label ?? __('No address yet') }}@if ($job->posted_at) · {{ __('Posted :date', ['date' => $job->posted_at->translatedFormat('j M')]) }}@endif
                 </span>
             </a>
             @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Draft)

@@ -24,10 +24,9 @@ final class WaitlistDemand extends Page
     public function demand(): Collection
     {
         return WaitlistEntry::query()
-            ->join('services', 'services.id', '=', 'waitlist_entries.service_id')
-            ->leftJoin('suburbs', 'suburbs.id', '=', 'waitlist_entries.suburb_id')
-            ->selectRaw('coalesce(suburbs.name, ?) as suburb_name, services.name as service_name, count(*) as total', [__('Other suburb')])
-            ->groupBy('suburbs.name', 'services.name')
+            ->join('trades', 'trades.id', '=', 'waitlist_entries.trade_id')
+            ->selectRaw('coalesce(waitlist_entries.area_label, ?) as area_name, trades.name as trade_name, count(*) as total', [__('Other area')])
+            ->groupBy('waitlist_entries.area_label', 'trades.name')
             ->orderByDesc('total')
             ->get();
     }

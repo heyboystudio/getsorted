@@ -7,8 +7,8 @@ namespace Database\Factories;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
 use App\Models\Property;
-use App\Models\Service;
 use App\Models\ServiceJob;
+use App\Models\Trade;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -20,11 +20,11 @@ final class ServiceJobFactory extends Factory
     {
         return [
             'customer_id' => User::factory()->customer(),
-            'service_id' => Service::factory(),
+            'trade_id' => Trade::factory(),
             'property_id' => null,
             'preferred_date' => now()->addDays(3)->toDateString(),
             'time_window' => TimeWindow::Morning,
-            'scoping_answers' => [],
+            'facts' => [],
             'customer_notes' => null,
         ];
     }

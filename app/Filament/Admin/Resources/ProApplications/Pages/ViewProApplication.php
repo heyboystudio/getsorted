@@ -11,13 +11,13 @@ use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\Pros\Exceptions\CannotChangeApplication;
 use App\Filament\Admin\Resources\ProApplications\ProApplicationResource;
 use App\Models\Pro;
-use App\Models\Service;
-use App\Models\Suburb;
+use App\Models\Trade;
 use App\Models\User;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Support\Exceptions\Halt;
@@ -32,7 +32,7 @@ final class ViewProApplication extends ViewRecord
     {
         return [
             Action::make('approve')->label(__('Approve'))->color('success')->requiresConfirmation()
-                ->modalDescription(__('The pro starts receiving jobs for verified services in their suburbs.'))
+                ->modalDescription(__('The pro starts receiving jobs for their trades within their travel radius.'))
                 ->visible(fn (): bool => $this->pro()->status === ProStatus::Submitted)
                 ->action(fn () => $this->attempt(fn () => app(DecideApplication::class)->approve($this->admin(), $this->pro()), __('Approved'))),
             Action::make('requestChanges')->label(__('Request changes'))->color('warning')
@@ -50,15 +50,14 @@ final class ViewProApplication extends ViewRecord
             Action::make('reinstate')->label(__('Reinstate'))->requiresConfirmation()
                 ->visible(fn (): bool => $this->pro()->status === ProStatus::Suspended)
                 ->action(fn () => $this->attempt(fn () => app(ChangeProStanding::class)->reinstate($this->admin(), $this->pro()), __('Reinstated'))),
-            Action::make('editCoverage')->label(__('Edit services and suburbs'))->color('gray')
-                ->fillForm(fn (): array => ['service_ids' => $this->pro()->services->pluck('id')->all(), 'suburb_ids' => $this->pro()->serviceAreas->pluck('id')->all()])
+            Action::make('editCoverage')->label(__('Edit trades and radius'))->color('gray')
+                ->fillForm(fn (): array => ['trade_ids' => $this->pro()->trades->pluck('id')->all(), 'radius_km' => $this->pro()->service_radius_km])
                 ->schema([
-                    Select::make('service_ids')->label(__('Services'))->multiple()->required()
-                        ->options(fn (): array => Service::query()->with('trade')->where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn (Service $service): array => [$service->id => $service->trade->name.' · '.$service->name])->all()),
-                    Select::make('suburb_ids')->label(__('Suburbs'))->multiple()->required()
-                        ->options(fn (): array => Suburb::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all()),
+                    Select::make('trade_ids')->label(__('Trades'))->multiple()->required()
+                        ->options(fn (): array => Trade::query()->where('is_active', true)->orderBy('sort')->pluck('name', 'id')->all()),
+                    TextInput::make('radius_km')->label(__('Travel radius (km)'))->numeric()->required()->minValue(1)->maxValue(50),
                 ])
-                ->action(fn (array $data) => $this->attempt(fn () => app(EditProCoverage::class)->handle($this->admin(), $this->pro(), $data['service_ids'], $data['suburb_ids']), __('Saved'))),
+                ->action(fn (array $data) => $this->attempt(fn () => app(EditProCoverage::class)->handle($this->admin(), $this->pro(), $data['trade_ids'], (int) $data['radius_km']), __('Saved'))),
         ];
     }
 
@@ -69,7 +68,7 @@ final class ViewProApplication extends ViewRecord
 
     private function loaded(Pro $pro): Pro
     {
-        return $pro->load(['documents.media', 'events.actor']);
+        return $pro->load(['documents.media', 'events.actor', 'trades']);
     }
 
     private function reasonField(): Textarea

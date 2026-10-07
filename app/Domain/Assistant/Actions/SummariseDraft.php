@@ -30,7 +30,7 @@ final readonly class SummariseDraft
     public function handle(User $customer, ServiceJob $job): void
     {
         Gate::forUser($customer)->authorize('update', $job);
-        $job->loadMissing('service');
+        $job->loadMissing('trade');
         $hash = JobSummaryInput::hash($job);
 
         if ($job->status !== ServiceJobStatus::Draft || $job->ai_summary_source === SummarySource::CustomerEdited
@@ -43,7 +43,7 @@ final readonly class SummariseDraft
             'assistant:summary:'.$job->id,
             (int) config('sortd.ai.summaries_per_hour'),
             fn (ScopingAssistant $assistant): ScopingSummaryReply => $assistant->summarise(
-                $job->service->key, JobSummaryInput::redactedAnswers($job), Redactor::strip((string) $job->customer_notes),
+                $job->trade->name, JobSummaryInput::redactedFacts($job), Redactor::strip((string) $job->customer_notes),
             ),
             fn (ScopingSummaryReply $reply): bool => SummaryRules::acceptable($reply->summary),
             $job->id,

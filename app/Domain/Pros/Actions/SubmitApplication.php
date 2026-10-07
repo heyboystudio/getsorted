@@ -40,7 +40,7 @@ final readonly class SubmitApplication
         RateLimiter::hit($limitKey, 3600);
 
         return DB::transaction(function () use ($user, $pro): Pro {
-            $locked = Pro::query()->with(['services', 'serviceAreas', 'documents.media', 'references'])->lockForUpdate()->findOrFail($pro->id);
+            $locked = Pro::query()->with(['trades', 'documents.media', 'references'])->lockForUpdate()->findOrFail($pro->id);
 
             if (! $locked->status->isEditable()) {
                 throw new CannotChangeApplication(__('Your application has already been sent for review.'));
@@ -70,12 +70,12 @@ final readonly class SubmitApplication
             $missing[] = __('business details');
         }
 
-        if ($pro->services->isEmpty()) {
-            $missing[] = __('services');
+        if ($pro->trades->isEmpty()) {
+            $missing[] = __('trades');
         }
 
-        if ($pro->serviceAreas->isEmpty()) {
-            $missing[] = __('suburbs');
+        if ($pro->base_location === null) {
+            $missing[] = __('the address you work from');
         }
 
         foreach (DocumentType::required() as $type) {

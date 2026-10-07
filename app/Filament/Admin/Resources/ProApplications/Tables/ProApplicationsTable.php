@@ -19,13 +19,13 @@ final class ProApplicationsTable
     {
         return $table
             ->defaultSort('submitted_at')
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('services.trade')->withCount('serviceAreas'))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('trades'))
             ->emptyStateHeading(__('No applications waiting'))
             ->columns([
                 TextColumn::make('business_name')->label(__('Business'))->placeholder(__('Not given yet'))->searchable(),
                 TextColumn::make('trades')->label(__('Trades'))
-                    ->state(fn (Pro $record): string => $record->services->pluck('trade.name')->unique()->sort()->implode(', ')),
-                TextColumn::make('service_areas_count')->label(__('Suburbs')),
+                    ->state(fn (Pro $record): string => $record->trades->pluck('name')->sort()->implode(', ')),
+                TextColumn::make('base_area_label')->label(__('Based in'))->placeholder('—'),
                 TextColumn::make('status')->label(__('Status'))->badge()
                     ->formatStateUsing(fn (ProStatus $state): string => $state->label())
                     ->color(fn (ProStatus $state): string => match ($state) {

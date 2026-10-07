@@ -67,7 +67,7 @@ function fakeGoogle(string $id = 'g-123', string $email = 'thandi@gmail.com', bo
 
 it('shows the sign-up page with Google and email options', function (): void {
     $this->get('/register')->assertOk()->assertSeeLivewire(Register::class)
-        ->assertSee('Continue with Google')->assertSee('Create account');
+        ->assertSee('Continue with Google')->assertSee('Create client account');
 });
 
 it('creates a customer with a hashed password, consents and an unverified email, then asks to check email (AC1, AC3)', function (): void {
@@ -109,9 +109,9 @@ it('tells someone with an existing email to sign in instead (AC1)', function ():
 });
 
 it('signs up pros with the pro agreement (spec 011)', function (): void {
-    Livewire::withQueryParams(['as' => 'pro'])->test(Register::class)->assertSee('Join Sortd as a pro')->assertSee('pro agreement');
+    Livewire::test(Register::class, ['as' => 'pro'])->assertSee('Join Get Sorted as a pro')->assertSee('pro agreement');
 
-    $component = Livewire::withQueryParams(['as' => 'pro'])->test(Register::class);
+    $component = Livewire::test(Register::class, ['as' => 'pro']);
     foreach (['firstName' => 'Sipho', 'lastName' => 'Dlamini', 'email' => 'sipho@example.com', 'password' => 'long-enough-password', 'acceptTerms' => true, 'acceptPrivacy' => true] as $field => $value) {
         $component->set($field, $value);
     }

@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Livewire\Pros\Jobs;
 
 use App\Domain\Assistant\Support\Redactor;
+use App\Domain\Matching\Actions\AcceptInvite;
 use App\Domain\Matching\Actions\DeclineInvite;
 use App\Domain\Matching\Actions\OpenInvite;
 use App\Domain\Matching\Enums\DeclineReason;
 use App\Domain\Matching\Enums\InviteStatus;
 use App\Domain\Matching\Exceptions\CannotInvite;
+use App\Domain\Matching\Support\Distance;
 use App\Domain\Quotes\Actions\ReviseQuote;
 use App\Domain\Quotes\Actions\SubmitQuote;
 use App\Domain\Quotes\Actions\WithdrawQuote;
@@ -124,9 +126,22 @@ final class Show extends Component
         $this->redirectRoute('pros.jobs');
     }
 
+    public function acceptJob(AcceptInvite $acceptInvite): void
+    {
+        $this->resetErrorBag();
+
+        try {
+            $acceptInvite->handle($this->currentUser(), $this->invite());
+        } catch (CannotInvite $exception) {
+            $this->unavailable = true;
+            throw ValidationException::withMessages(['accept' => $exception->getMessage()]);
+        }
+    }
+
     public function startQuote(QuoteSettings $settings): void
     {
         $this->resetErrorBag();
+        abort_unless($this->invite()->status === InviteStatus::Accepted, 403);
         $this->lines = [['kind' => LineKind::Labour->value, 'description' => '', 'quantity' => '1', 'unitPrice' => '']];
         $this->depositPercent = 0;
         $this->earliestStartDate = LocalTime::today()->addDay()->toDateString();
@@ -229,13 +244,13 @@ final class Show extends Component
     {
         $invite = $this->invite();
         $quote = $this->myQuote()?->load('lines');
-        $job = ServiceJob::query()->with(['service.trade', 'service.questions', 'property.suburb', 'customer', 'media'])->findOrFail($invite->service_job_id);
+        $job = ServiceJob::query()->with(['trade', 'property', 'customer', 'media'])->findOrFail($invite->service_job_id);
         $accepted = $quote instanceof Quote && $quote->status === QuoteStatus::Accepted && $job->accepted_quote_id === $quote->id;
         $canQuote = ! $quote instanceof Quote && ! $this->unavailable && $invite->isAvailable();
         $hasOpenQuote = $quote instanceof Quote && in_array($quote->status, [QuoteStatus::Submitted, QuoteStatus::Expired], true) && $job->status === ServiceJobStatus::Open;
 
         if (! $accepted && ! $canQuote && ! $hasOpenQuote && ! $this->sent) {
-            $full = $invite->status === InviteStatus::Closed && $job->status === ServiceJobStatus::Open && $job->quotes_count >= QuoteFlow::MAX_QUOTES;
+            $full = $invite->status === InviteStatus::Closed && $job->status === ServiceJobStatus::Open && $job->quotes_count >= QuoteFlow::maxQuotes();
 
             return view('livewire.pros.jobs.show', ['invite' => $invite, 'job' => null, 'full' => $full]);
         }
@@ -246,13 +261,9 @@ final class Show extends Component
         return view('livewire.pros.jobs.show', [
             'invite' => $invite,
             'job' => $job,
-            'answers' => array_map(static function (array $answer): array {
-                $answer['answer'] = is_array($answer['answer'])
-                    ? array_map(static fn (mixed $value): string => Redactor::strip((string) $value), $answer['answer'])
-                    : Redactor::strip((string) $answer['answer']);
-
-                return $answer;
-            }, $job->orderedAnswers()),
+            // The facts Siya extracted, highlighted so the pro can decide whether they can help (spec 020).
+            'facts' => array_map(static fn (string $fact): string => Redactor::strip($fact), $job->factTexts()),
+            'distance' => $invite->pro->base_location !== null && $job->location !== null ? Distance::label($invite->pro->base_location, $job->location) : null,
             'description' => $description === '' ? null : $description,
             // Not "notes": that name is the quote builder's own field on this component.
             'customerNotes' => $notes === '' || $notes === $description ? null : $notes,
@@ -261,6 +272,7 @@ final class Show extends Component
             'quotesCount' => $job->quotes_count,
             'reasons' => DeclineReason::cases(),
             'canQuote' => $canQuote,
+            'jobAccepted' => $invite->status === InviteStatus::Accepted,
             'quote' => $quote,
             'accepted' => $accepted,
             // Contact details only for the pro whose quote was accepted (AC9).
@@ -269,7 +281,7 @@ final class Show extends Component
                 'phone' => $job->customer->phone_e164,
                 'label' => $job->property?->label,
                 'address' => $job->property?->street_address,
-                'suburb' => $job->property?->suburb?->name,
+                'suburb' => $job->area_label,
             ] : null,
             'previewTotals' => $this->building && $this->previewing ? $this->previewTotals($calculator) : null,
             'previewText' => $this->building && $this->previewing ? $this->previewText() : null,

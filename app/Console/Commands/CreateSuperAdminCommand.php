@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Domain\Accounts\Actions\CreateSuperAdmin;
+use Filament\Facades\Filament;
 use Illuminate\Console\Command;
 use Illuminate\Validation\ValidationException;
 
@@ -54,7 +55,7 @@ final class CreateSuperAdminCommand extends Command
         }
 
         $this->info("Super-admin {$user->email} created.");
-        $this->line('Sign in at '.url('/admin').' and set up your authenticator app when asked.');
+        $this->line('Sign in at '.Filament::getPanel('admin')->getUrl().'.');
 
         return self::SUCCESS;
     }

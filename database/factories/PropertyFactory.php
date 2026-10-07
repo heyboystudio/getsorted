@@ -6,8 +6,8 @@ namespace Database\Factories;
 
 use App\Domain\Properties\Enums\PropertyType;
 use App\Models\Property;
-use App\Models\Suburb;
 use App\Models\User;
+use Clickbar\Magellan\Data\Geometries\Point;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /** @extends Factory<Property> */
@@ -20,8 +20,9 @@ final class PropertyFactory extends Factory
             'user_id' => User::factory()->customer(),
             'label' => fake()->randomElement(['Home', 'Flat', 'Office', 'Granny flat']),
             'street_address' => fake()->streetAddress(),
-            'suburb_id' => Suburb::factory(),
-            'location' => null,
+            'location' => Point::makeGeodetic(-29.8587, 31.0218),
+            'location_source' => 'places',
+            'area_label' => 'Musgrave',
             'postal_code' => fake()->numerify('4###'),
             'property_type' => PropertyType::House,
         ];

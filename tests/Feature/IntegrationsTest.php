@@ -2,18 +2,20 @@
 
 declare(strict_types=1);
 
+use App\Contracts\Data\ChatRequest;
 use App\Contracts\Data\CheckoutRequest;
 use App\Contracts\Data\MessageChannel;
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\Data\PaymentEventType;
 use App\Contracts\Data\PayoutRequest;
 use App\Contracts\Data\RefundRequest;
-use App\Contracts\Data\ScopingSuggestion;
 use App\Contracts\Exceptions\InvalidWebhookSignature;
 use App\Contracts\Geocoder;
 use App\Contracts\MessagingChannel;
 use App\Contracts\PaymentGateway;
 use App\Contracts\ScopingAssistant;
+use App\Domain\Assistant\State\BookingState;
+use App\Domain\Assistant\Support\BookingToolbox;
 use App\Integrations\Fakes\FakeGeocoder;
 use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Integrations\Fakes\FakePaymentGateway;
@@ -83,15 +85,23 @@ it('records messages instead of sending them', function (): void {
     $channel->assertSent('otp_code', fn (OutgoingMessage $message): bool => $message->phoneE164 === '+27821234567');
 });
 
-it('gives no AI suggestion unless a test scripts one', function (): void {
+it('gives a plain reply unless a test scripts the chat turn, and keeps the scripted tool calls honest', function (): void {
+    $toolbox = new BookingToolbox(new BookingState, ['plumbing' => 'Plumbing'], [['role' => 'customer', 'text' => 'My geyser is leaking']]);
+    $request = new ChatRequest($toolbox, [['role' => 'customer', 'text' => 'My geyser is leaking']]);
     $assistant = new FakeScopingAssistant;
 
-    expect($assistant->suggestService('My geyser is leaking', ['plumbing' => ['leak_repair']])->suggestion)->toBeNull();
+    expect($assistant->chat($request)->reply)->toContain('Tell me a bit more');
 
-    $assistant->willSuggest(new ScopingSuggestion('plumbing', 'leak_repair', 0.9));
+    $assistant->willChat(function (ChatRequest $request): string {
+        $request->toolbox->setTrade('plumbing');
+        $request->toolbox->addFact('geyser is leaking', 'geyser is leaking');
 
-    expect($assistant->suggestService('My geyser is leaking', ['plumbing' => ['leak_repair']])->suggestion?->serviceKey)->toBe('leak_repair')
-        ->and($assistant->descriptionsSeen())->toBe(['My geyser is leaking', 'My geyser is leaking']);
+        return 'Noted.';
+    });
+
+    expect($assistant->chat($request)->reply)->toBe('Noted.')
+        ->and($toolbox->state->tradeKey)->toBe('plumbing')->and($toolbox->state->factTexts())->toBe(['geyser is leaking'])
+        ->and($assistant->chatRequests())->toHaveCount(2);
 });
 
 it('looks up Durban addresses offline', function (): void {

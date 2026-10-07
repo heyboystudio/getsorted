@@ -26,17 +26,14 @@ use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Models\Pro;
 use App\Models\Property;
 use App\Models\Quote;
-use App\Models\Service;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobInvite;
-use App\Models\Suburb;
 use App\Models\User;
 use App\Settings\MatchingSettings;
 use App\Settings\QuoteSettings;
 use App\Support\Rand;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CatalogueSeeder;
-use Database\Seeders\SuburbSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,11 +44,9 @@ use Spatie\Activitylog\Models\Activity;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
-    $this->leak = Service::query()->where('key', 'leak_repair')->sole();
-    $this->musgrave = Suburb::query()->where('slug', 'musgrave')->sole();
+    $this->seed(CatalogueSeeder::class);
     $settings = app(MatchingSettings::class);
-    $settings->wave_one_size = 6;
+    $settings->invite_count = 6;
     $settings->save();
 });
 
@@ -63,9 +58,8 @@ function quoteMessages(): FakeMessagingChannel
 function quotingPros(int $count, ?string $vat = null): array
 {
     return collect(range(1, $count))->map(function () use ($vat): Pro {
-        $pro = Pro::factory()->approved()->create(['vat_number' => $vat]);
-        $pro->services()->attach(test()->leak);
-        $pro->serviceAreas()->attach(test()->musgrave);
+        $pro = proNear(['plumbing'], 2);
+        $pro->forceFill(['vat_number' => $vat])->save();
 
         return $pro;
     })->all();
@@ -74,13 +68,9 @@ function quotingPros(int $count, ?string $vat = null): array
 function postedJob(): ServiceJob
 {
     $customer = User::factory()->customer()->create();
-    $property = Property::factory()->for($customer)->create(['suburb_id' => test()->musgrave->id]);
-    $answers = [];
-    foreach (test()->leak->questions as $question) {
-        $answers[$question->key] = ['prompt' => $question->prompt, 'type' => $question->type->value, 'answer' => $question->options[0]];
-    }
-    $draft = app(SaveBookingDraft::class)->handle($customer, test()->leak, null, new BookingData(
-        answers: $answers, notes: 'Under the sink.', propertyPublicId: $property->public_id,
+    $property = Property::factory()->for($customer)->create();
+    $draft = app(SaveBookingDraft::class)->handle($customer, tradeOf('plumbing'), null, new BookingData(
+        facts: [['id' => 'f1', 'text' => 'tap drips when fully closed', 'turn' => 1]], notes: 'Under the sink.', propertyPublicId: $property->public_id,
         preferredDate: now()->toImmutable()->addDays(2), timeWindow: TimeWindow::Morning,
     ));
 
@@ -105,7 +95,14 @@ function draftQuote(int $depositPercent = 20, ?string $notes = null, int $validi
 
 function inviteFor(ServiceJob $job, Pro $pro): ServiceJobInvite
 {
-    return ServiceJobInvite::query()->where('service_job_id', $job->id)->where('pro_id', $pro->id)->with('pro.user')->sole();
+    $invite = ServiceJobInvite::query()->where('service_job_id', $job->id)->where('pro_id', $pro->id)->with('pro.user')->sole();
+
+    // Pros accept the job before they can quote; most tests here start from that point.
+    if ($invite->status->isOpen()) {
+        $invite->forceFill(['status' => 'accepted'])->save();
+    }
+
+    return $invite->refresh();
 }
 
 function submitFor(ServiceJob $job, Pro $pro, ?QuoteDraft $draft = null): Quote
@@ -189,18 +186,34 @@ it('submits a quote: version 1, invite quoted, customer told, count up (AC3)', f
     expect(Quote::query()->count())->toBe(1);
 });
 
-it('accepts three quotes at most, then closes the other invites as full (AC4)', function (): void {
-    $pros = quotingPros(5);
+it('accepts the first five quotes, then closes the other invites as full (spec 020)', function (): void {
+    $settings = app(MatchingSettings::class);
+    $settings->invite_count = 7;
+    $settings->save();
+    $pros = quotingPros(7);
     $job = postedJob();
 
-    foreach (array_slice($pros, 0, 3) as $pro) {
+    foreach (array_slice($pros, 0, 5) as $pro) {
         submitFor($job, $pro);
     }
 
-    expect($job->fresh()->quotes_count)->toBe(3)
-        ->and(inviteFor($job, $pros[3])->status)->toBe(InviteStatus::Closed)
-        ->and(fn () => submitFor($job, $pros[3]))->toThrow(CannotQuote::class, 'This job is full');
-    expect(Quote::query()->count())->toBe(3);
+    expect($job->fresh()->quotes_count)->toBe(5)
+        ->and(inviteFor($job, $pros[5])->status)->toBe(InviteStatus::Closed)
+        ->and(fn () => submitFor($job, $pros[5]))->toThrow(CannotQuote::class, 'This job is full');
+    expect(Quote::query()->count())->toBe(5);
+});
+
+it('uses the quote cap from settings', function (): void {
+    $settings = app(MatchingSettings::class);
+    $settings->max_quotes = 2;
+    $settings->save();
+    $pros = quotingPros(3);
+    $job = postedJob();
+
+    submitFor($job, $pros[0]);
+    submitFor($job, $pros[1]);
+
+    expect(fn () => submitFor($job, $pros[2]))->toThrow(CannotQuote::class, 'This job is full');
 });
 
 it('only lets the invited pro quote, on an open invite (AC1, security)', function (): void {
@@ -435,21 +448,22 @@ it('expires a quote after its validity, then lets the pro send a fresh version (
     expect($fresh->status)->toBe(QuoteStatus::Submitted)->and($fresh->version)->toBe(2)->and($job->fresh()->quotes_count)->toBe(1);
 });
 
-it('stops later invite waves once enough quotes are in (spec 009 AC3, now counted from quotes)', function (): void {
+it('stops inviting once the job is full (spec 009 AC3, spec 020)', function (): void {
     $settings = app(MatchingSettings::class);
-    $settings->wave_one_size = 2;
+    $settings->invite_count = 4;
+    $settings->max_quotes = 2;
     $settings->save();
-    $pros = quotingPros(6);
+    quotingPros(6);
     $job = postedJob();
-    $invited = $job->invites()->pluck('pro_id')->all();
+    $invited = $job->invites()->limit(2)->pluck('pro_id')->all();
     foreach (Pro::query()->whereIn('id', $invited)->with('user')->get() as $pro) {
         submitFor($job, $pro);
     }
 
-    $this->travel(13)->hours();
+    $this->travel(31)->minutes();
     app(RunMatchingSchedule::class)->handle();
 
-    expect($job->invites()->count())->toBe(2);
+    expect($job->invites()->count())->toBe(4);
 });
 
 it('schedules quote and job expiry every five minutes (rules)', function (): void {

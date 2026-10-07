@@ -19,13 +19,11 @@ use App\Models\JobMessage;
 use App\Models\Pro;
 use App\Models\Property;
 use App\Models\Quote;
-use App\Models\Service;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobInvite;
-use App\Models\Suburb;
+use App\Models\Trade;
 use App\Models\User;
 use Database\Seeders\CatalogueSeeder;
-use Database\Seeders\SuburbSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -42,11 +40,11 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->seed([CatalogueSeeder::class, SuburbSeeder::class]);
+    $this->seed(CatalogueSeeder::class);
     Storage::fake('media');
     $this->customer = User::factory()->customer()->create(['first_name' => 'Thandi']);
-    $property = Property::factory()->for($this->customer)->create(['suburb_id' => Suburb::query()->where('slug', 'musgrave')->value('id')]);
-    $this->job = ServiceJob::factory()->open()->forProperty($property)->create(['service_id' => Service::query()->where('key', 'leak_repair')->value('id')]);
+    $property = Property::factory()->for($this->customer)->create();
+    $this->job = ServiceJob::factory()->open()->forProperty($property)->create(['trade_id' => Trade::query()->where('key', 'plumbing')->value('id')]);
     $this->proA = chatPro('Dlamini Plumbing');
     $this->proB = chatPro('Naidoo Plumbing');
 });
@@ -190,19 +188,16 @@ it('queues notifications on the notifications queue after the message is saved (
     Queue::assertPushedOn('notifications', SendChatNotification::class, fn (SendChatNotification $job): bool => $job->recipient === MessageSender::Pro);
 });
 
-it('lets senders delete their own message for a few minutes, and the other side report it (AC6)', function (): void {
+it('never lets anyone delete a message, but the other side can report it (AC6)', function (): void {
     chatAs($this->customer, $this->proA)->set('message', 'Oops wrong job')->call('send');
     $message = JobMessage::query()->sole();
 
-    chatAs($this->proA->user, $this->proA, 'Thandi')->call('deleteMessage', $message->public_id)->assertNotFound();
-    chatAs($this->customer, $this->proA)->call('deleteMessage', $message->public_id)->assertSee('Message deleted');
-    expect($message->fresh()->body)->toBeNull()->and($message->fresh()->deleted_at)->not->toBeNull();
+    chatAs($this->customer, $this->proA)->assertDontSee('Delete');
+    expect(fn () => chatAs($this->customer, $this->proA)->call('deleteMessage', $message->public_id))->toThrow(Exception::class);
+    expect($message->fresh()->body)->toBe('Oops wrong job')->and($message->fresh()->deleted_at)->toBeNull();
 
     chatAs($this->proA->user, $this->proA, 'Thandi')->set('message', 'Pay me cash, cheaper')->call('send');
     $proMessage = JobMessage::query()->where('sender_type', 'pro')->sole();
-    $this->travel(6)->minutes();
-    chatAs($this->proA->user, $this->proA, 'Thandi')->call('deleteMessage', $proMessage->public_id)->assertHasErrors('message');
-
     chatAs($this->proA->user, $this->proA, 'Thandi')->call('startReport', $proMessage->public_id)->call('report', 'off_platform')->assertNotFound();
     chatAs($this->customer, $this->proA)->call('startReport', $proMessage->public_id)->call('report', 'off_platform')->assertSee('Reported');
     expect($proMessage->fresh()->reported_at)->not->toBeNull()->and($proMessage->fresh()->report_reason->value)->toBe('off_platform');
@@ -221,7 +216,7 @@ it('shows estimate cards in the chat and calls quotes estimates (AC7)', function
     chatAs($this->customer, $this->proA)->set('message', 'Thanks')->call('send')->assertSee('Estimate · R 570.50');
 
     $this->actingAs($this->customer);
-    Livewire::test(CustomerJob::class, ['job' => $this->job])->assertSee('Estimates (1 of 3)')
+    Livewire::test(CustomerJob::class, ['job' => $this->job])->assertSee('Estimates (1 of 5)')
         ->assertSee('Your pro can adjust the final amount after seeing the job. You’ll approve any change.');
 });
 

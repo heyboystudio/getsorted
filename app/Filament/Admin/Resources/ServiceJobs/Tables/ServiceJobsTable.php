@@ -6,7 +6,7 @@ namespace App\Filament\Admin\Resources\ServiceJobs\Tables;
 
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Enums\Urgency;
-use App\Models\Suburb;
+use App\Models\Trade;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -19,11 +19,11 @@ final class ServiceJobsTable
     {
         return $table
             ->defaultSort('updated_at', 'desc')
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['service.trade', 'property.suburb']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('trade'))
             ->emptyStateHeading(__('No jobs yet'))
             ->columns([
-                TextColumn::make('service.name')->label(__('Service'))->description(fn ($record): string => $record->service->trade->name),
-                TextColumn::make('property.suburb.name')->label(__('Suburb'))->placeholder('—'),
+                TextColumn::make('trade.name')->label(__('Trade'))->description(fn ($record): string => $record->factTexts()[0] ?? ''),
+                TextColumn::make('area_label')->label(__('Area'))->placeholder('—'),
                 TextColumn::make('status')->label(__('Status'))->badge()
                     ->formatStateUsing(fn (ServiceJobStatus $state): string => __(str($state->value)->replace('_', ' ')->ucfirst()->toString())),
                 TextColumn::make('urgency')->label(__('Urgency'))->badge()
@@ -34,9 +34,9 @@ final class ServiceJobsTable
             ->filters([
                 SelectFilter::make('status')->label(__('Status'))
                     ->options(collect(ServiceJobStatus::cases())->mapWithKeys(fn (ServiceJobStatus $s): array => [$s->value => __(str($s->value)->replace('_', ' ')->ucfirst()->toString())])->all()),
-                SelectFilter::make('suburb')->label(__('Suburb'))
-                    ->options(fn (): array => Suburb::query()->orderBy('name')->pluck('name', 'id')->all())
-                    ->query(fn (Builder $query, array $data): Builder => $data['value'] ? $query->whereHas('property', fn (Builder $q) => $q->where('suburb_id', $data['value'])) : $query),
+                SelectFilter::make('trade')->label(__('Trade'))
+                    ->options(fn (): array => Trade::query()->orderBy('sort')->pluck('name', 'id')->all())
+                    ->query(fn (Builder $query, array $data): Builder => $data['value'] ? $query->where('trade_id', $data['value']) : $query),
             ])
             ->recordActions([
                 ViewAction::make(),

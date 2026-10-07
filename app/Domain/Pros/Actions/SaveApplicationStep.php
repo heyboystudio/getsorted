@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Pros\Actions;
 
+use App\Contracts\Data\GeocodedAddress;
 use App\Domain\Accounts\Support\PhoneNumbers;
 use App\Domain\Pros\Data\BusinessDetails;
 use App\Domain\Pros\Data\ReferenceData;
@@ -13,9 +14,9 @@ use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\Pros\Enums\ReferenceOutcome;
 use App\Models\Pro;
 use App\Models\ProReference;
-use App\Models\Service;
-use App\Models\Suburb;
+use App\Models\Trade;
 use App\Models\User;
+use Clickbar\Magellan\Data\Geometries\Point;
 use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -42,30 +43,51 @@ final class SaveApplicationStep
         $this->whileDraft($user, $pro, fn (Pro $locked) => $locked->fill([...$data, 'business_type' => $details->businessType])->save());
     }
 
-    /** @param  list<int>  $serviceIds */
-    public function services(User $user, Pro $pro, array $serviceIds): void
+    /** @param  list<int>  $tradeIds */
+    public function trades(User $user, Pro $pro, array $tradeIds): void
     {
-        $serviceIds = array_values(array_unique(array_map(intval(...), $serviceIds)));
-        $valid = Service::query()->whereKey($serviceIds)->where('is_active', true)
-            ->whereHas('trade', fn ($trade) => $trade->where('is_active', true))->count();
+        $tradeIds = array_values(array_unique(array_map(intval(...), $tradeIds)));
+        $valid = Trade::query()->whereKey($tradeIds)->where('is_active', true)->count();
 
-        if ($serviceIds === [] || $valid !== count($serviceIds)) {
-            throw ValidationException::withMessages(['serviceIds' => __('Choose at least one service we offer.')]);
+        if ($tradeIds === [] || $valid !== count($tradeIds)) {
+            throw ValidationException::withMessages(['tradeIds' => __('Choose at least one trade we offer.')]);
         }
 
-        $this->whileDraft($user, $pro, fn (Pro $locked) => $locked->services()->sync($serviceIds));
+        $this->whileDraft($user, $pro, fn (Pro $locked) => $locked->trades()->sync($tradeIds));
     }
 
-    /** @param  list<int>  $suburbIds */
-    public function areas(User $user, Pro $pro, array $suburbIds): void
+    /** Where the pro works from, picked through Google Places, and how far they travel (spec 020). */
+    public function base(User $user, Pro $pro, GeocodedAddress $address, string $placeId, int $radiusKm): void
     {
-        $suburbIds = array_values(array_unique(array_map(intval(...), $suburbIds)));
+        $this->validBase($address, $radiusKm);
 
-        if ($suburbIds === [] || Suburb::query()->whereKey($suburbIds)->where('is_active', true)->count() !== count($suburbIds)) {
-            throw ValidationException::withMessages(['suburbIds' => __('Choose at least one suburb in our launch area.')]);
-        }
+        $this->whileDraft($user, $pro, fn (Pro $locked) => $this->writeBase($locked, $address, $placeId, $radiusKm));
+    }
 
-        $this->whileDraft($user, $pro, fn (Pro $locked) => $locked->serviceAreas()->sync($suburbIds));
+    /** Vetting admins correct a base address or radius (logged by the caller). */
+    public function writeBase(Pro $locked, GeocodedAddress $address, string $placeId, int $radiusKm): void
+    {
+        $locked->forceFill([
+            'base_location' => Point::makeGeodetic($address->latitude, $address->longitude),
+            'base_address' => $address->formattedAddress,
+            'base_place_id' => mb_substr($placeId, 0, 300),
+            'base_area_label' => $address->areaLabel(),
+            'service_radius_km' => $radiusKm,
+        ])->save();
+    }
+
+    /** The radius alone, e.g. when the pro changes how far they travel. */
+    public function radius(User $user, Pro $pro, int $radiusKm): void
+    {
+        $this->validRadius($radiusKm);
+
+        $this->locked($user, $pro, function (Pro $locked) use ($radiusKm): void {
+            if ($locked->status === ProStatus::Submitted) {
+                throw new AuthorizationException;
+            }
+
+            $locked->forceFill(['service_radius_km' => $radiusKm])->save();
+        });
     }
 
     /** @param  list<ReferenceData>  $references */
@@ -118,7 +140,7 @@ final class SaveApplicationStep
         $this->whileDraft($user, $pro, fn (Pro $locked) => $locked->forceFill(['vetting_consent_at' => $locked->vetting_consent_at ?? now()])->save());
     }
 
-    /** A registration number for a chosen service that needs one, stored encrypted (AC3, AC13). */
+    /** A registration number for a chosen trade that has one, stored encrypted (AC3, AC13). */
     public function registration(User $user, Pro $pro, DocumentType $type, string $number): void
     {
         $number = mb_strtoupper(trim($number));
@@ -127,7 +149,7 @@ final class SaveApplicationStep
         ])->validate();
 
         $this->locked($user, $pro, function (Pro $locked) use ($type, $number): void {
-            abort_unless($type->isRegistration() && in_array($type, $locked->requiredRegistrations(), true), 404);
+            abort_unless($type->isRegistration() && in_array($type, $locked->offeredRegistrations(), true), 404);
             $document = $locked->documents()->firstOrNew(['type' => $type]);
 
             if ($document->exists && $document->number === $number) {
@@ -142,6 +164,23 @@ final class SaveApplicationStep
             // A new number has to be checked again (security review).
             $document->forceFill(['number' => $number, 'status' => DocumentStatus::Pending, 'verified_at' => null, 'verified_by' => null, 'expires_at' => null])->save();
         });
+    }
+
+    private function validBase(GeocodedAddress $address, int $radiusKm): void
+    {
+        $this->validRadius($radiusKm);
+
+        // South Africa's bounding box: catches a stray point without limiting the launch area (spec 020, D-c).
+        if ($address->latitude < -35.0 || $address->latitude > -22.0 || $address->longitude < 16.0 || $address->longitude > 33.0) {
+            throw ValidationException::withMessages(['address' => __('Choose a South African address.')]);
+        }
+    }
+
+    private function validRadius(int $radiusKm): void
+    {
+        if ($radiusKm < 1 || $radiusKm > 50) {
+            throw ValidationException::withMessages(['radiusKm' => __('Choose a distance between 1 and 50 km.')]);
+        }
     }
 
     /**

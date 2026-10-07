@@ -55,7 +55,7 @@ final class ProApplicationResource extends Resource
      */
     public static function getEloquentQuery(): Builder
     {
-        return Pro::query()->where('user_id', '!=', auth()->id())->with(['user', 'services.trade', 'serviceAreas']);
+        return Pro::query()->where('user_id', '!=', auth()->id())->with(['user', 'trades']);
     }
 
     public static function canView(Model $record): bool

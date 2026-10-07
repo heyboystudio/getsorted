@@ -18,7 +18,7 @@ class AiUsageFactory extends Factory
     public function definition(): array
     {
         return [
-            'purpose' => AiPurpose::SuggestService,
+            'purpose' => AiPurpose::Chat,
             'provider' => 'fake',
             'model' => 'fake-model',
             'input_tokens' => 100,

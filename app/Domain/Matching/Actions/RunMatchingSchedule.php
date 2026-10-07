@@ -12,9 +12,10 @@ use App\Settings\MatchingSettings;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * The every-five-minutes matching run (spec 009, AC3–AC5): expire unanswered
- * invites, close invites on jobs that stopped collecting quotes, and send due
- * waves. Safe to run repeatedly.
+ * The every-five-minutes matching run (spec 009, spec 020): expire unanswered
+ * invites, close invites on jobs that stopped collecting quotes, and top up
+ * the invites of open jobs that still have fewer than the configured number.
+ * Safe to run repeatedly.
  */
 final readonly class RunMatchingSchedule
 {
@@ -32,10 +33,11 @@ final readonly class RunMatchingSchedule
         ServiceJob::query()
             ->where('status', ServiceJobStatus::Open)
             ->whereNull('matching_stopped_at')
-            ->where(fn (Builder $query): Builder => $query->whereNull('last_wave_at')->orWhere('last_wave_at', '<=', now()->subHours($this->settings->wave_interval_hours)))
-            // Current submitted quotes (spec 010) decide whether more pros are needed.
-            ->where('quotes_count', '<', $this->settings->enough_quotes)
+            ->where(fn (Builder $query): Builder => $query->whereNull('last_wave_at')->orWhere('last_wave_at', '<=', now()->subMinutes(30)))
+            ->where('quotes_count', '<', $this->settings->max_quotes)
+            ->where('posted_at', '>=', now()->subHours($this->settings->invite_expiry_hours))
+            ->has('invites', '<', $this->settings->invite_count)
             ->lazyById()
-            ->each(fn (ServiceJob $job): int => $this->runInviteWave->handle($job, firstWave: $job->last_wave_at === null));
+            ->each(fn (ServiceJob $job): int => $this->runInviteWave->handle($job));
     }
 }
