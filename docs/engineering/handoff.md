@@ -20,6 +20,6 @@ Read this, then `docs/roadmap.md` → "Where we are". Older handoff notes (spec 
 
 ## Blockers for the founder
 
-- GitHub CI: the account has a billing lock, so Actions jobs never start (decision 020).
+- GitHub CI: the account has a billing lock; fixing it is on hold by founder choice (2026-10-08), so run `composer check` locally before every merge.
 - Test server: run the rename checklist before deploying `main`.
-- Open questions before launch: Q14 (how model B earns money), Q11, Q13, Q15, Q16 (`docs/product/open-questions.md`).
+- Open questions before launch: Q14 (how model B earns money; founder proposes a PayFast fee on quote acceptance), Q13 (support hours: proposal awaiting OK), Q10 (production host). Q11, Q15, Q16 decided 2026-10-08.

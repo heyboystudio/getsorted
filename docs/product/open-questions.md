@@ -8,11 +8,8 @@ Updated 2026-10-08 for decision 058 (model B now, payments in Phase M). "Phase" 
 
 | # | Question | Default until decided | Blocks |
 |---|---|---|---|
-| Q14 | How does GetSorted earn money on model B (no on-platform payments)? Lead fee per accepted quote, pro subscription, or nothing until Phase M? | Nothing charged | Pricing copy, pro agreement, launch |
-| Q11 | Brand: is "GetSorted" cleared (CIPC, trademark)? The domain is usesorted.co.za. | Working name | Public launch |
-| Q15 | Customer-facing domain: stay on usesorted.co.za, or also get a getsorted domain? | usesorted.co.za | Marketing, email sender |
-| Q13 | Business hours for support and SLA for complaints | Weekdays 08:00–17:00, 2 business days | Admin, legal pages |
-| Q16 | Admin MFA: switch back to required before real customer data (decision 047 says revisit)? | Optional | Launch readiness |
+| Q14 | How does GetSorted earn money on model B? Founder proposal (2026-10-08): the customer pays a fee through PayFast when they accept a quote, which unlocks contact details. Alternative: the pro pays a lead fee when their quote is accepted. Claude's recommendation is in the 2026-10-08 session notes; founder to confirm. | Nothing charged | PayFast integration, pricing copy, pro agreement, launch |
+| Q13 | Support hours and response times. **Proposed (Claude, 2026-10-08), awaiting founder OK:** Mon–Fri 08:00–17:00 and Sat 08:00–13:00 SAST, closed Sundays and public holidays; first reply within 4 business hours (1 business hour for urgent jobs); complaints resolved or updated within 2 business days; GetSorted is not an emergency service (112 / 031 361 0000) | The proposal | Contact page, legal pages |
 | Q10 | Production host (South African provider, decision 014). The test site is on AWS Cape Town (046). | Undecided | Production deploy |
 
 ## Needed for Phase M (payments)
@@ -36,3 +33,7 @@ Updated 2026-10-08 for decision 058 (model B now, payments in Phase M). "Phase" 
 | Q12 | Do pros pay to join? | Free (spec 011, 2026-10-04) |
 | — | Payments at launch? | No: model B, payments in Phase M (decision 058, 2026-10-08) |
 | — | Product name | GetSorted, one word (decision 057, 2026-10-07) |
+| Q11 | Company registration and trademark | Not now: the company will be registered later; no trademark (founder, 2026-10-08) |
+| Q15 | Domain | usesorted.co.za only (founder, 2026-10-08) |
+| Q16 | Admin MFA | Stays optional, including with real data (founder, 2026-10-08; decision 047) |
+| — | GitHub billing lock / CI | On hold by founder choice (2026-10-08); CI stays manual, checks run locally (decision 020) |
