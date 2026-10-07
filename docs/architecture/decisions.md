@@ -64,6 +64,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 058 | MVP launches on model B (quotes, then hand-off); payments after launch | Accepted (founder) | 2026-10-08 |
 | 059 | "Start a job" means sign in, then Siya | Accepted (founder) | 2026-10-08 |
 | 060 | No safety advice and no emergency handling | Accepted (founder) | 2026-10-08 |
+| 061 | GetSorted earns from introductions: free at launch, then a fixed fee paid by the pro | Accepted (founder) | 2026-10-08 |
 
 ---
 
@@ -613,3 +614,21 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** Founder decision; Gemini handles conversation, and GetSorted's role is matching households with pros, not safety guidance.
 
 **Watch:** with the AI off or failing, a message describing danger (gas, sparks, fire) is now booked like any other job. Old saved Siya conversations drop their safety and emergency cards when reopened.
+
+## 061 · GetSorted earns from introductions: free at launch, then a fixed fee paid by the pro
+
+**Date:** 2026-10-08 · **Status:** Accepted (founder)
+
+**Decision:** A proper quote needs a home visit, so GetSorted charges for the **introduction**, never for the quote or the job.
+1. The client posts a job (free).
+2. Pros send an **estimate**: a price range plus their call-out / inspection fee (a firm price only for small, clear jobs).
+3. The client **chooses a pro to come and inspect**. This is the introduction: names, phone numbers and the street address unlock only here.
+4. The visit, the real quote, the work and the payment happen between client and pro.
+
+Before the introduction there is a paywall: chat is allowed but contact details are blocked (phone numbers, emails, links, "WhatsApp me"), and the pro's business name is hidden (first name, rating, badges, distance and estimate only).
+
+**Fee:** none at launch, so supply and demand can grow; every introduction is recorded. Later the **pro** pays a **fixed fee per introduction** to unlock the client (amount an admin setting, decided when it is switched on), from prepaid PayFast credits. Pros are told their **first 10 jobs are free**. Clients never pay GetSorted.
+
+**Why:** Client and pro meet at the visit, so anything charged on the final price can be bypassed; the introduction is the one thing GetSorted controls. Charging pros only for clients who chose them is the norm for home-services marketplaces (Bark, Thumbtack, MyBuilder), and keeping clients free maximises jobs posted. A percentage on the client was considered and rejected (fee on an estimate that changes; large jobs invite bypass).
+
+**Consequences:** answers Q14. Phase L: estimates wording and "choose a pro to visit" (replacing "accept quote"), the paywall, an introduction record with a switched-off fee setting. PayFast integration (credits, notifications, receipts) comes when the fee is switched on. Decision 058 (no on-platform job payments) still holds.
