@@ -1,3 +1,9 @@
+# Get Sorted — Codex instructions
+
+## Claude / Codex continuity
+
+Read `docs/engineering/agent-workflow.md` and any `docs/engineering/handoff.md` at the start of every session. They define the shared workflow and how to resume work when the founder switches agents.
+
 <laravel-boost-guidelines>
 === .ai/sortd-domain rules ===
 

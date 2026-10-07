@@ -2,6 +2,10 @@
 
 > The Laravel Boost section at the end of this file is generated from Laravel's guidelines plus our project rules in `.ai/guidelines/`. To change those rules, edit `.ai/guidelines/*.md` (never the generated section), run `php artisan boost:update`, and commit `CLAUDE.md` and `AGENTS.md` so cloud sessions have them. Everything above the generated section is kept by Boost and is edited here directly.
 
+## Claude / Codex continuity
+
+Read `docs/engineering/agent-workflow.md` and any `docs/engineering/handoff.md` at the start of every session. They define the shared workflow and how to resume work when the founder switches agents.
+
 ## Read first, every session
 1. `.ai/guidelines/sortd-project.md` — how to work and hard rules (also included below)
 2. `.ai/guidelines/sortd-domain.md` — domain vocabulary and rules (also included below)
@@ -13,8 +17,8 @@
 - Approves specs and plans, clicks through previews, and makes product/money/privacy decisions.
 - Ask before deciding anything listed in `docs/product/open-questions.md`.
 
-## Current phase: 0 — Foundations
-Follow the numbered tasks in `docs/roadmap.md` → "Phase 0"; the roadmap shows which are done.
+## Current work
+Use the active branch, spec Progress section and handoff to establish current work. The roadmap may lag behind recent approved specs and decisions.
 - Verify every package version against Laravel 13 / Filament 5 / Livewire 4 before installing (Boost's `search-docs` helps).
 
 ## Commands

@@ -54,7 +54,8 @@ final readonly class AcceptQuote
             $job->quotes()->whereKey($declined)->update(['status' => QuoteStatus::Declined->value, 'updated_at' => now()]);
             $job->invites()->whereIn('status', InviteStatus::open())->update(['status' => InviteStatus::Closed->value, 'responded_at' => now(), 'updated_at' => now()]);
 
-            $job->forceFill(['accepted_quote_id' => $chosen->id, 'scheduled_for' => $chosen->earliest_start_date->toDateString(), 'quotes_count' => 0]);
+            // The accepted estimate is the agreed final amount until a proposal changes it (spec 018, AC14).
+            $job->forceFill(['accepted_quote_id' => $chosen->id, 'scheduled_for' => $chosen->earliest_start_date->toDateString(), 'quotes_count' => 0, 'agreed_final_cents' => $chosen->total_cents]);
             $this->stateMachine->transition(
                 $job,
                 $chosen->deposit_cents > 0 ? ServiceJobStatus::AwaitingDeposit : ServiceJobStatus::Scheduled,

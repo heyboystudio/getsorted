@@ -200,6 +200,11 @@
                 </div>
             @endif
 
+            {{-- Spec 018, AC9–AC12: once booked, the chosen pro can propose a different final amount. --}}
+            @if ($accepted && in_array($job->status, [\App\Domain\ServiceJobs\Enums\ServiceJobStatus::Scheduled, \App\Domain\ServiceJobs\Enums\ServiceJobStatus::InProgress], true))
+                <livewire:pros.jobs.final-amount :job-public-id="$job->public_id" :key="'final-'.$job->public_id" />
+            @endif
+
             {{-- Spec 018: chat with the customer. Their name shows only once this pro's estimate is accepted (spec 005 privacy). --}}
             @if ($chat)
                 <livewire:jobs.chat :job-public-id="$job->public_id" :pro-public-id="$invite->pro->public_id" :title="$accepted ? $job->customer->first_name : __('the customer')" :key="'chat-'.$invite->public_id.($accepted ? '-named' : '')" />

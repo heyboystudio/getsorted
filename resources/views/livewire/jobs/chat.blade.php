@@ -23,6 +23,15 @@
                         @endif
                     </div>
                 </li>
+            @elseif ($item['type'] === 'proposal')
+                @php($proposal = $item['proposal'])
+                <li wire:key="proposal-{{ $proposal->public_id }}" class="flex justify-center">
+                    <div class="w-full max-w-sm rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+                        <p class="font-medium text-amber-950">{{ __('Final amount') }}: {{ $R::format($proposal->previous_total_cents) }} → {{ $R::format($proposal->total_cents) }}</p>
+                        <p class="text-xs text-amber-900">{{ $proposal->status->label() }} · {{ $proposal->created_at->translatedFormat('D j M, H:i') }}</p>
+                        <p class="mt-1 whitespace-pre-line text-xs text-amber-950">{{ $proposal->reason }}</p>
+                    </div>
+                </li>
             @else
                 @php($message = $item['message'])
                 <li wire:key="msg-{{ $message->public_id }}" @class(['flex flex-col', 'items-end' => $item['mine'], 'items-start' => ! $item['mine']])>

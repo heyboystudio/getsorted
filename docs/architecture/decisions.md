@@ -46,6 +46,12 @@ Short architecture decision records. **Add an entry for every significant choice
 | 040 | Twilio for WhatsApp and SMS (Q5) | Accepted | 2026-10-05 |
 | 041 | Test site: mobile saved without a code while SMS is blocked | Accepted | 2026-10-05 |
 
+| 046 | Allow Node 22.12+ for Monterey alongside Node 24 | Accepted | 2026-10-06 |
+
+| 047 | Native user-owned PostgreSQL 17 + PostGIS on Monterey | Superseded for PostGIS variants by 048 | 2026-10-06 |
+
+| 048 | Use default PostGIS raster/topology variants on Monterey | Accepted | 2026-10-06 |
+
 ---
 
 ## 001 · Laravel 13 modular monolith
@@ -413,3 +419,27 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** The founder found the chat-then-wizard flow lost track of the customer and repeated questions (location twice, notes twice, service confirmed twice).
 
 **Next:** spec 018: after posting, the customer chats with the quoting pros and can send more photos. Pros send an estimate quote and the customer pays the deposit on it. After accepting, the pro can raise or lower the final amount, and the customer must accept the change. This brings in-app chat into v1, which the PRD had parked.
+
+## 046 · Node 22 for Monterey development
+**Status:** Accepted
+**Date:** 2026-10-06
+**Context:** The founder requires development on Intel macOS Monterey 12.7.6. Node 24 binaries require macOS 13.5; Node 22 binaries target macOS 11. The locked Vite 8, Laravel Vite plugin 3, Rolldown and yargs dependencies accept Node 22.12+; concurrently requires Node 22+.
+**Options considered:** Upgrade macOS (conflicts with the founder's constraint); move all development to Linux (not needed solely for Node); allow Node 22 alongside Node 24 (matches declared dependency requirements).
+**Decision:** Allow `^22.12.0 || 24.x` in package metadata and the local tool check. Keep `.nvmrc` and the existing CI default on 24; use Node 22 locally on Monterey. No dependency versions change.
+**Consequences:** The frontend can be installed with a Monterey-compatible Node version. A successful `npm ci` and `npm run build` on this Mac remain to be verified; dependency engine compatibility alone is not a build result. PHP and the database runtime need separate Monterey-compatible installation paths. Sources: https://github.com/nodejs/node/blob/v22.x/BUILDING.md and https://vite.dev/guide/.
+
+## 047 · Native PostgreSQL for Monterey
+**Status:** Accepted
+**Date:** 2026-10-06
+**Context:** The founder requires Monterey and authorized installation of the development tools. Current Docker Desktop excludes this OS; MacPorts provides PostgreSQL 17 and pg17-postgis.
+**Options considered:** Legacy Docker Desktop (older unsupported runtime); Linux VM (additional tooling); native PostgreSQL (retains the application's existing database engine).
+**Decision:** Install MacPorts PostgreSQL 17 and PostGIS without unused raster/topology modules. Create a separate user-owned GetSorted cluster under ~/.local/share, bound to 127.0.0.1 with password-authenticated TCP and an owner-only Unix socket. Development and test databases remain separate. The local-only role matches Docker's superuser role because test migrations recreate PostGIS. Existing Docker workflows remain available elsewhere.
+**Consequences:** No OS upgrade or Docker runtime is needed for local database work. Start/stop uses scripts/monterey-db.sh; the cluster does not start at login. Installation, migrations and full tests must still be verified. Sources: https://ports.macports.org/port/postgresql17/ and https://ports.macports.org/port/pg17-postgis/.
+
+## 048 · Keep PostGIS default variants
+**Status:** Accepted
+**Date:** 2026-10-06
+**Context:** The pg17-postgis 3.6.4 source build failed after its core libraries compiled: utils/Makefile still requested raster and topology upgrade SQL despite those features being disabled.
+**Options considered:** Patch upstream build files locally (extra maintenance); use the default MacPorts feature variants (standard build path).
+**Decision:** Supersede decision 047's reduced-feature choice; install pg17-postgis with +raster +topology. Clear the failed port build before retrying.
+**Consequences:** Additional dependencies may be installed. The database engine, local-only cluster and app behavior are unchanged. Retry success still needs verification.

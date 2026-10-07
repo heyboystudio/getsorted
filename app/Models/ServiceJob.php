@@ -42,6 +42,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property CarbonImmutable|null $posted_at
  * @property int $quotes_count
  * @property int|null $accepted_quote_id
+ * @property int|null $agreed_final_cents
  * @property CarbonImmutable|null $scheduled_for
  * @property CarbonImmutable|null $last_wave_at
  * @property CarbonImmutable|null $matching_stopped_at
@@ -104,6 +105,12 @@ final class ServiceJob extends Model implements HasMedia
         return $this->hasMany(ServiceJobInvite::class);
     }
 
+    /** @return HasMany<FinalAmountProposal, $this> */
+    public function finalAmountProposals(): HasMany
+    {
+        return $this->hasMany(FinalAmountProposal::class);
+    }
+
     /** @return HasMany<JobConversation, $this> */
     public function conversations(): HasMany
     {
@@ -159,6 +166,7 @@ final class ServiceJob extends Model implements HasMedia
     protected function casts(): array
     {
         return [
+            'agreed_final_cents' => 'integer',
             'status' => ServiceJobStatus::class,
             'urgency' => Urgency::class,
             'preferred_date' => 'immutable_date',

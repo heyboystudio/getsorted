@@ -35,10 +35,23 @@ Verified from a clean clone on 2026-10-03 (Zorin/Ubuntu 24.04).
 ### You need
 - PHP 8.4 with the `pdo_pgsql`, `pgsql`, `intl`, `bcmath`, `gd`, `zip`, `mbstring`, `curl` and `xml` extensions
 - Composer 2
-- Node 24 (see `.nvmrc`)
+- Node 22.12+ on Monterey, or Node 24 (the `.nvmrc` default)
 - Docker with Compose (runs Postgres 17 + PostGIS)
 
 `bash scripts/check-tools.sh` checks all of these (details in [the preflight report](docs/engineering/phase-0-preflight.md)).
+
+### Intel macOS Monterey
+
+Use Node 22.12+ (the default `.nvmrc` remains 24 for other environments) and PHP 8.4 via MacPorts. The native database setup is an alternative to Docker on this Mac:
+
+```bash
+bash scripts/install-node-monterey.sh
+# Install the official Monterey MacPorts package first.
+bash scripts/install-php-monterey.sh
+bash scripts/install-db-monterey.sh
+```
+
+The database lives in `~/.local/share/getsorted-postgresql17`, listens only on `127.0.0.1:5432`, and has separate `sortd` and `sortd_testing` databases with PostGIS. It uses the same documented local development credentials as Docker. Start or stop it with `bash scripts/monterey-db.sh start` or `bash scripts/monterey-db.sh stop`; data is retained. It does not start automatically at login. The original Docker-based `scripts/check-tools.sh` remains the Docker preflight, not the native Mac preflight. Never run application migrations until the database connection has been confirmed local.
 
 ### First time
 ```bash

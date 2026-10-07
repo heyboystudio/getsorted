@@ -77,4 +77,26 @@ final class ServiceJobStateMachine
 
         return $event;
     }
+
+    /**
+     * Writes a timeline event that doesn't change the status, such as an agreed
+     * final amount (spec 018). Callers hold the job lock.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function record(ServiceJob $job, string $eventType, ActorType $actorType, ?int $actorId, array $payload = []): ServiceJobEvent
+    {
+        $event = new ServiceJobEvent([
+            'from_status' => $job->status,
+            'to_status' => $job->status,
+            'event_type' => $eventType,
+            'actor_type' => $actorType,
+            'actor_id' => $actorId,
+            'payload' => $payload,
+        ]);
+        $event->serviceJob()->associate($job);
+        $event->save();
+
+        return $event;
+    }
 }

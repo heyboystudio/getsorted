@@ -22,3 +22,4 @@ Suggested first specs after Phase 0 (from the roadmap):
 | 016 | Siya, the AI booking assistant — [done](016-ai-booking-assistant.md) (hand-off replaced by 017) | 2 |
 | 017 | One-thread booking with Siya, Kandua-style — [done](017-one-thread-booking.md) | 2 |
 | 018 | Chat with your pros, estimate quotes and an approved final amount — [draft](018-pro-chat-and-final-amount.md) | 3–4 |
+| 019 | Reinvent Siya's conversation and booking workflow — [draft](019-siya-conversation-redesign.md) | 2 |

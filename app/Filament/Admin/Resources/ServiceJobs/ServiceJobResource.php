@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Resources\ServiceJobs;
 use App\Filament\Admin\Resources\ServiceJobs\Pages\ListServiceJobs;
 use App\Filament\Admin\Resources\ServiceJobs\Pages\ViewServiceJob;
 use App\Filament\Admin\Resources\ServiceJobs\RelationManagers\ConversationsRelationManager;
+use App\Filament\Admin\Resources\ServiceJobs\RelationManagers\FinalAmountProposalsRelationManager;
 use App\Filament\Admin\Resources\ServiceJobs\RelationManagers\InvitesRelationManager;
 use App\Filament\Admin\Resources\ServiceJobs\RelationManagers\QuotesRelationManager;
 use App\Filament\Admin\Resources\ServiceJobs\Schemas\ServiceJobInfolist;
@@ -56,6 +57,7 @@ final class ServiceJobResource extends Resource
             InvitesRelationManager::class,
             QuotesRelationManager::class,
             ConversationsRelationManager::class,
+            FinalAmountProposalsRelationManager::class,
         ];
     }
 

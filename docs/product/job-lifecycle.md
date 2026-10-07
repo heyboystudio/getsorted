@@ -59,7 +59,7 @@ stateDiagram-v2
 | awaiting_deposit → scheduled | System (payment webhook) | Verified provider webhook for the deposit payment | Record ledger entries; notify pro |
 | awaiting_deposit → open | System | Deposit unpaid after 48 h | Accepted quote → `released`; customer told |
 | scheduled → in_progress | Pro | Today ≥ scheduled date − 1 day | Notify customer |
-| in_progress → awaiting_final_payment | Pro | Final invoice issued (amount ≥ 0) | Notify customer; start 72 h auto-confirm timer |
+| in_progress → awaiting_final_payment | Pro | Final invoice issued (amount ≥ 0, never above the job's **agreed final amount**, spec 018) | Notify customer; start 72 h auto-confirm timer |
 | awaiting_final_payment → completed | System (payment webhook) | Verified webhook; no open dispute | Schedule payout (next business day); open review window (14 days) |
 | any active → disputed | Customer, pro, admin | Reason given; within guarantee window for `completed` (default 30 days) | Freeze unpaid payouts; create dispute record; notify admin |
 | disputed → * | Admin only | Resolution recorded | Apply refund/payout per resolution; notify both sides |
@@ -92,3 +92,16 @@ stateDiagram-v2
 - Each transition is an Action class, e.g. `AcceptQuote`, `MarkServiceJobComplete`, wrapped in a DB transaction with a row lock on the job (`lockForUpdate`).
 - Timers run as scheduled commands or delayed queued jobs that **re-check state before acting** (idempotent).
 - Every transition must have a Pest test for the happy path and for each guard failing.
+
+## Price changes after booking (spec 018)
+
+While a job is `scheduled` or `in_progress`, the accepted pro can propose a new final amount. These timeline events don't change the status (`ServiceJobStateMachine::record`):
+
+| Event | Who | Effect |
+|---|---|---|
+| `final_amount_proposed` | Pro | An increase waits for the customer. Only one pending at a time; a new one replaces it. |
+| `final_amount_lowered` | Pro | A decrease applies straight away (`agreed_final_cents` updated). |
+| `final_amount_approved` | Customer | The increase becomes the agreed final amount. |
+| `final_amount_declined` | Customer | The agreed amount stays. The pro gets one more proposal; after two declined increases, only decreases are allowed. |
+
+`scheduled → cancelled` with event `cancelled_price_not_agreed` (pro, after a declined proposal, before work starts) records `refund_deposit_cents` for a full deposit refund (decision 4).

@@ -7,7 +7,7 @@ for sortd_tool in php composer node npm docker; do
 done
 php -r 'if (PHP_MAJOR_VERSION !== 8 || PHP_MINOR_VERSION !== 4) { fwrite(STDERR, "PHP 8.4 required\n"); exit(1); } foreach (["curl", "mbstring", "dom", "zip", "pdo_pgsql", "intl", "bcmath", "gd"] as $extension) { if (!extension_loaded($extension)) { fwrite(STDERR, "Missing PHP extension: $extension\n"); exit(1); } } echo "PHP ".PHP_VERSION." and required extensions: OK\n";'
 composer --version
-node -e 'if (Number(process.versions.node.split(".")[0]) !== 24) { console.error("Node 24 LTS required"); process.exit(1); } console.log("Node " + process.version + ": OK");'
+node -e 'const [major, minor] = process.versions.node.split(".").map(Number); if (!((major === 22 && minor >= 12) || major === 24)) { console.error("Node 22.12+ or Node 24 required"); process.exit(1); } console.log("Node " + process.version + ": OK");'
 npm --version
 if [[ -n ${DOCKER_CONTEXT:-} ]]; then
     sortd_endpoint=$(docker context inspect "$DOCKER_CONTEXT" --format '{{.Endpoints.docker.Host}}')

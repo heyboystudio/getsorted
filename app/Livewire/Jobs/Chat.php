@@ -10,6 +10,7 @@ use App\Domain\ServiceJobs\Actions\SendJobMessage;
 use App\Domain\ServiceJobs\Enums\MessageReportReason;
 use App\Domain\ServiceJobs\Enums\MessageSender;
 use App\Domain\ServiceJobs\Support\JobChat;
+use App\Models\FinalAmountProposal;
 use App\Models\JobConversation;
 use App\Models\JobMessage;
 use App\Models\Pro;
@@ -141,7 +142,7 @@ final class Chat extends Component
     /**
      * Messages and this pro's estimate versions in time order (AC7).
      *
-     * @return Collection<int, array{type: string, mine: bool, message?: JobMessage, photos?: array<string, string>, quote?: Quote, at: \DateTimeInterface}>
+     * @return Collection<int, array{type: string, mine: bool, message?: JobMessage, photos?: array<string, string>, quote?: Quote, proposal?: FinalAmountProposal, at: \DateTimeInterface}>
      */
     private function timeline(?JobConversation $conversation, ServiceJob $job, Pro $pro): Collection
     {
@@ -169,6 +170,13 @@ final class Chat extends Component
 
         foreach ($quotes as $quote) {
             $items->push(['type' => 'quote', 'mine' => $side === MessageSender::Pro, 'quote' => $quote, 'at' => $quote->submitted_at]);
+        }
+
+        // Price changes from the accepted pro show as cards too (AC9).
+        $proposals = FinalAmountProposal::query()->where('service_job_id', $job->id)->where('pro_id', $pro->id)->orderBy('version')->get();
+
+        foreach ($proposals as $proposal) {
+            $items->push(['type' => 'proposal', 'mine' => $side === MessageSender::Pro, 'proposal' => $proposal, 'at' => $proposal->created_at]);
         }
 
         return $items->sortBy(fn (array $item): int => $item['at']->getTimestamp())->values();

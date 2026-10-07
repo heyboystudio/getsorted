@@ -56,6 +56,11 @@
 
         @include('livewire.account.jobs.partials.quotes')
 
+        {{-- Spec 018, AC9–AC13: the agreed price and any change the pro proposes. --}}
+        @if ($job->accepted_quote_id && in_array($job->status, [\App\Domain\ServiceJobs\Enums\ServiceJobStatus::Scheduled, \App\Domain\ServiceJobs\Enums\ServiceJobStatus::InProgress, \App\Domain\ServiceJobs\Enums\ServiceJobStatus::AwaitingFinalPayment], true))
+            <livewire:account.jobs.final-amount :job-public-id="$job->public_id" :key="'price-'.$job->public_id" />
+        @endif
+
         {{-- Spec 018: chat with each pro looking at the job. Invited pros stay anonymous until they reply or quote (spec 009 AC13). --}}
         @if ($chats->isNotEmpty())
             <section class="mt-6" id="chats">

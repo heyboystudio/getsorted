@@ -43,6 +43,12 @@ sequenceDiagram
     P-->>S: Webhook: payout paid
 ```
 
+## Agreed final amount (spec 018)
+
+- `service_jobs.agreed_final_cents` starts as the accepted estimate's total. It changes only through a final-amount proposal: lowering applies at once, and raising needs the customer's approval.
+- The final invoice is for the agreed final amount minus the deposit already paid. If the deposit is more than the agreed amount, the difference is refunded.
+- If the price isn't agreed, the pro may cancel before work starts, and the customer gets any deposit back in full.
+
 ## Deposit rules
 
 - Pro chooses a deposit of 0–50% of the quote total when quoting (cap configurable).
