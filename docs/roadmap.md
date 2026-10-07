@@ -31,8 +31,8 @@ Goal: what exists is correct, honest and documented before anything new is built
 | S3 | Safety net: separate dev and test databases, `composer check` passing locally | Done (#63). CI needs the GitHub billing lock cleared (founder). |
 | S4 | Fix the audit bugs | Done (#64) |
 | S5 | Honest copy for model B, real contact details | Done (#65) |
-| S6 | Docs match the product: PRD v2, roadmap, decisions index, specs index, agent instructions | This change |
-| S7 | Tidy GitHub: close superseded PRs, archive old branches | To do |
+| S6 | Docs match the product: PRD v2, roadmap, decisions index, specs index, agent instructions | Done (#66) |
+| S7 | Tidy GitHub: close superseded PRs, archive old branches | Done: PRs #49, #52, #53, #55, #60 closed; old branches kept as `archive/*` tags; open branches are `main`, `feat/018-final-amount`, `docs/spec-013-deposit-payments` |
 
 **Exit criteria:** `composer check` green; docs describe the app as it is; one `main`; test server renamed and deployed from `main`; a full click-through (customer books → pro quotes → customer accepts) passes on the test site.
 
