@@ -19,8 +19,6 @@ final class BookingToolbox
     /** The booking steps Siya may offer once a trade and a problem are known. */
     public const array STEPS = ['sign_in', 'location', 'when', 'photos', 'review'];
 
-    public bool $emergencyFlagged = false;
-
     public int $calls = 0;
 
     public int $rejected = 0;
@@ -160,15 +158,6 @@ final class BookingToolbox
         $this->state->nextStepOffered = true;
 
         return ['ok' => true, 'note' => 'The app now shows the customer the secure control for this step. Do not describe it as a form.'];
-    }
-
-    /** @return array<string, mixed> */
-    public function flagEmergency(string $reason): array
-    {
-        $this->calls++;
-        $this->emergencyFlagged = true;
-
-        return ['ok' => true, 'note' => 'The app shows reviewed emergency guidance. Say nothing more about safety.'];
     }
 
     private function quoted(string $needle): bool

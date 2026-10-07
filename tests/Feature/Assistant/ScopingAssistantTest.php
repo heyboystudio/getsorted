@@ -465,40 +465,13 @@ it('drops an AI summary written for older details at posting (AC8)', function ()
     expect($job->fresh()->ai_summary)->toBeNull()->and($job->fresh()->ai_summary_source)->toBe(SummarySource::None);
 });
 
-it('shows the trade’s safety advice and a guidance note at review for safety-relevant trades only (AC9)', function (): void {
-    [$customer, $property] = aiCustomer();
-    $this->actingAs($customer);
-
-    reviewStep($property)
-        ->assertSee('If water is flooding, close the main stopcock first.')
-        ->assertSee('This is guidance, not a guarantee.');
-
-    proNear(['painting'], 2);
-    reviewStep($property, 'Peeling walls.', tradeOf('painting'))
-        ->assertDontSee('This is guidance, not a guarantee.');
-});
-
-it('shows the guidance note for a registered-electrician trade even without advice (AC9)', function (): void {
+it('shows no safety guidance at review, even for electrical work (decision 060)', function (): void {
     [$customer, $property] = aiCustomer();
     $this->actingAs($customer);
     $electrical = tradeOf('electrical');
-    $electrical->update(['safety_advice' => []]);
     proNear(['electrical'], 2);
 
-    reviewStep($property, 'Light trips the breaker.', $electrical)->assertSee('This is guidance, not a guarantee.');
-});
-
-it('shows safety advice at review even when the assistant is off (AC9)', function (): void {
-    $settings = app(AiSettings::class);
-    $settings->enabled = false;
-    $settings->save();
-    [$customer, $property] = aiCustomer();
-    $this->actingAs($customer);
-
-    manualReview($property)
-        ->assertSee('If water is flooding, close the main stopcock first.')
-        ->assertSee('This is guidance, not a guarantee.');
-    summaryCard()->assertDontSee('Job description for pros');
+    reviewStep($property, 'Light trips the breaker.', $electrical)->assertDontSee('This is guidance, not a guarantee.')->assertDontSee('Safety advice');
 });
 
 it('cannot summarise or edit another customer\'s draft (security)', function (): void {

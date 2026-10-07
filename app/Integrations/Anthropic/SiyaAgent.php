@@ -19,7 +19,7 @@ use Laravel\Ai\Promptable;
 /**
  * Siya, the booking chat (spec 020). A tool-using agent: it understands what the customer wants, records what it
  * learns through tools the application validates, then answers in plain text. Rules that code enforces
- * (emergencies, prices, contact details, posting) are not repeated here.
+ * (prices, contact details, posting) are not repeated here.
  */
 #[MaxSteps(6)]
 #[Temperature(0.3)]
@@ -63,7 +63,6 @@ final class SiyaAgent implements Agent, Conversational, HasProviderOptions, HasT
             - If they ask a GetSorted question, answer only from the published facts below; otherwise say you don't know.
             - Don't diagnose causes, quote prices, promise availability, or give safety, medical or legal instructions.
             - Never mention buttons, forms or screens that you have not been told are showing.
-            - For immediate danger call flag_emergency and keep your reply to one line: emergency help comes first.
 
             Published facts about GetSorted:
             {$facts}

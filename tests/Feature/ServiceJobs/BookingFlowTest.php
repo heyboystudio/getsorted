@@ -110,7 +110,7 @@ it('keeps Siya for signed-in customers: guests are sent to sign in', function ()
     $this->get(route('assistant'))->assertRedirect('/book');
 });
 
-it('marks the job urgent and shows the trade’s reviewed safety advice when Siya flags urgency (AC8)', function (): void {
+it('marks the job urgent when Siya flags urgency, without any safety advice (AC8, decision 060)', function (): void {
     [$customer] = bookingCustomer();
     $this->actingAs($customer);
     $settings = app(AiSettings::class);
@@ -126,23 +126,9 @@ it('marks the job urgent and shows the trade’s reviewed safety advice when Siy
     });
 
     threadFor()->set('message', 'My pipe is flooding the kitchen')->call('send')
-        ->assertSee('If water is flooding, close the main stopcock first.')->assertSet('stage', 'where');
+        ->assertDontSee('stopcock')->assertSet('stage', 'where');
 
     expect(ServiceJob::query()->sole()->urgency)->toBe(Urgency::Urgent);
-});
-
-it('pauses for an emergency Siya flags, and keeps the facts', function (): void {
-    $settings = app(AiSettings::class);
-    $settings->enabled = true;
-    $settings->save();
-    app(ScopingAssistant::class)->willChat(function (ChatRequest $request): string {
-        $request->toolbox->flagEmergency('smoke from the socket');
-
-        return 'Emergency help comes first.';
-    });
-
-    threadFor()->set('message', 'The wall behind the stove looks scorched and warm')->call('send')
-        ->assertSet('stage', 'emergency')->assertSee('031 361 0000');
 });
 
 it('replaces a reply that breaks the rules with a plain one built from the state, keeping the facts', function (): void {

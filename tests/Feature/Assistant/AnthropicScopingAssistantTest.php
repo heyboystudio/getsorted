@@ -79,7 +79,7 @@ it('gives the agent the same tools every turn, each backed by the validating too
     $toolbox = chatRequest()->toolbox;
     $tools = collect(SiyaTools::for($toolbox))->mapWithKeys(fn ($tool): array => [$tool->name() => $tool]);
 
-    expect($tools->keys()->all())->toBe(['get_booking_state', 'set_trade', 'add_job_fact', 'remove_job_fact', 'set_urgency', 'park_job', 'offer_next_step', 'flag_emergency']);
+    expect($tools->keys()->all())->toBe(['get_booking_state', 'set_trade', 'add_job_fact', 'remove_job_fact', 'set_urgency', 'park_job', 'offer_next_step']);
 
     $run = fn (string $name, array $arguments): array => json_decode((string) $tools[$name]->handle(new Request($arguments)), true);
 
@@ -88,9 +88,7 @@ it('gives the agent the same tools every turn, each backed by the validating too
         ->and($run('add_job_fact', ['text' => 'tap drips', 'evidence' => 'my tap is dripping'])['ok'])->toBeTrue()
         ->and($run('add_job_fact', ['text' => 'made up', 'evidence' => 'never said this'])['ok'])->toBeFalse()
         ->and($run('get_booking_state', [])['facts'])->toHaveCount(1)
-        ->and($run('offer_next_step', ['step' => 'sign_in'])['ok'])->toBeTrue()
-        ->and($run('flag_emergency', ['reason' => 'smoke'])['ok'])->toBeTrue()
-        ->and($toolbox->emergencyFlagged)->toBeTrue();
+        ->and($run('offer_next_step', ['step' => 'sign_in'])['ok'])->toBeTrue();
 });
 
 it('has no tool that can post a job, take payment or contact anyone', function (): void {

@@ -57,12 +57,6 @@ final class SiyaTools
                 fn (JsonSchema $schema): array => ['step' => $schema->string()->enum(BookingToolbox::STEPS)->required()],
                 fn (Request $request): array => $toolbox->offerNextStep((string) $request['step']),
             ),
-            new ToolboxTool(
-                'flag_emergency',
-                'Call this if the customer describes immediate danger to life or property. The app then shows reviewed emergency guidance.',
-                fn (JsonSchema $schema): array => ['reason' => $schema->string()->required()],
-                fn (Request $request): array => $toolbox->flagEmergency((string) $request['reason']),
-            ),
         ];
     }
 }

@@ -9,8 +9,6 @@ use App\Domain\Accounts\Enums\Role;
 use App\Domain\Assistant\Actions\ChatWithSiya;
 use App\Domain\Assistant\Enums\AiOutcome;
 use App\Domain\Assistant\State\BookingState;
-use App\Domain\Assistant\Support\EmergencyGuidance;
-use App\Domain\Catalogue\Enums\RegistrationType;
 use App\Domain\Matching\Actions\JoinWaitlist;
 use App\Domain\Matching\EligibleProsQuery;
 use App\Domain\Properties\Actions\SaveProperty;
@@ -76,7 +74,7 @@ final class Thread extends Component
     private const array PERSISTED = [
         'messages', 'stage', 'tradeId', 'facts', 'urgent', 'parked', 'bookingTurn', 'nextStepOffered', 'notes',
         'photosDone', 'propertyPublicId', 'preferredDate', 'chosenDate', 'timeWindow', 'jobPublicId', 'customerMessages',
-        'failures', 'emergencyShown', 'returnToSummary', 'waitlistPropertyPublicId', 'stageBeforeEmergency', 'retryPending',
+        'failures', 'returnToSummary', 'waitlistPropertyPublicId', 'retryPending',
         'showTradeShortcuts', 'bookingRequested',
     ];
 
@@ -138,12 +136,6 @@ final class Thread extends Component
 
     #[Locked]
     public int $failures = 0;
-
-    #[Locked]
-    public bool $emergencyShown = false;
-
-    #[Locked]
-    public ?string $stageBeforeEmergency = null;
 
     #[Locked]
     public bool $retryPending = false;
@@ -248,18 +240,7 @@ final class Thread extends Component
 
         // The customer already described the problem (saved as notes while Siya could not read it): never ask again.
         $this->say(__('Thanks, your description is saved for the pros. Add more detail or carry on to book.'));
-
-        if (self::soundsActive($this->notes) && ! $this->safetyShown()) {
-            $this->showSafetyAdvice();
-        }
-
         $this->advance(speak: false);
-    }
-
-    /** Words that suggest a problem happening right now, so the trade's safety tip should not wait for the "when" step. */
-    private static function soundsActive(string $text): bool
-    {
-        return preg_match('/\b(?:leak\w*|burst\w*|flood\w*|drip\w*|pouring|overflow\w*|gushing|no water|tripp\w*|no power|smell\w*)\b/u', mb_strtolower($text)) === 1;
     }
 
     public function send(ChatWithSiya $siya): void
@@ -276,7 +257,7 @@ final class Thread extends Component
             throw ValidationException::withMessages(['message' => __('Type a message of :min to :max characters.', ['min' => self::MIN_LENGTH, 'max' => self::MAX_LENGTH])]);
         }
 
-        if ($this->customerMessages >= (int) config('getsorted.ai.chat_messages_per_conversation') && ! EmergencyGuidance::required($text)) {
+        if ($this->customerMessages >= (int) config('getsorted.ai.chat_messages_per_conversation')) {
             throw ValidationException::withMessages(['message' => __('This chat is full. Tap Restart to start again.')]);
         }
 
@@ -285,18 +266,6 @@ final class Thread extends Component
         $scrubbed = ChatWithSiya::scrub($text);
         $this->messages[] = ['role' => 'customer', 'text' => $scrubbed];
         $this->retryPending = false;
-
-        if (EmergencyGuidance::required($text)) {
-            $this->pauseForEmergency();
-
-            return;
-        }
-
-        if ($this->stage === 'emergency') {
-            $this->say(__('Please contact emergency services first. Use “Discuss a later repair” only when you want to plan repair work, not emergency help.'));
-
-            return;
-        }
 
         abort_unless(! in_array($this->stage, ['posted', 'closed'], true), 404);
 
@@ -318,7 +287,7 @@ final class Thread extends Component
     /** Runs the same turn again after a failure. The customer's message is already in the thread, so nothing is duplicated. */
     public function retry(ChatWithSiya $siya): void
     {
-        abort_unless($this->retryPending && ! in_array($this->stage, ['posted', 'closed', 'emergency'], true), 404);
+        abort_unless($this->retryPending && ! in_array($this->stage, ['posted', 'closed'], true), 404);
         $this->turn($siya);
     }
 
@@ -332,31 +301,10 @@ final class Thread extends Component
         $this->advance();
     }
 
-    public function continueAfterEmergency(): void
-    {
-        abort_unless($this->stage === 'emergency', 404);
-        $this->stage = $this->stageBeforeEmergency ?? 'chat';
-        $this->stageBeforeEmergency = null;
-        $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Discuss a later repair')];
-        $this->say(__('We can plan a later repair here. This does not mean the situation is safe; follow the emergency services’ advice.'));
-    }
-
-    private function pauseForEmergency(): void
-    {
-        if ($this->stage !== 'emergency') {
-            $this->stageBeforeEmergency = $this->stage;
-        }
-        $this->stage = 'emergency';
-        $this->emergencyShown = true;
-        $this->retryPending = false;
-        $this->messages[] = ['role' => 'assistant', 'kind' => 'emergency', 'text' => EmergencyGuidance::message()];
-        $this->persist();
-    }
-
     /** A fact the customer removes from "What I've got so far", or from the summary. */
     public function removeFact(string $id): void
     {
-        abort_unless(! in_array($this->stage, ['posted', 'closed', 'emergency'], true), 404);
+        abort_unless(! in_array($this->stage, ['posted', 'closed'], true), 404);
         $this->facts = array_values(array_filter($this->facts, fn (array $fact): bool => $fact['id'] !== $id));
         $this->autosave();
 
@@ -537,10 +485,6 @@ final class Thread extends Component
         $this->timeWindow = $chosen->value;
         $this->chosenDate = $date->toDateString();
         $this->messages[] = ['role' => 'assistant', 'kind' => 'done', 'label' => __('Date confirmed'), 'text' => $this->whenLabel()];
-
-        if ($chosen === TimeWindow::Today && ! $this->safetyShown()) {
-            $this->showSafetyAdvice();
-        }
 
         $this->autosave();
         $this->advance();
@@ -724,17 +668,7 @@ final class Thread extends Component
         $this->failures = 0;
         $this->retryPending = false;
 
-        if ($result['emergency']) {
-            $this->pauseForEmergency();
-
-            return;
-        }
-
         $this->say($result['reply']);
-
-        if ($this->urgent && ! $this->safetyShown()) {
-            $this->showSafetyAdvice();
-        }
 
         if ($result['nextStepOffered']) {
             $this->bookingRequested = true;
@@ -847,18 +781,6 @@ final class Thread extends Component
         $this->say($line);
     }
 
-    private function showSafetyAdvice(): void
-    {
-        foreach ($this->trade()->safety_advice ?? [] as $advice) {
-            $this->messages[] = ['role' => 'assistant', 'kind' => 'safety', 'text' => $advice];
-        }
-    }
-
-    private function safetyShown(): bool
-    {
-        return collect($this->messages)->contains(fn (array $message): bool => ($message['kind'] ?? null) === 'safety');
-    }
-
     private function isReady(): bool
     {
         return $this->tradeId !== null && ($this->facts !== [] || trim($this->notes) !== '');
@@ -892,6 +814,12 @@ final class Thread extends Component
             if (array_key_exists($field, $saved)) {
                 $this->{$field} = $saved[$field];
             }
+        }
+
+        // Conversations saved before the safety cards and emergency stop were removed (2026-10-08).
+        $this->messages = array_values(array_filter($this->messages, fn (array $message): bool => ! in_array($message['kind'] ?? null, ['safety', 'emergency'], true)));
+        if ($this->stage === 'emergency') {
+            $this->stage = 'chat';
         }
 
         // A draft saved for someone else (another sign-in on this browser) is not ours.
@@ -1035,11 +963,10 @@ final class Thread extends Component
     }
 
     /**
-     * @return array{key: ?string, facts: list<string>, property: ?Property, when: string, urgent: bool, advice: list<string>, guidance: bool}
+     * @return array{key: ?string, facts: list<string>, property: ?Property, when: string, urgent: bool}
      */
     private function summary(?ServiceJob $draft): array
     {
-        $trade = $this->trade();
         $urgent = $this->timeWindow === TimeWindow::Today->value || $this->urgent;
 
         return [
@@ -1048,8 +975,6 @@ final class Thread extends Component
             'property' => $this->selectedProperty(),
             'when' => $this->whenLabel(),
             'urgent' => $urgent,
-            'advice' => $trade instanceof Trade ? $trade->safety_advice : [],
-            'guidance' => $trade instanceof Trade && ($trade->safety_advice !== [] || $trade->registration === RegistrationType::ElectricalRegisteredPerson),
         ];
     }
 
