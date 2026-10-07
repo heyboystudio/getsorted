@@ -8,7 +8,7 @@ Postgres 17+ with PostGIS. This is the target shape; migrations are the source o
 
 - Primary keys: `bigint` identity (`id`) for joins. Every table exposed in a URL also has a `public_id` **ULID** (unique). **Never put `id` in a URL or API response.**
 - Money: `*_cents bigint not null`, currency fixed to ZAR (column `currency char(3) default 'ZAR'` only where amounts can be shown to users).
-- Time: `timestamptz`, stored UTC, shown in `Africa/Johannesburg`.
+- Time: `timestamptz` (absolute instants); the app and the database connection both run on `Africa/Johannesburg` (decision 047).
 - Flexible answers: `jsonb` (scoping answers, flags). Validate shape in code before writing.
 - Soft deletes only where noted. Money, events and audit rows are **never** deleted or updated after the fact (append-only).
 - Encrypted columns (Laravel `encrypted` cast): ID numbers, bank account numbers, registration numbers. Store a separate keyed hash if lookup is needed.

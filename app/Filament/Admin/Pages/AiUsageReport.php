@@ -6,7 +6,6 @@ namespace App\Filament\Admin\Pages;
 
 use App\Models\AiUsage;
 use App\Models\User;
-use App\Support\LocalTime;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
 
@@ -35,11 +34,9 @@ final class AiUsageReport extends Page
     /** @return Collection<int, object{day: string, purpose: string, outcome: string, calls: int, input_tokens: int, output_tokens: int, avg_latency_ms: int}> */
     public function usage(): Collection
     {
-        $timezone = LocalTime::timezone();
-
         /** @var Collection<int, object{day: string, purpose: string, outcome: string, calls: int, input_tokens: int, output_tokens: int, avg_latency_ms: int}> $rows */
         $rows = AiUsage::query()->toBase()
-            ->selectRaw("to_char((created_at at time zone 'UTC') at time zone ?, 'YYYY-MM-DD') as day", [$timezone])
+            ->selectRaw("to_char(created_at, 'YYYY-MM-DD') as day")
             ->selectRaw('purpose, outcome, count(*) as calls, sum(input_tokens) as input_tokens, sum(output_tokens) as output_tokens, round(avg(latency_ms)) as avg_latency_ms')
             ->where('created_at', '>=', now()->subDays(30))
             ->groupBy('day', 'purpose', 'outcome')

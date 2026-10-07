@@ -9,7 +9,7 @@ Laravel Boost's guidelines cover general Laravel, Livewire, Pest, Tailwind and P
 - `final` classes by default (Actions, Data objects, Integrations); remove `final` only when extension is intended.
 - Enums (PHP backed enums) for every fixed set of values: statuses, types, roles, channels. Never compare against string literals.
 - No magic numbers or durations in code: timers, rates and caps come from `spatie/laravel-settings` or `config/sortd.php`.
-- Dates: `CarbonImmutable`. Store UTC; display `Africa/Johannesburg`.
+- Dates: `CarbonImmutable`. Columns are `timestamptz`; the app and database connection share `Africa/Johannesburg` (decision 047).
 - Money: `Brick\Money\Money` in code, `*_cents` integers in the DB. A `MoneyCast` handles conversion.
 - Comments explain **why**, not what. Public Actions get a one-line docblock stating the business rule.
 

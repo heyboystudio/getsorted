@@ -45,6 +45,8 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // The connection and the app share one clock, so a time written by PHP is read back as the same moment (decision 047).
+            'timezone' => env('DB_TIMEZONE', env('APP_TIMEZONE', 'Africa/Johannesburg')),
         ],
 
     ],
