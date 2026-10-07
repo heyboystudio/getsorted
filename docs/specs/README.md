@@ -24,3 +24,4 @@ Suggested first specs after Phase 0 (from the roadmap):
 | 018 | Chat with your pros, estimate quotes and an approved final amount — [draft](018-pro-chat-and-final-amount.md) | 3–4 |
 | 019 | Reinvent Siya’s conversation and booking workflow — [in progress](019-siya-conversation-redesign.md) | 2 |
 | 020 | Trades, extracted job facts and distance matching (and the Siya agent engine) — [in progress](020-trade-and-distance-matching.md) | 2–3 |
+| 021 | Customer and pro signed-in panels — [draft](021-signed-in-panels.md) | 2–3 |

@@ -8,8 +8,11 @@ use App\Domain\Quotes\Actions\AcceptQuote;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Exceptions\CannotQuote;
 use App\Domain\ServiceJobs\Actions\CancelJobByCustomer;
+use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Exceptions\CannotCancelJob;
 use App\Domain\ServiceJobs\Support\JobChat;
+use App\Domain\ServiceJobs\Support\JobStages;
+use App\Domain\ServiceJobs\Support\JobTimeline;
 use App\Models\JobConversation;
 use App\Models\Pro;
 use App\Models\Quote;
@@ -23,7 +26,7 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /** A customer's own job: details, estimates to compare (spec 010) and chats with pros (spec 018). */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.panel', ['panel' => 'customer'])]
 final class Show extends Component
 {
     #[Locked]
@@ -127,6 +130,12 @@ final class Show extends Component
         return view('livewire.account.jobs.show', [
             'job' => $job,
             'justPosted' => session('job_posted') === true,
+            'stages' => JobStages::for($job->status),
+            'timeline' => JobTimeline::forJob($job),
+            // The same trade again; the customer describes the new problem and picks the address in the thread (spec 021, AC11).
+            'bookAgain' => in_array($job->status, ServiceJobStatus::finished(), true) && $job->trade->is_active
+                ? route('book.trade', $job->trade)
+                : null,
             // A count only: customers never see who was invited (spec 009, AC13).
             'invitedCount' => $job->invites()->count(),
             // Current quotes to compare, or the accepted one (spec 010, AC7–AC9).

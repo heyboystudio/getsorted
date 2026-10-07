@@ -84,8 +84,13 @@ final readonly class StoreProDocument
         });
     }
 
-    /** @return array{string, string, string} bytes, extension, MIME type */
-    private function process(DocumentType $type, UploadedFile $upload): array
+    /**
+     * Checks and cleans an upload: images re-encoded without metadata, PDFs checked by content.
+     * Also used for the files that come with a change request (spec 021).
+     *
+     * @return array{string, string, string} bytes, extension, MIME type
+     */
+    public function process(DocumentType $type, UploadedFile $upload): array
     {
         $path = $upload->getRealPath();
 

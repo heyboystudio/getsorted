@@ -14,7 +14,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /** What vetting has checked and what still needs the pro (spec 008, AC5, AC12). Never shows internal notes. */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.panel', ['panel' => 'pro'])]
 #[Title('Your application')]
 final class Status extends Component
 {

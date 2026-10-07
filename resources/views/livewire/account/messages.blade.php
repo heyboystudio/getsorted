@@ -1,7 +1,6 @@
-<main class="flex min-h-dvh items-start justify-center px-5 py-12">
+<main class="flex items-start justify-center px-5 py-8">
     <section class="w-full max-w-xl" wire:poll.10s.visible>
-        <a wire:navigate.hover href="{{ $home }}" class="mb-10 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Back') }}</a>
-        <h1 class="text-3xl font-semibold tracking-tight">{{ __('Messages') }}</h1>
+        <h1 class="text-2xl font-semibold tracking-tight">{{ __('Messages') }}</h1>
 
         <ul class="mt-6 divide-y divide-zinc-100 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
             @forelse ($rows as $row)

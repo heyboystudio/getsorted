@@ -87,7 +87,7 @@ final readonly class AssistantCalls
         $key = $this->budgetKey();
 
         Cache::add($key, AiUsage::query()
-            ->where('created_at', '>=', LocalTime::today()->utc())
+            ->where('created_at', '>=', LocalTime::today())
             ->where('outcome', '!=', AiOutcome::Throttled)
             ->count(), now()->addDay());
 

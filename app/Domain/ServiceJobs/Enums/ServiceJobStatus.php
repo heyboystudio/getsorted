@@ -36,4 +36,30 @@ enum ServiceJobStatus: string
             self::Expired => __('No quote accepted'),
         };
     }
+
+    /** Jobs still going on, drafts included (customer Jobs tab "Active", spec 021). */
+    /** @return list<self> */
+    public static function inFlight(): array
+    {
+        return [self::Draft, self::Open, self::AwaitingDeposit, self::Scheduled, self::InProgress, self::AwaitingFinalPayment, self::Disputed];
+    }
+
+    /** Jobs that were posted and are underway, so they get a card on the customer's home. */
+    /** @return list<self> */
+    public static function underway(): array
+    {
+        return [self::Open, self::AwaitingDeposit, self::Scheduled, self::InProgress, self::AwaitingFinalPayment, self::Disputed];
+    }
+
+    /** @return list<self> */
+    public static function finished(): array
+    {
+        return [self::Completed, self::Closed];
+    }
+
+    /** @return list<self> */
+    public static function ended(): array
+    {
+        return [self::Cancelled, self::Expired];
+    }
 }

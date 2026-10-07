@@ -415,6 +415,7 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 
 **Next:** spec 018: after posting, the customer chats with the quoting pros and can send more photos. Pros send an estimate quote and the customer pays the deposit on it. After accepting, the pro can raise or lower the final amount, and the customer must accept the change. This brings in-app chat into v1, which the PRD had parked.
 
+<<<<<<< HEAD
 ## 049 · Google Gemini API for the AI assistant (supersedes the provider in 043)
 
 **Date:** 2026-10-06 · **Status:** Accepted (founder)
@@ -482,3 +483,26 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** The founder asked for 2FA to be turned off.
 
 **Risk:** A leaked or guessed admin password now gives full admin access. Strong passwords (12+ characters, checked against known breaches), login rate limits and panel-only sessions (`EnsureAdminSignedInThroughPanel`) still apply. Revisit before real customer data or money goes through the admin panel.
+=======
+## 052 · The app and the database share one clock: Africa/Johannesburg (SAST)
+
+**Date:** 2026-10-07 · **Status:** Accepted (founder)
+
+**Decision:** The application timezone (`APP_TIMEZONE`) and the Postgres connection timezone (`DB_TIMEZONE`) both default to `Africa/Johannesburg`. Columns stay `timestamptz`, so every stored moment is still an absolute instant; the setting only makes PHP and Postgres agree on how a time written without an offset is read.
+
+**Why:** Postgres on the founder's Mac runs on South African time while the app wrote UTC, so a time written by PHP was read back two hours off. That broke nine tests (sign-in codes, job posting windows, chat notifications) and could break expiry and quote windows anywhere the server's timezone differs from the app's.
+
+**Update 2026-10-07:** spec 020's branch had separately fixed the same mismatch the other way (app and database session both on UTC). The founder chose SAST, so this decision replaces that setting.
+
+**Watch:** Rows written while the two clocks disagreed keep their shifted values. This only matters on databases that already hold real data written under a mismatch; the test site holds fake data. Before launch, set `APP_TIMEZONE` and `DB_TIMEZONE` explicitly in each environment.
+
+## 053 · Pin a patched `shell-quote` for the dev tool `concurrently`
+
+**Date:** 2026-10-07 · **Status:** Accepted (founder)
+
+**Decision:** `package.json` has an npm `overrides` entry that makes the dev tool `concurrently` use `shell-quote` 1.12.0 (was 1.9.0). `concurrently` itself stays on 10.x.
+
+**Why:** `npm audit` reported a critical command-injection advisory for `shell-quote` 1.8.4 to 1.10.0. npm's suggested fix was to downgrade `concurrently` to 9.2.1, which is a breaking change; 1.11.0 and later are outside the affected range. `shell-quote` is used only by the local `composer dev` script, never in production. `npm audit` now reports 0 vulnerabilities and `npm ci` accepts the lockfile.
+
+**Watch:** remove the override once `concurrently` ships with a patched `shell-quote` of its own.
+>>>>>>> feat/021-panels-shell

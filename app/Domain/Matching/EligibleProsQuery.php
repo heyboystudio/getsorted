@@ -42,6 +42,7 @@ final readonly class EligibleProsQuery
             ->selectRaw("ST_Distance(pros.base_location, {$target}) as distance_m", $bindings)
             ->where('status', ProStatus::Approved)
             ->whereNotNull('approved_at')
+            ->whereNull('paused_at')
             ->whereNotNull('base_location')
             ->whereHas('trades', fn (Builder $query): Builder => $query->whereKey($trade->id))
             ->whereRaw("ST_DWithin(pros.base_location, {$target}, (pros.service_radius_km + ?) * 1000)", [...$bindings, $this->settings->soft_edge_km])

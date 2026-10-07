@@ -11,6 +11,7 @@ use App\Domain\Pros\Enums\ProStatus;
 use Carbon\CarbonImmutable;
 use Clickbar\Magellan\Data\Geometries\Point;
 use Database\Factories\ProFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -43,6 +44,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $decided_at
  * @property CarbonImmutable|null $approved_at
  * @property CarbonImmutable|null $suspended_at
+ * @property CarbonImmutable|null $paused_at
  * @property CarbonImmutable|null $reapply_after
  * @property CarbonImmutable|null $last_activity_at
  * @property int $contact_masking_count
@@ -89,6 +91,12 @@ final class Pro extends Model
         return $this->belongsToMany(Trade::class, 'pro_trades');
     }
 
+    /** @return HasMany<ProChangeRequest, $this> */
+    public function changeRequests(): HasMany
+    {
+        return $this->hasMany(ProChangeRequest::class);
+    }
+
     /** @return HasMany<ProDocument, $this> */
     public function documents(): HasMany
     {
@@ -105,6 +113,28 @@ final class Pro extends Model
     public function invites(): HasMany
     {
         return $this->hasMany(ServiceJobInvite::class);
+    }
+
+    /** Paused pros get no new invites; jobs they already have carry on (spec 021, AC21). */
+    public function isPaused(): bool
+    {
+        return $this->paused_at !== null;
+    }
+
+    /**
+     * Verified registrations that have expired or expire within `$days` days (spec 021, AC29).
+     *
+     * @return Collection<int, ProDocument>
+     */
+    public function registrationsNeedingAttention(int $days = 30): Collection
+    {
+        return $this->documents()->get()
+            ->filter(fn (ProDocument $document): bool => $document->type->isRegistration()
+                && $document->status === DocumentStatus::Verified
+                && $document->expires_at !== null
+                && $document->expires_at->lte(now()->addDays($days)))
+            ->sortBy('expires_at')
+            ->values();
     }
 
     /** Repeated attempts to share contact details in quotes (spec 010, AC6). */
@@ -180,6 +210,7 @@ final class Pro extends Model
             'decided_at' => 'immutable_datetime',
             'approved_at' => 'immutable_datetime',
             'suspended_at' => 'immutable_datetime',
+            'paused_at' => 'immutable_datetime',
             'reapply_after' => 'immutable_datetime',
             'last_activity_at' => 'immutable_datetime',
         ];

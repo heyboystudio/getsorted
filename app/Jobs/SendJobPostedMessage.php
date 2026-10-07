@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Accounts\Support\NotificationPreferences;
 use App\Domain\Notifications\Notify;
 use App\Models\ServiceJob;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -44,10 +45,10 @@ final class SendJobPostedMessage implements ShouldQueue
             Notify::user($job->customer, 'job_posted', __('Your :trade job is posted', ['trade' => mb_strtolower($job->trade->name)]), __('We are sharing it with vetted pros near you. Quotes will show up on your job page.'), route('jobs.show', $job));
         }
 
-        if ($job->customer->phone_e164 === null) {
+        if ($job->customer->phone_e164 === null || ! NotificationPreferences::allows($job->customer, 'job_updates')) {
             return;
         }
 
-        $messaging->send(new OutgoingMessage($job->customer->phone_e164, 'job_posted', ['service' => $job->trade->name]));
+        $messaging->send(new OutgoingMessage($job->customer->phone_e164, 'job_posted', ['service' => $job->trade->name], NotificationPreferences::channel($job->customer)));
     }
 }

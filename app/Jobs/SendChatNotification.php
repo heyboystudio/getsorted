@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Contracts\Data\MessageChannel;
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Accounts\Support\NotificationPreferences;
 use App\Domain\Notifications\Notify;
 use App\Domain\ServiceJobs\Enums\MessageSender;
 use App\Domain\ServiceJobs\Support\JobChat;
@@ -81,13 +83,14 @@ final class SendChatNotification implements ShouldQueue
             Notify::user($toCustomer ? $job->customer : $send->pro->user, 'chat_message', __('New message about your :trade job', ['trade' => mb_strtolower($job->trade->name)]), __('Open the chat to read and reply.'), $toCustomer ? route('jobs.show', $job) : route('pros.jobs.show', $invite));
         }
 
-        if ($phone === null) {
+        // Customers choose which texts they get (spec 021, AC15); the in-app notice above is always sent.
+        if ($phone === null || ($toCustomer && ! NotificationPreferences::allows($job->customer, 'messages'))) {
             return;
         }
 
         $messaging->send(new OutgoingMessage($phone, 'chat_message', [
             'service' => $job->trade->name,
             'link' => $toCustomer ? route('jobs.show', $job) : route('pros.jobs.show', $invite),
-        ]));
+        ], $toCustomer ? NotificationPreferences::channel($job->customer) : MessageChannel::WhatsApp));
     }
 }
