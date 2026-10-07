@@ -49,7 +49,7 @@ it('does not repeat the old per-page header on the customer home (spec 021, AC1)
     expect($html)->not->toContain('>Sortd<');
 });
 
-it('gives an approved pro Today, Jobs and Application tabs (spec 021, AC2)', function (): void {
+it('gives an approved pro Today, Jobs and Profile tabs (spec 021, AC2)', function (): void {
     $pro = panelApprovedPro();
 
     $this->actingAs($pro)->get(route('pros.welcome'))
@@ -57,7 +57,7 @@ it('gives an approved pro Today, Jobs and Application tabs (spec 021, AC2)', fun
         ->assertSee('aria-label="Main"', false)
         ->assertSee('Today')
         ->assertSee(route('pros.jobs'), false)
-        ->assertSee(route('pros.status'), false)
+        ->assertSee(route('pros.profile'), false)
         ->assertDontSee('Go to my customer account');
 });
 
@@ -110,7 +110,7 @@ it('keeps every existing signed-in route working (spec 021, AC4)', function (): 
     }
 
     $pro = panelApprovedPro();
-    foreach (['pros.welcome', 'pros.jobs', 'pros.status'] as $name) {
+    foreach (['pros.welcome', 'pros.jobs', 'pros.status', 'pros.profile', 'pros.profile.preview'] as $name) {
         $this->actingAs($pro)->get(route($name))->assertOk();
     }
 });

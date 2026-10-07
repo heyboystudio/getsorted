@@ -15,6 +15,20 @@
             </button>
         </div>
 
+        @foreach ($expiring as $document)
+            <a wire:navigate.hover href="{{ route('pros.profile') }}" wire:key="expiring-{{ $document->public_id }}" class="mt-4 block rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 hover:border-amber-500">
+                <span class="font-medium">{{ $document->isExpired() ? __(':type has expired', ['type' => $document->type->label()]) : __(':type expires on :date', ['type' => $document->type->label(), 'date' => $document->expires_at->translatedFormat('j M Y')]) }}</span>
+                <span class="block">{{ $document->isExpired() ? __('You will not get invites for the services that need it until it is renewed.') : __('Renew it so your invites keep coming.') }}</span>
+            </a>
+        @endforeach
+
+        @if ($missingBio)
+            <a wire:navigate.hover href="{{ route('pros.profile') }}" class="mt-4 block rounded-xl border border-zinc-200 bg-white p-4 text-sm hover:border-emerald-700">
+                <span class="font-medium">{{ __('Finish your profile') }}</span>
+                <span class="block text-zinc-600">{{ __('Add a short line about your business. Customers read it when they compare quotes.') }}</span>
+            </a>
+        @endif
+
         @if ($invites->isNotEmpty())
             <section class="mt-8" aria-labelledby="today-invites">
                 <div class="flex items-baseline justify-between">

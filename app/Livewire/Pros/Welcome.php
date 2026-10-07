@@ -74,6 +74,8 @@ final class Welcome extends Component
         return [
             'firstName' => $this->user()->first_name,
             'paused' => $pro->isPaused(),
+            'missingBio' => blank($pro->bio),
+            'expiring' => $pro->registrationsNeedingAttention(),
             'invites' => $pipeline['invites']->take(10),
             'invitesTotal' => $pipeline['invites']->count(),
             'quoted' => $pipeline['quoted']->take(10),

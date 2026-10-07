@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Pros\Enums\BusinessType;
+use App\Domain\Pros\Enums\DocumentStatus;
 use App\Domain\Pros\Enums\DocumentType;
 use App\Domain\Pros\Enums\ProStatus;
 use Carbon\CarbonImmutable;
 use Database\Factories\ProFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -111,6 +113,22 @@ final class Pro extends Model
     public function isPaused(): bool
     {
         return $this->paused_at !== null;
+    }
+
+    /**
+     * Verified registrations that have expired or expire within `$days` days (spec 021, AC29).
+     *
+     * @return Collection<int, ProDocument>
+     */
+    public function registrationsNeedingAttention(int $days = 30): Collection
+    {
+        return $this->documents()->get()
+            ->filter(fn (ProDocument $document): bool => $document->type->isRegistration()
+                && $document->status === DocumentStatus::Verified
+                && $document->expires_at !== null
+                && $document->expires_at->lte(now()->addDays($days)))
+            ->sortBy('expires_at')
+            ->values();
     }
 
     /** Repeated attempts to share contact details in quotes (spec 010, AC6). */

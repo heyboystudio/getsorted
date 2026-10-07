@@ -34,7 +34,7 @@ final class PanelNavigation
             return [
                 ['label' => __('Today'), 'route' => 'pros.welcome', 'icon' => 'home', 'active' => ['pros.welcome'], 'badge' => 0],
                 ['label' => __('Jobs'), 'route' => 'pros.jobs', 'icon' => 'briefcase', 'active' => ['pros.jobs', 'pros.jobs.*'], 'badge' => $user instanceof User ? self::openInvites($user) : 0],
-                ['label' => __('Application'), 'route' => 'pros.status', 'icon' => 'user', 'active' => ['pros.status'], 'badge' => 0],
+                ['label' => __('Profile'), 'route' => 'pros.profile', 'icon' => 'user', 'active' => ['pros.profile', 'pros.profile.*', 'pros.status'], 'badge' => 0],
             ];
         }
 
