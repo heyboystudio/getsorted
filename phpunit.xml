@@ -21,6 +21,8 @@
         </include>
     </source>
     <php>
+        <!-- The full suite needs more than PHP's 128M default (failure pages are rendered in memory). -->
+        <ini name="memory_limit" value="1G"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
