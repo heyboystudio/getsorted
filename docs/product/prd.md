@@ -12,7 +12,7 @@ Tradespeople, meanwhile, lose 20% of labour to commission and wait 3 business da
 
 ## 2. Product in one sentence
 
-GetSorted turns a household's description of a problem into a clear job, offers it to vetted Durban pros nearby, collects up to five itemised quotes, and lets the customer chat, compare and choose in one place. **MVP (model B):** after accepting a quote, customer and pro arrange the work and payment directly. **Later (model A, Phase M):** deposit → work → final payment → payout → review all on GetSorted.
+GetSorted turns a household's description of a problem into a clear job, offers it to vetted Durban pros nearby, collects up to five estimates, and lets the customer chat, compare and choose a pro to come and inspect. **MVP (model B):** choosing a pro is the introduction: contact details unlock and customer and pro arrange the visit, the final quote, the work and the payment directly. GetSorted earns from introductions: free at launch, later a fixed fee paid by the pro (decision 061). **Later (model A, Phase M):** deposit → work → final payment → payout → review all on GetSorted.
 
 ## 3. Users and roles
 
@@ -46,6 +46,7 @@ One account can be a customer or a pro (decision 027); v1 is one login per pro b
 
 ### To build before launch (Phase L, `docs/roadmap.md`)
 
+12a. **Introductions (decision 061):** estimates (range + call-out) instead of quotes, "choose a pro to visit" instead of "accept", a paywall before the introduction (contact details blocked in chat, business name hidden), an introduction record and a fee setting that is off at launch.
 12. **Finish a job without money:** mark done, cancel after acceptance with a reason.
 13. **Reviews:** customer rates the pro after "done"; the pro can reply once; ratings show on quotes.
 14. **Registration capture:** PIRB / electrical registration numbers on the application so pros can be shown as verified.

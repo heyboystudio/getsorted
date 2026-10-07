@@ -33,7 +33,8 @@ Statuses checked against the code on 2026-10-08. "Superseded" means a later spec
 
 | # | Spec | Notes |
 |---|---|---|
-| 023 | Finish a job without payments | Mark done, cancel after acceptance; no job stuck in "Awaiting deposit" |
-| 024 | Reviews | After "done"; one pro reply; shown on quotes |
-| 025 | Registration capture and verified badges | PIRB / electrical registration numbers |
-| 026 | Operations: stalled jobs and success measures | Admin queue and dashboard metrics |
+| 023 | Estimates, introductions and the paywall (decision 061) | Estimate range + call-out; "choose a pro to visit" unlocks contacts; contact details blocked and business name hidden before; introduction record; fee setting off |
+| 024 | Finish a job without payments | Mark done, cancel after acceptance; no job stuck in "Awaiting deposit" |
+| 025 | Reviews | After "done"; one pro reply; shown on quotes |
+| 026 | Registration capture and verified badges | PIRB / electrical registration numbers |
+| 027 | Operations: stalled jobs and success measures | Admin queue and dashboard metrics |
