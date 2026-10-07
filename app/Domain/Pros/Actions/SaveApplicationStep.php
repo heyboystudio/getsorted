@@ -166,7 +166,7 @@ final class SaveApplicationStep
         });
     }
 
-    private function validBase(GeocodedAddress $address, int $radiusKm): void
+    public function validBase(GeocodedAddress $address, int $radiusKm): void
     {
         $this->validRadius($radiusKm);
 
@@ -176,7 +176,7 @@ final class SaveApplicationStep
         }
     }
 
-    private function validRadius(int $radiusKm): void
+    public function validRadius(int $radiusKm): void
     {
         if ($radiusKm < 1 || $radiusKm > 50) {
             throw ValidationException::withMessages(['radiusKm' => __('Choose a distance between 1 and 50 km.')]);

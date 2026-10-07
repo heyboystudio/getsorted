@@ -1,6 +1,6 @@
-<main class="flex min-h-dvh items-start justify-center px-5 py-12">
+<main class="flex items-start justify-center px-5 py-8">
     <section class="w-full max-w-xl">
-        <a wire:navigate.hover href="{{ route('account.home') }}" class="mb-10 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Your account') }}</a>
+        <a wire:navigate.hover href="{{ route('jobs.index') }}" class="mb-6 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Your jobs') }}</a>
 
         @if ($justPosted)
             <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900" role="status">
@@ -12,6 +12,17 @@
         <p class="text-sm font-medium uppercase tracking-widest text-emerald-800">{{ $job->trade->name }}</p>
         <h1 class="mt-1 text-3xl font-semibold tracking-tight">{{ $job->factTexts()[0] ?? $job->trade->name }}</h1>
         <p class="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-sm">{{ $job->status->customerLabel() }}@if ($job->urgency === \App\Domain\ServiceJobs\Enums\Urgency::Urgent) · {{ __('Urgent') }}@endif</p>
+
+        @if ($stages)
+            <ol class="mt-6 flex items-center gap-1 text-xs" aria-label="{{ __('Job progress') }}">
+                @foreach ($stages as $stage)
+                    <li class="flex flex-1 flex-col items-center gap-1 text-center" @if ($stage['state'] === 'current') aria-current="step" @endif>
+                        <span @class(['h-1.5 w-full rounded-full', 'bg-emerald-700' => $stage['state'] !== 'upcoming', 'bg-zinc-200' => $stage['state'] === 'upcoming'])></span>
+                        <span @class(['font-medium text-emerald-900' => $stage['state'] === 'current', 'text-zinc-700' => $stage['state'] === 'done', 'text-zinc-500' => $stage['state'] === 'upcoming'])>@if ($stage['state'] === 'done')<span class="sr-only">{{ __('Done:') }} </span>@endif{{ $stage['label'] }}</span>
+                    </li>
+                @endforeach
+            </ol>
+        @endif
 
         @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Open)
             <div class="mt-6 rounded-xl border border-zinc-200 bg-white p-4" role="status">
@@ -84,6 +95,24 @@
                     <p class="mt-2 text-sm text-zinc-600">{{ __('Ask a pro a question or send more photos before they send their estimate.') }}</p>
                 @endif
             </section>
+        @endif
+
+        @if ($timeline->isNotEmpty())
+            <section class="mt-8" aria-labelledby="timeline-title">
+                <h2 id="timeline-title" class="font-semibold">{{ __('Timeline') }}</h2>
+                <ol class="mt-3 space-y-3 border-l-2 border-zinc-200 pl-4 text-sm">
+                    @foreach ($timeline as $entry)
+                        <li wire:key="timeline-{{ $loop->index }}">
+                            <span class="block">{{ $entry['text'] }}</span>
+                            <time datetime="{{ $entry['at']->toIso8601String() }}" class="text-xs text-zinc-500">{{ $entry['at']->translatedFormat('D j M, H:i') }}</time>
+                        </li>
+                    @endforeach
+                </ol>
+            </section>
+        @endif
+
+        @if ($bookAgain)
+            <a wire:navigate.hover href="{{ $bookAgain }}" class="mt-8 block w-full rounded-lg border border-emerald-700 px-4 py-3 text-center font-medium text-emerald-900 hover:bg-emerald-50">{{ __('Book :trade again', ['trade' => mb_strtolower($job->trade->name)]) }}</a>
         @endif
 
         @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Draft)

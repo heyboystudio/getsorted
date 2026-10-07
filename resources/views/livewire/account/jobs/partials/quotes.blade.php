@@ -32,6 +32,7 @@
                         @endif
                         <div>
                             <p class="font-semibold">{{ $pro->business_name }}</p>
+                            <a wire:navigate.hover href="{{ route('account.pro-profile', $quote) }}" class="text-xs text-emerald-800 underline underline-offset-4">{{ __('View profile') }}</a>
                             <p class="text-xs text-zinc-500">{{ __('On Sortd since :date', ['date' => $pro->approved_at?->translatedFormat('M Y')]) }}</p>
                             @foreach ($registrations as $registration)
                                 <p class="text-xs text-emerald-800">✓ {{ $registration->type->label() }}</p>

@@ -49,7 +49,7 @@ use Livewire\Component;
  * contact details and address (spec 010, AC1–AC5, AC9). Before acceptance the
  * pro never sees the customer's identity, contact details or street address.
  */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.panel', ['panel' => 'pro', 'focused' => true])]
 #[Title('Job')]
 final class Show extends Component
 {

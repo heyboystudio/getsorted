@@ -44,9 +44,9 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            // The app stores UTC; make the session agree so timestamptz values are never shifted by the server's own zone.
-            'timezone' => 'UTC',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // The connection and the app share one clock, so a time written by PHP is read back as the same moment (decision 052).
+            'timezone' => env('DB_TIMEZONE', env('APP_TIMEZONE', 'Africa/Johannesburg')),
         ],
 
     ],

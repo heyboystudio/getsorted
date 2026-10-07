@@ -21,7 +21,7 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /** Add or edit a saved property (spec 004), with Google address search (spec 015, 020). */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.panel', ['panel' => 'customer'])]
 final class Form extends Component
 {
     use SearchesAddresses;
