@@ -91,6 +91,12 @@ final class Pro extends Model
         return $this->belongsToMany(Suburb::class, 'pro_service_areas');
     }
 
+    /** @return HasMany<ProChangeRequest, $this> */
+    public function changeRequests(): HasMany
+    {
+        return $this->hasMany(ProChangeRequest::class);
+    }
+
     /** @return HasMany<ProDocument, $this> */
     public function documents(): HasMany
     {

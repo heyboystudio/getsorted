@@ -67,6 +67,73 @@
                     <div><p class="font-medium">{{ $trade }}</p><p class="text-zinc-700">{{ $list->pluck('name')->implode(', ') }}</p></div>
                 @endforeach
             </div>
+            <p class="mt-3 text-xs text-zinc-500">{{ __('New services and registrations are checked by our team before they go live. What you offer now stays active while we check.') }}</p>
+
+            @if ($changes->isNotEmpty())
+                <ul class="mt-4 space-y-2 text-sm" aria-label="{{ __('Your requests') }}">
+                    @foreach ($changes as $change)
+                        <li wire:key="change-{{ $change->public_id }}" @class(['rounded-lg border p-3', 'border-amber-200 bg-amber-50' => $change->status === \App\Domain\Pros\Enums\ProChangeStatus::Pending, 'border-emerald-200 bg-emerald-50' => $change->status === \App\Domain\Pros\Enums\ProChangeStatus::Approved, 'border-red-200 bg-red-50' => $change->status === \App\Domain\Pros\Enums\ProChangeStatus::Rejected])>
+                            <span class="font-medium">{{ $change->summary() }}</span> · {{ $change->status->label() }}
+                            @if ($change->decision_reason)<span class="block text-zinc-700">{{ $change->decision_reason }}</span>@endif
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+            @if ($requested) <p class="mt-3 text-sm text-emerald-800" role="status">{{ __('Sent. We will review it and you will see the answer here.') }}</p> @endif
+
+            @if ($offerable->isNotEmpty())
+                <form wire:submit="requestService" class="mt-6 rounded-xl border border-zinc-200 bg-white p-4" novalidate>
+                    <label for="new-service" class="font-medium">{{ __('Add a service') }}</label>
+                    <select id="new-service" wire:model.live="newService" class="{{ $input }}">
+                        <option value="">{{ __('Choose a service') }}</option>
+                        @foreach ($offerable as $trade => $list)
+                            <optgroup label="{{ $trade }}">
+                                @foreach ($list as $service)
+                                    <option value="{{ $service->id }}">{{ $service->name }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
+                    @error('newService') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+
+                    @if ($needsRegistration)
+                        <div class="mt-4 rounded-lg bg-zinc-50 p-3">
+                            <p class="text-sm">{{ __('This service needs your :type. Add its number and a photo or PDF.', ['type' => $needsRegistration->label()]) }}</p>
+                            <label for="service-number" class="mt-3 block text-sm font-medium">{{ __('Registration number') }}</label>
+                            <input id="service-number" type="text" wire:model="serviceNumber" autocomplete="off" class="{{ $input }}">
+                            @error('serviceNumber') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                            <label for="service-upload" class="mt-3 block text-sm font-medium">{{ __('Photo or PDF of the certificate') }}</label>
+                            <input id="service-upload" type="file" wire:model="serviceUpload" accept="image/*,application/pdf" class="mt-1 block w-full text-sm">
+                            <p wire:loading wire:target="serviceUpload" class="mt-1 text-sm text-zinc-600">{{ __('Uploading…') }}</p>
+                            @error('serviceUpload') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                        </div>
+                    @endif
+                    <button type="submit" class="mt-4 rounded-lg border border-emerald-700 px-4 py-2.5 font-medium text-emerald-900 hover:bg-emerald-50">{{ __('Send for review') }}</button>
+                </form>
+            @endif
+
+            @if ($heldRegistrations->isNotEmpty())
+                <form wire:submit="requestRenewal" class="mt-4 rounded-xl border border-zinc-200 bg-white p-4" novalidate>
+                    <label for="renew-type" class="font-medium">{{ __('Renew a registration') }}</label>
+                    <select id="renew-type" wire:model.live="renewType" class="{{ $input }}">
+                        <option value="">{{ __('Choose a registration') }}</option>
+                        @foreach ($heldRegistrations as $type)
+                            <option value="{{ $type->value }}">{{ $type->label() }}</option>
+                        @endforeach
+                    </select>
+                    @error('renewType') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                    @if ($renewType !== '')
+                        <label for="renew-number" class="mt-3 block text-sm font-medium">{{ __('Registration number') }}</label>
+                        <input id="renew-number" type="text" wire:model="renewNumber" autocomplete="off" class="{{ $input }}">
+                        @error('renewNumber') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                        <label for="renew-upload" class="mt-3 block text-sm font-medium">{{ __('Photo or PDF of the new certificate') }}</label>
+                        <input id="renew-upload" type="file" wire:model="renewUpload" accept="image/*,application/pdf" class="mt-1 block w-full text-sm">
+                        <p wire:loading wire:target="renewUpload" class="mt-1 text-sm text-zinc-600">{{ __('Uploading…') }}</p>
+                        @error('renewUpload') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                    @endif
+                    <button type="submit" class="mt-4 rounded-lg border border-emerald-700 px-4 py-2.5 font-medium text-emerald-900 hover:bg-emerald-50">{{ __('Send for review') }}</button>
+                </form>
+            @endif
         </section>
 
         <section class="mt-10" aria-labelledby="profile-documents">
