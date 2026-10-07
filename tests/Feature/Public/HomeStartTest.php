@@ -20,7 +20,7 @@ it('keeps the home page description and sends a guest to sign up, then on to Siy
         ->set('description', 'The kitchen tap will not stop dripping')
         ->call('start')
         ->assertHasNoErrors()
-        ->assertRedirect(route('register'));
+        ->assertRedirect(route('login'));
 
     expect(session(Welcome::DESCRIPTION_KEY)['text'])->toBe('The kitchen tap will not stop dripping')
         ->and(BookingStart::pending())->toBeTrue();
@@ -36,7 +36,7 @@ it('sends a signed-in customer straight to the booking thread', function (): voi
 });
 
 it('sends a guest to sign up even with no description', function (): void {
-    Livewire::test(Welcome::class)->call('start')->assertHasNoErrors()->assertRedirect(route('register'));
+    Livewire::test(Welcome::class)->call('start')->assertHasNoErrors()->assertRedirect(route('login'));
 
     expect(session()->has(Welcome::DESCRIPTION_KEY))->toBeFalse();
 });
@@ -78,7 +78,7 @@ it('offers a signed-in visitor their account instead of sign-up', function (): v
 it('only lands a new sign-in in Siya after "Start a job", never otherwise (founder 2026-10-07)', function (): void {
     $user = User::factory()->customer()->create(['password' => 'a-long-password-1']);
 
-    $this->get(route('start'))->assertRedirect(route('register'));
+    $this->get(route('start'))->assertRedirect(route('login'));
     expect(BookingStart::pending())->toBeTrue()->and(BookingStart::landing($user))->toBe(route('book'));
 
     // Browsing the home page afterwards cancels it.
@@ -95,4 +95,21 @@ it('lets the start marker expire', function (): void {
     $this->travel(31)->minutes();
 
     expect(BookingStart::pending())->toBeFalse();
+});
+
+it('sends every "Start a job" button to sign-in and then Siya, never jumping down the page (founder 2026-10-08)', function (): void {
+    $html = $this->get('/')->assertOk()->getContent();
+
+    expect($html)->not->toContain('href="#start"')
+        ->and(substr_count($html, 'href="'.route('start').'"'))->toBeGreaterThanOrEqual(3);
+});
+
+it('lands in Siya after signing in from "Start a job", even if another page was remembered earlier', function (): void {
+    $user = User::factory()->customer()->create(['password' => 'a-long-password-1']);
+    session()->put('url.intended', url('/admin'));
+
+    $this->get(route('start'))->assertRedirect(route('login'));
+
+    expect(session('url.intended'))->toBeNull()
+        ->and(BookingStart::landing($user))->toBe(route('book'));
 });

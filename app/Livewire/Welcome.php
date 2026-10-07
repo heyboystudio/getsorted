@@ -53,10 +53,10 @@ final class Welcome extends Component
         }
 
         if (auth()->guest()) {
-            // Siya is for signed-in users only (decision 056): sign up first, then land in the booking thread.
+            // Siya is for signed-in users only (decision 056): sign in (or sign up) first, then land in the booking thread.
             BookingStart::begin();
 
-            return $this->redirect(route('register'), navigate: true);
+            return $this->redirect(route('login'), navigate: true);
         }
 
         return $this->redirect(route('book'), navigate: true);

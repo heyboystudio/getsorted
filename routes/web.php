@@ -59,7 +59,7 @@ Route::view('/contact', 'pages.contact')->name('contact');
 Route::get('/trades/{trade}', ShowTradeController::class)->name('trades.show');
 // Siya (the booking thread) is for signed-in users only; guests are sent to sign in and return afterwards.
 Route::redirect('/help', '/book')->name('assistant');
-// The "Start a job" buttons: guests sign up first and are then taken to Siya; signed-in users go straight there.
+// Every "Start a job" button: guests sign in (or sign up from there) and are then taken to Siya; signed-in users go straight there.
 Route::get('/start', function () {
     if (auth()->check()) {
         return redirect()->route('book');
@@ -67,7 +67,7 @@ Route::get('/start', function () {
 
     BookingStart::begin();
 
-    return redirect()->route('register');
+    return redirect()->route('login');
 })->name('start');
 
 Route::view('/terms', 'pages.terms')->name('terms');

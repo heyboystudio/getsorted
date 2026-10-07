@@ -67,7 +67,7 @@
       <p class="kicker appear">Vetted pros. Itemised quotes. One thread.</p>
       <h1 class="h-hero appear" id="hero-h">Get Your Home Sorted, Properly.</h1>
       <p class="hero-sub appear">Describe the job once. Vetted Durban pros send itemised quotes you can compare in one thread.</p>
-      <a class="btn-lime appear" href="#start">Start a job <span class="sq"><svg aria-hidden="true"><use href="#arrow-r"/></svg></span></a>
+      <a class="btn-lime appear" href="{{ route('start') }}">Start a job <span class="sq"><svg aria-hidden="true"><use href="#arrow-r"/></svg></span></a>
       <p class="guarantee appear"><svg class="tick" aria-hidden="true"><use href="#check"/></svg> Free to create an account</p>
     </div>
   </section>
@@ -113,7 +113,7 @@
     <div class="grid-copy">
       <p class="kicker appear">No phone tag and no five browser tabs</p>
       <h2 class="h-md dark appear" id="thread-h">One Thread, From Leak To Paid. Every Step in the Same Place.</h2>
-      <a class="btn-lime appear" href="#start">Start a job <span class="sq"><svg aria-hidden="true"><use href="#arrow-r"/></svg></span></a>
+      <a class="btn-lime appear" href="{{ route('start') }}">Start a job <span class="sq"><svg aria-hidden="true"><use href="#arrow-r"/></svg></span></a>
     </div>
     <ul class="tiles">
       <li class="tile lime appear"><svg class="tick" aria-hidden="true"><use href="#check"/></svg><span>Vetted pros near you</span></li>
@@ -297,7 +297,7 @@
     <div class="foot-brand">
       <a class="logo logo-inv" href="{{ route('home') }}" aria-label="GetSorted home"><svg class="logo-svg" viewBox="0 0 552.5 97" aria-hidden="true"><use href="#logo"/></svg></a>
       <p>Trusted tradespeople for Durban homes. Describe the job, compare quotes from vetted pros, and keep everything in one place.</p>
-      <a class="btn-lime" href="#start">Start a job <span class="sq"><svg aria-hidden="true"><use href="#arrow-r"/></svg></span></a>
+      <a class="btn-lime" href="{{ route('start') }}">Start a job <span class="sq"><svg aria-hidden="true"><use href="#arrow-r"/></svg></span></a>
     </div>
     <div class="foot-cols">
       <div><p class="foot-k">Navigation</p><ul><li><a href="#how">How it works</a></li><li><a href="#trades">Trades</a></li><li><a href="#quotes">Quotes</a></li><li><a href="#faqs">FAQs</a></li></ul></div>
