@@ -1,5 +1,7 @@
 # Money flow
 
+> **Not built yet: Phase M (decision 058).** At launch (model B) GetSorted takes no payments; customers pay pros directly, including any deposit in the quote. Everything below is the plan for Phase M and still needs the provider and money decisions (open questions Q1–Q4, Q6–Q8).
+
 > Not tax or legal advice. Confirm VAT treatment, invoicing-on-behalf and payment-provider rules with an accountant and the chosen provider before launch.
 
 ## Principles

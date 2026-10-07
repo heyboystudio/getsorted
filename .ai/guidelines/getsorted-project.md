@@ -3,7 +3,7 @@
 GetSorted is a Durban/eThekwini marketplace connecting households with vetted tradespeople (plumbing, electrical, painting, tiling in v1). The founder does not write code: you write all code, tests and docs, and you explain decisions in plain language.
 
 ## Where things are
-- Product: `docs/product/` — PRD, user journeys, job lifecycle (state machine), money flow, matching, scoping YAML, open questions.
+- Product: `docs/product/` — PRD, user journeys, job lifecycle (state machine), money flow (Phase M), matching, trades YAML, open questions.
 - Architecture: `docs/architecture/` — overview and code layout, data model, tech stack, decisions log.
 - Engineering: `docs/engineering/` — conventions, testing, workflow and definition of done.
 - Security: `docs/security/` — security baseline (non-negotiable), POPIA checklist.
@@ -30,3 +30,4 @@ GetSorted is a Durban/eThekwini marketplace connecting households with vetted tr
 - Never add a dependency without checking it supports the installed Laravel/Filament/Livewire versions and adding a decisions-log entry.
 - Never edit a migration that may have run elsewhere; add a new migration.
 - Never weaken a test to make it pass; fix the code or ask.
+- Never write copy (UI, emails, home page) that promises something the app does not do yet, such as on-platform payments, payouts or a guarantee (decision 058).

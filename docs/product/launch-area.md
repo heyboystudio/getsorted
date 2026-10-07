@@ -15,4 +15,3 @@ Outside the active list, booking shows a waitlist form (name, phone, suburb, ser
 
 **Update 2026-10-05 (decision 044):** the whole of Durban (eThekwini) is open for requests: 86 seeded suburbs, all active, plus suburbs added automatically from Google addresses.
 
-**Update 2026-10-05 (decision 044):** the whole of Durban (eThekwini) is open for requests: 86 seeded suburbs, all active, plus suburbs added automatically from Google addresses.

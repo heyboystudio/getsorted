@@ -1,28 +1,39 @@
 # Specs
 
-One file per feature: `NNN-short-name.md`, created with `/spec` from `docs/templates/feature-spec.md`. A spec must be **Approved** by the founder before `/build-feature` will build it.
+One file per feature: `NNN-short-name.md`, created with `/spec` from `docs/templates/feature-spec.md`. A spec must be **Approved** by the founder before `/build-feature` will build it. Feature freeze until Phase S is done (decision 058): no new specs are built before then.
 
-Suggested first specs after Phase 0 (from the roadmap):
+Statuses checked against the code on 2026-10-08. "Superseded" means a later spec or decision replaced the design; the file is kept as history.
 
-| # | Spec | Phase |
+| # | Spec | Status | Phase |
+|---|---|---|---|
+| 001 | [Phone + OTP login and consent](001-phone-otp-login.md) | Built, then superseded by 014 for customers and pros | 1 |
+| 002 | Roles and Filament panel access | Built in Phase 0 (decisions 021, 022) | 1 |
+| 003 | [Catalogue from scoping YAML](003-catalogue.md) | Built, superseded by 020 (trades only) | 1 |
+| 004 | [Suburbs and properties](004-suburbs-and-properties.md) | Built; suburbs removed by 020 (Google Places addresses) | 1 |
+| 005 | [Booking flow](005-booking-flow.md) | Built, superseded by 017 | 2 |
+| 006 | [Coverage check + waitlist](006-coverage-check-and-waitlist.md) | Built; open mode since decision 044; waitlist only outside eThekwini | 2 |
+| 007 | [AI scoping assistant](007-ai-scoping-assistant.md) | Built, superseded by 016 / 020 | 2 |
+| 008 | [Pro application and vetting](008-pro-application-and-vetting.md) | Built | 3 |
+| 009 | [Matching and invite waves](009-matching-and-invite-waves.md) | Built, waves superseded by 020 | 3 |
+| 010 | [Quotes, comparison and acceptance](010-quotes-and-acceptance.md) | Built (max quotes now 5, decision 051) | 3 |
+| 011 | [Join as a pro](011-join-as-a-pro.md) | Built | 1 |
+| 012 | [Job photos](012-job-photos.md) | Built | 2 |
+| 013 | Deposit payments, webhooks and the ledger | Draft, **parked for Phase M** (PR #37, branch `docs/spec-013-deposit-payments`) | M |
+| 014 | [Email or Google sign-in, verified phone](014-email-google-sign-in.md) | Built | 1 |
+| 015 | [Address autocomplete](015-address-autocomplete.md) | Built | 2 |
+| 016 | [Siya, the AI booking assistant](016-ai-booking-assistant.md) | Built, hand-off replaced by 017 | 2 |
+| 017 | [One-thread booking](017-one-thread-booking.md) | Built; guest flow removed by decision 056 | 2 |
+| 018 | [Chat with pros, estimates, final amount](018-pro-chat-and-final-amount.md) | Part 1 (chat, estimates) built; part 2 (final amount) **parked for Phase M** on branch `feat/018-final-amount` | 3 / M |
+| 019 | [Siya conversation redesign](019-siya-conversation-redesign.md) | Built (PR #55's later commits superseded by 020) | 2 |
+| 020 | [Trades, facts, distance matching, Siya agent](020-trade-and-distance-matching.md) | Built (PR #57) | 2–3 |
+| 021 | [Customer and pro signed-in panels](021-signed-in-panels.md) | Built (PR #58) | 2–3 |
+| 022 | [Web push and live inbox](022-web-push-notifications.md) | Built (PR #61) | 3 |
+
+## Next specs (Phase L, not started)
+
+| # | Spec | Notes |
 |---|---|---|
-| 001 | Phone + OTP login and consent — [done](001-phone-otp-login.md) | 1 |
-| 002 | Roles and Filament panel access — **done in Phase 0** (decisions 021, 022) | 1 |
-| 003 | Catalogue seeded from scoping YAML + admin editing — [done](003-catalogue.md) | 1 |
-| 004 | Suburbs and properties with PostGIS lookup — [done](004-suburbs-and-properties.md) | 1 |
-| 005 | Booking flow: service → scoping → property → date → post — [done](005-booking-flow.md) (photos: separate spec) | 2 |
-| 006 | Coverage check + waitlist — [done](006-coverage-check-and-waitlist.md) | 2 |
-| 007 | AI scoping assistant (free text → service + summary) — [done](007-ai-scoping-assistant.md) | 2 |
-| 008 | Pro application and vetting — [done](008-pro-application-and-vetting.md) | 3 |
-| 009 | Matching and invite waves — [done](009-matching-and-invite-waves.md) | 3 |
-| 010 | Quote builder, comparison and acceptance — [done](010-quotes-and-acceptance.md) | 3 |
-| 011 | Join as a pro (sign-up entry) — [done](011-join-as-a-pro.md) | 1 |
-| 012 | Job photos — [done](012-job-photos.md) | 2 |
-| 014 | Sign up and sign in with email or Google, then verify your phone — [done, awaiting merge](014-email-google-sign-in.md) | 1 |
-| 016 | Siya, the AI booking assistant — [done](016-ai-booking-assistant.md) (hand-off replaced by 017) | 2 |
-| 017 | One-thread booking with Siya, Kandua-style — [done](017-one-thread-booking.md) | 2 |
-| 018 | Chat with your pros, estimate quotes and an approved final amount — [draft](018-pro-chat-and-final-amount.md) | 3–4 |
-| 019 | Reinvent Siya’s conversation and booking workflow — [in progress](019-siya-conversation-redesign.md) | 2 |
-| 020 | Trades, extracted job facts and distance matching (and the Siya agent engine) — [in progress](020-trade-and-distance-matching.md) | 2–3 |
-| 021 | Customer and pro signed-in panels — [draft](021-signed-in-panels.md) | 2–3 |
-| 022 | Real notifications: browser and phone pop-ups, and a live inbox — [draft](022-web-push-notifications.md) | 3 |
+| 023 | Finish a job without payments | Mark done, cancel after acceptance; no job stuck in "Awaiting deposit" |
+| 024 | Reviews | After "done"; one pro reply; shown on quotes |
+| 025 | Registration capture and verified badges | PIRB / electrical registration numbers |
+| 026 | Operations: stalled jobs and success measures | Admin queue and dashboard metrics |

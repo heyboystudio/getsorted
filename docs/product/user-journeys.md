@@ -1,5 +1,7 @@
 # User journeys
 
+> Written for PRD v1. Since then booking is one Siya conversation (decisions 045, 051), sign-in is email or Google (039), and payment steps are Phase M: at launch customers pay pros directly (058). Where this file and `prd.md` (v2) disagree, `prd.md` wins.
+
 Each journey is a list of screens/steps. Feature specs in `docs/specs/` break these into buildable pieces.
 
 ## Customer (`/app`, Livewire, mobile first)
@@ -21,7 +23,7 @@ Everything happens in one conversation at `/book`, Kandua-style (`docs/product/k
 8. "Your job is booked" in the thread, with a link to the job page, plus the WhatsApp "job posted" template.
 
 ### C3 · Compare and accept quotes
-1. Job page shows quotes as they arrive (max 3): pro name, rating, reviews count, years on GetSorted, registrations, total, labour vs materials, deposit, earliest date, validity, notes.
+1. Job page shows quotes as they arrive (max 5): pro name, rating, reviews count, years on GetSorted, registrations, total, labour vs materials, deposit, earliest date, validity, notes.
 2. Accept one → if deposit > 0, pay now via provider checkout; else booked.
 3. Other quoting pros are told politely.
 

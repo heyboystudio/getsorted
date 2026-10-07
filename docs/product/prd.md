@@ -1,6 +1,8 @@
-# GetSorted — Product Requirements (v1)
+# GetSorted — Product Requirements (v2)
 
-Status: Draft v1 · Owner: founder · Last updated: 2026-10-03
+Status: v2 · Owner: founder · Last updated: 2026-10-08 · Replaces v1 (2026-10-03)
+
+**What changed from v1:** the MVP launches on **model B** (decision 058): customers get quotes from vetted pros and pay the pro directly; on-platform payments, payouts, disputes and the guarantee move to Phase M after launch. Booking is one conversation with Siya (decisions 045, 050, 051), matching is by trade and distance (051), sign-in is email or Google plus a verified mobile (039), and in-app chat is in scope (045). The name is GetSorted (057).
 
 ## 1. Problem
 
@@ -10,73 +12,83 @@ Tradespeople, meanwhile, lose 20% of labour to commission and wait 3 business da
 
 ## 2. Product in one sentence
 
-GetSorted turns a household's description of a problem into a clear, scoped job, invites vetted Durban pros in waves to collect up to three quotes, and runs quote → deposit → work → final payment → review in one place, with WhatsApp updates throughout.
+GetSorted turns a household's description of a problem into a clear job, offers it to vetted Durban pros nearby, collects up to five itemised quotes, and lets the customer chat, compare and choose in one place. **MVP (model B):** after accepting a quote, customer and pro arrange the work and payment directly. **Later (model A, Phase M):** deposit → work → final payment → payout → review all on GetSorted.
 
 ## 3. Users and roles
 
 | Role | Who | Main surface |
 |---|---|---|
-| Customer | A Durban homeowner or tenant | Public website + customer web app (`/app`) |
-| Pro | A vetted tradesperson or small trade business | Mobile web pages (`/pros/...`) |
-| Admin | GetSorted staff: support, vetting, finance | Admin panel (`/admin`, Filament panel) |
+| Customer | A Durban homeowner, tenant or landlord | Public site + signed-in app (`/app`, `/book`) |
+| Pro | A vetted tradesperson or small trade business | Signed-in pro pages (`/pros/...`), mobile first |
+| Admin | GetSorted staff: support, vetting | Admin panel on its own host (`dashboard.usesorted.co.za`, Filament) |
 
-Pros may later have team members; v1 is one login per pro business.
+One account can be a customer or a pro (decision 027); v1 is one login per pro business.
 
-## 4. Scope of v1
+## 4. Scope of the MVP
 
-**Trades (demo services for now — see `docs/product/scoping/`):** Plumbing, Electrical, Painting, Tiling.
+**Trades:** Plumbing, Electrical, Painting, Tiling (`docs/product/trades/`).
 
-**Launch area:** a short list of eThekwini suburbs (`docs/product/launch-area.md`). Requests outside it get a waitlist, not an error.
+**Area:** requests from all of Durban/eThekwini (decision 044); pros recruited first in Berea/central and North (`docs/product/launch-area.md`). Addresses outside eThekwini go to a waitlist.
 
-### In scope
+### Built
 
-1. **Account & identity**: phone-number login with one-time code (WhatsApp first, SMS fallback). Customers and pros verify a mobile number before they can post or quote. Admins use email + password + mandatory two-factor auth.
-2. **Guided booking**: pick trade → service → scoping questions (tap answers, optional free text) → property → preferred date + time window → optional photos → summary → post.
-3. **AI-assisted scoping**: an assistant turns free text into a structured job summary and suggests the trade/service. It never invents prices, never posts a job on its own, and its output is validated before use.
-4. **Properties**: saved addresses with suburb autocomplete and map pin. Street address is hidden from pros until a quote is accepted.
-5. **Coverage check before details**: tell the customer early whether pros cover that service in their suburb.
-6. **Matching**: invite vetted pros who offer the service and cover the property's location; collect **up to 3 quotes** automatically.
-7. **Quotes**: pros build itemised quotes (labour vs materials lines, call-out fee, validity period). Customer compares up to 3 side by side and accepts one.
-8. **Payments** (provider TBD behind an adapter): optional deposit, final invoice, card / instant EFT / Apple Pay / Google Pay where the provider supports them. Platform never holds customer funds in its own bank account.
-9. **Payouts**: next business day after the customer confirms completion (or after an auto-confirm window). Commission (target 10–12% of labour) deducted at payout.
-10. **Job tracking**: one job page with stage tracker, quotes, invoices, documents, timeline, WhatsApp button, cancel-with-reason.
-11. **Notifications**: WhatsApp templates for key events, email receipts, in-app status.
-12. **Reviews**: customer rates the pro after completion; pro can reply once.
-13. **Disputes & guarantee**: customer can raise an issue before or after completion; funds not yet paid out are frozen; admin resolves with a recorded outcome.
-14. **Pro onboarding & vetting**: application, ID, trade registrations (PIRB for plumbers; registered-person / CoC ability for electricians), references, bank details, service areas, services offered. Admin approves before a pro sees any job.
-15. **Admin**: vetting queue, manual matching override, job oversight, refunds, disputes, payouts, content for scoping trees, audit log, reports.
-16. **Public website**: home, how it works, trade pages, suburb × trade SEO pages, join as a pro, help/FAQ, legal pages.
+1. **Account and identity:** email + password or Google, then a verified email and SA mobile before booking or quoting (039). Admins: email + strong password; MFA available, optional (047).
+2. **Booking with Siya:** one conversation (signed-in only, 056): the customer says what's wrong in their own words; Siya records the trade and short facts using only the customer's words, asks for an address (Google Places), a time (date + Morning / Afternoon / Flexible, or Urgent — today) and optional photos, shows an editable summary, and posts only on Confirm. It works by taps when the AI is off. It never gives prices and never posts on its own.
+3. **Safety:** possible emergencies (fire, gas, sparks, water near electrics) pause booking and show emergency numbers, even with the AI off; trade safety tips appear early for active leaks or urgent jobs.
+4. **Matching:** up to 10 approved pros of the trade, nearest first, within each pro's travel radius (default 15 km + 2 km soft edge); the first 5 quotes are accepted; invites expire after 24 hours, or 4 hours for urgent jobs (all admin settings; `matching.md`).
+5. **Privacy:** pros see the area and approximate distance, the customer's words, facts and photos; never the street address, customer phone or surname until **their** quote is accepted.
+6. **Quotes:** itemised lines (labour, materials, call-out), optional deposit, earliest start, validity; revise or withdraw; the customer compares and accepts one. Registrations are shown as verified or not; they are never a gate (051).
+7. **After acceptance (model B):** both sides see each other's contact details; any deposit is paid directly to the pro; the copy says GetSorted does not handle payments yet.
+8. **Chat:** customer ↔ each quoting pro in the job, with photos; contact details are masked before acceptance (spec 018 part 1).
+9. **Notifications:** in-app inbox, browser/phone push (spec 022), WhatsApp/SMS through Twilio (040), email through Resend (038).
+10. **Pro onboarding and vetting:** application (business, trades, base address, radius, ID, proof of address, photo, two references); admin verifies documents and records reference calls before approval is allowed; profile, change requests, pause.
+11. **Admin:** vetting queue, jobs, manual invites, trades, matching and AI settings, AI usage, waitlist demand, data requests.
 
-### Out of scope for v1 (parked)
+### To build before launch (Phase L, `docs/roadmap.md`)
 
-Native mobile apps · pro team members · subscriptions · financing · in-app chat beyond WhatsApp deep links · multi-city · Home Hub / maintenance plans · loyalty.
+12. **Finish a job without money:** mark done, cancel after acceptance with a reason.
+13. **Reviews:** customer rates the pro after "done"; the pro can reply once; ratings show on quotes.
+14. **Registration capture:** PIRB / electrical registration numbers on the application so pros can be shown as verified.
+15. **Operations:** stalled-job list; success measures on the admin dashboard.
+16. **Launch readiness:** lawyer-reviewed legal pages, POPIA checklist, monitoring, backups, production host, WhatsApp templates.
 
-## 5. Success measures (first 90 days after launch)
+### Phase M (after launch)
+
+On-platform payments (deposit, final invoice, card / instant EFT; provider behind an adapter; platform never holds funds in its own account), payouts next business day, commission (Q1, Q2), refunds, PDFs, disputes and the guarantee (Q8), final-amount changes approved by the customer (spec 018 part 2, parked).
+
+### Out of scope (parked)
+
+Native mobile apps · pro team members · subscriptions (unless chosen for Q14) · financing · multi-city · Home Hub / maintenance plans · loyalty · public pro directory (055).
+
+## 5. Success measures
+
+**MVP (first 90 days after soft launch):**
 
 - Time from job posted to first quote: median < 4 hours.
 - Jobs receiving ≥ 2 quotes: > 60%.
 - Quote → accepted conversion: > 35%.
-- Payments taken on-platform: > 90% of accepted jobs.
-- Pro payout within 1 business day of completion: > 95%.
-- Disputes per completed job: < 3%.
+- Accepted jobs marked done: > 70%; done jobs reviewed: > 40%.
+
+**Phase M (once payments exist):** payments on-platform > 90% of accepted jobs; payout within 1 business day > 95%; disputes per completed job < 3%.
 
 ## 6. Non-functional requirements
 
-- **Security & privacy**: see `docs/security/`. POPIA compliant from day one.
-- **Performance**: pages interactive in < 2 s on a mid-range Android phone on 4G.
-- **Availability**: 99.5% monthly for booking and payments.
-- **Accessibility**: WCAG 2.2 AA for customer-facing pages.
-- **Language**: English v1; copy written so isiZulu can be added later (all strings translatable).
-- **Mobile first**: every customer and pro flow must work one-handed on a 360 px wide screen.
+- **Security and privacy:** `docs/security/`. POPIA compliant from day one; the privacy notice must name Google (Places, Gemini), Twilio and Resend before launch.
+- **Performance:** pages interactive in < 2 s on a mid-range Android phone on 4G.
+- **Availability:** 99.5% monthly for booking.
+- **Accessibility:** WCAG 2.2 AA for customer-facing pages; animations respect reduced motion.
+- **Language:** English v1; strings translatable for isiZulu later.
+- **Mobile first:** every customer and pro flow works one-handed on a 360 px wide screen.
 
 ## 7. Key product rules
 
 - Money is stored as integer cents (ZAR). Never floats.
 - Every job status change goes through the state machine and is written to the job timeline.
-- A pro sees: trade, service, scoping answers, suburb, date window, photos. Not: street address, customer phone, customer surname — until their quote is accepted.
-- Customers and pros must not be pushed to pay or be paid off-platform; the UI warns against it.
-- The AI assistant gives guidance, not guarantees, and says so for safety-critical topics (electrical, gas).
+- Pros never see street address, customer phone or surname before their quote is accepted.
+- Siya changes booking state only through validated tools, uses only the customer's own words as facts, never quotes prices, and never posts a job (051).
+- The AI gives guidance, not guarantees, and says so for safety-critical topics (electrical, gas).
+- Copy never promises what is not built (decision 058).
 
 ## 8. Open questions
 
-See `docs/product/open-questions.md`.
+`docs/product/open-questions.md`.
