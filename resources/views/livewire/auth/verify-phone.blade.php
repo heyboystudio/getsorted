@@ -8,7 +8,7 @@
             @if (\App\Support\AppMode::skipsPhoneCodes())
                 <p class="auth-note warn"><i class="ph-bold ph-warning" aria-hidden="true"></i>{{ __('Test site: codes are switched off, so your number is saved without one.') }}</p>
             @endif
-            <p class="auth-sub">{{ \App\Livewire\Auth\VerifyPhone::firstChannel() === \App\Contracts\Data\MessageChannel::Sms ? __("We'll text you a 6-digit code.") : __("We'll send a 6-digit code on WhatsApp.") }} {{ __('Pros and Sortd use this number to keep you updated about your jobs.') }}</p>
+            <p class="auth-sub">{{ \App\Livewire\Auth\VerifyPhone::firstChannel() === \App\Contracts\Data\MessageChannel::Sms ? __("We'll text you a 6-digit code.") : __("We'll send a 6-digit code on WhatsApp.") }} {{ __('Pros and Get Sorted use this number to keep you updated about your jobs.') }}</p>
 
             <form wire:submit="sendCode" class="auth-form" novalidate>
                 <div class="auth-field">

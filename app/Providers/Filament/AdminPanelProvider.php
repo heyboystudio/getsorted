@@ -7,6 +7,7 @@ namespace App\Providers\Filament;
 use App\Filament\Admin\Pages\Auth\EditProfile;
 use App\Filament\Admin\Pages\Auth\Login;
 use App\Http\Middleware\EnsureAdminSignedInThroughPanel;
+use App\Support\InitialsAvatarProvider;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -39,17 +40,18 @@ final class AdminPanelProvider extends PanelProvider
             ->brandLogo(fn (): string => asset('home/logo/get-sorted-logo.svg'))
             ->brandLogoHeight('2rem')
             ->favicon(asset('favicon-v2.png'))
-            // The sign-in page uses the home v3 look (self-hosted fonts and CSS only).
+            ->darkMode(false)
+            ->defaultAvatarProvider(InitialsAvatarProvider::class)
+            // The whole panel uses the home v3 look (self-hosted fonts and CSS only).
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn (): string => Blade::render('<link rel="stylesheet" href="{{ asset(\'home/admin.css\') }}?v=3.4">'),
-                scopes: Login::class,
+                fn (): string => Blade::render('<link rel="stylesheet" href="{{ asset(\'home/admin.css\') }}?v=3.5">'),
             )
             ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)
             // Optional since decision 047: an admin can switch it on in their profile.
             ->multiFactorAuthentication(
-                [AppAuthentication::make()->recoverable()->brandName('Sortd')],
+                [AppAuthentication::make()->recoverable()->brandName('Get Sorted')],
                 isRequired: false,
             )
             ->colors([

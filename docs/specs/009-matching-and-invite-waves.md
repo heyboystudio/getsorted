@@ -3,7 +3,7 @@
 Status: Done (merged in PR #32) · Phase: 3 · Owner: founder
 
 ## Goal
-When a customer posts a job, Sortd invites suitable vetted pros automatically, in waves, so the job collects quotes without the customer doing anything more. Pros get a WhatsApp message and see the job (without the customer's identity or street address), and can open or decline it. Quoting itself is spec 010.
+When a customer posts a job, Get Sorted invites suitable vetted pros automatically, in waves, so the job collects quotes without the customer doing anything more. Pros get a WhatsApp message and see the job (without the customer's identity or street address), and can open or decline it. Quoting itself is spec 010.
 
 ## User stories
 - As a customer, I want suitable local pros invited as soon as I post, so quotes start coming in.

@@ -3,7 +3,7 @@
 Status: Done (merged in PR #25) · Phase: 2 · Owner: founder · Since spec 017 the coverage check runs when the property is picked, and the waitlist uses the signed-in account's name and number
 
 ## Goal
-Tell a customer whether Sortd can serve their chosen service and suburb before they answer booking questions. When coverage is unavailable, collect a small waitlist request so Sortd can follow up when service becomes available.
+Tell a customer whether Get Sorted can serve their chosen service and suburb before they answer booking questions. When coverage is unavailable, collect a small waitlist request so Get Sorted can follow up when service becomes available.
 
 ## User stories
 - As a customer, I want to check my suburb early so I do not spend time describing a job that cannot be served.
@@ -14,7 +14,7 @@ Tell a customer whether Sortd can serve their chosen service and suburb before t
 1. After choosing an active service, a guest or signed-in customer chooses a suburb before the first scoping question. The searchable list includes active and inactive launch suburbs; a customer can also enter an unlisted suburb for the waitlist. The choice survives back navigation and sign-in.
 2. For an active suburb and service, the server checks whether at least one pro is eligible under `docs/product/matching.md`. The check uses the same `EligibleProsQuery` that matching will use in spec 009. The UI says whether booking can continue without exposing pro identities or exact counts.
 3. When the suburb is inactive, unlisted, or has zero eligible pros for that service, booking stops before scoping and offers a waitlist form. Existing booking answers and photos remain on the customer's draft if they return later.
-4. The waitlist form asks for first name, South African mobile number, suburb, and service, explains that Sortd will contact the customer about availability, and records the applicable privacy notice consent. Signed-in customers may see prefilled details and can correct them for this request.
+4. The waitlist form asks for first name, South African mobile number, suburb, and service, explains that Get Sorted will contact the customer about availability, and records the applicable privacy notice consent. Signed-in customers may see prefilled details and can correct them for this request.
 5. Submitting valid waitlist details creates one entry per normalized phone, suburb and service combination; retrying or double-tapping does not create duplicates. Show a confirmation that makes no promise about timing or availability. Do not send a booking-posted message or open a job.
 6. The waitlist form validates every field on the server, normalizes the phone to E.164, rate limits submissions, and handles temporary failure with a retry message that preserves the form.
 7. If coverage was shown and then disappears before posting, posting is refused, the job stays a draft, and the customer is offered the waitlist with the service and suburb filled in. If the selected property is in a different suburb, repeat the coverage check for the property's suburb before allowing the customer to continue or post.

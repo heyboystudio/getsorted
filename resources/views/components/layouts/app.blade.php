@@ -3,8 +3,8 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="{{ $description ?? __('Sortd connects Durban homes with local tradespeople for plumbing, electrical, painting and tiling work.') }}">
-        <title>{{ isset($title) ? $title.' · '.($brand ?? __('Sortd')) : ($brand ?? __('Sortd')) }}</title>
+        <meta name="description" content="{{ $description ?? __('Get Sorted connects Durban homes with local tradespeople for plumbing, electrical, painting and tiling work.') }}">
+        <title>{{ isset($title) ? $title.' · '.($brand ?? __('Get Sorted')) : ($brand ?? __('Get Sorted')) }}</title>
         <link rel="icon" href="{{ asset('favicon-v2.png') }}" type="image/png">
         {{-- Installable site and pop-up notifications (spec 022). --}}
         <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">

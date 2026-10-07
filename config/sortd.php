@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
-| Sortd business and security values. Product values that admins change at
+| Get Sorted business and security values. Product values that admins change at
 | runtime belong in spatie/laravel-settings instead.
 */
 

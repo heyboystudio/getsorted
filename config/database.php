@@ -25,7 +25,7 @@ return [
     | Database Connections
     |--------------------------------------------------------------------------
     |
-    | Sortd uses PostgreSQL + PostGIS as its only database (decision 002),
+    | Get Sorted uses PostgreSQL + PostGIS as its only database (decision 002),
     | including for the queue, cache and sessions.
     |
     */

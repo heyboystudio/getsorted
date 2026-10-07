@@ -25,7 +25,7 @@ it('does not expose starter account pages', function (string $path): void {
 
     $this->get($path)->assertNotFound();
 })->with([
-    // /register, /forgot-password and /reset-password are Sortd's own pages since spec 014.
+    // /register, /forgot-password and /reset-password are Get Sorted's own pages since spec 014.
     '/email/verify', '/two-factor-challenge', '/user/confirm-password',
     '/dashboard', '/settings/profile', '/settings/security', '/settings/appearance',
 ]);

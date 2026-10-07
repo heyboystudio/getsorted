@@ -13,7 +13,7 @@
 
 ## Product requirements derived from POPIA
 
-| Requirement | How Sortd meets it |
+| Requirement | How Get Sorted meets it |
 |---|---|
 | Minimality | Collect only what a booking or vetting needs. No ID numbers from customers. |
 | Purpose specification | Each field has a stated purpose in the privacy notice. |

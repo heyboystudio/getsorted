@@ -3,11 +3,11 @@
 Status: In review · Phase: 2 (improves specs 004 and 006) · Owner: founder
 
 ## Goal
-Customers type their street address and pick it from Google Places suggestions instead of typing an address and choosing a suburb separately. Sortd works out the suburb from the chosen address and says straight away whether that suburb is covered. Fewer wrong suburbs, real map locations for matching, and one less step.
+Customers type their street address and pick it from Google Places suggestions instead of typing an address and choosing a suburb separately. Get Sorted works out the suburb from the chosen address and says straight away whether that suburb is covered. Fewer wrong suburbs, real map locations for matching, and one less step.
 
 ## User stories
 - As a customer, I want to start typing my address and pick it from a list, so I don't have to know my official suburb name.
-- As a customer, I want to know immediately whether Sortd works at my address.
+- As a customer, I want to know immediately whether Get Sorted works at my address.
 - As the founder, I want each property to have an accurate map location, so matching distance is right.
 
 ## Acceptance criteria

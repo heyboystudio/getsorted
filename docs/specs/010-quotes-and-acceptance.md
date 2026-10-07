@@ -19,7 +19,7 @@ An invited pro can send an itemised quote from their phone. The customer compare
    - how long the quote is valid (1–30 days, default 7);
    - optional notes (max 1,000 characters).
    At least one line is needed, and at most one call-out line.
-2. The server calculates every total from the lines in integer cents: line totals, labour, materials, call-out, VAT (open question 2), total and deposit (rounded to the cent). It never trusts totals sent by the browser. A preview shows the quote exactly as the customer will see it, plus the pro's estimated payout after Sortd's commission (the configured rate on labour and call-out; open question 3).
+2. The server calculates every total from the lines in integer cents: line totals, labour, materials, call-out, VAT (open question 2), total and deposit (rounded to the cent). It never trusts totals sent by the browser. A preview shows the quote exactly as the customer will see it, plus the pro's estimated payout after Get Sorted's commission (the configured rate on labour and call-out; open question 3).
 3. When the pro submits, then the quote becomes `submitted` (version 1), the invite becomes `quoted`, the customer gets a `quote_received` WhatsApp message, and the job's quote count goes up. A double tap submits once.
 4. A job accepts at most **three** submitted quotes. When the third arrives, every other open invite is closed with "This job is full" and no more waves run. A pro who tries to submit to a full job is told politely, and nothing is saved.
 5. While the job is open and their quote is not accepted, the pro can **revise** it: a new version is submitted, the old one becomes `superseded`, and the customer is told it changed. They can also **withdraw** it with a reason: the quote becomes `withdrawn`, the customer is told, and the slot frees up for another quote.
@@ -27,7 +27,7 @@ An invited pro can send an itemised quote from their phone. The customer compare
 
 **Comparison and acceptance (customer)**
 7. Given a job with submitted quotes, then the customer's job page lists them side by side (stacked on a phone), showing for each:
-   - the pro's business name, profile photo, verified registrations and time on Sortd;
+   - the pro's business name, profile photo, verified registrations and time on Get Sorted;
    - labour, materials and call-out subtotals, VAT and total;
    - the deposit, the earliest start date, the valid-until date and the masked notes;
    - expandable line items.
@@ -41,7 +41,7 @@ An invited pro can send an itemised quote from their phone. The customer compare
    - a `pro_job_allocations` row is written (it feeds the weekly cap).
 
    The winning pro is told by WhatsApp. The other quoting pros are told politely that the customer chose someone else.
-9. After acceptance, the winning pro's job page shows the customer's first name, mobile number, full street address and the property label. Other pros never see these. The customer's job page shows the accepted pro's business name and mobile number. Both sides see "Keep payments on Sortd" guidance.
+9. After acceptance, the winning pro's job page shows the customer's first name, mobile number, full street address and the property label. Other pros never see these. The customer's job page shows the accepted pro's business name and mobile number. Both sides see "Keep payments on Get Sorted" guidance.
 10. A customer can accept only a submitted, unexpired quote on their own open job. Accepting twice, a withdrawn or superseded quote, or another customer's quote fails safely, and nothing changes.
 
 **Timers**

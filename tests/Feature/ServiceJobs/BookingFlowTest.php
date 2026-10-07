@@ -494,7 +494,7 @@ it('keeps customers and pros out of the admin jobs list (spec 005 AC15)', functi
     $this->actingAs(User::factory()->customer()->create())->get('/admin/service-jobs')->assertForbidden();
 });
 
-it('only accepts Sortd booking paths as a return address after adding a property', function (?string $return, ?string $expected): void {
+it('only accepts Get Sorted booking paths as a return address after adding a property', function (?string $return, ?string $expected): void {
     expect(BookingReturn::sanitise($return))->toBe($expected);
 })->with([
     'booking start' => ['/book/plumbing', '/book/plumbing'],

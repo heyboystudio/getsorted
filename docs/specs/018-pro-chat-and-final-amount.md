@@ -3,21 +3,21 @@
 Status: Approved (founder, 2026-10-05) · Phase: 3–4 (builds on specs 009, 010, 012, 013, 017) · Owner: founder
 
 ## Goal
-After a job is booked, the customer can **chat in Sortd with each pro who's looking at the job**. They can answer questions and send more photos, and pros can then send a better **estimate quote**. The customer accepts one estimate and pays the deposit on it (spec 013). Once the pro has seen the job, they can **raise or lower the final amount**, but the customer must **approve the change** before the final invoice is issued. This is the founder's flow from 2026-10-05 (decision 045 "Next"). It brings in-app chat into v1, which the PRD had parked.
+After a job is booked, the customer can **chat in Get Sorted with each pro who's looking at the job**. They can answer questions and send more photos, and pros can then send a better **estimate quote**. The customer accepts one estimate and pays the deposit on it (spec 013). Once the pro has seen the job, they can **raise or lower the final amount**, but the customer must **approve the change** before the final invoice is issued. This is the founder's flow from 2026-10-05 (decision 045 "Next"). It brings in-app chat into v1, which the PRD had parked.
 
 ## User stories
 - As a customer, I want to answer a pro's questions and send more photos without giving out my number, so I get accurate estimates.
 - As a pro, I want to ask the customer questions before I quote, so my estimate is close to the real cost.
 - As a customer, I want to see and approve any change to the price before I'm asked to pay it.
 - As a pro, I want to adjust the final amount when the job turns out bigger or smaller than estimated, with a reason the customer can see.
-- As the founder, I want all of this to stay on Sortd: no phone numbers swapped before a quote is accepted, and a record of every price change.
+- As the founder, I want all of this to stay on Get Sorted: no phone numbers swapped before a quote is accepted, and a record of every price change.
 
 ## Acceptance criteria
 
 **Conversations**
 1. Each pair of job and invited pro has one conversation, and **either side can start it** (decision 1). The customer's job page lists every invited pro, with "Message" next to each. The pro's invite page has "Message the customer". The conversation is created with the first message. Each one shows the pro's business name, rating (when reviews exist) and quote status. Pros whose invite was declined or expired can't be messaged.
 2. Customer and pro can send text (1–1,000 characters) and **photos** (up to 5 per message, same rules and processing as spec 012). New messages appear in about 5 seconds without reloading (polling; open question 5). The newest message is in view, and unread counts show on the job page and the pro's job list.
-3. **Before a quote is accepted**, every message passes through the existing scrubber (`Redactor`, spec 007 AC10): phone numbers, emails, links, ID numbers and street addresses become "[hidden until you book]". A banner reads: "Keep chats and payments on Sortd. Contact details are shared once you accept a quote." Photos go through the same metadata stripping as spec 012 (no GPS).
+3. **Before a quote is accepted**, every message passes through the existing scrubber (`Redactor`, spec 007 AC10): phone numbers, emails, links, ID numbers and street addresses become "[hidden until you book]". A banner reads: "Keep chats and payments on Get Sorted. Contact details are shared once you accept a quote." Photos go through the same metadata stripping as spec 012 (no GPS).
 4. Notifications send a WhatsApp/SMS **template**, "You have a new message about your {service} job", with a link. The message text is never included. There's at most one notification per conversation every 15 minutes (setting), and none while the person has the page open.
 5. When the customer accepts a quote, the chosen pro's conversation **stays open** for the rest of the job, now unscrubbed because contact details are shared from this point (spec 010). The other conversations close **read-only**, with "The customer chose another pro". Cancelling or expiring a job closes all of them.
 6. Either side can **report** a message (reason list). Reported conversations show up for admins.

@@ -6,7 +6,7 @@ Status: Done · Phase: 2–3 (builds on specs 005, 006, 007, 012, 015) · Owner:
 A customer can open a chat on the website, describe the problem in their own words, and the assistant works out what's wrong. It asks the right follow-up questions, gives safety advice when needed, collects photos and the address, and hands over a ready-to-post job. From there the existing cycle runs unchanged: matching and invite waves (009), quotes and acceptance (010), and later payments, reviews and so on. It replaces the removed "Describe your problem" box. The website only, not WhatsApp.
 
 ## User stories
-- As a customer, I want to explain my problem like I'd explain it to a person, and have Sortd figure out which pro I need.
+- As a customer, I want to explain my problem like I'd explain it to a person, and have Get Sorted figure out which pro I need.
 - As a customer, I want to be told if something is dangerous, and what to do right now.
 - As a customer, I want to check and correct the job before it's sent to pros.
 - As the founder, I want the AI cost capped and its behaviour auditable, without reading customers' private text in logs.

@@ -22,7 +22,7 @@ A customer can describe a job by picking a trade and service, answering that ser
 5. Given an answer listed in a question's `urgent_if`, then the job is marked **urgent** and the service's safety advice is shown on that screen.
 
 **Property and timing**
-6. The customer picks one of their saved properties or adds one (spec 004 form, returning to the booking). A property in a suburb Sortd isn't in yet stops the booking with "Sortd isn't in {suburb} yet" (the waitlist is spec 006).
+6. The customer picks one of their saved properties or adds one (spec 004 form, returning to the booking). A property in a suburb Get Sorted isn't in yet stops the booking with "Get Sorted isn't in {suburb} yet" (the waitlist is spec 006).
 7. The customer picks a preferred date within the next 30 days and a window (morning 07–12, afternoon 12–17, flexible). If the service is emergency-capable, "Urgent — today" is offered and sets urgency to urgent.
 
 **Review and post**

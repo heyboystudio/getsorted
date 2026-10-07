@@ -1,6 +1,6 @@
 # Private test site (preview)
 
-A temporary, publicly reachable copy of Sortd at https://sortd.heyboy.co.za for clicking through on a phone (decision 037). **Fake data only.** It is not staging and not production.
+A temporary, publicly reachable copy of Get Sorted at https://sortd.heyboy.co.za for clicking through on a phone (decision 037). **Fake data only.** It is not staging and not production.
 
 ## What is different there
 - `APP_ENV=preview`: WhatsApp, payments, AI and maps are the local Fakes; the login code shows on the screen.
@@ -34,7 +34,7 @@ The preview includes a multi-page public website: home, customer guide, trade di
 
 The home page (home v3, decision 055) has its own layout, `components.layouts.home`, and serves its CSS, scripts, fonts and logo files from `public/home/`; its photos are in `public/images/home/`. Its animations switch off for visitors whose device asks for reduced motion; add `?motion=on` to the URL to preview them anyway.
 
-The website's logo and photographs are generated visual assets stored in `public/images/`. They are illustrative and do not depict actual Sortd customers, pros or completed jobs.
+The website's logo and photographs are generated visual assets stored in `public/images/`. They are illustrative and do not depict actual Get Sorted customers, pros or completed jobs.
 
 The public navigation includes Home, About, Customers, Pros and Contact. The Contact page routes visitors to the customer or pro journey and displays founder-approved placeholder contact details: hello@sortd.heyboy.co.za and 031 000 0000. The subdomain has no receiving MX record yet; replace these details when real contact channels are connected.
 

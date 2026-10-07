@@ -160,7 +160,7 @@
                     <button type="button" wire:click="differentTrade" x-on:click="pending = @js(__('Choose a different trade'))" class="{{ $chip }}">{{ __('Choose a different trade') }}</button>
                     <button type="button" wire:click="noThanks" x-on:click="pending = @js(__('No thanks'))" class="{{ $chip }}">{{ __('No thanks') }}</button>
                 </div>
-                <p class="mt-2 text-xs text-zinc-500">{{ __('“Keep me updated” lets Sortd contact you about this trade near your address.') }} <a href="{{ route('privacy') }}" wire:navigate class="underline">{{ __('Privacy notice') }}</a></p>
+                <p class="mt-2 text-xs text-zinc-500">{{ __('“Keep me updated” lets Get Sorted contact you about this trade near your address.') }} <a href="{{ route('privacy') }}" wire:navigate class="underline">{{ __('Privacy notice') }}</a></p>
                 @error('waitlist') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
             @elseif ($stage === 'closed')
                 <button type="button" wire:click="differentTrade" x-on:click="pending = @js(__('Choose a different trade'))" class="{{ $chip }}">{{ __('Choose a different trade') }}</button>

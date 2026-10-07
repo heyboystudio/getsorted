@@ -6,7 +6,7 @@ namespace App\Contracts\Data;
 
 use Brick\Money\Money;
 
-/** A hosted-checkout payment the customer is sent to (Sortd never sees card details). */
+/** A hosted-checkout payment the customer is sent to (Get Sorted never sees card details). */
 final readonly class CheckoutRequest
 {
     public function __construct(

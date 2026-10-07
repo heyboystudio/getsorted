@@ -4,7 +4,7 @@
 @endphp
 <main class="flex min-h-dvh items-start justify-center px-5 py-8 pb-32">
     <section class="w-full max-w-xl">
-        <a wire:navigate.hover href="{{ route('pros.welcome') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('Sortd Pro') }}</a>
+        <a wire:navigate.hover href="{{ route('pros.welcome') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('Get Sorted Pro') }}</a>
         <h1 class="mt-4 text-3xl font-semibold tracking-tight">{{ $changes ? __('Update your application') : __('Tell us about your business') }}</h1>
         <p class="mt-2 text-zinc-600">{{ $changes ? __('Fix what is listed below, then send it back to us.') : __('Fill this in at your own pace. Everything is saved when you tap Save progress, and your uploads save as soon as you add them.') }}</p>
 
@@ -169,8 +169,8 @@
             <label class="mt-6 flex gap-3 text-sm">
                 <input type="checkbox" wire:model="refereesAgreed" class="mt-0.5 size-5 shrink-0 rounded text-emerald-700">
                 <span>{{ $pro->status === \App\Domain\Pros\Enums\ProStatus::ChangesRequested
-                    ? __('This person agreed that Sortd may phone them about my work.')
-                    : __('Both people agreed that Sortd may phone them about my work.') }}</span>
+                    ? __('This person agreed that Get Sorted may phone them about my work.')
+                    : __('Both people agreed that Get Sorted may phone them about my work.') }}</span>
             </label>
             @error('refereesAgreed') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
 
@@ -186,7 +186,7 @@
 
             <label class="mt-6 flex gap-3 text-sm">
                 <input type="checkbox" wire:model="consent" class="mt-0.5 size-5 shrink-0 rounded text-emerald-700">
-                <span>{{ __('I agree that Sortd may check my identity document, proof of address, registrations and references to decide on my application.') }} <a href="{{ route('privacy') }}" target="_blank" class="underline underline-offset-4">{{ __('Privacy notice') }}</a></span>
+                <span>{{ __('I agree that Get Sorted may check my identity document, proof of address, registrations and references to decide on my application.') }} <a href="{{ route('privacy') }}" target="_blank" class="underline underline-offset-4">{{ __('Privacy notice') }}</a></span>
             </label>
             @error('consent') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
 

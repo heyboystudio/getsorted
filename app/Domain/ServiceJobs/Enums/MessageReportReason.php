@@ -15,7 +15,7 @@ enum MessageReportReason: string
     public function label(): string
     {
         return match ($this) {
-            self::OffPlatform => __('Asks to pay or talk outside Sortd'),
+            self::OffPlatform => __('Asks to pay or talk outside Get Sorted'),
             self::Abusive => __('Rude or abusive'),
             self::Spam => __('Spam'),
             self::Other => __('Something else'),

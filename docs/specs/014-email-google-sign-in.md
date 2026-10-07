@@ -36,7 +36,7 @@ Customers and pros create an account with **email and password** or **Continue w
 
 ## Screens / UX
 - `/register`: name fields, email, password with show/hide, consent checkboxes, "Create account", "or Continue with Google", and "Already have an account? Sign in".
-- `/login`: email, password, "Sign in", "Forgot password?", "or Continue with Google", and "New to Sortd? Create an account".
+- `/login`: email, password, "Sign in", "Forgot password?", "or Continue with Google", and "New to Get Sorted? Create an account".
 - Verify your mobile: number field (+27), "Send code by WhatsApp", the code screen with resend and SMS fallback, and success. On the preview site the code shows on screen, as now.
 - 360 px first; clear errors next to each field.
 
@@ -67,7 +67,7 @@ Customers and pros create an account with **email and password** or **Continue w
 - Real WhatsApp or SMS delivery: Twilio SMS and the Meta WhatsApp connection are their own specs. Until then, codes use the fake channel (shown on screen on the preview site).
 
 ## Decisions (founder, 2026-10-04)
-1. **Both Google and email sign-up are offered**, for customers and pros. Phone + code is no longer a way to sign in. After the account exists (and its email is verified, for email sign-ups), Sortd asks for the mobile number and verifies it.
+1. **Both Google and email sign-up are offered**, for customers and pros. Phone + code is no longer a way to sign in. After the account exists (and its email is verified, for email sign-ups), Get Sorted asks for the mobile number and verifies it.
 2. **Email and mobile must both be verified** before the user can use the site or their account.
 3. **Wipe the test data** on the preview site and local machines. There's no migration path for phone-only accounts.
 4. **Twilio is the messaging provider** for both WhatsApp (sandbox for testing) and SMS (Q5). The real connection is its own small spec.
