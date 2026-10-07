@@ -36,7 +36,8 @@ final class PanelNavigation
         }
 
         return [
-            ['label' => __('Home'), 'route' => 'account.home', 'icon' => 'home', 'active' => ['account.home', 'jobs.show', 'booking.continue']],
+            ['label' => __('Home'), 'route' => 'account.home', 'icon' => 'home', 'active' => ['account.home']],
+            ['label' => __('Jobs'), 'route' => 'jobs.index', 'icon' => 'briefcase', 'active' => ['jobs.*']],
             ['label' => __('Properties'), 'route' => 'properties.index', 'icon' => 'map-pin', 'active' => ['properties.*']],
         ];
     }

@@ -7,7 +7,10 @@ namespace App\Livewire\Account\Jobs;
 use App\Domain\Quotes\Actions\AcceptQuote;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Exceptions\CannotQuote;
+use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Support\JobChat;
+use App\Domain\ServiceJobs\Support\JobStages;
+use App\Domain\ServiceJobs\Support\JobTimeline;
 use App\Models\JobConversation;
 use App\Models\Pro;
 use App\Models\Quote;
@@ -90,6 +93,12 @@ final class Show extends Component
         return view('livewire.account.jobs.show', [
             'job' => $job,
             'justPosted' => session('job_posted') === true,
+            'stages' => JobStages::for($job->status),
+            'timeline' => JobTimeline::forJob($job),
+            // The same service again; the customer picks the property in the thread (spec 021, AC11).
+            'bookAgain' => in_array($job->status, ServiceJobStatus::finished(), true) && $job->service->is_active && $job->service->trade->is_active
+                ? route('booking.start', ['trade' => $job->service->trade, 'service' => $job->service])
+                : null,
             // A count only: customers never see who was invited (spec 009, AC13).
             'invitedCount' => $job->invites()->count(),
             // Current quotes to compare, or the accepted one (spec 010, AC7–AC9).

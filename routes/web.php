@@ -14,6 +14,7 @@ use App\Http\Controllers\ShowTradeController;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsurePhoneIsVerified;
 use App\Livewire\Account\Home;
+use App\Livewire\Account\Jobs\Index as JobIndex;
 use App\Livewire\Account\Jobs\Show as JobShow;
 use App\Livewire\Account\Properties\Form as PropertyForm;
 use App\Livewire\Account\Properties\Index as PropertyIndex;
@@ -77,6 +78,7 @@ Route::middleware('auth')->group(function (): void {
             Route::get('/app/properties', PropertyIndex::class)->name('properties.index');
             Route::get('/app/properties/new', PropertyForm::class)->name('properties.create');
             Route::get('/app/properties/{property}/edit', PropertyForm::class)->name('properties.edit');
+            Route::get('/app/jobs', JobIndex::class)->name('jobs.index');
             Route::get('/app/jobs/{job}', JobShow::class)->name('jobs.show');
             Route::get('/app/jobs/{job}/continue', BookingThread::class)->name('booking.continue');
         });

@@ -1,6 +1,6 @@
 # Spec 021 · Customer and pro signed-in panels
 
-Status: In progress (part 1 of 5 built) — approved by the founder 2026-10-07 · Phase: 2–3 · Owner: founder
+Status: In progress (parts 1–2 of 5 built) — approved by the founder 2026-10-07 · Phase: 2–3 · Owner: founder
 
 ## Goal
 Replace the bare signed-in screens with two real panels. Customers get a home that says what needs them, a jobs area, a messages inbox and an account area with a profile. Pros get a "Today" home, a job pipeline and a profile that works as their shop front. Customers can see a pro's profile when comparing quotes. Both roles get persistent navigation that works one-handed at 360 px.
@@ -40,7 +40,7 @@ This builds on specs 008–010, 012 and 018. It changes presentation, navigation
 ### Customer Jobs
 9. Given the Jobs tab, then jobs are grouped Active / Completed / Cancelled and expired, each row showing service, suburb, status chip and the relevant date; drafts continue into the booking thread as today.
 10. Given a job page, then it shows a stage tracker and a timeline built from `service_job_events` (customer-visible events only). Existing quotes, chat and final-amount sections are unchanged.
-11. Given a completed job, then "Book this pro again" starts a booking pre-filled with the same service and property, with no pro pre-selected (matching is unchanged).
+11. Given a completed job, then "Book this pro again" starts a booking with the same service pre-selected and no pro pre-selected (matching is unchanged). The customer picks the property at the Where step; pre-filling it needs a change inside the booking thread, which spec 019 is rewriting, so it waits for that.
 
 ### Customer Messages
 12. Given the Messages tab, then one inbox lists conversations across all of the customer's jobs, most recent first, with unread counts and a link into the job's chat. A customer sees only their own conversations.
@@ -138,4 +138,11 @@ Earnings, payouts and statements (Phase 4); reviews, ratings, performance stats 
   - **Transitional tabs:** only tabs that already have a real page are shown. Customer: Home, Properties. Pro: Today (the welcome page), Jobs, Application. They become Home / Jobs / Messages / Account and Today / Jobs / Profile as parts 2–5 land (AC1 and AC2 are fully met only then).
   - Tests: `tests/Feature/Panels/PanelShellTest.php` (AC1–AC4).
 - Dependency to watch: the "final-amount response waiting" items (AC5, AC20) need spec 018 part 2, which is still uncommitted in the original checkout. Build those items after it merges.
-- Next: part 2 (customer Home "Needs you", Jobs list, job timeline and stage tracker, Book again).
+- 2026-10-07: **Part 2 (customer Home and Jobs) built** (AC5–AC11).
+  - Home: "Needs you" strip (pay, deposit, quotes to compare, unread chat, unfinished request; most urgent first, hidden when empty), Siya box, active-job cards (pro name once a quote is accepted), recent activity (5 allow-listed events). Saved properties and waitlist removal stay on Home until part 3 moves them into Account.
+  - Jobs tab at `/app/jobs` (`jobs.index`): Active / Done / Cancelled, removed drafts left out. Job page: five-step progress tracker, timeline, "Book again" on finished jobs.
+  - Customer-visible events are an allow-list in `JobTimeline` (`job_posted`, `quote_accepted`, `job_expired`, and the spec 018 final-amount events); anything else is hidden by default. `draft_cancelled` is deliberately not shown.
+  - "Quote received" is not in the timeline because no event is recorded when a quote arrives; the quotes section of the job page shows them.
+  - The "final amount waiting" Needs-you item is not built yet (needs spec 018 part 2).
+  - Tests: `tests/Feature/Panels/CustomerPanelTest.php`.
+- Next: part 3 (customer Messages inbox and Account: profile, notification preferences, privacy and data).

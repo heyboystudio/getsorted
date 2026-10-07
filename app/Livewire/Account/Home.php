@@ -8,6 +8,8 @@ use App\Domain\Matching\Actions\WithdrawWaitlist;
 use App\Domain\ServiceJobs\Actions\CancelServiceJob;
 use App\Domain\ServiceJobs\Enums\ActorType;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
+use App\Domain\ServiceJobs\Support\CustomerAttention;
+use App\Domain\ServiceJobs\Support\JobTimeline;
 use App\Livewire\Booking\Thread;
 use App\Models\ServiceJob;
 use App\Models\User;
@@ -18,9 +20,9 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-/** Customer account home: describe a problem to Siya, your jobs, properties and waitlist requests. */
+/** Customer home: what needs you, Siya, active jobs and recent activity (spec 021). */
 #[Layout('components.layouts.panel', ['panel' => 'customer'])]
-#[Title('Your account')]
+#[Title('Home')]
 final class Home extends Component
 {
     public bool $waitlistRemoved = false;
@@ -69,12 +71,14 @@ final class Home extends Component
         return view('livewire.account.home', [
             'firstName' => $user->first_name,
             'hasWaitlistRequests' => $user->phone_e164 !== null && WaitlistEntry::query()->where('phone_e164', $user->phone_e164)->exists(),
-            'jobs' => ServiceJob::query()->where('customer_id', $user->id)
-                ->whereNot('status', ServiceJobStatus::Cancelled)
-                ->with(['service', 'property.suburb'])
-                ->orderByRaw('case when status = ? then 0 else 1 end', [ServiceJobStatus::Draft->value])
+            'attention' => CustomerAttention::for($user),
+            'activeJobs' => ServiceJob::query()->where('customer_id', $user->id)
+                ->whereIn('status', ServiceJobStatus::underway())
+                ->with(['service', 'property.suburb', 'acceptedQuote.pro.documents.media'])
                 ->latest('updated_at')
+                ->limit(5)
                 ->get(),
+            'activity' => JobTimeline::recentFor($user, 5),
         ]);
     }
 }
