@@ -1,4 +1,4 @@
-# Get Sorted — domain rules
+# GetSorted — domain rules
 
 ## Vocabulary
 | UI word | Code | Notes |

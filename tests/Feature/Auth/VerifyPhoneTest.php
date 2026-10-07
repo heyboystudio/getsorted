@@ -145,7 +145,7 @@ it('offers WhatsApp only after 30 seconds (AC4)', function (): void {
 });
 
 it('can be switched back to WhatsApp first by setting', function (): void {
-    config()->set('sortd.otp.default_channel', 'whatsapp');
+    config()->set('getsorted.otp.default_channel', 'whatsapp');
 
     requestCode()->assertSee('SMS available in');
     messaging()->assertSent('otp_code', fn (OutgoingMessage $message): bool => $message->channel === MessageChannel::WhatsApp);
@@ -214,7 +214,7 @@ it('shows the code on screen in local development and on the private test site o
 
 it('saves the mobile without a code on the test site when codes are switched off (decision 041)', function (): void {
     app()->detectEnvironment(fn (): string => 'preview');
-    config()->set('sortd.otp.phone_codes_enabled', false);
+    config()->set('getsorted.otp.phone_codes_enabled', false);
     $user = newCustomer();
 
     requestCode(user: $user)->assertHasNoErrors()->assertRedirect(route('account.home'));
@@ -225,7 +225,7 @@ it('saves the mobile without a code on the test site when codes are switched off
 
 it('still refuses a taken number when codes are switched off', function (): void {
     app()->detectEnvironment(fn (): string => 'preview');
-    config()->set('sortd.otp.phone_codes_enabled', false);
+    config()->set('getsorted.otp.phone_codes_enabled', false);
     User::factory()->customer()->create(['phone_e164' => PHONE]);
 
     requestCode()->assertHasErrors(['phone']);
@@ -233,7 +233,7 @@ it('still refuses a taken number when codes are switched off', function (): void
 
 it('never skips codes in staging or production, even when switched off', function (string $environment): void {
     app()->detectEnvironment(fn (): string => $environment);
-    config()->set('sortd.otp.phone_codes_enabled', false);
+    config()->set('getsorted.otp.phone_codes_enabled', false);
     $user = newCustomer();
 
     requestCode(user: $user);

@@ -36,8 +36,8 @@ final class JoinWaitlist
         $ipKey = 'waitlist:ip:'.hash_hmac('sha256', (string) $ip, (string) config('app.key'));
 
         // Throttle every submission, duplicates included, so the response never reveals who is already waitlisted.
-        if (RateLimiter::tooManyAttempts($phoneKey, (int) config('sortd.waitlist.submissions_per_hour'))
-            || RateLimiter::tooManyAttempts($ipKey, (int) config('sortd.waitlist.submissions_per_ip_hour'))) {
+        if (RateLimiter::tooManyAttempts($phoneKey, (int) config('getsorted.waitlist.submissions_per_hour'))
+            || RateLimiter::tooManyAttempts($ipKey, (int) config('getsorted.waitlist.submissions_per_ip_hour'))) {
             throw ValidationException::withMessages(['waitlist' => __('Please try again later.')]);
         }
 
@@ -50,7 +50,7 @@ final class JoinWaitlist
             'phone_e164' => $phoneE164,
             'trade_id' => $trade->id,
             'area_label' => $areaLabel,
-            'privacy_version' => (string) config('sortd.legal.privacy_version'),
+            'privacy_version' => (string) config('getsorted.legal.privacy_version'),
             'consented_at' => now(),
             'created_at' => now(),
             'updated_at' => now(),

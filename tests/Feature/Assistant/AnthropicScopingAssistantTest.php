@@ -24,11 +24,11 @@ function chatRequest(string $customer = 'My tap is dripping', string $stage = 'c
 {
     $transcript = [['role' => 'customer', 'text' => $customer]];
 
-    return new ChatRequest(new BookingToolbox($state ?? new BookingState, ['plumbing' => 'Plumbing', 'electrical' => 'Electrical'], $transcript), $transcript, ['Get Sorted is free for customers.'], $stage);
+    return new ChatRequest(new BookingToolbox($state ?? new BookingState, ['plumbing' => 'Plumbing', 'electrical' => 'Electrical'], $transcript), $transcript, ['GetSorted is free for customers.'], $stage);
 }
 
 it('returns the plain-text reply and reports the model used', function (): void {
-    config(['sortd.ai.provider' => 'gemini', 'sortd.ai.model' => 'gemini-2.5-flash']);
+    config(['getsorted.ai.provider' => 'gemini', 'getsorted.ai.model' => 'gemini-2.5-flash']);
     SiyaAgent::fake(['Sounds like a dripping tap. Does it drip when it is fully closed?']);
 
     $reply = (new AnthropicScopingAssistant)->chat(chatRequest());

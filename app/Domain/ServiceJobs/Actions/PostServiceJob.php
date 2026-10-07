@@ -46,7 +46,7 @@ final readonly class PostServiceJob
 
         $limitKey = 'post-job:'.$customer->id;
 
-        if (RateLimiter::tooManyAttempts($limitKey, (int) config('sortd.jobs.posts_per_day'))) {
+        if (RateLimiter::tooManyAttempts($limitKey, (int) config('getsorted.jobs.posts_per_day'))) {
             throw new CannotPostServiceJob(__('You have posted a lot of jobs today. Please try again tomorrow.'));
         }
 
@@ -105,8 +105,8 @@ final readonly class PostServiceJob
             throw new CannotPostServiceJob(__('This trade is not available right now.'));
         }
 
-        if (mb_strlen((string) $job->customer_notes) > (int) config('sortd.jobs.notes_max_length')) {
-            throw new CannotPostServiceJob(__('Notes can be up to :max characters.', ['max' => config('sortd.jobs.notes_max_length')]));
+        if (mb_strlen((string) $job->customer_notes) > (int) config('getsorted.jobs.notes_max_length')) {
+            throw new CannotPostServiceJob(__('Notes can be up to :max characters.', ['max' => config('getsorted.jobs.notes_max_length')]));
         }
 
         if ($job->facts === [] && trim((string) $job->customer_notes) === '') {
@@ -127,10 +127,10 @@ final readonly class PostServiceJob
         }
 
         $today = LocalTime::today()->toDateString();
-        $lastDay = LocalTime::today()->addDays((int) config('sortd.jobs.booking_days_ahead'))->toDateString();
+        $lastDay = LocalTime::today()->addDays((int) config('getsorted.jobs.booking_days_ahead'))->toDateString();
 
         if ($date->toDateString() < $today || $date->toDateString() > $lastDay) {
-            throw new CannotPostServiceJob(__('Please choose a date in the next :days days.', ['days' => config('sortd.jobs.booking_days_ahead')]));
+            throw new CannotPostServiceJob(__('Please choose a date in the next :days days.', ['days' => config('getsorted.jobs.booking_days_ahead')]));
         }
 
         if ($window === TimeWindow::Today && $date->toDateString() !== $today) {

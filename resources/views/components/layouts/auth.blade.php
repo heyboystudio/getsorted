@@ -8,8 +8,8 @@
         @isset($description)
         <meta name="description" content="{{ $description }}">
         @endisset
-        <title>{{ isset($title) ? $title.' · Get Sorted' : 'Get Sorted' }}</title>
-        <link rel="icon" type="image/svg+xml" href="{{ asset('home/logo/get-sorted-mark.svg') }}">
+        <title>{{ isset($title) ? $title.' · GetSorted' : 'GetSorted' }}</title>
+        <link rel="icon" type="image/svg+xml" href="{{ asset('home/logo/getsorted-mark.svg') }}">
         <link rel="icon" href="{{ asset('favicon-v2.png') }}" type="image/png">
         <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
         <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">

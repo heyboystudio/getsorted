@@ -2,7 +2,7 @@
 
 ## Spec 020 build — trades, facts, distance matching, Siya agent (2026-10-06, Claude)
 
-Branch `feat/020-trade-distance-matching` in worktree `/Users/andymichaels/Documents/getsorted/sortd-020`, from `deploy/combined`. Spec: `docs/specs/020-trade-and-distance-matching.md`; decision 051. Founder approved; **quality gate deferred by founder instruction** (see below).
+Branch `feat/020-trade-distance-matching` in worktree `/Users/andymichaels/Documents/getsorted/getsorted-020`, from `deploy/combined`. Spec: `docs/specs/020-trade-and-distance-matching.md`; decision 051. Founder approved; **quality gate deferred by founder instruction** (see below).
 
 ### Built (all phases of the spec, unverified)
 - Schema + backfill + drops: `database/migrations/2026_10_07_000001_move_to_trades_and_distance_matching.php` (irreversible; drops services, scoping_questions, pro_services, pro_service_areas, suburbs) and `database/settings/2026_10_07_000001_update_matching_settings_for_distance.php`.
@@ -22,7 +22,7 @@ Branch `feat/020-trade-distance-matching` in worktree `/Users/andymichaels/Docum
 - Obsolete tests removed: `tests/Feature/Places/SuburbsTest.php` (suburbs no longer exist). Old service/scoping tests were rewritten for trades, facts and distance, not deleted.
 
 ### Still not verified
-- **Live Gemini**: evaluated on 2026-10-06 (see decision 051 addendum): `gemini-3.1-flash-lite`, thinking `minimal`, 7/8 cases passed in two runs; failures were provider timeouts. Set `SORTD_AI_MODEL` on the server (2.5 models are retired). Still do a human read of replies on a preview. Earlier note: `SiyaGeminiWireTest` proves the SDK/Gemini wire loop with HTTP faked (tool calls run, results returned, plain-text answer). Judgement and tone need `php artisan siya:eval --live` on a preview (8 synthetic cases from the audit; checks state, not wording). Also set the model id / thinking and check latency and the per-turn budget unit.
+- **Live Gemini**: evaluated on 2026-10-06 (see decision 051 addendum): `gemini-3.1-flash-lite`, thinking `minimal`, 7/8 cases passed in two runs; failures were provider timeouts. Set `GETSORTED_AI_MODEL` on the server (2.5 models are retired). Still do a human read of replies on a preview. Earlier note: `SiyaGeminiWireTest` proves the SDK/Gemini wire loop with HTTP faked (tool calls run, results returned, plain-text answer). Judgement and tone need `php artisan siya:eval --live` on a preview (8 synthetic cases from the audit; checks state, not wording). Also set the model id / thinking and check latency and the per-turn budget unit.
 - No browser pass: pro application, job → 10 invites → 5 quotes → "job full", the calendar sheet on a phone, emergency pause.
 - Privacy notice gained one sentence on Google Places and encrypted pro addresses; the legal text is still placeholder and needs lawyer review.
 
@@ -31,7 +31,7 @@ Branch `feat/020-trade-distance-matching` in worktree `/Users/andymichaels/Docum
 - `AiPurpose::SuggestService` kept so old usage rows still read.
 - Timing stated in chat ("tomorrow morning") is not captured (spec decision D1 default OFF).
 - "Book the next job" after posting exists (`startNextJob`); parked jobs are limited to 3.
-- `vendor/` was copied from `sortd-gemini` and `node_modules` is a symlink to it; `.env` and `public/build` are local and git-ignored.
+- `vendor/` was copied from `getsorted-gemini` and `node_modules` is a symlink to it; `.env` and `public/build` are local and git-ignored.
 
 ## Cancel, notifications, admin host (2026-10-07)
 
@@ -39,5 +39,5 @@ Branch `feat/020-trade-distance-matching` in worktree `/Users/andymichaels/Docum
 - **Notifications:** `Notify::user()` → `UserNotice` (database always; email only for key events and only to verified emails). Inbox at `/notifications`, bell with unread count in the app layout. No contact details or street addresses in any notice. WhatsApp still goes as before.
 - **Client cancel:** `CancelJobByCustomer` (open job, no accepted quote): invites closed, quotes declined, invited pros told. After acceptance the client is told to contact support.
 - **Messages cannot be deleted** by clients or pros any more (`delete_within_minutes` removed). Older deleted rows still render as "Message deleted".
-- **Admin host:** set `SORTD_ADMIN_DOMAIN=dashboard.usesorted.co.za` (panel moves to the host root, `/admin` on the main host redirects). Add the host to `SERVER_NAME` so Caddy issues its certificate. Test: `SORTD_ADMIN_DOMAIN=admin.sorted.test vendor/bin/pest tests/Feature/Admin`.
-- **Cloudflare:** set `SORTD_BEHIND_CLOUDFLARE=true` before turning the proxy on (trusts Cloudflare ranges for real visitor IPs) and use SSL mode Full (strict). The pgsql connection now pins its session timezone to UTC.
+- **Admin host:** set `GETSORTED_ADMIN_DOMAIN=dashboard.usesorted.co.za` (panel moves to the host root, `/admin` on the main host redirects). Add the host to `SERVER_NAME` so Caddy issues its certificate. Test: `GETSORTED_ADMIN_DOMAIN=admin.sorted.test vendor/bin/pest tests/Feature/Admin`.
+- **Cloudflare:** set `GETSORTED_BEHIND_CLOUDFLARE=true` before turning the proxy on (trusts Cloudflare ranges for real visitor IPs) and use SSL mode Full (strict). The pgsql connection now pins its session timezone to UTC.

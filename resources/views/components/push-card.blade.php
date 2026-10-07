@@ -30,8 +30,8 @@
 
     <template x-if="!justEnabled && state === 'install'">
         <div>
-            <p class="font-medium text-emerald-950">{{ __('Add Get Sorted to your Home Screen to get pop-ups') }}</p>
-            <p class="mt-1 text-sm text-emerald-900">{{ __('On iPhone and iPad, tap the Share button, then "Add to Home Screen". Open Get Sorted from your Home Screen and turn notifications on there.') }}</p>
+            <p class="font-medium text-emerald-950">{{ __('Add GetSorted to your Home Screen to get pop-ups') }}</p>
+            <p class="mt-1 text-sm text-emerald-900">{{ __('On iPhone and iPad, tap the Share button, then "Add to Home Screen". Open GetSorted from your Home Screen and turn notifications on there.') }}</p>
             <button type="button" x-on:click="dismiss()" class="mt-3 text-sm text-emerald-900 underline underline-offset-4">{{ __('Not now') }}</button>
         </div>
     </template>

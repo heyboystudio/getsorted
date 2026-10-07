@@ -54,7 +54,7 @@ final readonly class SendPhoneCode
                 'code_hash' => self::hash($code),
                 'channel' => $channel,
                 'purpose' => OtpPurpose::VerifyPhone,
-                'expires_at' => now()->addMinutes((int) config('sortd.otp.ttl_minutes')),
+                'expires_at' => now()->addMinutes((int) config('getsorted.otp.ttl_minutes')),
                 'attempts' => 0,
                 'ip' => $ip,
             ]);
@@ -89,7 +89,7 @@ final readonly class SendPhoneCode
 
     private function generateCode(): string
     {
-        $length = (int) config('sortd.otp.length');
+        $length = (int) config('getsorted.otp.length');
 
         return str_pad((string) random_int(0, (10 ** $length) - 1), $length, '0', STR_PAD_LEFT);
     }

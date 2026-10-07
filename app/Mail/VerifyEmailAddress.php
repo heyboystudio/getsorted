@@ -18,7 +18,7 @@ final class VerifyEmailAddress extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: __('Confirm your email for Get Sorted'));
+        return new Envelope(subject: __('Confirm your email for GetSorted'));
     }
 
     public function content(): Content

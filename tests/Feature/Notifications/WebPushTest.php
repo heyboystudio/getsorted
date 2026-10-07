@@ -232,7 +232,7 @@ it('sends a test notice to one account through the normal path (spec 022)', func
     $user = User::factory()->customer()->create(['email' => 'tester@example.com']);
     $other = User::factory()->customer()->create();
 
-    $this->artisan('sortd:send-test-notification', ['email' => ' Tester@Example.com '])->expectsOutputToContain('no subscribed device')->assertSuccessful();
+    $this->artisan('getsorted:send-test-notification', ['email' => ' Tester@Example.com '])->expectsOutputToContain('no subscribed device')->assertSuccessful();
 
     Notification::assertSentTo($user, UserNotice::class, fn (UserNotice $notice): bool => $notice->kind === 'test' && $notice->group === null);
     Notification::assertNotSentTo($other, UserNotice::class);
@@ -242,8 +242,8 @@ it('says how many devices will get the pop-up and fails for an unknown account (
     Notification::fake();
     subscribed(User::factory()->customer()->create(['email' => 'phone@example.com']));
 
-    $this->artisan('sortd:send-test-notification', ['email' => 'phone@example.com'])->expectsOutputToContain('1 subscribed device')->assertSuccessful();
-    $this->artisan('sortd:send-test-notification', ['email' => 'nobody@example.com'])->expectsOutputToContain('No account has that email')->assertFailed();
+    $this->artisan('getsorted:send-test-notification', ['email' => 'phone@example.com'])->expectsOutputToContain('1 subscribed device')->assertSuccessful();
+    $this->artisan('getsorted:send-test-notification', ['email' => 'nobody@example.com'])->expectsOutputToContain('No account has that email')->assertFailed();
 });
 
 // --- Knowing how each push went ----------------------------------------------------------

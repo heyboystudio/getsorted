@@ -103,11 +103,11 @@ final readonly class EligibleProsQuery
 
     /**
      * Whether a customer may book this trade at this point. Before launch (decision 044) a job
-     * posts even with no pros signed up; set SORTD_REQUIRE_PROS=true to require a nearby pro.
+     * posts even with no pros signed up; set GETSORTED_REQUIRE_PROS=true to require a nearby pro.
      */
     public function covers(Trade $trade, Point $point, ?User $customer = null): bool
     {
-        if ((bool) config('sortd.coverage.require_pros')) {
+        if ((bool) config('getsorted.coverage.require_pros')) {
             return $this->exists($trade, $point, $customer);
         }
 

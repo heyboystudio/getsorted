@@ -9,6 +9,6 @@ enum MessageSender: string
 {
     case Customer = 'customer';
     case Pro = 'pro';
-    /** Get Sorted's own notes in the chat, such as "the customer chose another pro". */
+    /** GetSorted's own notes in the chat, such as "the customer chose another pro". */
     case System = 'system';
 }

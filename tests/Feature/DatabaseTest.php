@@ -39,8 +39,8 @@ it('defaults sessions, cache and queue to the database', function (string $key):
 it('stores sessions, cache and queued jobs in Postgres', function (): void {
     expect(Schema::hasTable('sessions'))->toBeTrue();
 
-    Cache::store('database')->put('sortd-check', 'ok', 60);
-    expect(Cache::store('database')->get('sortd-check'))->toBe('ok')
+    Cache::store('database')->put('getsorted-check', 'ok', 60);
+    expect(Cache::store('database')->get('getsorted-check'))->toBe('ok')
         ->and(DB::table('cache')->count())->toBe(1);
 
     Queue::connection('database')->pushRaw('{"job":"check"}', 'payments');

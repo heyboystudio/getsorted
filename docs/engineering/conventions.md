@@ -1,6 +1,6 @@
 # Coding conventions
 
-Laravel Boost's guidelines cover general Laravel, Livewire, Pest, Tailwind and Pint conventions. This file adds Get Sorted-specific rules; where they conflict, **this file wins**.
+Laravel Boost's guidelines cover general Laravel, Livewire, Pest, Tailwind and Pint conventions. This file adds GetSorted-specific rules; where they conflict, **this file wins**.
 
 ## General
 
@@ -8,7 +8,7 @@ Laravel Boost's guidelines cover general Laravel, Livewire, Pest, Tailwind and P
 - Typed properties, parameters and return types everywhere. No `mixed` unless unavoidable.
 - `final` classes by default (Actions, Data objects, Integrations); remove `final` only when extension is intended.
 - Enums (PHP backed enums) for every fixed set of values: statuses, types, roles, channels. Never compare against string literals.
-- No magic numbers or durations in code: timers, rates and caps come from `spatie/laravel-settings` or `config/sortd.php`.
+- No magic numbers or durations in code: timers, rates and caps come from `spatie/laravel-settings` or `config/getsorted.php`.
 - Dates: `CarbonImmutable`. Columns are `timestamptz`; the app and database connection share `Africa/Johannesburg` (decision 052).
 - Money: `Brick\Money\Money` in code, `*_cents` integers in the DB. A `MoneyCast` handles conversion.
 - Comments explain **why**, not what. Public Actions get a one-line docblock stating the business rule.

@@ -8,7 +8,7 @@
         <figure class="pol a4"><img src="{{ asset('images/home/trade-tiling-v3.webp') }}" alt="" width="1280" height="960"><figcaption>Tiling</figcaption></figure>
     </div>
     <header class="auth-head">
-        <a href="{{ route('home') }}" wire:navigate.hover aria-label="{{ __('Get Sorted home') }}"><img src="{{ asset('home/logo/get-sorted-logo.svg') }}" alt="Get Sorted" width="181" height="32"></a>
+        <a href="{{ route('home') }}" wire:navigate.hover aria-label="{{ __('GetSorted home') }}"><img src="{{ asset('home/logo/getsorted-logo.svg') }}" alt="GetSorted" width="181" height="32"></a>
         <a class="cta-dark" href="{{ route('home') }}" wire:navigate.hover>{{ __('Back to home') }} <span class="sq"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a>
     </header>
     <section class="auth-card">

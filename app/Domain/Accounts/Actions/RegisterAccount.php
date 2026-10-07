@@ -77,17 +77,17 @@ final readonly class RegisterAccount
         $user->assignRole($role->value);
 
         $consents = [
-            ConsentType::Terms->value => (string) config('sortd.legal.terms_version'),
-            ConsentType::Privacy->value => (string) config('sortd.legal.privacy_version'),
+            ConsentType::Terms->value => (string) config('getsorted.legal.terms_version'),
+            ConsentType::Privacy->value => (string) config('getsorted.legal.privacy_version'),
         ];
 
         if ($role === Role::Pro) {
-            $consents[ConsentType::ProAgreement->value] = (string) config('sortd.legal.pro_agreement_version');
+            $consents[ConsentType::ProAgreement->value] = (string) config('getsorted.legal.pro_agreement_version');
         }
 
         if ($marketing) {
             // Marketing opt-in follows the privacy notice version it was given under.
-            $consents[ConsentType::Marketing->value] = (string) config('sortd.legal.privacy_version');
+            $consents[ConsentType::Marketing->value] = (string) config('getsorted.legal.privacy_version');
         }
 
         activity()->performedOn($user)->causedBy($user)->withProperties(['method' => $googleId === null ? 'email' : 'google'])->log('account created');

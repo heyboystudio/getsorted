@@ -87,7 +87,7 @@ final class UserNotice extends Notification implements ShouldQueue
             ->subject($this->title)
             ->greeting(__('Hi :name,', ['name' => $notifiable->first_name]))
             ->line($this->body)
-            ->action(__('Open on Get Sorted'), $this->url)
-            ->line(__('You are receiving this because you have a Get Sorted account.'));
+            ->action(__('Open on GetSorted'), $this->url)
+            ->line(__('You are receiving this because you have a GetSorted account.'));
     }
 }

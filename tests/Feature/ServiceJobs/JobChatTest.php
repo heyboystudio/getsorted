@@ -94,7 +94,7 @@ it('lets a pro who opened the invite start the chat, shown on their job page (AC
 it('masks contact and bank details before a quote is accepted and flags pros who try (AC3)', function (): void {
     chatAs($this->proA->user, $this->proA, 'Thandi')
         ->set('message', 'WhatsApp me on 082 123 4567 or pay FNB acc 62812345678')->call('send')
-        ->assertDontSee('082 123 4567')->assertSee('Keep chats and payments on Get Sorted');
+        ->assertDontSee('082 123 4567')->assertSee('Keep chats and payments on GetSorted');
 
     $stored = JobMessage::query()->sole()->body;
     expect($stored)->not->toContain('082 123 4567')->not->toContain('62812345678')
@@ -204,7 +204,7 @@ it('never lets anyone delete a message, but the other side can report it (AC6)',
 });
 
 it('limits messages per hour per sender', function (): void {
-    config()->set('sortd.chat.messages_per_hour', 2);
+    config()->set('getsorted.chat.messages_per_hour', 2);
     $chat = chatAs($this->customer, $this->proA);
     $chat->set('message', 'one')->call('send')->set('message', 'two')->call('send')->set('message', 'three')->call('send')->assertHasErrors('message');
 

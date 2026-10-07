@@ -4,7 +4,7 @@
 set -euo pipefail
 
 HOST="${PREVIEW_HOST:-aws}"
-REMOTE_DIR="sortd"
+REMOTE_DIR="getsorted"
 cd "$(git rev-parse --show-toplevel)"
 
 echo "→ Building front-end assets"

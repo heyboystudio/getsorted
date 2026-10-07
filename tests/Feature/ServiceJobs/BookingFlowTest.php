@@ -64,7 +64,7 @@ it('opens the thread from the home page and trade pages (AC1, AC3)', function ()
 
 it('starts with Siya’s greeting and optional trade shortcuts (AC2, AC5)', function (): void {
     Livewire::test(Thread::class)
-        ->assertSee('I’m Siya, Get Sorted’s AI assistant')->assertSet('stage', 'chat')->assertDontSee('Continue to book')
+        ->assertSee('I’m Siya, GetSorted’s AI assistant')->assertSet('stage', 'chat')->assertDontSee('Continue to book')
         ->call('showTrades')->assertSee('Plumbing')
         ->call('pickTrade', 'plumbing')->assertSee('What’s the plumbing problem?')->assertSet('tradeId', $this->plumbing->id);
 });
@@ -494,7 +494,7 @@ it('keeps customers and pros out of the admin jobs list (spec 005 AC15)', functi
     $this->actingAs(User::factory()->customer()->create())->get('/admin/service-jobs')->assertForbidden();
 });
 
-it('only accepts Get Sorted booking paths as a return address after adding a property', function (?string $return, ?string $expected): void {
+it('only accepts GetSorted booking paths as a return address after adding a property', function (?string $return, ?string $expected): void {
     expect(BookingReturn::sanitise($return))->toBe($expected);
 })->with([
     'booking start' => ['/book/plumbing', '/book/plumbing'],

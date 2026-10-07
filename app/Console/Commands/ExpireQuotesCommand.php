@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 /** Spec 010: expire old quotes and jobs whose quote window ended. Safe to run repeatedly. */
 final class ExpireQuotesCommand extends Command
 {
-    protected $signature = 'sortd:expire-quotes';
+    protected $signature = 'getsorted:expire-quotes';
 
     protected $description = 'Expire quotes past their validity and open jobs past their quote window';
 

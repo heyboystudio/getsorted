@@ -21,7 +21,7 @@ class WaitlistEntryFactory extends Factory
             'phone_e164' => '+2782'.fake()->unique()->numerify('#######'),
             'trade_id' => Trade::factory(),
             'area_label' => 'Musgrave',
-            'privacy_version' => config('sortd.legal.privacy_version'),
+            'privacy_version' => config('getsorted.legal.privacy_version'),
             'consented_at' => now(),
         ];
     }

@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
  */
 final class SendTestNotificationCommand extends Command
 {
-    protected $signature = 'sortd:send-test-notification {email : The account to notify}';
+    protected $signature = 'getsorted:send-test-notification {email : The account to notify}';
 
     protected $description = 'Send a test notice (inbox and, if the device is subscribed, a pop-up) to one account';
 

@@ -1,6 +1,6 @@
 {
-    "name": "Get Sorted",
-    "short_name": "Get Sorted",
+    "name": "GetSorted",
+    "short_name": "GetSorted",
     "description": "Trusted plumbers, electricians, painters and tilers in Durban.",
     "start_url": "/app",
     "scope": "/",

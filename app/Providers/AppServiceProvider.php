@@ -45,7 +45,7 @@ final class AppServiceProvider extends ServiceProvider
      */
     private function configureCloudflare(): void
     {
-        if (config('sortd.behind_cloudflare') !== true) {
+        if (config('getsorted.behind_cloudflare') !== true) {
             return;
         }
 
@@ -94,7 +94,7 @@ final class AppServiceProvider extends ServiceProvider
         $guard = Auth::guard('web');
 
         if ($guard instanceof SessionGuard) {
-            $guard->setRememberDuration((int) config('sortd.auth.remember_days') * 24 * 60);
+            $guard->setRememberDuration((int) config('getsorted.auth.remember_days') * 24 * 60);
         }
     }
 

@@ -91,7 +91,7 @@ final class JobMessage extends Model implements HasMedia
      */
     public function prunable(): Builder
     {
-        $cutoff = now()->subMonths((int) config('sortd.chat.retention_months'));
+        $cutoff = now()->subMonths((int) config('getsorted.chat.retention_months'));
 
         return self::query()->whereHas('conversation.serviceJob', fn (Builder $job) => $job
             ->whereIn('status', ['closed', 'cancelled', 'expired'])->where('updated_at', '<', $cutoff));

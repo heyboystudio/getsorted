@@ -160,7 +160,7 @@ it('cannot point the form at another property from the browser (AC9)', function 
 })->throws(CannotUpdateLockedPropertyException::class);
 
 it('shows a retry message, not a manual form, when address search is unavailable', function (): void {
-    config()->set('sortd.places.unavailable_for_test', true);
+    config()->set('getsorted.places.unavailable_for_test', true);
     app()->instance(Geocoder::class, new class implements Geocoder
     {
         public function autocomplete(string $query, string $sessionToken): array

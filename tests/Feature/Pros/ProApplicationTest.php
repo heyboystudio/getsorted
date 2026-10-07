@@ -488,7 +488,7 @@ it('deletes documents and references of rejected or abandoned applications after
 it('schedules the vetting prune daily (AC14)', function (): void {
     $events = collect(app(Schedule::class)->events())->map->command->implode(' ');
 
-    expect($events)->toContain('sortd:prune-vetting-records');
+    expect($events)->toContain('getsorted:prune-vetting-records');
 });
 
 // --- Review fixes --------------------------------------------------------------------
@@ -532,7 +532,7 @@ it('will not verify a registration without its number (spec check)', function ()
 });
 
 it('limits uploads and submissions per pro (security review)', function (): void {
-    config()->set('sortd.pros.uploads_per_hour', 2);
+    config()->set('getsorted.pros.uploads_per_hour', 2);
     $user = applicant();
     $pro = app(StartApplication::class)->handle($user);
 
@@ -542,8 +542,8 @@ it('limits uploads and submissions per pro (security review)', function (): void
     expect(fn () => app(StoreProDocument::class)->handle($user, $pro, DocumentType::IdDocument, UploadedFile::fake()->image('c.jpg', 20, 20)))
         ->toThrow(ValidationException::class);
 
-    config()->set('sortd.pros.uploads_per_hour', 30);
-    config()->set('sortd.pros.submissions_per_hour', 1);
+    config()->set('getsorted.pros.uploads_per_hour', 30);
+    config()->set('getsorted.pros.submissions_per_hour', 1);
     $other = completeApplication();
     $other->forceFill(['bio' => null])->save();
     expect(fn () => app(SubmitApplication::class)->handle($other->user, $other->fresh()))->toThrow(ValidationException::class, 'Still needed');

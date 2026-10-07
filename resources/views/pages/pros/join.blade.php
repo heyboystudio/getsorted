@@ -1,6 +1,6 @@
 <x-layouts.auth :title="__('Join as a pro')" extra-css="pages.css" :description="__('Get matched with Durban homes that need your trade. Choose the jobs you want, set your own prices and keep the details together.')">
 <header class="pg-head">
-    <a href="{{ route('home') }}" aria-label="{{ __('Get Sorted home') }}"><img src="{{ asset('home/logo/get-sorted-logo.svg') }}" alt="Get Sorted" width="181" height="32"></a>
+    <a href="{{ route('home') }}" aria-label="{{ __('GetSorted home') }}"><img src="{{ asset('home/logo/getsorted-logo.svg') }}" alt="GetSorted" width="181" height="32"></a>
     <div class="pg-right">
         <nav class="nav" aria-label="{{ __('Main') }}">
             <a href="{{ route('home') }}">{{ __('Home') }}</a>
@@ -47,7 +47,7 @@
     </section>
 
     <section class="pg-sec">
-        <p class="kicker">{{ __('Why join Get Sorted') }}</p>
+        <p class="kicker">{{ __('Why join GetSorted') }}</p>
         <h2 class="pg-h2">{{ __('Built around the way you work.') }}</h2>
         <div class="pg-cards">
             <article><span>01</span><h3>{{ __('Relevant local jobs') }}</h3><p>{{ __('See opportunities that fit the services you offer and the areas you cover.') }}</p></article>
@@ -65,7 +65,7 @@
             <ol class="pg-steps">
                 <li><span>01</span><div><h3>{{ __('Create your account') }}</h3><p>{{ __('Sign up with email or Google, then verify your email and South African mobile.') }}</p></div></li>
                 <li><span>02</span><div><h3>{{ __('Tell us about your work') }}</h3><p>{{ __('Complete your pro application with your business, services and coverage areas.') }}</p></div></li>
-                <li><span>03</span><div><h3>{{ __('Go through review') }}</h3><p>{{ __('Get Sorted checks identity, relevant registrations and references before approving pros.') }}</p></div></li>
+                <li><span>03</span><div><h3>{{ __('Go through review') }}</h3><p>{{ __('GetSorted checks identity, relevant registrations and references before approving pros.') }}</p></div></li>
             </ol>
         </div>
     </section>
@@ -82,7 +82,7 @@
 </main>
 
 <footer class="pg-foot">
-    <img src="{{ asset('home/logo/get-sorted-logo-inverse.svg') }}" alt="Get Sorted" width="150" height="26">
+    <img src="{{ asset('home/logo/getsorted-logo-inverse.svg') }}" alt="GetSorted" width="150" height="26">
     <nav aria-label="{{ __('Footer') }}">
         <a href="{{ route('terms') }}">{{ __('Terms') }}</a>
         <a href="{{ route('privacy') }}">{{ __('Privacy') }}</a>

@@ -30,7 +30,7 @@ const STRONG_PASSWORD = 'Correct-Horse-42-Battery';
 
 function runCreateSuperAdmin(string $email, string $password, ?string $confirmation = null): PendingCommand
 {
-    return test()->artisan('sortd:create-super-admin')
+    return test()->artisan('getsorted:create-super-admin')
         ->expectsQuestion('First name', 'Founder')
         ->expectsQuestion('Last name', 'Person')
         ->expectsQuestion('Email address', $email)
@@ -80,7 +80,7 @@ it('rejects an email that is already registered', function (): void {
 });
 
 it('refuses to run without an interactive terminal', function (): void {
-    $this->artisan('sortd:create-super-admin', ['--no-interaction' => true])->assertFailed();
+    $this->artisan('getsorted:create-super-admin', ['--no-interaction' => true])->assertFailed();
 
     expect(User::query()->count())->toBe(0);
 });

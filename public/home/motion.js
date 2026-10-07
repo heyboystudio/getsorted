@@ -1,4 +1,4 @@
-/* Get Sorted — motion layer (GSAP + ScrollTrigger + SplitText + Lenis).
+/* GetSorted — motion layer (GSAP + ScrollTrigger + SplitText + Lenis).
    Everything here is decoration: if the libraries fail to load or the visitor
    prefers reduced motion, the page shows its final state and stays usable. */
 (() => {

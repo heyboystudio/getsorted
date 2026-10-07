@@ -5,7 +5,7 @@
     <p x-show="state === 'on'" style="display: none" class="mt-1 text-sm text-emerald-800">{{ __('On. You will get a pop-up on this device.') }}</p>
     <p x-show="state === 'off' || state === 'ask'" style="display: none" class="mt-1 text-sm text-zinc-600">{{ __('Off. Turn on to get a pop-up the moment a quote, message or job arrives.') }}</p>
     <p x-show="state === 'blocked'" style="display: none" class="mt-1 text-sm text-amber-800">{{ __('Blocked in this browser. Allow notifications for this site in your browser settings, then reload the page.') }}</p>
-    <p x-show="state === 'install'" style="display: none" class="mt-1 text-sm text-zinc-600">{{ __('On iPhone and iPad, add Get Sorted to your Home Screen first (Share, then "Add to Home Screen"), then open it from there and turn this on.') }}</p>
+    <p x-show="state === 'install'" style="display: none" class="mt-1 text-sm text-zinc-600">{{ __('On iPhone and iPad, add GetSorted to your Home Screen first (Share, then "Add to Home Screen"), then open it from there and turn this on.') }}</p>
     <p x-show="state === 'unsupported'" style="display: none" class="mt-1 text-sm text-zinc-600">{{ __('This browser does not support pop-up notifications. Try Chrome, Edge, Firefox or Safari.') }}</p>
 
     <button type="button" x-show="state === 'on'" style="display: none" x-on:click="disable()" x-bind:disabled="busy" class="mt-3 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-60">{{ __('Turn off on this device') }}</button>

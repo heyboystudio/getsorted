@@ -6,8 +6,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="{{ $description ?? __('Describe the job, compare quotes from vetted Durban pros, and keep everything in one place.') }}">
-        <title>{{ $brand ?? __('Get Sorted') }}</title>
-        <link rel="icon" type="image/svg+xml" href="{{ asset('home/logo/get-sorted-mark.svg') }}">
+        <title>{{ $brand ?? __('GetSorted') }}</title>
+        <link rel="icon" type="image/svg+xml" href="{{ asset('home/logo/getsorted-mark.svg') }}">
         <link rel="icon" href="{{ asset('favicon-v2.png') }}" type="image/png">
         <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
         <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">

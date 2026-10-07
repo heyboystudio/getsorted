@@ -1,7 +1,7 @@
 @include('livewire.auth.partials.shell-start')
         <span class="auth-kicker"><i class="ph-bold ph-sign-in" aria-hidden="true"></i>{{ $asPro ? __('Pro sign in') : __('Welcome back') }}</span>
         <h1 class="auth-title">{{ $asPro ? __('Sign in to join as a pro.') : __('Sign in.') }}</h1>
-        <p class="auth-sub">{{ __('New to Get Sorted?') }} <a href="{{ route($asPro ? 'pros.register' : 'register') }}">{{ $asPro ? __('Create a pro account') : __('Create an account') }}</a></p>
+        <p class="auth-sub">{{ __('New to GetSorted?') }} <a href="{{ route($asPro ? 'pros.register' : 'register') }}">{{ $asPro ? __('Create a pro account') : __('Create an account') }}</a></p>
 
         @if (session('status'))
             <p class="auth-note" role="status"><i class="ph-bold ph-info" aria-hidden="true"></i>{{ session('status') }}</p>

@@ -276,7 +276,7 @@ it('refuses a quantity above 9 999 (AC1)', function (): void {
 });
 
 it('limits how often a pro can send, revise or withdraw quotes (security)', function (): void {
-    config()->set('sortd.quotes.changes_per_hour', 2);
+    config()->set('getsorted.quotes.changes_per_hour', 2);
     [$pro] = quotingPros(1);
     $job = postedJob();
     $quote = submitFor($job, $pro);
@@ -468,7 +468,7 @@ it('stops inviting once the job is full (spec 009 AC3, spec 020)', function (): 
 
 it('schedules quote and job expiry every five minutes (rules)', function (): void {
     $events = collect(app(Schedule::class)->events());
-    $expiry = $events->first(fn ($event): bool => str_contains((string) $event->command, 'sortd:expire-quotes'));
+    $expiry = $events->first(fn ($event): bool => str_contains((string) $event->command, 'getsorted:expire-quotes'));
 
     expect($expiry)->not->toBeNull()->and($expiry->expression)->toBe('*/5 * * * *');
 });

@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "heyboystudio/sortd",
+    "name": "heyboystudio/getsorted",
     "type": "project",
-    "description": "Get Sorted home services marketplace.",
+    "description": "GetSorted home services marketplace.",
     "keywords": [
         "laravel",
         "framework"

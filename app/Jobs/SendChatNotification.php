@@ -55,8 +55,8 @@ final class SendChatNotification implements ShouldQueue
                 return null;
             }
 
-            $onPage = $conversation->{$readColumn}?->gt(now()->subSeconds((int) config('sortd.chat.online_seconds'))) === true;
-            $recent = $conversation->{$notifiedColumn}?->gt(now()->subMinutes((int) config('sortd.chat.notify_every_minutes'))) === true;
+            $onPage = $conversation->{$readColumn}?->gt(now()->subSeconds((int) config('getsorted.chat.online_seconds'))) === true;
+            $recent = $conversation->{$notifiedColumn}?->gt(now()->subMinutes((int) config('getsorted.chat.notify_every_minutes'))) === true;
 
             if ($onPage || $recent) {
                 return null;

@@ -40,7 +40,7 @@ function siya(): FakeScopingAssistant
 it('greets as an AI assistant called Siya and is linked from the home page', function (): void {
     $this->get('/')->assertSee('Start a job');
     [$customer] = bookingCustomer();
-    $this->actingAs($customer)->get(route('book'))->assertOk()->assertSee('I’m Siya, Get Sorted’s AI assistant');
+    $this->actingAs($customer)->get(route('book'))->assertOk()->assertSee('I’m Siya, GetSorted’s AI assistant');
 });
 
 it('records the trade and several facts from the first message, with no confirmation card (spec 019 AC7, spec 020)', function (): void {
@@ -129,7 +129,7 @@ it('shows the stop-first card for gas, sparks, smoke or flooding', function (): 
 });
 
 it('stops after the message limit and can start over', function (): void {
-    config()->set('sortd.ai.chat_messages_per_conversation', 1);
+    config()->set('getsorted.ai.chat_messages_per_conversation', 1);
 
     Livewire::test(Thread::class)
         ->set('message', 'Leak')->call('send')->assertHasNoErrors()

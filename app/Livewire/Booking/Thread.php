@@ -57,7 +57,7 @@ use Throwable;
  * a job: it is posted only when the customer taps Confirm booking. The thread lives in the session
  * (scrubbed text) and, once signed in, on the customer's draft job.
  */
-#[Layout('components.layouts.app', ['brand' => 'Get Sorted', 'gs' => true])]
+#[Layout('components.layouts.app', ['brand' => 'GetSorted', 'gs' => true])]
 final class Thread extends Component
 {
     use SearchesAddresses;
@@ -256,7 +256,7 @@ final class Thread extends Component
             throw ValidationException::withMessages(['message' => __('Type a message of :min to :max characters.', ['min' => self::MIN_LENGTH, 'max' => self::MAX_LENGTH])]);
         }
 
-        if ($this->customerMessages >= (int) config('sortd.ai.chat_messages_per_conversation') && ! EmergencyGuidance::required($text)) {
+        if ($this->customerMessages >= (int) config('getsorted.ai.chat_messages_per_conversation') && ! EmergencyGuidance::required($text)) {
             throw ValidationException::withMessages(['message' => __('This chat is full. Tap Restart to start again.')]);
         }
 
@@ -447,7 +447,7 @@ final class Thread extends Component
                 $this->pickedPlaceId,
             );
         } catch (PropertyLimitReached) {
-            throw ValidationException::withMessages(['addressQuery' => __('You can save up to :count properties. Delete one in your account to add another.', ['count' => config('sortd.properties.max_per_customer')])]);
+            throw ValidationException::withMessages(['addressQuery' => __('You can save up to :count properties. Delete one in your account to add another.', ['count' => config('getsorted.properties.max_per_customer')])]);
         }
 
         $this->stage = 'where';
@@ -508,10 +508,10 @@ final class Thread extends Component
         }
 
         $date = $this->parseDate($this->preferredDate);
-        $last = LocalTime::today()->addDays((int) config('sortd.jobs.booking_days_ahead'));
+        $last = LocalTime::today()->addDays((int) config('getsorted.jobs.booking_days_ahead'));
 
         if (! $date instanceof CarbonImmutable || $date->lt(LocalTime::today()) || $date->gt($last)) {
-            throw ValidationException::withMessages(['when' => __('Choose a day in the next :days days.', ['days' => config('sortd.jobs.booking_days_ahead')])]);
+            throw ValidationException::withMessages(['when' => __('Choose a day in the next :days days.', ['days' => config('getsorted.jobs.booking_days_ahead')])]);
         }
 
         $this->timeWindow = $chosen->value;
@@ -532,7 +532,7 @@ final class Thread extends Component
     public function updatedPhotoUpload(): void
     {
         abort_unless($this->stage === 'photos' && $this->isCustomer(), 404);
-        $this->validate(['photoUpload' => ['required', 'file', 'max:'.config('sortd.job_photos.max_kilobytes')]]);
+        $this->validate(['photoUpload' => ['required', 'file', 'max:'.config('getsorted.job_photos.max_kilobytes')]]);
 
         /** @var User $user */
         $user = $this->user();
@@ -586,7 +586,7 @@ final class Thread extends Component
     {
         abort_unless($this->stage === 'notes', 404);
         $this->notesDraft = trim($this->notesDraft);
-        $this->validate(['notesDraft' => ['nullable', 'string', 'max:'.config('sortd.jobs.notes_max_length')]]);
+        $this->validate(['notesDraft' => ['nullable', 'string', 'max:'.config('getsorted.jobs.notes_max_length')]]);
         $this->notes = ChatWithSiya::scrub($this->notesDraft);
         $this->autosave();
         $this->advance();
@@ -667,14 +667,14 @@ final class Thread extends Component
                 ? $this->user()?->properties()->latest()->get() ?? new Collection : new Collection,
             'propertyTypes' => PropertyType::cases(),
             'minDate' => LocalTime::today()->toDateString(),
-            'maxDate' => LocalTime::today()->addDays((int) config('sortd.jobs.booking_days_ahead'))->toDateString(),
+            'maxDate' => LocalTime::today()->addDays((int) config('getsorted.jobs.booking_days_ahead'))->toDateString(),
             'windows' => $this->stage === 'when' ? TimeWindow::cases() : [],
             'photos' => $photos,
             'photoUrls' => $draft === null ? [] : $photos->mapWithKeys(fn ($photo): array => [$photo->uuid => $draft->photoUrl($photo)])->all(),
             'summary' => $this->stage === 'summary' ? $this->summary($draft) : null,
             'isGuest' => ! $this->user() instanceof User,
             'needsPhone' => $this->user()?->hasRole(Role::Customer->value) === true && $this->user()->phone_verified_at === null,
-            'limitReached' => $this->customerMessages >= (int) config('sortd.ai.chat_messages_per_conversation'),
+            'limitReached' => $this->customerMessages >= (int) config('getsorted.ai.chat_messages_per_conversation'),
         ])->title(__('Book a pro'));
     }
 
@@ -856,7 +856,7 @@ final class Thread extends Component
     {
         $this->reset([...self::PERSISTED, 'message', 'notesDraft', 'photoUpload', 'newStreet', 'newArea', 'newPostal', 'newType']);
         $this->tradeCache = null;
-        $this->say(__('Hi, I’m Siya, Get Sorted’s AI assistant. Tell me what’s happening at home, or ask me about Get Sorted.'));
+        $this->say(__('Hi, I’m Siya, GetSorted’s AI assistant. Tell me what’s happening at home, or ask me about GetSorted.'));
     }
 
     private function restore(): void
@@ -898,7 +898,7 @@ final class Thread extends Component
             return;
         }
 
-        $this->notes = mb_substr(trim($this->notes === '' ? $text : $this->notes."\n".$text), 0, (int) config('sortd.jobs.notes_max_length'));
+        $this->notes = mb_substr(trim($this->notes === '' ? $text : $this->notes."\n".$text), 0, (int) config('getsorted.jobs.notes_max_length'));
     }
 
     /** Text from the account home box or the public home (spec 007), used once as the first message. */
@@ -947,7 +947,7 @@ final class Thread extends Component
             $earlier = trim((string) $job?->customer_notes);
 
             if ($earlier !== '' && ! str_contains($this->notes, $earlier)) {
-                $this->notes = mb_substr(trim($earlier."\n".$this->notes), 0, (int) config('sortd.jobs.notes_max_length'));
+                $this->notes = mb_substr(trim($earlier."\n".$this->notes), 0, (int) config('getsorted.jobs.notes_max_length'));
             }
         }
 
@@ -1072,7 +1072,7 @@ final class Thread extends Component
     {
         $key = 'coverage:check:'.hash_hmac('sha256', (string) request()->ip(), (string) config('app.key'));
 
-        if (RateLimiter::tooManyAttempts($key, (int) config('sortd.waitlist.checks_per_hour'))) {
+        if (RateLimiter::tooManyAttempts($key, (int) config('getsorted.waitlist.checks_per_hour'))) {
             throw ValidationException::withMessages(['where' => __('Please try again later.')]);
         }
 

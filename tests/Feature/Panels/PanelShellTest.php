@@ -18,7 +18,7 @@ function panelApprovedPro(?User $user = null): User
     return $user;
 }
 
-it('wraps customer pages in the Get Sorted shell with a labelled tab bar (spec 021, AC1)', function (string $route): void {
+it('wraps customer pages in the GetSorted shell with a labelled tab bar (spec 021, AC1)', function (string $route): void {
     $customer = User::factory()->customer()->create();
 
     $this->actingAs($customer)->get(route($route))
@@ -28,7 +28,7 @@ it('wraps customer pages in the Get Sorted shell with a labelled tab bar (spec 0
         ->assertSee(route('properties.index'), false)
         ->assertSee('Log out')
         ->assertSee('<title>', false)
-        ->assertSee('· Get Sorted', false);
+        ->assertSee('· GetSorted', false);
 })->with(['account.home', 'properties.index']);
 
 it('marks the current tab for assistive technology (spec 021, AC1)', function (): void {
@@ -46,7 +46,7 @@ it('does not repeat the old per-page header on the customer home (spec 021, AC1)
     $html = $this->actingAs($customer)->get(route('account.home'))->getContent();
 
     expect(substr_count($html, 'name="_token"'))->toBe(1);
-    expect($html)->not->toContain('>Get Sorted<');
+    expect($html)->not->toContain('>GetSorted<');
 });
 
 it('gives an approved pro Today, Jobs and Profile tabs (spec 021, AC2)', function (): void {

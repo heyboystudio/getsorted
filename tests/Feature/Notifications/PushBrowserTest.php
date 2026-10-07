@@ -24,10 +24,10 @@ function notice(User $user, string $title = 'New quote'): void
 
 // --- Installable site and the service worker (AC11) --------------------------------------
 
-it('serves a valid web app manifest with the Get Sorted name and real icons (spec 022, AC11)', function (): void {
+it('serves a valid web app manifest with the GetSorted name and real icons (spec 022, AC11)', function (): void {
     $manifest = json_decode((string) file_get_contents(public_path('manifest.webmanifest')), true, flags: JSON_THROW_ON_ERROR);
 
-    expect($manifest['name'])->toBe('Get Sorted')
+    expect($manifest['name'])->toBe('GetSorted')
         ->and($manifest['display'])->toBe('standalone')
         ->and($manifest['start_url'])->toBe('/app')
         ->and(array_column($manifest['icons'], 'sizes'))->toContain('192x192', '512x512');
@@ -80,7 +80,7 @@ it('asks for permission only from the button and explains every blocked state (s
     expect($html)->toContain('x-on:click="enable()"')
         ->and($html)->not->toContain('requestPermission')
         ->and($html)->toContain('Notifications are blocked in this browser')
-        ->and($html)->toContain('Add Get Sorted to your Home Screen')
+        ->and($html)->toContain('Add GetSorted to your Home Screen')
         ->and($html)->toContain('x-on:click="dismiss()"');
 });
 

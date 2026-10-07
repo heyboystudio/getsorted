@@ -12,7 +12,7 @@ Goal: every posted job reaches up to **10** vetted, nearby pros of the right tra
 
 **Registration is never a gate.** A pro with a verified PIRB or registered-electrician document gets a badge; an unverified pro can still be invited and quote, and the customer sees "registration not verified". There are no sub-services and no scoping questions: the job carries the facts Siya extracted (spec 020).
 
-The **coverage check** in booking uses the same query and stops the customer early if no pro is near (waitlist instead) once `SORTD_REQUIRE_PROS` is on; before launch a job posts regardless (decision 044).
+The **coverage check** in booking uses the same query and stops the customer early if no pro is near (waitlist instead) once `GETSORTED_REQUIRE_PROS` is on; before launch a job posts regardless (decision 044).
 
 ## Locations (spec 020)
 

@@ -1,10 +1,10 @@
-# CLAUDE.md — Get Sorted
+# CLAUDE.md — GetSorted
 
 > The Laravel Boost section at the end of this file is generated from Laravel's guidelines plus our project rules in `.ai/guidelines/`. To change those rules, edit `.ai/guidelines/*.md` (never the generated section), run `php artisan boost:update`, and commit `CLAUDE.md` and `AGENTS.md` so cloud sessions have them. Everything above the generated section is kept by Boost and is edited here directly.
 
 ## Read first, every session
-1. `.ai/guidelines/sortd-project.md` — how to work and hard rules (also included below)
-2. `.ai/guidelines/sortd-domain.md` — domain vocabulary and rules (also included below)
+1. `.ai/guidelines/getsorted-project.md` — how to work and hard rules (also included below)
+2. `.ai/guidelines/getsorted-domain.md` — domain vocabulary and rules (also included below)
 3. `docs/roadmap.md` — current phase and next tasks
 4. The spec you are working on in `docs/specs/` (create it with `/spec` if missing)
 
@@ -27,9 +27,9 @@ Follow the numbered tasks in `docs/roadmap.md` → "Phase 0"; the roadmap shows 
 ===
 
 <laravel-boost-guidelines>
-=== .ai/sortd-domain rules ===
+=== .ai/getsorted-domain rules ===
 
-# Get Sorted — domain rules
+# GetSorted — domain rules
 
 ## Vocabulary
 
@@ -65,11 +65,11 @@ Rules: `docs/product/matching.md`. Eligibility is one query object (`EligiblePro
 
 Timers, commission rate, deposit cap and invite wave sizes come from settings (`spatie/laravel-settings`), never literals in code. Defaults are listed in the lifecycle, money-flow and matching docs.
 
-=== .ai/sortd-project rules ===
+=== .ai/getsorted-project rules ===
 
-# Get Sorted — project rules (read before any task)
+# GetSorted — project rules (read before any task)
 
-Get Sorted is a Durban/eThekwini marketplace connecting households with vetted tradespeople (plumbing, electrical, painting, tiling in v1). The founder does not write code: you write all code, tests and docs, and you explain decisions in plain language.
+GetSorted is a Durban/eThekwini marketplace connecting households with vetted tradespeople (plumbing, electrical, painting, tiling in v1). The founder does not write code: you write all code, tests and docs, and you explain decisions in plain language.
 
 ## Where things are
 
@@ -91,7 +91,7 @@ Get Sorted is a Durban/eThekwini marketplace connecting households with vetted t
 
 ## Hard rules
 
-- These Get Sorted rules take precedence over the generic Laravel Boost guidelines that follow them in `CLAUDE.md` (for example, docs **must** be updated in the same change, and hosting stays undecided until decision 014).
+- These GetSorted rules take precedence over the generic Laravel Boost guidelines that follow them in `CLAUDE.md` (for example, docs **must** be updated in the same change, and hosting stays undecided until decision 014).
 - Follow `docs/security/security-baseline.md` in every change.
 - Business logic lives in `app/Domain/*/Actions`. Livewire components, Filament resources, controllers and queued jobs stay thin.
 - Job status changes only through `ServiceJobStateMachine` transitions; every transition writes a `service_job_events` row.

@@ -201,7 +201,7 @@ it('shows the customer the quotes side by side with the pro\'s details (AC7)', f
     Livewire::test(CustomerJob::class, ['job' => $job])
         ->assertSee('Estimates (2 of 5)')->assertSee('Dlamini Plumbing')->assertSee('Naidoo Plumbing')
         ->assertSee('R 570.50')->assertSee('R 114.10')->assertSee('Can come tomorrow morning.')
-        ->assertSee('Labour')->assertSee('Materials')->assertSee('On Get Sorted since');
+        ->assertSee('Labour')->assertSee('Materials')->assertSee('On GetSorted since');
 });
 
 it('shows "waiting for quotes" before any quote arrives (AC7, UX)', function (): void {
@@ -264,7 +264,7 @@ it('accepts a quote after confirmation and then shows the pro\'s contact details
     Livewire::test(CustomerJob::class, ['job' => $job])
         ->call('confirmAccept', $quote->public_id)->assertSee('Accept this estimate for R 570.50?')
         ->call('accept')->assertHasNoErrors()
-        ->assertSee('Booked with Dlamini Plumbing')->assertSee($pro->user->phone_e164)->assertSee('Keep payments on Get Sorted');
+        ->assertSee('Booked with Dlamini Plumbing')->assertSee($pro->user->phone_e164)->assertSee('Keep payments on GetSorted');
 
     expect($job->fresh()->status)->toBe(ServiceJobStatus::Scheduled);
 });
@@ -296,7 +296,7 @@ it('reveals the customer\'s contact details and address only to the accepted pro
 
     Livewire::test(ProJob::class, ['invite' => screenInvite($job, $winner)])
         ->assertSee('Nomvula')->assertSee('+27829990000')->assertSee('7 Private Lane')->assertSee('Home')
-        ->assertSee('Keep payments on Get Sorted')->assertDontSee('Secretname');
+        ->assertSee('Keep payments on GetSorted')->assertDontSee('Secretname');
 
     $this->actingAs($loser->user);
     Livewire::test(ProJob::class, ['invite' => screenInvite($job, $loser)])

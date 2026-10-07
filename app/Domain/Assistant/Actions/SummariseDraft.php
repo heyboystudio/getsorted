@@ -41,7 +41,7 @@ final readonly class SummariseDraft
         [$outcome, $reply] = $this->calls->call(
             AiPurpose::Summarise,
             'assistant:summary:'.$job->id,
-            (int) config('sortd.ai.summaries_per_hour'),
+            (int) config('getsorted.ai.summaries_per_hour'),
             fn (ScopingAssistant $assistant): ScopingSummaryReply => $assistant->summarise(
                 $job->trade->name, JobSummaryInput::redactedFacts($job), Redactor::strip((string) $job->customer_notes),
             ),

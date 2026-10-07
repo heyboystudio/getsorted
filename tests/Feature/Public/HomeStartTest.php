@@ -53,8 +53,8 @@ it('offers only the description box in the start-a-job form, and guests are poin
         ->assertDontSee(route('book'), false)->assertDontSee(route('book.trade', 'plumbing'), false);
 });
 
-it('names the product Get Sorted in the page title', function (): void {
-    $this->get('/')->assertOk()->assertSee('<title>Get Sorted</title>', false);
+it('names the product GetSorted in the page title', function (): void {
+    $this->get('/')->assertOk()->assertSee('<title>GetSorted</title>', false);
 });
 
 it('loads every home page asset from the site itself, as the security headers require (decision 055)', function (): void {

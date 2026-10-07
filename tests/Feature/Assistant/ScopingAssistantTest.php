@@ -167,7 +167,7 @@ it('drops an expired description from the session on the next page visit (AC4, s
 // --- Limits and switches (AC14, AC15) ------------------------------------------------
 
 it('throttles chat per visitor without calling the provider (AC14)', function (): void {
-    config()->set('sortd.ai.chat_messages_per_hour', 1);
+    config()->set('getsorted.ai.chat_messages_per_hour', 1);
     $thread = threadFor();
 
     chatTurn($thread);
@@ -178,7 +178,7 @@ it('throttles chat per visitor without calling the provider (AC14)', function ()
 });
 
 it('records at most one throttled row per visitor per hour (security review)', function (): void {
-    config()->set('sortd.ai.chat_messages_per_hour', 1);
+    config()->set('getsorted.ai.chat_messages_per_hour', 1);
     $thread = threadFor();
 
     foreach (range(1, 5) as $attempt) {
@@ -190,7 +190,7 @@ it('records at most one throttled row per visitor per hour (security review)', f
 });
 
 it('limits signed-in customers by account rather than by network address (security review)', function (): void {
-    config()->set('sortd.ai.chat_messages_per_hour', 1);
+    config()->set('getsorted.ai.chat_messages_per_hour', 1);
     $this->actingAs(User::factory()->customer()->create());
     chatTurn(threadFor());
 
@@ -395,7 +395,7 @@ it('throws away a summary for details that changed while it was being written (r
 });
 
 it('throttles summaries per draft (AC14)', function (): void {
-    config()->set('sortd.ai.summaries_per_hour', 1);
+    config()->set('getsorted.ai.summaries_per_hour', 1);
     [$customer, $property] = aiCustomer();
     $this->actingAs($customer);
     assistant()->willSummarise('Dripping tap under the sink.');

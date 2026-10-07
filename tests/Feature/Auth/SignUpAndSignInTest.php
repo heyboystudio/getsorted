@@ -109,7 +109,7 @@ it('tells someone with an existing email to sign in instead (AC1)', function ():
 });
 
 it('signs up pros with the pro agreement (spec 011)', function (): void {
-    Livewire::test(Register::class, ['as' => 'pro'])->assertSee('Join Get Sorted as a pro')->assertSee('pro agreement');
+    Livewire::test(Register::class, ['as' => 'pro'])->assertSee('Join GetSorted as a pro')->assertSee('pro agreement');
 
     $component = Livewire::test(Register::class, ['as' => 'pro']);
     foreach (['firstName' => 'Sipho', 'lastName' => 'Dlamini', 'email' => 'sipho@example.com', 'password' => 'long-enough-password', 'acceptTerms' => true, 'acceptPrivacy' => true] as $field => $value) {

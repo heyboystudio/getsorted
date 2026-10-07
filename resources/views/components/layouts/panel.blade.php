@@ -20,10 +20,10 @@
         'map-pin' => 'M12 21s-6.75-5.7-6.75-11.25a6.75 6.75 0 1 1 13.5 0C18.75 15.3 12 21 12 21Zm0-8.25a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z',
     ];
 @endphp
-<x-layouts.app :title="$title ?? null" :brand="__('Get Sorted')" :hide-inbox-nav="true" :gs="true">
+<x-layouts.app :title="$title ?? null" :brand="__('GetSorted')" :hide-inbox-nav="true" :gs="true">
     <div @class(['lg:pl-56' => $showTabs, 'pb-24 lg:pb-0' => $showTabs && ! $focused, 'pb-8' => ! $showTabs || $focused])>
         <header class="gs-shell-head">
-            <a wire:navigate.hover href="{{ route($homeRoute) }}" @class(['gs-logo', 'lg:hidden' => $showTabs]) aria-label="{{ __('Get Sorted') }}"><img src="{{ asset('home/logo/get-sorted-logo.svg') }}" alt="Get Sorted" width="181" height="32">@if ($panel === 'pro')<span class="gs-pro-tag">{{ __('Pro') }}</span>@endif</a>
+            <a wire:navigate.hover href="{{ route($homeRoute) }}" @class(['gs-logo', 'lg:hidden' => $showTabs]) aria-label="{{ __('GetSorted') }}"><img src="{{ asset('home/logo/getsorted-logo.svg') }}" alt="GetSorted" width="181" height="32">@if ($panel === 'pro')<span class="gs-pro-tag">{{ __('Pro') }}</span>@endif</a>
             <div class="gs-head-actions ml-auto">
                 <span x-data="pushControl({ mode: 'silent' })" class="hidden" aria-hidden="true"></span>
                 <span class="gs-bell"><livewire:notification-bell /></span>
@@ -46,7 +46,7 @@
             'lg:inset-y-0 lg:right-auto lg:block lg:w-56 lg:border-r lg:border-t-0 lg:px-3 lg:py-6',
             'hidden' => $focused,
         ])>
-            <a wire:navigate.hover href="{{ route($homeRoute) }}" class="gs-logo mb-6 hidden px-3 lg:block" aria-label="{{ __('Get Sorted') }}"><img src="{{ asset('home/logo/get-sorted-logo.svg') }}" alt="Get Sorted" width="181" height="32">@if ($panel === 'pro')<span class="gs-pro-tag">{{ __('Pro') }}</span>@endif</a>
+            <a wire:navigate.hover href="{{ route($homeRoute) }}" class="gs-logo mb-6 hidden px-3 lg:block" aria-label="{{ __('GetSorted') }}"><img src="{{ asset('home/logo/getsorted-logo.svg') }}" alt="GetSorted" width="181" height="32">@if ($panel === 'pro')<span class="gs-pro-tag">{{ __('Pro') }}</span>@endif</a>
             <ul class="flex lg:flex-col lg:gap-1">
                 @foreach ($items as $item)
                     @php($active = request()->routeIs(...$item['active']))

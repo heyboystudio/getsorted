@@ -33,7 +33,7 @@ final readonly class SubmitApplication
 
         $limitKey = 'pro-submissions:'.$user->id;
 
-        if (RateLimiter::tooManyAttempts($limitKey, (int) config('sortd.pros.submissions_per_hour'))) {
+        if (RateLimiter::tooManyAttempts($limitKey, (int) config('getsorted.pros.submissions_per_hour'))) {
             throw ValidationException::withMessages(['application' => __('Please try again later.')]);
         }
 

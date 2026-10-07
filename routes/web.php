@@ -46,9 +46,9 @@ use App\Livewire\Welcome;
 use App\Support\BookingStart;
 use Illuminate\Support\Facades\Route;
 
-if (config('sortd.admin_domain') !== null) {
+if (config('getsorted.admin_domain') !== null) {
     // The admin panel moved to its own host; old /admin links land there.
-    Route::get('/admin/{any?}', fn () => redirect()->away('https://'.config('sortd.admin_domain')))->where('any', '.*');
+    Route::get('/admin/{any?}', fn () => redirect()->away('https://'.config('getsorted.admin_domain')))->where('any', '.*');
 }
 
 Route::get('/', Welcome::class)->name('home');

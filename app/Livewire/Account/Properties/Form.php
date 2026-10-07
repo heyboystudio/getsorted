@@ -110,7 +110,7 @@ final class Form extends Component
                 $this->pickedPlaceId,
             );
         } catch (PropertyLimitReached) {
-            throw ValidationException::withMessages(['label' => __('You can save up to :count properties. Delete one to add another.', ['count' => config('sortd.properties.max_per_customer')])]);
+            throw ValidationException::withMessages(['label' => __('You can save up to :count properties. Delete one to add another.', ['count' => config('getsorted.properties.max_per_customer')])]);
         }
 
         $this->returnTo === null ? $this->redirectRoute('properties.index') : $this->redirect($this->returnTo);

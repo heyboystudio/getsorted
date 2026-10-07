@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * The framework's validation messages, with Get Sorted's wording for failed uploads: a person should see
+ * The framework's validation messages, with GetSorted's wording for failed uploads: a person should see
  * "We couldn't upload your identity document", never the internal field name (spec 020 follow-up).
  */
 $framework = require base_path('vendor/laravel/framework/src/Illuminate/Translation/lang/en/validation.php');

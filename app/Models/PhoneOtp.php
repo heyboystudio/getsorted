@@ -39,7 +39,7 @@ final class PhoneOtp extends Model
      */
     public function prunable(): Builder
     {
-        return self::query()->where('created_at', '<', now()->subDays((int) config('sortd.otp.retention_days')));
+        return self::query()->where('created_at', '<', now()->subDays((int) config('getsorted.otp.retention_days')));
     }
 
     /** @return array<string, string> */

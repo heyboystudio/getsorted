@@ -36,7 +36,7 @@ it('binds every contract to its fake, once per app, in tests', function (string 
 it('creates hosted checkouts without moving money', function (): void {
     $gateway = new FakePaymentGateway;
 
-    $checkout = $gateway->createCheckout(new CheckoutRequest(Money::of(500, 'ZAR'), 'JOB-1', 'Deposit', 'https://sortd.test/return', 'deposit-job-1'));
+    $checkout = $gateway->createCheckout(new CheckoutRequest(Money::of(500, 'ZAR'), 'JOB-1', 'Deposit', 'https://getsorted.test/return', 'deposit-job-1'));
 
     expect($checkout->redirectUrl)->toStartWith('https://payments.fake.test/checkout/');
     $gateway->assertCheckoutCreated(fn (CheckoutRequest $request): bool => $request->amount->isEqualTo(Money::of(500, 'ZAR')));

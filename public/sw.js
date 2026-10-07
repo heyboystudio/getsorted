@@ -1,5 +1,5 @@
 /*
- * Get Sorted service worker (spec 022). It does one job: receive a push and show the pop-up, and open the
+ * GetSorted service worker (spec 022). It does one job: receive a push and show the pop-up, and open the
  * right page when it is tapped. No caching, no offline mode. It lives at the site root so it can control
  * every page.
  */
@@ -23,7 +23,7 @@ self.addEventListener('push', (event) => {
 
         // Always show the pop-up, even when the site is open: Safari requires it, and it means a tester or a
         // busy pro cannot miss one. A newer notice with the same tag replaces the older and alerts again.
-        await self.registration.showNotification(payload.title || 'Get Sorted', {
+        await self.registration.showNotification(payload.title || 'GetSorted', {
             body: payload.body || '',
             icon: payload.icon || '/icons/icon-192.png',
             badge: payload.badge || '/icons/badge-96.png',

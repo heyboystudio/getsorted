@@ -24,7 +24,7 @@ final class StoreJobPhoto
     {
         abort_unless($user->can('update', $job), 404);
 
-        if ($upload->getSize() === false || $upload->getSize() > (int) config('sortd.job_photos.max_kilobytes') * 1024) {
+        if ($upload->getSize() === false || $upload->getSize() > (int) config('getsorted.job_photos.max_kilobytes') * 1024) {
             throw ValidationException::withMessages(['photoUpload' => __('Each photo must be 10 MB or smaller.')]);
         }
 
@@ -43,7 +43,7 @@ final class StoreJobPhoto
                 return $existing;
             }
 
-            if ($locked->getMedia(ServiceJob::PHOTO_COLLECTION)->count() >= (int) config('sortd.job_photos.max_count')) {
+            if ($locked->getMedia(ServiceJob::PHOTO_COLLECTION)->count() >= (int) config('getsorted.job_photos.max_count')) {
                 throw ValidationException::withMessages(['photoUpload' => __('You can add up to 5 photos.')]);
             }
 

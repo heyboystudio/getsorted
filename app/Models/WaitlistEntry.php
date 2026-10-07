@@ -25,7 +25,7 @@ final class WaitlistEntry extends Model
     /** @return Builder<self> */
     public function prunable(): Builder
     {
-        return self::query()->where('created_at', '<', now()->subMonths((int) config('sortd.waitlist.retention_months')));
+        return self::query()->where('created_at', '<', now()->subMonths((int) config('getsorted.waitlist.retention_months')));
     }
 
     /** @return array<string, string> */

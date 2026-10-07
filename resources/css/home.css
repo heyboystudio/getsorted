@@ -1,4 +1,4 @@
-/* Home page (Get Sorted redesign, decision 048). Scoped under .gs-home so other pages keep the shared styles in app.css. */
+/* Home page (GetSorted redesign, decision 048). Scoped under .gs-home so other pages keep the shared styles in app.css. */
 @font-face{font-family:"Geist";font-style:normal;font-weight:300 700;font-display:swap;src:url(/fonts/geist.woff2) format("woff2")}
 @font-face{font-family:"Libre Caslon Display";font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/libre-caslon-display.woff2) format("woff2")}
 .gs-home{

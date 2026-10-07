@@ -31,7 +31,7 @@ final class Index extends Component
     {
         return view('livewire.account.properties.index', [
             'properties' => $this->user()->properties()->latest()->get(),
-            'limit' => (int) config('sortd.properties.max_per_customer'),
+            'limit' => (int) config('getsorted.properties.max_per_customer'),
         ]);
     }
 

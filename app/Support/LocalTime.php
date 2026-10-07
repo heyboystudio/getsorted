@@ -14,7 +14,7 @@ final class LocalTime
 {
     public static function timezone(): string
     {
-        return (string) config('sortd.timezone');
+        return (string) config('getsorted.timezone');
     }
 
     public static function today(): CarbonImmutable
