@@ -216,3 +216,24 @@ it('removes a person\'s devices when their account is deleted for good (spec 022
 
     expect(PushSubscription::query()->count())->toBe(0);
 });
+
+// --- Checking it on a real device ----------------------------------------------------------
+
+it('sends a test notice to one account through the normal path (spec 022)', function (): void {
+    Notification::fake();
+    $user = User::factory()->customer()->create(['email' => 'tester@example.com']);
+    $other = User::factory()->customer()->create();
+
+    $this->artisan('sortd:send-test-notification', ['email' => ' Tester@Example.com '])->expectsOutputToContain('no subscribed device')->assertSuccessful();
+
+    Notification::assertSentTo($user, UserNotice::class, fn (UserNotice $notice): bool => $notice->kind === 'test' && $notice->group === null);
+    Notification::assertNotSentTo($other, UserNotice::class);
+});
+
+it('says how many devices will get the pop-up and fails for an unknown account (spec 022)', function (): void {
+    Notification::fake();
+    subscribed(User::factory()->customer()->create(['email' => 'phone@example.com']));
+
+    $this->artisan('sortd:send-test-notification', ['email' => 'phone@example.com'])->expectsOutputToContain('1 subscribed device')->assertSuccessful();
+    $this->artisan('sortd:send-test-notification', ['email' => 'nobody@example.com'])->expectsOutputToContain('No account has that email')->assertFailed();
+});

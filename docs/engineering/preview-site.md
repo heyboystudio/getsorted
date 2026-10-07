@@ -35,3 +35,14 @@ The preview includes a multi-page public website: home, customer guide, trade di
 The website's logo and photographs are generated visual assets stored in `public/images/`. They are illustrative and do not depict actual Sortd customers, pros or completed jobs.
 
 The public navigation includes Home, About, Customers, Pros and Contact. The Contact page routes visitors to the customer or pro journey and displays founder-approved placeholder contact details: hello@sortd.heyboy.co.za and 031 000 0000. The subdomain has no receiving MX record yet; replace these details when real contact channels are connected.
+
+## Pop-up notifications (spec 022)
+Push needs a VAPID key pair in `~/sortd/deploy/preview/.env` (`VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`); without them push is skipped quietly. The keys were generated on 2026-10-07 and are never committed or printed.
+
+To check it on a phone or desktop: sign in, tap **Turn on notifications** on the home screen (on iPhone, add the site to the Home Screen first and open it from there), then on the server run:
+
+```bash
+cd ~/sortd/deploy/preview && docker compose exec web php artisan sortd:send-test-notification you@example.com
+```
+
+A pop-up should appear within seconds, even with the site closed; tapping it opens your home screen. The same notice shows in the Notifications page and the bell.
