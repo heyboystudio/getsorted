@@ -117,6 +117,18 @@ final class JobChat
         })->filter()->values();
     }
 
+    /** Every message from a pro that this customer has not read yet, across all their jobs (spec 021, AC12). */
+    public static function unreadTotalForCustomer(User $customer): int
+    {
+        return JobMessage::query()
+            ->where('sender_type', MessageSender::Pro)
+            ->whereNull('deleted_at')
+            ->whereHas('conversation', fn ($conversation) => $conversation
+                ->whereHas('serviceJob', fn ($job) => $job->where('customer_id', $customer->id))
+                ->where(fn ($read) => $read->whereNull('customer_read_at')->orWhereColumn('job_messages.created_at', '>', 'job_conversations.customer_read_at')))
+            ->count();
+    }
+
     /** Messages the other side sent after this side last looked. */
     public static function unreadFor(JobConversation $conversation, MessageSender $side): int
     {

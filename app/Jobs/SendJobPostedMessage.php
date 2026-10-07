@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Accounts\Support\NotificationPreferences;
 use App\Models\ServiceJob;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -28,10 +29,10 @@ final class SendJobPostedMessage implements ShouldQueue
     {
         $job = ServiceJob::query()->with(['customer', 'service'])->find($this->serviceJobId);
 
-        if ($job === null || $job->customer->phone_e164 === null) {
+        if ($job === null || $job->customer->phone_e164 === null || ! NotificationPreferences::allows($job->customer, 'job_updates')) {
             return;
         }
 
-        $messaging->send(new OutgoingMessage($job->customer->phone_e164, 'job_posted', ['service' => $job->service->name]));
+        $messaging->send(new OutgoingMessage($job->customer->phone_e164, 'job_posted', ['service' => $job->service->name], NotificationPreferences::channel($job->customer)));
     }
 }

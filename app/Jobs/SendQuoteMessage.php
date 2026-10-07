@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Contracts\Data\MessageChannel;
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Accounts\Support\NotificationPreferences;
 use App\Models\Quote;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -40,9 +42,11 @@ final class SendQuoteMessage implements ShouldQueue
         }
 
         $toCustomer = in_array($this->template, self::TO_CUSTOMER, true);
-        $phone = $toCustomer ? $quote->serviceJob->customer->phone_e164 : $quote->pro->user->phone_e164;
+        $customer = $quote->serviceJob->customer;
+        $phone = $toCustomer ? $customer->phone_e164 : $quote->pro->user->phone_e164;
 
-        if ($phone === null) {
+        // Customers choose which messages they get (spec 021, AC15); pros' messages are not optional.
+        if ($phone === null || ($toCustomer && ! NotificationPreferences::allows($customer, 'quotes'))) {
             return;
         }
 
@@ -50,6 +54,6 @@ final class SendQuoteMessage implements ShouldQueue
             'service' => $quote->serviceJob->service->name,
             'pro' => (string) $quote->pro->business_name,
             'link' => $toCustomer ? route('jobs.show', $quote->serviceJob) : route('pros.jobs'),
-        ]));
+        ], $toCustomer ? NotificationPreferences::channel($customer) : MessageChannel::WhatsApp));
     }
 }

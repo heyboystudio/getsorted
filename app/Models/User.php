@@ -30,6 +30,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $email
  * @property string|null $phone_e164
  * @property CarbonImmutable|null $phone_verified_at
+ * @property array<string, mixed>|null $notification_preferences
+ * @property string|null $pending_email
  * @property string $locale
  */
 final class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasName
@@ -133,6 +135,7 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
         return [
             'email_verified_at' => 'immutable_datetime',
             'phone_verified_at' => 'immutable_datetime',
+            'notification_preferences' => 'array',
             'password' => 'hashed',
         ];
     }

@@ -1,6 +1,6 @@
 # Spec 021 · Customer and pro signed-in panels
 
-Status: In progress (parts 1–2 of 5 built) — approved by the founder 2026-10-07 · Phase: 2–3 · Owner: founder
+Status: In progress (parts 1–3 of 5 built) — approved by the founder 2026-10-07 · Phase: 2–3 · Owner: founder
 
 ## Goal
 Replace the bare signed-in screens with two real panels. Customers get a home that says what needs them, a jobs area, a messages inbox and an account area with a profile. Pros get a "Today" home, a job pipeline and a profile that works as their shop front. Customers can see a pro's profile when comparing quotes. Both roles get persistent navigation that works one-handed at 360 px.
@@ -145,4 +145,13 @@ Earnings, payouts and statements (Phase 4); reviews, ratings, performance stats 
   - "Quote received" is not in the timeline because no event is recorded when a quote arrives; the quotes section of the job page shows them.
   - The "final amount waiting" Needs-you item is not built yet (needs spec 018 part 2).
   - Tests: `tests/Feature/Panels/CustomerPanelTest.php`.
-- Next: part 3 (customer Messages inbox and Account: profile, notification preferences, privacy and data).
+- 2026-10-07: **Part 3 (customer Messages and Account) built** (AC12–AC16). Customer tabs are now Home, Jobs, Messages, Account.
+  - Messages (`/app/messages`): one inbox across jobs with unread counts and an unread badge on the tab. It shows who and when, never message text, so masked contact details cannot appear in a preview.
+  - Account (`/app/account`) lists Profile, Properties, Notifications, Privacy and data, and Help. Properties reuses the existing screens.
+  - Profile: name edit; a new email waits in `users.pending_email` and only replaces the old one when its emailed signed link is opened (rate limited); mobile change reuses the existing code flow, which already keeps the old number until the new one is verified.
+  - Notifications: choose which text messages to get (quotes, job updates, chat) and WhatsApp or SMS. Defaults are all on. The customer-bound send jobs (`SendQuoteMessage`, `SendJobPostedMessage`, `SendJobExpiredMessage`, `SendChatNotification`) read the choices; messages to pros and login codes are never affected.
+  - Privacy and data: "ask for a copy" and "ask us to delete my account" create one open `data_requests` row each (idempotent, rate limited, logged). Nothing is exported or deleted automatically. Support and super admins see the queue in the admin panel under Customers → Data requests and mark requests done.
+  - Migration `2026_10_07_090000`; `docs/architecture/data-model.md` updated.
+  - **Deviations from the spec text:** (a) Notifications offers WhatsApp or SMS only, not email, because the app sends no customer emails other than verification; email can join when there are emails to choose. (b) The waitlist-removal block also stays on Home (an existing test relies on it) as well as appearing on the privacy page, and the Saved properties shortcut stays on Home; both can be dropped from Home later.
+  - Tests: `tests/Feature/Panels/CustomerAccountTest.php`.
+- Next: part 4 (pro Today and Jobs pipeline, Available/Paused toggle).

@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Accounts\Support\NotificationPreferences;
 use App\Models\ServiceJob;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -28,13 +29,13 @@ final class SendJobExpiredMessage implements ShouldQueue
     {
         $job = ServiceJob::query()->with(['customer', 'service.trade'])->find($this->serviceJobId);
 
-        if (! $job instanceof ServiceJob || $job->customer->phone_e164 === null) {
+        if (! $job instanceof ServiceJob || $job->customer->phone_e164 === null || ! NotificationPreferences::allows($job->customer, 'job_updates')) {
             return;
         }
 
         $messaging->send(new OutgoingMessage($job->customer->phone_e164, 'job_expired', [
             'service' => $job->service->name,
             'link' => route('booking.start', ['trade' => $job->service->trade, 'service' => $job->service->key]),
-        ]));
+        ], NotificationPreferences::channel($job->customer)));
     }
 }

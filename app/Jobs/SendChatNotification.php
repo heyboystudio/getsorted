@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Contracts\Data\MessageChannel;
 use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\MessagingChannel;
+use App\Domain\Accounts\Support\NotificationPreferences;
 use App\Domain\ServiceJobs\Enums\MessageSender;
 use App\Domain\ServiceJobs\Support\JobChat;
 use App\Models\JobConversation;
@@ -65,13 +67,13 @@ final class SendChatNotification implements ShouldQueue
         $phone = $toCustomer ? $job->customer->phone_e164 : $send->pro->user->phone_e164;
         $invite = JobChat::inviteFor($job, $send->pro);
 
-        if ($phone === null || (! $toCustomer && $invite === null)) {
+        if ($phone === null || (! $toCustomer && $invite === null) || ($toCustomer && ! NotificationPreferences::allows($job->customer, 'messages'))) {
             return;
         }
 
         $messaging->send(new OutgoingMessage($phone, 'chat_message', [
             'service' => $job->service->name,
             'link' => $toCustomer ? route('jobs.show', $job) : route('pros.jobs.show', $invite),
-        ]));
+        ], $toCustomer ? NotificationPreferences::channel($job->customer) : MessageChannel::WhatsApp));
     }
 }

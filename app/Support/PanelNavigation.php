@@ -6,6 +6,7 @@ namespace App\Support;
 
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Pros\Enums\ProStatus;
+use App\Domain\ServiceJobs\Support\JobChat;
 use App\Models\Pro;
 use App\Models\User;
 
@@ -23,22 +24,23 @@ final class PanelNavigation
      * Tab bar entries. `active` lists the route names (wildcards allowed) that
      * keep the entry highlighted.
      *
-     * @return list<array{label: string, route: string, icon: string, active: list<string>}>
+     * @return list<array{label: string, route: string, icon: string, active: list<string>, badge: int}>
      */
-    public static function items(string $panel): array
+    public static function items(string $panel, ?User $user = null): array
     {
         if ($panel === self::PRO) {
             return [
-                ['label' => __('Today'), 'route' => 'pros.welcome', 'icon' => 'home', 'active' => ['pros.welcome']],
-                ['label' => __('Jobs'), 'route' => 'pros.jobs', 'icon' => 'briefcase', 'active' => ['pros.jobs', 'pros.jobs.*']],
-                ['label' => __('Application'), 'route' => 'pros.status', 'icon' => 'user', 'active' => ['pros.status']],
+                ['label' => __('Today'), 'route' => 'pros.welcome', 'icon' => 'home', 'active' => ['pros.welcome'], 'badge' => 0],
+                ['label' => __('Jobs'), 'route' => 'pros.jobs', 'icon' => 'briefcase', 'active' => ['pros.jobs', 'pros.jobs.*'], 'badge' => 0],
+                ['label' => __('Application'), 'route' => 'pros.status', 'icon' => 'user', 'active' => ['pros.status'], 'badge' => 0],
             ];
         }
 
         return [
-            ['label' => __('Home'), 'route' => 'account.home', 'icon' => 'home', 'active' => ['account.home']],
-            ['label' => __('Jobs'), 'route' => 'jobs.index', 'icon' => 'briefcase', 'active' => ['jobs.*']],
-            ['label' => __('Properties'), 'route' => 'properties.index', 'icon' => 'map-pin', 'active' => ['properties.*']],
+            ['label' => __('Home'), 'route' => 'account.home', 'icon' => 'home', 'active' => ['account.home'], 'badge' => 0],
+            ['label' => __('Jobs'), 'route' => 'jobs.index', 'icon' => 'briefcase', 'active' => ['jobs.*'], 'badge' => 0],
+            ['label' => __('Messages'), 'route' => 'account.messages', 'icon' => 'chat', 'active' => ['account.messages'], 'badge' => $user instanceof User ? JobChat::unreadTotalForCustomer($user) : 0],
+            ['label' => __('Account'), 'route' => 'account.settings', 'icon' => 'user', 'active' => ['account.settings', 'account.profile', 'account.notifications', 'account.privacy', 'properties.*'], 'badge' => 0],
         ];
     }
 
