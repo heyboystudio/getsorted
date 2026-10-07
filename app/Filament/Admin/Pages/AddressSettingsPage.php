@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Pages;
 use App\Domain\Accounts\Enums\Role;
 use App\Models\User;
 use App\Settings\PlacesSettings;
+use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -15,10 +16,18 @@ use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 
 /** Spec 015: super-admins set the daily cap on address searches. */
 final class AddressSettingsPage extends Page
 {
+    protected static string|UnitEnum|null $navigationGroup = 'Settings';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
+
+    protected static ?int $navigationSort = 3;
+
     protected static ?string $slug = 'address-settings';
 
     public static function getNavigationLabel(): string

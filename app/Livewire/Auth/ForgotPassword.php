@@ -13,7 +13,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /** Emails a password reset link; the answer never reveals whether the email has an account (spec 014, AC9). */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.auth')]
 #[Title('Reset your password')]
 final class ForgotPassword extends Component
 {

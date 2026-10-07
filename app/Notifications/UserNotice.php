@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\Domain\Accounts\Support\NotificationPreferences;
 use App\Models\User;
+use App\Notifications\Channels\SafeWebPushChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushMessage;
 
 /**
  * One notice to a client or a pro: always shown in their notifications, and emailed too for the moments that
@@ -25,6 +28,7 @@ final class UserNotice extends Notification implements ShouldQueue
         public readonly string $body,
         public readonly string $url,
         public readonly bool $email = false,
+        public readonly ?string $group = null,
     ) {
         $this->onQueue('notifications');
         $this->afterCommit();
@@ -33,7 +37,42 @@ final class UserNotice extends Notification implements ShouldQueue
     /** @return list<string> */
     public function via(User $notifiable): array
     {
-        return $this->email && filled($notifiable->email) && $notifiable->email_verified_at !== null ? ['database', 'mail'] : ['database'];
+        $channels = $this->email && filled($notifiable->email) && $notifiable->email_verified_at !== null ? ['database', 'mail'] : ['database'];
+
+        return $this->pushes($notifiable) ? [...$channels, SafeWebPushChannel::class] : $channels;
+    }
+
+    /**
+     * A pop-up on this person's devices (spec 022): only when push is set up on the server, they have a
+     * subscribed device, and a customer has not switched this kind of notice off.
+     */
+    private function pushes(User $notifiable): bool
+    {
+        if (! filled(config('webpush.vapid.public_key')) || ! filled(config('webpush.vapid.private_key'))) {
+            return false;
+        }
+
+        if ($this->group !== null && ! NotificationPreferences::allows($notifiable, $this->group)) {
+            return false;
+        }
+
+        return $notifiable->pushSubscriptions()->exists();
+    }
+
+    /**
+     * The same safe text as the inbox and email: trade, area or wording and a link, never contact details
+     * or message text (security baseline §3). Notices of one kind for one page replace each other.
+     */
+    public function toWebPush(User $notifiable): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title($this->title)
+            ->body($this->body)
+            ->icon(asset('icons/icon-192.png'))
+            ->badge(asset('icons/badge-96.png'))
+            ->tag($this->kind.'-'.substr(md5($this->url), 0, 10))
+            ->data(['url' => $this->url])
+            ->options(['TTL' => 3600, 'urgency' => 'high']);
     }
 
     /** @return array{kind: string, title: string, body: string, url: string} */

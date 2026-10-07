@@ -137,6 +137,8 @@
             @endif
         </section>
 
+        <x-push-switch class="mt-10" />
+
         <section class="mt-10" aria-labelledby="profile-documents">
             <h2 id="profile-documents" class="font-semibold">{{ __('Documents') }}</h2>
             <ul class="mt-3 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white text-sm">

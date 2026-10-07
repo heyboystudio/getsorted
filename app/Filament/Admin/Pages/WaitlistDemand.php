@@ -6,11 +6,20 @@ namespace App\Filament\Admin\Pages;
 
 use App\Models\User;
 use App\Models\WaitlistEntry;
+use BackedEnum;
 use Filament\Pages\Page;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Collection;
+use UnitEnum;
 
 final class WaitlistDemand extends Page
 {
+    protected static string|UnitEnum|null $navigationGroup = 'Insights';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQueueList;
+
+    protected static ?int $navigationSort = 1;
+
     protected string $view = 'filament.admin.pages.waitlist-demand';
 
     protected static ?string $navigationLabel = 'Waitlist demand';

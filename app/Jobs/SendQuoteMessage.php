@@ -71,6 +71,7 @@ final class SendQuoteMessage implements ShouldQueue
                     $body,
                     $toCustomer ? route('jobs.show', $quote->serviceJob) : route('pros.jobs'),
                     email: in_array($this->template, ['quote_received', 'quote_accepted'], true),
+                    group: $toCustomer ? 'quotes' : null,
                 );
             }
         }

@@ -1,0 +1,100 @@
+/* Get Sorted — signed-in pages (account, jobs, messages, settings, Siya) in the home v3 look.
+   Loaded only when a layout passes `gs`. It re-themes Tailwind's palette for the page, so every
+   existing view picks up the new colours; the shell and the main cards get the ProjectOne treatment. */
+@font-face { font-family: "Satoshi"; src: url("fonts/Satoshi-Medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Satoshi"; src: url("fonts/Satoshi-Bold.woff2") format("woff2"); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: "Satoshi"; src: url("fonts/Satoshi-Black.woff2") format("woff2"); font-weight: 800 900; font-display: swap; }
+
+body.gs-ui {
+  --ink: #131311; --lime: #C6FD50; --paper: #F5F5F5; --line: #DADAD3; --ease: cubic-bezier(.16, 1, .3, 1);
+  /* Tailwind palette -> brand: emerald becomes ink + lime tints, zinc/stone warm up slightly */
+  --color-emerald-50: #F4FFD9; --color-emerald-100: #E6FDA6; --color-emerald-200: #D3F96F; --color-emerald-300: #C6FD50;
+  --color-emerald-400: #9ED72E; --color-emerald-500: #3A3A36; --color-emerald-600: #2A2A27; --color-emerald-700: #131311;
+  --color-emerald-800: #131311; --color-emerald-900: #131311; --color-emerald-950: #131311;
+  --color-zinc-100: #EDEDEA; --color-zinc-200: #DADAD3; --color-zinc-300: #C4C4BC;
+  --color-stone-50: #F5F5F5;
+  --font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  background: var(--paper); color: var(--ink); font-family: var(--font-sans); font-weight: 500;
+}
+.gs-ui h1, .gs-ui h2 { font-weight: 900; letter-spacing: -.01em; }
+.gs-ui h1 { line-height: 1.05; }
+.gs-ui ::selection { background: var(--lime); color: var(--ink); }
+.gs-ui :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* Cards: ink border and a hard shadow, like the home page */
+.gs-ui .rounded-xl.border.bg-white, .gs-ui .rounded-2xl.border.bg-white, .gs-ui details.rounded-xl, .gs-ui ul.rounded-xl.border, .gs-ui ul.rounded-2xl.border {
+  border: 2px solid var(--ink); border-radius: 16px; box-shadow: 4px 4px 0 var(--ink);
+}
+.gs-ui a.rounded-xl.border.bg-white { transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
+.gs-ui a.rounded-xl.border.bg-white:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); border-color: var(--ink); }
+.gs-ui .divide-y > :not(:last-child) { border-color: var(--line); }
+.gs-ui .border-dashed { border-color: #9A9A96; }
+
+/* Buttons: ink buttons get the lime hard-shadow treatment */
+.gs-ui button.bg-emerald-700, .gs-ui a.bg-emerald-700.rounded-lg, .gs-ui button.bg-emerald-800 {
+  background: var(--lime); color: var(--ink); border: 2px solid var(--ink); border-radius: 6px; font-weight: 700; text-transform: uppercase; font-size: .8125rem; letter-spacing: .01em;
+  box-shadow: 3px 3px 0 var(--ink); transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.gs-ui a.bg-emerald-700.rounded-lg { display: inline-flex; align-items: center; }
+.gs-ui button.bg-emerald-700:hover, .gs-ui a.bg-emerald-700.rounded-lg:hover, .gs-ui button.bg-emerald-800:hover { background: var(--lime); transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--ink); }
+.gs-ui button.bg-emerald-700.rounded-full:not(.w-full) { text-transform: none; }
+.gs-ui button.border-zinc-300, .gs-ui a.border-zinc-300 { border-color: var(--ink); border-width: 1.5px; font-weight: 700; }
+.gs-ui .rounded-full.border.bg-white { border-color: var(--ink); border-width: 1.5px; font-weight: 700; }
+.gs-ui .rounded-full.border.bg-white:hover { background: var(--lime); border-color: var(--ink); }
+
+/* Inputs */
+.gs-ui input[type="text"], .gs-ui input[type="email"], .gs-ui input[type="tel"], .gs-ui input[type="password"], .gs-ui input[type="search"], .gs-ui input[type="date"], .gs-ui input[type="number"], .gs-ui textarea, .gs-ui select {
+  border: 1.5px solid var(--ink); border-radius: 10px; background: #F2F2F2; font-weight: 500;
+}
+.gs-ui input:focus, .gs-ui textarea:focus, .gs-ui select:focus { background: #fff; --tw-ring-color: var(--ink); box-shadow: 3px 3px 0 var(--lime), 3px 3px 0 1.5px var(--ink); }
+.gs-ui input[type="checkbox"], .gs-ui input[type="radio"] { accent-color: var(--ink); }
+
+/* Status chips and bubbles */
+.gs-ui .rounded-full.bg-zinc-100 { background: var(--lime); border: 1.5px solid var(--ink); font-weight: 700; }
+.gs-ui .bg-amber-50 { background: #FFF4CC; }
+.gs-ui .rounded-2xl.bg-white.shadow-sm { border: 1.5px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); --tw-ring-shadow: 0 0 #0000; }
+.gs-ui .rounded-2xl.bg-emerald-700 { background: var(--ink); color: #fff; }
+
+/* Hero block on the account home: ink panel with a lime button */
+.gs-ui .rounded-2xl.bg-emerald-800 { background: var(--ink); border-radius: 20px; box-shadow: 6px 6px 0 var(--lime); }
+.gs-ui .rounded-2xl.bg-emerald-800 h2 { color: #fff; }
+.gs-ui .rounded-2xl.bg-emerald-800 .text-emerald-100 { color: #D0D0CE; }
+.gs-ui .rounded-2xl.bg-emerald-800 form button { background: var(--lime); color: var(--ink); border: 0; font-weight: 900; }
+.gs-ui .rounded-2xl.bg-emerald-800 .border-emerald-500 { border-color: #5A5A55; color: #fff; }
+.gs-ui .rounded-2xl.bg-emerald-800 .border-emerald-500:hover { background: #2A2A27; }
+
+/* Links */
+.gs-ui .underline.text-emerald-800, .gs-ui a.text-emerald-800 { color: var(--ink); font-weight: 700; text-decoration-color: var(--lime); text-decoration-thickness: 2px; }
+.gs-ui .text-emerald-700 { color: #3FAE2A; }
+.gs-ui .text-zinc-600, .gs-ui .text-zinc-500 { color: #5A5A56; }
+
+/* ---------- Shell ---------- */
+.gs-shell-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; max-width: 36rem; margin: 0 auto; padding: 20px 20px 0; }
+.gs-logo img { display: block; height: 30px; width: auto; }
+.gs-pro-tag { margin-left: 10px; padding: 3px 8px; border-radius: 6px; background: var(--ink); color: var(--lime); font-size: 11px; font-weight: 700; text-transform: uppercase; vertical-align: middle; }
+.gs-head-actions { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.gs-head-actions a.gs-switch { text-decoration: underline; text-decoration-color: var(--lime); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.gs-logout { padding: 9px 12px; border-radius: 8px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 700; text-transform: uppercase; cursor: pointer; border: 0; }
+.gs-logout:hover { color: var(--lime); }
+.gs-bell { display: inline-flex; }
+.gs-ui .gs-bell a { color: var(--ink); border: 1.5px solid var(--ink); background: #fff; }
+.gs-ui .gs-bell a:hover { background: var(--lime); }
+.gs-ui .gs-bell a span.absolute { background: var(--ink); color: var(--lime); }
+
+.gs-rail { background: #fff; border-color: var(--ink) !important; border-top-width: 2px !important; }
+@media (min-width: 64rem) { .gs-rail { border-top-width: 0 !important; border-right-width: 2px !important; background: var(--paper); } }
+.gs-rail a[aria-current="page"] { background: var(--lime); color: var(--ink); font-weight: 700; }
+@media (min-width: 64rem) { .gs-rail a { border-radius: 10px; font-weight: 700; } .gs-rail a[aria-current="page"] { box-shadow: 3px 3px 0 var(--ink); border: 1.5px solid var(--ink); } }
+.gs-rail .gs-badge { background: var(--ink); color: var(--lime); }
+
+/* Siya thread header */
+.gs-siya-head { background: rgba(245,245,245,.95) !important; border-bottom: 2px solid var(--ink) !important; }
+.gs-siya-avatar { background: var(--lime) !important; color: var(--ink) !important; border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); font-weight: 900; }
+.gs-ui .gs-siya-form { background: var(--paper); border-color: var(--ink); border-top-width: 2px; }
+
+@media (max-width: 640px) { .gs-ui h1.text-3xl { font-size: 1.75rem; } }
+
+/* "Needs you" cards */
+.gs-ui a.border-amber-200 { border: 2px solid var(--ink); border-radius: 16px; background: #FFF4CC; box-shadow: 4px 4px 0 var(--ink); }
+.gs-ui a.border-amber-200:hover { border-color: var(--ink); }
+.gs-ui .text-amber-800 { color: var(--ink); }

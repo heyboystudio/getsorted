@@ -1,6 +1,6 @@
 # Coding conventions
 
-Laravel Boost's guidelines cover general Laravel, Livewire, Pest, Tailwind and Pint conventions. This file adds Sortd-specific rules; where they conflict, **this file wins**.
+Laravel Boost's guidelines cover general Laravel, Livewire, Pest, Tailwind and Pint conventions. This file adds Get Sorted-specific rules; where they conflict, **this file wins**.
 
 ## General
 

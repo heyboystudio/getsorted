@@ -50,9 +50,12 @@ function remoteProperty(User $customer): Property
 }
 
 it('opens the thread from the home page and trade pages (AC1, AC3)', function (): void {
-    $this->get('/')->assertOk()->assertSee(route('book'), false);
-    $this->get(route('trades.show', $this->plumbing))->assertOk()->assertSee('Start a plumbing job')->assertSee(route('book.trade', $this->plumbing), false);
+    $this->get('/')->assertOk()->assertSee(route('register'), false);
+    $this->get(route('trades.show', $this->plumbing))->assertOk()->assertSee('Start a plumbing job')->assertSee(route('register'), false);
     $this->get(route('assistant'))->assertRedirect('/book');
+
+    [$customer] = bookingCustomer();
+    $this->actingAs($customer);
     $this->get(route('book.trade', $this->plumbing))->assertOk()->assertSee('What’s the plumbing problem?');
 
     $this->plumbing->update(['is_active' => false]);
@@ -99,6 +102,12 @@ it('lets the customer remove a fact Siya got wrong', function (): void {
     $id = $thread->get('facts')[1]['id'];
 
     $thread->call('removeFact', $id)->assertSet('facts', fn (array $facts): bool => count($facts) === 1 && $facts[0]['text'] === 'tap drips');
+});
+
+it('keeps Siya for signed-in customers: guests are sent to sign in', function (): void {
+    $this->get(route('book'))->assertRedirect(route('login'));
+    $this->get(route('book.trade', $this->plumbing))->assertRedirect(route('login'));
+    $this->get(route('assistant'))->assertRedirect('/book');
 });
 
 it('marks the job urgent and shows the trade’s reviewed safety advice when Siya flags urgency (AC8)', function (): void {
@@ -485,7 +494,7 @@ it('keeps customers and pros out of the admin jobs list (spec 005 AC15)', functi
     $this->actingAs(User::factory()->customer()->create())->get('/admin/service-jobs')->assertForbidden();
 });
 
-it('only accepts Sortd booking paths as a return address after adding a property', function (?string $return, ?string $expected): void {
+it('only accepts Get Sorted booking paths as a return address after adding a property', function (?string $return, ?string $expected): void {
     expect(BookingReturn::sanitise($return))->toBe($expected);
 })->with([
     'booking start' => ['/book/plumbing', '/book/plumbing'],

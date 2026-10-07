@@ -46,7 +46,7 @@ it('does not repeat the old per-page header on the customer home (spec 021, AC1)
     $html = $this->actingAs($customer)->get(route('account.home'))->getContent();
 
     expect(substr_count($html, 'name="_token"'))->toBe(1);
-    expect($html)->not->toContain('>Sortd<');
+    expect($html)->not->toContain('>Get Sorted<');
 });
 
 it('gives an approved pro Today, Jobs and Profile tabs (spec 021, AC2)', function (): void {

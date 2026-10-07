@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 /*
-| Sortd business and security values. Product values that admins change at
+| Get Sorted business and security values. Product values that admins change at
 | runtime belong in spatie/laravel-settings instead.
 */
 
 return [
 
-    // Host the admin panel lives on (e.g. admin.usesorted.co.za). Null keeps it at /admin on the main host (local and tests).
+    // Host the admin panel lives on (e.g. dashboard.usesorted.co.za). Null keeps it at /admin on the main host (local and tests).
     'admin_domain' => env('SORTD_ADMIN_DOMAIN') ?: null,
 
     // Set to true once the site sits behind the Cloudflare proxy, so visitors' real IPs are used.

@@ -20,17 +20,19 @@
         'map-pin' => 'M12 21s-6.75-5.7-6.75-11.25a6.75 6.75 0 1 1 13.5 0C18.75 15.3 12 21 12 21Zm0-8.25a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z',
     ];
 @endphp
-<x-layouts.app :title="$title ?? null" :brand="__('Get Sorted')">
+<x-layouts.app :title="$title ?? null" :brand="__('Get Sorted')" :hide-inbox-nav="true" :gs="true">
     <div @class(['lg:pl-56' => $showTabs, 'pb-24 lg:pb-0' => $showTabs && ! $focused, 'pb-8' => ! $showTabs || $focused])>
-        <header class="mx-auto flex w-full max-w-xl items-center justify-between gap-4 px-5 pt-6">
-            <a wire:navigate.hover href="{{ route($homeRoute) }}" @class(['text-xl font-semibold tracking-tight', 'lg:hidden' => $showTabs])>{{ __('Get Sorted') }}<span aria-hidden="true" class="text-emerald-700">.</span>@if ($panel === 'pro')<span class="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 align-middle text-xs font-medium text-emerald-900">{{ __('Pro') }}</span>@endif</a>
-            <div class="ml-auto flex items-center gap-4 text-sm">
+        <header class="gs-shell-head">
+            <a wire:navigate.hover href="{{ route($homeRoute) }}" @class(['gs-logo', 'lg:hidden' => $showTabs]) aria-label="{{ __('Get Sorted') }}"><img src="{{ asset('home/logo/get-sorted-logo.svg') }}" alt="Get Sorted" width="181" height="32">@if ($panel === 'pro')<span class="gs-pro-tag">{{ __('Pro') }}</span>@endif</a>
+            <div class="gs-head-actions ml-auto">
+                <span x-data="pushControl({ mode: 'silent' })" class="hidden" aria-hidden="true"></span>
+                <span class="gs-bell"><livewire:notification-bell /></span>
                 @if ($switch)
-                    <a wire:navigate.hover href="{{ route($switch['route']) }}" class="text-emerald-800 underline underline-offset-4">{{ $switch['label'] }}</a>
+                    <a wire:navigate.hover href="{{ route($switch['route']) }}" class="gs-switch">{{ $switch['label'] }}</a>
                 @endif
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="text-zinc-600 underline underline-offset-4">{{ __('Log out') }}</button>
+                    <button type="submit" class="gs-logout">{{ __('Log out') }}</button>
                 </form>
             </div>
         </header>
@@ -40,11 +42,11 @@
 
     @if ($showTabs)
         <nav aria-label="{{ __('Main') }}" @class([
-            'fixed inset-x-0 bottom-0 z-5 border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)]',
+            'gs-rail fixed inset-x-0 bottom-0 z-5 border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)]',
             'lg:inset-y-0 lg:right-auto lg:block lg:w-56 lg:border-r lg:border-t-0 lg:px-3 lg:py-6',
             'hidden' => $focused,
         ])>
-            <a wire:navigate.hover href="{{ route($homeRoute) }}" class="mb-6 hidden px-3 text-xl font-semibold tracking-tight lg:block">{{ __('Get Sorted') }}<span aria-hidden="true" class="text-emerald-700">.</span>@if ($panel === 'pro')<span class="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 align-middle text-xs font-medium text-emerald-900">{{ __('Pro') }}</span>@endif</a>
+            <a wire:navigate.hover href="{{ route($homeRoute) }}" class="gs-logo mb-6 hidden px-3 lg:block" aria-label="{{ __('Get Sorted') }}"><img src="{{ asset('home/logo/get-sorted-logo.svg') }}" alt="Get Sorted" width="181" height="32">@if ($panel === 'pro')<span class="gs-pro-tag">{{ __('Pro') }}</span>@endif</a>
             <ul class="flex lg:flex-col lg:gap-1">
                 @foreach ($items as $item)
                     @php($active = request()->routeIs(...$item['active']))
@@ -56,7 +58,7 @@
                             'text-zinc-600 hover:text-zinc-900 lg:hover:bg-zinc-100' => ! $active,
                         ])>
                             <svg aria-hidden="true" class="size-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{ $icons[$item['icon']] }}"/></svg>
-                            <span>{{ $item['label'] }}@if ($item['badge'] > 0)<span class="ml-1 rounded-full bg-emerald-700 px-1.5 text-xs text-white"><span class="sr-only">{{ __('Unread:') }} </span>{{ $item['badge'] > 9 ? '9+' : $item['badge'] }}</span>@endif</span>
+                            <span>{{ $item['label'] }}@if ($item['badge'] > 0)<span class="ml-1 gs-badge rounded-full bg-emerald-700 px-1.5 text-xs text-white"><span class="sr-only">{{ __('Unread:') }} </span>{{ $item['badge'] > 9 ? '9+' : $item['badge'] }}</span>@endif</span>
                         </a>
                     </li>
                 @endforeach

@@ -16,9 +16,9 @@ Booking a pro happens in **one Siya conversation on one screen**, the way Kandua
 6. Location is asked twice (suburb, then property), followed by "This property is in Memorial Park. Check coverage there instead?"
 
 ## User stories
-- As a customer, I want to tell Sortd what's wrong once and only be asked what it still needs.
+- As a customer, I want to tell Get Sorted what's wrong once and only be asked what it still needs.
 - As a customer, I want to see where I am (3–4 steps) and never be sent to another page halfway through.
-- As a customer, I want to know straight away, as soon as I give my address, whether Sortd has pros for my job there.
+- As a customer, I want to know straight away, as soon as I give my address, whether Get Sorted has pros for my job there.
 - As the founder, I want one booking flow to maintain instead of a chat plus a wizard.
 
 ## Acceptance criteria
@@ -47,7 +47,7 @@ Booking a pro happens in **one Siya conversation on one screen**, the way Kandua
 13. A photo card: "Optional, but recommended. Up to 5 photos", with **Upload from gallery**, **Take a photo** (opens the camera on phones) and **Skip for now**. Rules are as in spec 012.
 
 **Speed**
-14. Nothing in the thread reloads the page: every tap updates the thread in place, the tapped chip shows as the customer's message straight away (before the server answers), and buttons show a spinner while waiting. Links between Sortd pages use Livewire's in-page navigation (`wire:navigate`, prefetched on hover) instead of full page loads, and built CSS/JS files are cached by the browser for a year.
+14. Nothing in the thread reloads the page: every tap updates the thread in place, the tapped chip shows as the customer's message straight away (before the server answers), and buttons show a spinner while waiting. Links between Get Sorted pages use Livewire's in-page navigation (`wire:navigate`, prefetched on hover) instead of full page loads, and built CSS/JS files are cached by the browser for a year.
 
 **Confirm**
 15. Siya says "Here's a summary of your booking" and shows a summary card: **Need help with** (service), **What's wrong** (answers in one line each), **Notes**, **Photos** (thumbnails), **Address**, **When**, and the AI-written job description for pros ("Written with AI help, please check it", editable). There's a "Change" on each section that jumps back to that card in the thread, then returns to the summary.
@@ -61,7 +61,7 @@ Booking a pro happens in **one Siya conversation on one screen**, the way Kandua
 19. The `Booking\Wizard` component, its view and its routes are removed. Its rules (validation, drafts, rate limits, posting) live in the shared Actions the thread calls. Its tests are moved to the thread.
 
 ## Screens / UX
-- One column, max 640 px, full screen on mobile. A header with the Siya avatar, "Sortd's AI assistant · can make mistakes" and Restart. The progress bar sits under the header.
+- One column, max 640 px, full screen on mobile. A header with the Siya avatar, "Get Sorted's AI assistant · can make mistakes" and Restart. The progress bar sits under the header.
 - Messages and cards scroll, and the newest is always in view. The input stays at the bottom.
 - Card types: trade tiles, chips, service confirm, safety, emergency, property picker, coverage result, waitlist, calendar + window, photos, sign-in, summary, posted.
 - States: typing indicator, streaming reply, "Looking for pros near you…", error with Retry, AI unavailable (taps only).
@@ -99,4 +99,4 @@ Booking a pro happens in **one Siya conversation on one screen**, the way Kandua
   - Speed: the thread never reloads the page, a tapped chip shows straight away, 67 internal links use `wire:navigate.hover`, and the test-site Caddy config caches `/build/assets/*` for a year (`immutable`) and images for a week.
   - Not done: moving the test server closer to Durban. Each round trip to Stockholm is about 200 ms, so every tap costs at least that. AWS Cape Town (af-south-1) would be about 20–40 ms, and that's a hosting decision for the founder (decision 014).
 - 2026-10-05: approved by the founder with changes: guests sign in before Where & when; Siya books the job only when the customer taps **Confirm booking** after the summary; the app must stop feeling like a full page load on every click (AC14). Measured on the test site: the server answers in a few milliseconds, but each round trip to Stockholm is about 200 ms, no link used `wire:navigate`, and built assets had no cache header.
-- 2026-10-05: drafted after testing Kandua signed out and signed in (`docs/product/kandua-reference.md`) and walking the Sortd dev site.
+- 2026-10-05: drafted after testing Kandua signed out and signed in (`docs/product/kandua-reference.md`) and walking the Get Sorted dev site.

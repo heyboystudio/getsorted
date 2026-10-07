@@ -7,6 +7,7 @@ namespace App\Providers\Filament;
 use App\Filament\Admin\Pages\Auth\EditProfile;
 use App\Filament\Admin\Pages\Auth\Login;
 use App\Http\Middleware\EnsureAdminSignedInThroughPanel;
+use App\Support\InitialsAvatarProvider;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -16,12 +17,13 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 final class AdminPanelProvider extends PanelProvider
@@ -33,12 +35,22 @@ final class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->domain(config('sortd.admin_domain'))
             ->path(config('sortd.admin_domain') === null ? 'admin' : '')
-            ->brandName('Sortd Admin')
+            ->brandName('Get Sorted Admin')
+            ->brandLogo(fn (): string => asset('home/logo/get-sorted-logo.svg'))
+            ->brandLogoHeight('2rem')
+            ->favicon(asset('favicon-v2.png'))
+            ->darkMode(false)
+            ->defaultAvatarProvider(InitialsAvatarProvider::class)
+            // The whole panel uses the home v3 look (self-hosted fonts and CSS only).
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => Blade::render('<link rel="stylesheet" href="{{ asset(\'home/admin.css\') }}?v=3.7">'),
+            )
             ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)
             // Optional since decision 047: an admin can switch it on in their profile.
             ->multiFactorAuthentication(
-                [AppAuthentication::make()->recoverable()->brandName('Sortd')],
+                [AppAuthentication::make()->recoverable()->brandName('Get Sorted')],
                 isRequired: false,
             )
             ->colors([
@@ -50,9 +62,7 @@ final class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\Filament\Admin\Widgets')
-            ->widgets([
-                AccountWidget::class,
-            ])
+            ->navigationGroups(['Jobs', 'Pros', 'Customers', 'Catalogue', 'Insights', 'Settings'])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

@@ -287,6 +287,33 @@ it('signs in a returning Google user (AC2, AC8)', function (): void {
     $this->assertAuthenticatedAs($user);
 });
 
+it('does not sign a registered Google user in from the sign-up page (founder 2026-10-07)', function (): void {
+    User::factory()->customer()->create(['google_id' => 'g-123']);
+    fakeGoogle();
+
+    $this->get('/auth/google?intent=register')->assertRedirect('https://accounts.google.com/o/oauth2/auth');
+    $this->get('/auth/google/callback')->assertRedirect(route('login'));
+
+    $this->assertGuest();
+    $this->get(route('login'))->assertSee('Sign in instead');
+});
+
+it('does not link or sign in an existing email from the sign-up page', function (): void {
+    $user = User::factory()->customer()->create(['email' => 'thandi@gmail.com']);
+    fakeGoogle();
+
+    $this->get('/auth/google?intent=register');
+    $this->get('/auth/google/callback')->assertRedirect(route('login'));
+
+    $this->assertGuest();
+    expect($user->fresh()->google_id)->toBeNull();
+});
+
+it('points the sign-up page Google button at the register intent and the sign-in page at plain sign-in', function (): void {
+    $this->get('/register')->assertSee('intent=register', false);
+    $this->get('/login')->assertDontSee('intent=register', false);
+});
+
 it('never takes over a password account with the same email; it links after a password sign-in (AC2)', function (): void {
     $user = User::factory()->customer()->create(['email' => 'thandi@gmail.com']);
     fakeGoogle();

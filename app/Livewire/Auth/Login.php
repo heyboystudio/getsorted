@@ -6,6 +6,7 @@ namespace App\Livewire\Auth;
 
 use App\Domain\Accounts\Support\GoogleSignIn;
 use App\Models\User;
+use App\Support\BookingStart;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -20,7 +21,7 @@ use Livewire\Component;
  * Sign in with email + password, or continue with Google (spec 014, AC8).
  * Admins sign in at /admin with their authenticator app, never here.
  */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.auth')]
 #[Title('Sign in')]
 final class Login extends Component
 {
@@ -91,7 +92,7 @@ final class Login extends Component
         Auth::login($user, $this->remember);
         session()->regenerate();
 
-        $this->redirectIntended(route($user->homeRoute()));
+        $this->redirectIntended(BookingStart::landing($user));
     }
 
     public function render(): View

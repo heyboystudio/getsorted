@@ -3,6 +3,8 @@
         <p class="text-sm font-medium uppercase tracking-widest text-emerald-800">{{ __('Today') }}</p>
         <h1 class="mt-1 text-3xl font-semibold tracking-tight">{{ __('Hi :name', ['name' => $firstName]) }} <span aria-hidden="true">👋</span></h1>
 
+        <x-push-card class="mt-4" />
+
         <div @class(['mt-5 flex items-center justify-between gap-4 rounded-xl border p-4', 'border-amber-300 bg-amber-50' => $paused, 'border-zinc-200 bg-white' => ! $paused])>
             <div>
                 <p class="font-medium">{{ $paused ? __("You're paused") : __("You're available") }}</p>

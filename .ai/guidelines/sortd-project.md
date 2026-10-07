@@ -1,6 +1,6 @@
-# Sortd — project rules (read before any task)
+# Get Sorted — project rules (read before any task)
 
-Sortd is a Durban/eThekwini marketplace connecting households with vetted tradespeople (plumbing, electrical, painting, tiling in v1). The founder does not write code: you write all code, tests and docs, and you explain decisions in plain language.
+Get Sorted is a Durban/eThekwini marketplace connecting households with vetted tradespeople (plumbing, electrical, painting, tiling in v1). The founder does not write code: you write all code, tests and docs, and you explain decisions in plain language.
 
 ## Where things are
 - Product: `docs/product/` — PRD, user journeys, job lifecycle (state machine), money flow, matching, scoping YAML, open questions.
@@ -19,7 +19,7 @@ Sortd is a Durban/eThekwini marketplace connecting households with vetted trades
 7. Explain results to the founder in plain language: what changed, how to try it, what needs their decision.
 
 ## Hard rules
-- These Sortd rules take precedence over the generic Laravel Boost guidelines that follow them in `CLAUDE.md` (for example, docs **must** be updated in the same change, and hosting stays undecided until decision 014).
+- These Get Sorted rules take precedence over the generic Laravel Boost guidelines that follow them in `CLAUDE.md` (for example, docs **must** be updated in the same change, and hosting stays undecided until decision 014).
 - Follow `docs/security/security-baseline.md` in every change.
 - Business logic lives in `app/Domain/*/Actions`. Livewire components, Filament resources, controllers and queued jobs stay thin.
 - Job status changes only through `ServiceJobStateMachine` transitions; every transition writes a `service_job_events` row.

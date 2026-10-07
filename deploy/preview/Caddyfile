@@ -12,8 +12,15 @@
 	# Built CSS/JS have a content hash in the name, so browsers can keep them for a year without re-checking (spec 017 AC14).
 	@hashed path /build/assets/*
 	header @hashed Cache-Control "public, max-age=31536000, immutable"
-	@images path /images/* /favicon-v2.png
+	@images path /images/* /icons/* /favicon-v2.png
 	header @images Cache-Control "public, max-age=604800"
+
+	# Pop-up notifications (spec 022): the service worker is checked fresh every time so updates reach people,
+	# and the manifest is served as one.
+	@worker path /sw.js
+	header @worker Cache-Control "no-cache"
+	@manifest path /manifest.webmanifest
+	header @manifest Content-Type "application/manifest+json"
 
 	php_server
 }

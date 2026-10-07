@@ -25,7 +25,8 @@ final class ServiceJobsTable
                 TextColumn::make('trade.name')->label(__('Trade'))->description(fn ($record): string => $record->factTexts()[0] ?? ''),
                 TextColumn::make('area_label')->label(__('Area'))->placeholder('—'),
                 TextColumn::make('status')->label(__('Status'))->badge()
-                    ->formatStateUsing(fn (ServiceJobStatus $state): string => __(str($state->value)->replace('_', ' ')->ucfirst()->toString())),
+                    ->formatStateUsing(fn (ServiceJobStatus $state): string => __(str($state->value)->replace('_', ' ')->ucfirst()->toString()))
+                    ->color(fn (ServiceJobStatus $state): string => $state->badgeColor()),
                 TextColumn::make('urgency')->label(__('Urgency'))->badge()
                     ->formatStateUsing(fn (Urgency $state): string => $state === Urgency::Urgent ? __('Urgent') : __('Normal'))
                     ->color(fn (Urgency $state): string => $state === Urgency::Urgent ? 'danger' : 'gray'),

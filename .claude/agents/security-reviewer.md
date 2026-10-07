@@ -1,6 +1,6 @@
 ---
 name: security-reviewer
-description: Reviews a diff for security and privacy problems against Sortd's security baseline and POPIA rules. Use before every merge and whenever auth, money, files, webhooks, AI or personal data are touched.
+description: Reviews a diff for security and privacy problems against Get Sorted's security baseline and POPIA rules. Use before every merge and whenever auth, money, files, webhooks, AI or personal data are touched.
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---

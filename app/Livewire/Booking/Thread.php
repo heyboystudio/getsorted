@@ -33,6 +33,7 @@ use App\Models\Property;
 use App\Models\ServiceJob;
 use App\Models\Trade;
 use App\Models\User;
+use App\Support\BookingStart;
 use App\Support\LocalTime;
 use Carbon\CarbonImmutable;
 use Clickbar\Magellan\Data\Geometries\Point;
@@ -56,7 +57,7 @@ use Throwable;
  * a job: it is posted only when the customer taps Confirm booking. The thread lives in the session
  * (scrubbed text) and, once signed in, on the customer's draft job.
  */
-#[Layout('components.layouts.app', ['brand' => 'Get Sorted'])]
+#[Layout('components.layouts.app', ['brand' => 'Get Sorted', 'gs' => true])]
 final class Thread extends Component
 {
     use SearchesAddresses;
@@ -178,6 +179,8 @@ final class Thread extends Component
 
     public function mount(?Trade $trade = null, ?ServiceJob $job = null): void
     {
+        BookingStart::clear();
+
         if ($job instanceof ServiceJob && $job->exists) {
             $this->resumeDraft($job);
 

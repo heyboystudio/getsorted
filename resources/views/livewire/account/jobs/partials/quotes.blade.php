@@ -12,7 +12,7 @@
         @if ($job->status === $S::AwaitingDeposit)
             <p class="mt-3 rounded-lg bg-white p-3 text-sm">{{ __('Deposit due: :amount. Payment opens soon. We\'ll WhatsApp you when you can pay.', ['amount' => $R::format($acceptedQuote->deposit_cents)]) }}</p>
         @endif
-        <p class="mt-3 text-sm text-emerald-900">{{ __('Keep payments on Sortd. It protects you and the pro.') }}</p>
+        <p class="mt-3 text-sm text-emerald-900">{{ __('Keep payments on Get Sorted. It protects you and the pro.') }}</p>
     </section>
 @elseif ($job->status === $S::Open && $quotes->isNotEmpty())
     <section class="mt-6">
@@ -33,7 +33,7 @@
                         <div>
                             <p class="font-semibold">{{ $pro->business_name }}</p>
                             <a wire:navigate.hover href="{{ route('account.pro-profile', $quote) }}" class="text-xs text-emerald-800 underline underline-offset-4">{{ __('View profile') }}</a>
-                            <p class="text-xs text-zinc-500">{{ __('On Sortd since :date', ['date' => $pro->approved_at?->translatedFormat('M Y')]) }}</p>
+                            <p class="text-xs text-zinc-500">{{ __('On Get Sorted since :date', ['date' => $pro->approved_at?->translatedFormat('M Y')]) }}</p>
                             @foreach ($registrations as $registration)
                                 <p class="text-xs text-emerald-800">✓ {{ $registration->type->label() }}</p>
                             @endforeach

@@ -94,7 +94,7 @@ it('lets a pro who opened the invite start the chat, shown on their job page (AC
 it('masks contact and bank details before a quote is accepted and flags pros who try (AC3)', function (): void {
     chatAs($this->proA->user, $this->proA, 'Thandi')
         ->set('message', 'WhatsApp me on 082 123 4567 or pay FNB acc 62812345678')->call('send')
-        ->assertDontSee('082 123 4567')->assertSee('Keep chats and payments on Sortd');
+        ->assertDontSee('082 123 4567')->assertSee('Keep chats and payments on Get Sorted');
 
     $stored = JobMessage::query()->sole()->body;
     expect($stored)->not->toContain('082 123 4567')->not->toContain('62812345678')

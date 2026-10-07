@@ -38,8 +38,9 @@ function siya(): FakeScopingAssistant
 }
 
 it('greets as an AI assistant called Siya and is linked from the home page', function (): void {
-    $this->get('/')->assertSee(route('book'), false)->assertSee('Start a job');
-    $this->get(route('book'))->assertOk()->assertSee('I’m Siya, Get Sorted’s AI assistant');
+    $this->get('/')->assertSee('Start a job');
+    [$customer] = bookingCustomer();
+    $this->actingAs($customer)->get(route('book'))->assertOk()->assertSee('I’m Siya, Get Sorted’s AI assistant');
 });
 
 it('records the trade and several facts from the first message, with no confirmation card (spec 019 AC7, spec 020)', function (): void {

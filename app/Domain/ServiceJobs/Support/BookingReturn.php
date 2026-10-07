@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\ServiceJobs\Support;
 
 /**
- * Where "add a property" sends the customer back to. Only Sortd booking paths
+ * Where "add a property" sends the customer back to. Only Get Sorted booking paths
  * are accepted, so the parameter can't be used as an open redirect.
  */
 final class BookingReturn

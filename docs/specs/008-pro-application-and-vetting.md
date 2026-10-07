@@ -9,7 +9,7 @@ This spec covers the application and vetting only. Bank details move to the paym
 
 ## User stories
 - As a tradesperson, I want to apply in one guided flow on my phone and come back to finish later.
-- As a tradesperson, I want to see what Sortd is checking and what is still missing.
+- As a tradesperson, I want to see what Get Sorted is checking and what is still missing.
 - As a vetting admin, I want one queue of submitted applications with every document and a checklist, so I can approve, ask for changes, or reject with a reason.
 - As the founder, I want only checked pros to receive work, and sensitive documents seen only by people who vet.
 

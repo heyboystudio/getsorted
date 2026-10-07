@@ -2,7 +2,9 @@
     <section class="w-full max-w-xl">
         <a wire:navigate.hover href="{{ route('account.settings') }}" class="mb-6 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Account') }}</a>
         <h1 class="text-2xl font-semibold tracking-tight">{{ __('Notifications') }}</h1>
-        <p class="mt-2 text-sm text-zinc-600">{{ __('We text you about your jobs. Choose what you want to hear about. Sign-in codes and security messages always arrive.') }}</p>
+        <p class="mt-2 text-sm text-zinc-600">{{ __('We tell you about your jobs by pop-up and by text. Choose what you want to hear about. Sign-in codes and security messages always arrive.') }}</p>
+
+        <x-push-switch class="mt-6" />
 
         <form wire:submit="save" class="mt-6 space-y-6">
             <fieldset>

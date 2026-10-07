@@ -44,7 +44,7 @@
     @if ($masked)
         <p class="flex items-start gap-2 bg-amber-50 px-4 py-2 text-xs text-amber-950">
             <span aria-hidden="true">🔒</span>
-            <span>{{ __('Keep chats and payments on Sortd. Contact details are shared once you accept a quote.') }}</span>
+            <span>{{ __('Keep chats and payments on Get Sorted. Contact details are shared once you accept a quote.') }}</span>
         </p>
     @endif
 

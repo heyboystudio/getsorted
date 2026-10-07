@@ -1,4 +1,4 @@
-# CLAUDE.md — Sortd
+# CLAUDE.md — Get Sorted
 
 > The Laravel Boost section at the end of this file is generated from Laravel's guidelines plus our project rules in `.ai/guidelines/`. To change those rules, edit `.ai/guidelines/*.md` (never the generated section), run `php artisan boost:update`, and commit `CLAUDE.md` and `AGENTS.md` so cloud sessions have them. Everything above the generated section is kept by Boost and is edited here directly.
 
@@ -29,7 +29,7 @@ Follow the numbered tasks in `docs/roadmap.md` → "Phase 0"; the roadmap shows 
 <laravel-boost-guidelines>
 === .ai/sortd-domain rules ===
 
-# Sortd — domain rules
+# Get Sorted — domain rules
 
 ## Vocabulary
 
@@ -67,9 +67,9 @@ Timers, commission rate, deposit cap and invite wave sizes come from settings (`
 
 === .ai/sortd-project rules ===
 
-# Sortd — project rules (read before any task)
+# Get Sorted — project rules (read before any task)
 
-Sortd is a Durban/eThekwini marketplace connecting households with vetted tradespeople (plumbing, electrical, painting, tiling in v1). The founder does not write code: you write all code, tests and docs, and you explain decisions in plain language.
+Get Sorted is a Durban/eThekwini marketplace connecting households with vetted tradespeople (plumbing, electrical, painting, tiling in v1). The founder does not write code: you write all code, tests and docs, and you explain decisions in plain language.
 
 ## Where things are
 
@@ -91,7 +91,7 @@ Sortd is a Durban/eThekwini marketplace connecting households with vetted trades
 
 ## Hard rules
 
-- These Sortd rules take precedence over the generic Laravel Boost guidelines that follow them in `CLAUDE.md` (for example, docs **must** be updated in the same change, and hosting stays undecided until decision 014).
+- These Get Sorted rules take precedence over the generic Laravel Boost guidelines that follow them in `CLAUDE.md` (for example, docs **must** be updated in the same change, and hosting stays undecided until decision 014).
 - Follow `docs/security/security-baseline.md` in every change.
 - Business logic lives in `app/Domain/*/Actions`. Livewire components, Filament resources, controllers and queued jobs stay thin.
 - Job status changes only through `ServiceJobStateMachine` transitions; every transition writes a `service_job_events` row.

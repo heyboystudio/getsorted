@@ -1,9 +1,8 @@
-<main class="flex min-h-dvh items-start justify-center px-5 py-12">
-    <section class="w-full max-w-xl">
-        <a wire:navigate.hover href="{{ $home }}" class="mb-10 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Back') }}</a>
+<main class="flex items-start justify-center px-5 py-8">
+    <section class="w-full max-w-xl" wire:poll.15s.visible>
 
         <div class="flex items-end justify-between gap-4">
-            <h1 class="text-3xl font-semibold tracking-tight">{{ __('Notifications') }}</h1>
+            <h1 class="text-2xl font-semibold tracking-tight">{{ __('Notifications') }}</h1>
             @if ($unread > 0)
                 <button type="button" wire:click="markAllRead" class="text-sm text-emerald-800 underline underline-offset-4">{{ __('Mark all as read') }}</button>
             @endif

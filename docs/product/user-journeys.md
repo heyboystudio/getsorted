@@ -21,7 +21,7 @@ Everything happens in one conversation at `/book`, Kandua-style (`docs/product/k
 8. "Your job is booked" in the thread, with a link to the job page, plus the WhatsApp "job posted" template.
 
 ### C3 · Compare and accept quotes
-1. Job page shows quotes as they arrive (max 3): pro name, rating, reviews count, years on Sortd, registrations, total, labour vs materials, deposit, earliest date, validity, notes.
+1. Job page shows quotes as they arrive (max 3): pro name, rating, reviews count, years on Get Sorted, registrations, total, labour vs materials, deposit, earliest date, validity, notes.
 2. Accept one → if deposit > 0, pay now via provider checkout; else booked.
 3. Other quoting pros are told politely.
 

@@ -6,12 +6,21 @@ namespace App\Filament\Admin\Pages;
 
 use App\Models\AiUsage;
 use App\Models\User;
+use BackedEnum;
 use Filament\Pages\Page;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
+use UnitEnum;
 
 /** Spec 007, AC16: daily assistant usage by purpose and outcome. Aggregates only, no customer text. */
 final class AiUsageReport extends Page
 {
+    protected static string|UnitEnum|null $navigationGroup = 'Insights';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
+
+    protected static ?int $navigationSort = 2;
+
     protected static ?string $slug = 'ai-usage';
 
     public static function getNavigationLabel(): string

@@ -11,6 +11,7 @@ use App\Http\Controllers\MessagePhotoController;
 use App\Http\Controllers\ProChangeFileController;
 use App\Http\Controllers\ProDocumentController;
 use App\Http\Controllers\ProJobPhotoController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\QuoteProPhotoController;
 use App\Http\Controllers\ShowTradeController;
 use App\Http\Middleware\EnsureCustomer;
@@ -42,6 +43,7 @@ use App\Livewire\Pros\ProfilePreview as ProProfilePreview;
 use App\Livewire\Pros\Status as ProStatusPage;
 use App\Livewire\Pros\Welcome as ProWelcome;
 use App\Livewire\Welcome;
+use App\Support\BookingStart;
 use Illuminate\Support\Facades\Route;
 
 if (config('sortd.admin_domain') !== null) {
@@ -55,10 +57,18 @@ Route::view('/trades', 'pages.trades.index')->name('trades.index');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('/contact', 'pages.contact')->name('contact');
 Route::get('/trades/{trade}', ShowTradeController::class)->name('trades.show');
-// Booking is one Siya thread (spec 017). Guests describe the problem, then sign in before Where & when.
-Route::get('/book', BookingThread::class)->name('book');
-Route::get('/book/{trade}', BookingThread::class)->name('book.trade');
+// Siya (the booking thread) is for signed-in users only; guests are sent to sign in and return afterwards.
 Route::redirect('/help', '/book')->name('assistant');
+// The "Start a job" buttons: guests sign up first and are then taken to Siya; signed-in users go straight there.
+Route::get('/start', function () {
+    if (auth()->check()) {
+        return redirect()->route('book');
+    }
+
+    BookingStart::begin();
+
+    return redirect()->route('register');
+})->name('start');
 
 Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/privacy', 'pages.privacy')->name('privacy');
@@ -83,6 +93,8 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/pros/jobs/{invite}/photos/{photo}', ProJobPhotoController::class)->name('pros.jobs.photo');
     Route::get('/app/quotes/{quote}/pro-photo', QuoteProPhotoController::class)->name('quotes.pro-photo');
     Route::post('/logout', LogoutController::class)->name('logout');
+    Route::post('/push/subscriptions', [PushSubscriptionController::class, 'store'])->middleware('throttle:20,1')->name('push.subscribe');
+    Route::delete('/push/subscriptions', [PushSubscriptionController::class, 'destroy'])->middleware('throttle:20,1')->name('push.unsubscribe');
     Route::get('/verify-email', VerifyEmail::class)->name('verification.email');
     Route::get('/verify-email/{user}/{hash}', VerifyEmailController::class)->middleware(['signed', 'throttle:6,1'])->name('verification.email.verify');
     Route::get('/verify-mobile', VerifyPhone::class)->name('verification.phone');
@@ -104,6 +116,8 @@ Route::middleware('auth')->group(function (): void {
             Route::get('/app/jobs/{job}', JobShow::class)->name('jobs.show');
             Route::get('/app/jobs/{job}/continue', BookingThread::class)->name('booking.continue');
         });
+        Route::get('/book', BookingThread::class)->name('book');
+        Route::get('/book/{trade}', BookingThread::class)->name('book.trade');
         Route::get('/notifications', Inbox::class)->name('notifications');
         Route::get('/messages', Messages::class)->name('messages');
         Route::get('/pros/welcome', ProWelcome::class)->name('pros.welcome');

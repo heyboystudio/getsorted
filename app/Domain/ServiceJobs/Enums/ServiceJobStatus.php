@@ -37,6 +37,18 @@ enum ServiceJobStatus: string
         };
     }
 
+    /** Filament badge colour for admins: grey = idle or ended, blue = moving, amber = waiting on money, green = done, red = needs attention. */
+    public function badgeColor(): string
+    {
+        return match ($this) {
+            self::Open, self::Scheduled, self::InProgress => 'info',
+            self::AwaitingDeposit, self::AwaitingFinalPayment => 'warning',
+            self::Completed => 'success',
+            self::Disputed => 'danger',
+            self::Draft, self::Closed, self::Cancelled, self::Expired => 'gray',
+        };
+    }
+
     /** Jobs still going on, drafts included (customer Jobs tab "Active", spec 021). */
     /** @return list<self> */
     public static function inFlight(): array
