@@ -36,7 +36,7 @@ Future score (weights and settings to be decided when these signals exist):
 ## Invites
 
 1. When a job is posted, invite up to **10** eligible pros at once (`matching.invite_count`).
-2. Each invite expires after 24 h (`matching.invite_expiry_hours`).
+2. Each invite expires after 24 h (`matching.invite_expiry_hours`), or after 4 h for an urgent job — flagged urgent by Siya or booked for "Urgent — today" (`matching.urgent_invite_expiry_hours`, added 2026-10-08).
 3. The every-five-minutes run tops up missing invites for open jobs posted in the last 24 h, so a pro approved later can still be invited (never the same pro twice).
 4. The job accepts the first **5** submitted quotes (`matching.max_quotes`). When it is full every other open invite is closed and late pros see "This job is full".
 5. Admin can manually invite an eligible pro who has not been invited, or stop further matching. Existing open invites remain valid when matching is stopped.

@@ -13,10 +13,10 @@ Short architecture decision records. **Add an entry for every significant choice
 | 007 | Money as integer cents + `brick/money`; append-only ledger | Accepted | 2026-10-03 |
 | 008 | Third parties behind contracts with Fake implementations | Accepted | 2026-10-03 |
 | 009 | Database queue driver in v1; Redis later | Accepted | 2026-10-03 |
-| 010 | Scoping trees stored as data, seeded from YAML | Accepted | 2026-10-03 |
+| 010 | Scoping trees stored as data, seeded from YAML | Superseded by 051 | 2026-10-03 |
 | 011 | ULID `public_id` in URLs; never expose numeric IDs | Accepted | 2026-10-03 |
-| 012 | Payment provider | Open (Phase 3) | — |
-| 013 | WhatsApp provider | Open (Phase 1) | — |
+| 012 | Payment provider | Open (Phase M; decision 058) | — |
+| 013 | WhatsApp provider | Superseded by 040 (Twilio) | — |
 | 014 | Hosting: a South African provider; deployment deferred | Accepted (provider TBD) | 2026-10-03 |
 | 015 | Error tracking: Sentry (EU data region) | Accepted | 2026-10-03 |
 | 016 | Local foundation tools and rootless Docker | Accepted | 2026-10-03 |
@@ -24,19 +24,19 @@ Short architecture decision records. **Add an entry for every significant choice
 | 018 | Laravel Boost for AI guidelines and MCP | Accepted | 2026-10-03 |
 | 019 | Quality gate: Pint, Larastan, Pest arch tests, Rector | Accepted | 2026-10-03 |
 | 020 | CI workflow paused; free GitHub plan without branch protection | Accepted (temporary) | 2026-10-03 |
-| 021 | Filament 5 admin panel with mandatory MFA; pro panel locked | Accepted | 2026-10-03 |
+| 021 | Filament 5 admin panel with mandatory MFA; pro panel locked | Accepted; MFA made optional by 047 | 2026-10-03 |
 | 022 | Roles via spatie/laravel-permission; super-admin by console command | Accepted | 2026-10-03 |
 | 023 | Supporting packages: audit log, settings, media, money, phone, PostGIS | Accepted | 2026-10-03 |
 | 024 | Integration contracts and Fakes; no fallback to Fakes outside local/testing | Accepted | 2026-10-03 |
 | 025 | Security hardening baseline (headers, HTTPS, sessions, rate limits, strict models) | Accepted | 2026-10-03 |
 | 026 | Phone + OTP login implementation (spec 001) | Accepted | 2026-10-04 |
 | 027 | One account for customer and pro; pro sign-up (spec 011) | Accepted | 2026-10-04 |
-| 028 | Catalogue: YAML seeds, admin panel is the source of truth (spec 003) | Accepted | 2026-10-04 |
-| 029 | Suburbs and properties; location = suburb centre for now (spec 004) | Accepted | 2026-10-04 |
+| 028 | Catalogue: YAML seeds, admin panel is the source of truth (spec 003) | Superseded by 051 | 2026-10-04 |
+| 029 | Suburbs and properties; location = suburb centre for now (spec 004) | Superseded by 051 | 2026-10-04 |
 | 030 | Booking flow and job state machine (spec 005) | Accepted | 2026-10-04 |
 | 031 | Job photos and iPhone HEIC (spec 012) | Accepted | 2026-10-04 |
-| 032 | Coverage guard before booking and waitlist (spec 006) | Accepted | 2026-10-04 |
-| 033 | AI scoping assistant: Laravel AI SDK, Anthropic, shipped switched off (spec 007) | Accepted | 2026-10-04 |
+| 032 | Coverage guard before booking and waitlist (spec 006) | Changed by 044 (open mode) and 051 | 2026-10-04 |
+| 033 | AI scoping assistant: Laravel AI SDK, Anthropic, shipped switched off (spec 007) | Provider superseded by 043, then 049 | 2026-10-04 |
 | 034 | Pro application and vetting (spec 008) | Accepted | 2026-10-04 |
 | 035 | Daily login-code cap off on local machines (temporary) | Accepted | 2026-10-04 |
 | 036 | Quotes, comparison and acceptance (spec 010) | Accepted | 2026-10-04 |
@@ -45,9 +45,26 @@ Short architecture decision records. **Add an entry for every significant choice
 | 039 | Email or Google sign-in, then verified email and mobile (supersedes 004 for customers and pros) | Accepted | 2026-10-05 |
 | 040 | Twilio for WhatsApp and SMS (Q5) | Accepted | 2026-10-05 |
 | 041 | Test site: mobile saved without a code while SMS is blocked | Accepted | 2026-10-05 |
+| 042 | Test site without a password | Accepted (founder) | 2026-10-05 |
+| 043 | Amazon Bedrock (EU) for the AI assistant (spec 016) | Superseded by 049 | 2026-10-05 |
+| 044 | Take requests from all of Durban before pros are signed up | Accepted (founder) | 2026-10-05 |
+| 045 | Booking follows Kandua: one Siya thread (spec 017) | Quote and wave rules superseded by 051 | 2026-10-05 |
+| 046 | Test site moves to Cape Town on usesorted.co.za | Accepted (founder) | 2026-10-05 |
 | 047 | Admin MFA optional (changes 021 and the security baseline) | Accepted | 2026-10-05 |
+| 048 | Home page redesign and the name "Get Sorted" | Accepted (founder) | 2026-10-06 |
+| 049 | Google Gemini API for the AI assistant (supersedes the provider in 043) | Accepted (founder) | 2026-10-06 |
+| 050 | Siya understands the conversation before booking | Accepted (founder; spec 019) | 2026-10-06 |
+| 051 | Trades, extracted job facts and distance matching (supersedes the service/suburb model) | Accepted (founder; spec 020) | 2026-10-06 |
+| 052 | The app and the database share one clock: Africa/Johannesburg (SAST) | Accepted (founder) | 2026-10-07 |
+| 053 | Pin a patched `shell-quote` for the dev tool `concurrently` | Accepted (founder) | 2026-10-07 |
+| 054 | Web push with `laravel-notification-channels/webpush` (spec 022) | Accepted (founder) | 2026-10-07 |
+| 055 | Home page v3: its own layout, self-hosted fonts and GSAP motion | Accepted (founder) | 2026-10-07 |
+| 056 | Siya is for signed-in users only; auth pages use the home v3 look | Accepted (founder) | 2026-10-07 |
+| 057 | One name everywhere: GetSorted | Accepted (founder) | 2026-10-07 |
+| 058 | MVP launches on model B (quotes, then hand-off); payments after launch | Accepted (founder) | 2026-10-08 |
 
 ---
+
 
 ## 001 · Laravel 13 modular monolith
 **Context:** Founder does not code; all code is written by AI agents. We need a framework with strong conventions, batteries included (auth, queues, scheduler, mail, storage, notifications) and a large hiring pool in South Africa.
@@ -91,6 +108,20 @@ Short architecture decision records. **Add an entry for every significant choice
 
 ## 011 · Public IDs
 **Decision:** ULID `public_id` for every entity addressable by URL; route model binding uses it.
+
+## 014 · Hosting: a South African provider; deployment deferred
+**Context:** Roadmap step 12. Requirements (`tech-stack.md`): PHP 8.4 or Docker with separate web/queue/scheduler processes, managed Postgres with PostGIS, daily backups and point-in-time recovery, encryption at rest, TLS, staging and production separated; an SA region preferred for latency and POPIA. Options compared: Laravel Forge + AWS Cape Town, Laravel Cloud (no Africa region; nearest Frankfurt/Ireland), a local SA hosting provider.
+
+**Decision:** The founder chose **hosting with a South African provider** (option C) and to **keep developing locally for now**. The specific provider is chosen when the first hosted environment is needed (expected early Phase 1, when real OTP messages need a public URL). Before choosing, compare SA providers against the requirements above; if none offers managed Postgres with PostGIS and point-in-time recovery, bring the fallback (self-managed Postgres with WAL archiving/pgBackRest and tested restores) back to the founder as a decision.
+
+**Consequences:** Phase 0's "staging live" exit criterion stays open until then. Data stays in South Africa, which simplifies the POPIA position. HTTP→HTTPS redirect and trusted proxy settings (decision 025) are configured with the provider.
+
+## 015 · Error tracking: Sentry (EU data region)
+**Context:** Roadmap step 12. Options: Sentry (free developer plan, Team ~$26/month; EU data residency; built-in PII scrubbing) or Laravel Nightwatch (free tier 300k events, Pro $20/month; data location not confirmed).
+
+**Decision:** The founder chose **Sentry**, starting on the free plan with the **EU data region**. `sentry/sentry-laravel` is installed (after a compatibility check) together with the first hosted environment; it is not needed locally. Configure it to send no request bodies, cookies or user PII (`send_default_pii=false`) and to scrub phone numbers, emails and addresses.
+
+**Consequences:** Error data leaves South Africa (EU), so Sentry is listed as an operator in the POPIA checklist and privacy notice, with the cross-border basis documented.
 
 ## 016 · Local foundation tools and rootless Docker
 **Context:** The initial Zorin workstation lacked PHP, Composer and Docker, and supplied Node 18. Phase 0 requires PHP 8.4, Node LTS and PostgreSQL 17 with PostGIS. The founder authorized local installation and enters administrator credentials directly in a desktop terminal.
@@ -196,20 +227,6 @@ Short architecture decision records. **Add an entry for every significant choice
 - **Logs:** the fake messaging channel now masks phone numbers and never logs message parameters (no OTP codes in logs). Fixes an oversight from step 10.
 
 **Consequences:** Strict models surfaced a factory gap (MFA columns missing on new users); factories now mirror the full schema.
-
-## 014 · Hosting: a South African provider; deployment deferred
-**Context:** Roadmap step 12. Requirements (`tech-stack.md`): PHP 8.4 or Docker with separate web/queue/scheduler processes, managed Postgres with PostGIS, daily backups and point-in-time recovery, encryption at rest, TLS, staging and production separated; an SA region preferred for latency and POPIA. Options compared: Laravel Forge + AWS Cape Town, Laravel Cloud (no Africa region; nearest Frankfurt/Ireland), a local SA hosting provider.
-
-**Decision:** The founder chose **hosting with a South African provider** (option C) and to **keep developing locally for now**. The specific provider is chosen when the first hosted environment is needed (expected early Phase 1, when real OTP messages need a public URL). Before choosing, compare SA providers against the requirements above; if none offers managed Postgres with PostGIS and point-in-time recovery, bring the fallback (self-managed Postgres with WAL archiving/pgBackRest and tested restores) back to the founder as a decision.
-
-**Consequences:** Phase 0's "staging live" exit criterion stays open until then. Data stays in South Africa, which simplifies the POPIA position. HTTP→HTTPS redirect and trusted proxy settings (decision 025) are configured with the provider.
-
-## 015 · Error tracking: Sentry (EU data region)
-**Context:** Roadmap step 12. Options: Sentry (free developer plan, Team ~$26/month; EU data residency; built-in PII scrubbing) or Laravel Nightwatch (free tier 300k events, Pro $20/month; data location not confirmed).
-
-**Decision:** The founder chose **Sentry**, starting on the free plan with the **EU data region**. `sentry/sentry-laravel` is installed (after a compatibility check) together with the first hosted environment; it is not needed locally. Configure it to send no request bodies, cookies or user PII (`send_default_pii=false`) and to scrub phone numbers, emails and addresses.
-
-**Consequences:** Error data leaves South Africa (EU), so Sentry is listed as an operator in the POPIA checklist and privacy notice, with the cross-border basis documented.
 
 ## 026 · Phone + OTP login implementation (spec 001)
 **Context:** Spec 001 and security baseline §1. Customer and admin logins share the `web` guard.
@@ -331,6 +348,7 @@ Short architecture decision records. **Add an entry for every significant choice
 **Decision:** Laravel's built-in `resend` mail transport, with `resend/resend-php` ^1.16 (MIT; checked with `composer require --dry-run` against Laravel 13 / PHP 8.4, and no advisories). Production code needs no other change: `MAIL_MAILER=resend`, `RESEND_API_KEY` and `MAIL_FROM_ADDRESS` are set per environment. The preview site sends from `noreply@sortd.heyboy.co.za`, a subdomain verified in Resend so heyboy.co.za's own email isn't affected. Local development and tests keep the `log` and `array` mailers.
 
 **Consequences:** The API key lives only in each server's `.env`. The founder entered it on the server directly, and it never passed through chat or git. When Get Sorted moves to its own domain, verify that domain in Resend and change `MAIL_FROM_ADDRESS`.
+
 ## 039 · Email or Google sign-in, then verified email and mobile (spec 014)
 **Context:** The founder decided that the phone number must not be the main way in. Customers and pros should sign up like on other sites, then prove their email and mobile. This supersedes decision 004 for customers and pros; admins keep email, password and an authenticator app.
 
@@ -378,7 +396,6 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 
 **Watch:** anyone can now sign up and trigger real emails (Resend) and SMS (Twilio) from the site; rate limits apply. Don't put real customer data on it.
 
-
 ## 043 · Amazon Bedrock (EU) for the AI assistant (spec 016)
 
 **Date:** 2026-10-05 · **Status:** Accepted (founder)
@@ -415,7 +432,34 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 
 **Next:** spec 018: after posting, the customer chats with the quoting pros and can send more photos. Pros send an estimate quote and the customer pays the deposit on it. After accepting, the pro can raise or lower the final amount, and the customer must accept the change. This brings in-app chat into v1, which the PRD had parked.
 
-<<<<<<< HEAD
+## 046 · Test site moves to Cape Town on usesorted.co.za
+
+**Date:** 2026-10-05 · **Status:** Accepted (founder)
+
+**Decision:** The test site (decision 037) runs on an EC2 **t3.small in af-south-1 (Cape Town)**: 2 vCPU, 2 GB memory plus a 2 GB swap file, 20 GB gp3 disk, Elastic IP 13.247.209.13, CPU credits set to `standard` (no surplus charges). It has the same Ubuntu 26.04 + Docker setup and the same `sortd-preview-bedrock` instance role (Bedrock stays in eu-north-1). The address is **https://usesorted.co.za** (and www), a domain the founder registered, with a Let's Encrypt certificate from Caddy. The test data was copied from the Stockholm server. `ssh aws` now points at Cape Town; the old server is `ssh aws-stockholm`.
+
+**Why:** Round trips from Durban dropped from about 200 ms to about 35 ms (page first byte 0.74 s → 0.2 s), so taps feel instant (spec 017 AC14). The account is on the AWS free plan, which in Cape Town only allows c7i-flex.large (4 GB, about $89/month) or smaller types. The founder chose the t3.small (about $25/month), so the $120 credit lasts about four months.
+
+## 047 · Admin MFA optional
+
+**Date:** 2026-10-05 · **Status:** Accepted (founder)
+
+**Decision:** Admins sign in to `/admin` with email and a strong password only. App-based MFA stays available, so any admin can switch it on in their profile, and admins who already set it up are still asked for a code. This applies everywhere, including the future live site. It changes decision 021 and the security baseline's "mandatory MFA".
+
+**Why:** The founder asked for 2FA to be turned off.
+
+**Risk:** A leaked or guessed admin password now gives full admin access. Strong passwords (12+ characters, checked against known breaches), login rate limits and panel-only sessions (`EnsureAdminSignedInThroughPanel`) still apply. Revisit before real customer data or money goes through the admin panel.
+
+## 048 · Home page redesign and the name "Get Sorted"
+
+**Date:** 2026-10-06 · **Status:** Accepted (founder)
+
+**Decision:** The public home page (`/`) is redesigned as a dark, app-like page with a collapsible left sidebar on desktop, a serif headline, a "What needs sorting?" box and gallery-style sections (trades, popular jobs, one-thread explainer, sample quotes, sample pros, sample reviews, pros sign-up, FAQ). It is called **Get Sorted** on this page, including the browser title and description. Styles live in `resources/css/home.css`, scoped under `.gs-home`. Geist, Libre Caslon Display and a trimmed Phosphor icon set are self-hosted in `public/fonts/` (the CSP only allows our own fonts). Other pages keep the shared header, footer and styles.
+
+**Why:** The founder wanted a fuller, more modern home page modelled on refero.design's layout, and "Get Sorted" as the product name (usesorted.co.za).
+
+**Watch:** Prices, sample pros, sample reviews and the "now covering Umhlanga and Durban North" banner are invented placeholders and need founder approval or real data before launch. The name still reads "Get Sorted" on every other page, in emails and in the footer of those pages until the founder decides to rename the whole site. The box on the page sends the typed description to the Siya booking thread (spec 017); it does not call the older suggest-a-service step. Photos are the existing generated images. The logo carousel under the hero (replacing the suburb strip) shows placeholder logos of eight Durban-linked organisations (Mr Price Group, Tongaat Hulett, Illovo Sugar Africa, uShaka Marine World, Gateway Theatre of Shopping, AmaZulu FC, Comrades Marathon, Durban University of Technology), saved in `public/images/partners/`. They imply no partnership. Replace them with approved partners, or get permission for each logo, before launch.
+
 ## 049 · Google Gemini API for the AI assistant (supersedes the provider in 043)
 
 **Date:** 2026-10-06 · **Status:** Accepted (founder)
@@ -429,16 +473,6 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 - **Training on data:** use a **paid** (billing-enabled) Gemini API project. On the free tier Google may use prompts to improve its products. The assistant only receives the stripped description, service and answers (domain rules), never names, addresses, IDs or payment data.
 - **Key handling:** `GEMINI_API_KEY` lives only in the server's `.env`; never commit it.
 - **Quality:** check that Gemini keeps to the structured-reply schemas (spec 007 AC11); replies are still validated before use.
-
-## 048 · Home page redesign and the name "Get Sorted"
-
-**Date:** 2026-10-06 · **Status:** Accepted (founder)
-
-**Decision:** The public home page (`/`) is redesigned as a dark, app-like page with a collapsible left sidebar on desktop, a serif headline, a "What needs sorting?" box and gallery-style sections (trades, popular jobs, one-thread explainer, sample quotes, sample pros, sample reviews, pros sign-up, FAQ). It is called **Get Sorted** on this page, including the browser title and description. Styles live in `resources/css/home.css`, scoped under `.gs-home`. Geist, Libre Caslon Display and a trimmed Phosphor icon set are self-hosted in `public/fonts/` (the CSP only allows our own fonts). Other pages keep the shared header, footer and styles.
-
-**Why:** The founder wanted a fuller, more modern home page modelled on refero.design's layout, and "Get Sorted" as the product name (usesorted.co.za).
-
-**Watch:** Prices, sample pros, sample reviews and the "now covering Umhlanga and Durban North" banner are invented placeholders and need founder approval or real data before launch. The name still reads "Get Sorted" on every other page, in emails and in the footer of those pages until the founder decides to rename the whole site. The box on the page sends the typed description to the Siya booking thread (spec 017); it does not call the older suggest-a-service step. Photos are the existing generated images. The logo carousel under the hero (replacing the suburb strip) shows placeholder logos of eight Durban-linked organisations (Mr Price Group, Tongaat Hulett, Illovo Sugar Africa, uShaka Marine World, Gateway Theatre of Shopping, AmaZulu FC, Comrades Marathon, Durban University of Technology), saved in `public/images/partners/`. They imply no partnership. Replace them with approved partners, or get permission for each logo, before launch.
 
 ## 050 · Siya understands the conversation before booking
 
@@ -473,17 +507,6 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 - `gemini-2.5-flash` and `gemini-2.5-flash-lite` are **retired for new keys** (HTTP 404). Set `SORTD_AI_MODEL` to a current model. `gemini-3.1-flash-lite` with `SORTD_AI_THINKING_LEVEL=minimal` (the default) answered in about 1.5–7 s when the API was healthy and passed 7 of 8 cases in two runs, including the breaker-tripping message that used to fail, parking a second job, refusing unsupported work and ignoring prompt injection. The larger Flash models were overloaded (503) or timed out in the same window, and Gemini 3 with default thinking took 10–24 s per turn.
 - Provider latency is spiky (the same call took 1.5 s and 15 s+). The per-call timeout is now 25 s, provider overload gets one retry, and a failed turn keeps the validated facts so the customer can tap Try again. Re-run `siya:eval --live` after any model or prompt change and read the replies; it checks state, not tone.
 
-
-## 047 · Admin MFA optional
-
-**Date:** 2026-10-05 · **Status:** Accepted (founder)
-
-**Decision:** Admins sign in to `/admin` with email and a strong password only. App-based MFA stays available, so any admin can switch it on in their profile, and admins who already set it up are still asked for a code. This applies everywhere, including the future live site. It changes decision 021 and the security baseline's "mandatory MFA".
-
-**Why:** The founder asked for 2FA to be turned off.
-
-**Risk:** A leaked or guessed admin password now gives full admin access. Strong passwords (12+ characters, checked against known breaches), login rate limits and panel-only sessions (`EnsureAdminSignedInThroughPanel`) still apply. Revisit before real customer data or money goes through the admin panel.
-=======
 ## 052 · The app and the database share one clock: Africa/Johannesburg (SAST)
 
 **Date:** 2026-10-07 · **Status:** Accepted (founder)
@@ -505,7 +528,6 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** `npm audit` reported a critical command-injection advisory for `shell-quote` 1.8.4 to 1.10.0. npm's suggested fix was to downgrade `concurrently` to 9.2.1, which is a breaking change; 1.11.0 and later are outside the affected range. `shell-quote` is used only by the local `composer dev` script, never in production. `npm audit` now reports 0 vulnerabilities and `npm ci` accepts the lockfile.
 
 **Watch:** remove the override once `concurrently` ships with a patched `shell-quote` of its own.
->>>>>>> feat/021-panels-shell
 
 ## 054 · Web push with `laravel-notification-channels/webpush` (spec 022)
 
@@ -556,3 +578,18 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Kept on purpose:** historical records (this log above 057, specs 001–022, the Phase 0 reports) keep the names that were true when they were written. The old preview host `sortd.heyboy.co.za` (also the current mail sender domain) and the AWS role `sortd-preview-bedrock` stay until the server steps in `docs/engineering/rename-server-checklist.md` are done; the customer domain `usesorted.co.za` is unchanged.
 
 **Watch:** the test server must have its database and role renamed **before** this code is deployed, or the app cannot connect. Existing sessions are signed out once (the session cookie name follows `APP_NAME`).
+
+## 058 · MVP launches on model B (quotes, then hand-off); payments after launch
+
+**Date:** 2026-10-08 · **Status:** Accepted (founder)
+
+**Decision:** GetSorted launches without on-platform payments. A customer describes the job, vetted pros near them quote (up to 5), the customer accepts one, and both get each other's contact details to arrange the work and payment directly (any deposit in the quote is paid to the pro). On-platform payments (deposit, final payment, ledger, payouts, refunds, commission) become Phase M, after launch. Until Phase S is finished there is a **feature freeze**: only fixes, honest copy and docs.
+
+**Why:** The 2026-10-07 audit found the product ends at "Payment opens soon" while the copy promised payments; no provider or commission is decided (Q1–Q4, Q6–Q8). Launching honestly on what works proves demand and supply first, without blocking on payments.
+
+**Consequences:**
+- Copy says customers pay pros directly; the pro quote preview no longer shows a commission or payout (PR #65).
+- `app/Domain/Payments`, `Disputes` and `Reviews` stay empty for now; spec 013 (deposit payments, PR #37) and spec 018 part 2 (final amount, branch `feat/018-final-amount`) are parked for Phase M.
+- Phase L must close the loop without money: a job can be marked done, then reviewed, so jobs do not stay in "Awaiting deposit"/"Booked" forever.
+- How GetSorted earns money on model B (lead fee, subscription, or nothing until Phase M) is a new open question (Q14).
+- Supersedes the PRD v1 payment scope, the roadmap's Phase 4 order and the money promises in spec 018. `docs/product/prd.md` (v2) and `docs/roadmap.md` describe the new plan.

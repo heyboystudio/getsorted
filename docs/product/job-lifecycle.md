@@ -4,12 +4,14 @@
 
 The job state machine is the heart of GetSorted. **All status changes go through one class (`App\Domain\ServiceJobs\ServiceJobStateMachine`) and one action per transition.** Nothing else may write `service_jobs.status`. Every transition writes a row to `service_job_events` (the timeline and audit trail).
 
+> **Built so far (2026-10-08):** `draft` → `open` → `awaiting_deposit` or `scheduled`, plus cancel and expire. No Action yet moves a job to `in_progress`, `awaiting_final_payment`, `completed` or `closed`, and nothing pays a deposit: at launch (model B, decision 058) the deposit is paid to the pro directly. Phase L adds "mark done"; Phase M adds payments.
+
 ## States
 
 | State | Meaning | Customer sees | Pro sees |
 |---|---|---|---|
 | `draft` | Customer is still scoping | "Finish your request" | Nothing |
-| `open` | Posted; invites out; collecting quotes (max 3) | "Finding your pros · 1 of 3 quotes in" | Invite / job card |
+| `open` | Posted; invites out; collecting quotes (max 5, `matching.max_quotes`) | "Finding your pros" | Invite / job card |
 | `awaiting_deposit` | Customer accepted a quote that requires a deposit | "Pay deposit to confirm" | "Waiting for deposit" |
 | `scheduled` | Booked: deposit paid, or none required | "Booked for Wed 7 Oct, morning" | Job with full address |
 | `in_progress` | Pro has started work | "Work in progress" | "Mark complete" |

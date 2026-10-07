@@ -19,7 +19,7 @@ It builds the assets, copies the code (never `.env`), rebuilds the containers, m
 `deploy/preview/Caddyfile` compresses responses (zstd/gzip), lets browsers keep the hashed files in `/build/assets/` for a year without re-checking, and keeps `/images/*` for a week. Rename an image (e.g. `-v3`) when you change it. The server is in Stockholm (eu-north-1), about 200 ms away from Durban per round trip.
 
 ## Server layout
-- `ssh aws` (Ubuntu 26.04, EC2 eu-north-1). Code in `~/getsorted`. Containers: `web` (FrankenPHP: HTTPS + PHP), `queue`, `scheduler`, `pgsql`.
+- `ssh aws` (Ubuntu 26.04, EC2 af-south-1 Cape Town, decision 046; the old Stockholm server is `ssh aws-stockholm` and should be stopped if still running). Code in `~/getsorted`. Containers: `web` (FrankenPHP: HTTPS + PHP), `queue`, `scheduler`, `pgsql`.
 - Secrets live only in `~/getsorted/deploy/preview/.env` on the server: app key, database password and API keys. They are never committed or printed.
 - Logs: `cd ~/getsorted/deploy/preview && docker compose logs -f web`.
 
