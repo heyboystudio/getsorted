@@ -11,6 +11,7 @@ use App\Http\Controllers\MessagePhotoController;
 use App\Http\Controllers\ProChangeFileController;
 use App\Http\Controllers\ProDocumentController;
 use App\Http\Controllers\ProJobPhotoController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\QuoteProPhotoController;
 use App\Http\Controllers\ShowTradeController;
 use App\Http\Middleware\EnsureCustomer;
@@ -83,6 +84,8 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/pros/jobs/{invite}/photos/{photo}', ProJobPhotoController::class)->name('pros.jobs.photo');
     Route::get('/app/quotes/{quote}/pro-photo', QuoteProPhotoController::class)->name('quotes.pro-photo');
     Route::post('/logout', LogoutController::class)->name('logout');
+    Route::post('/push/subscriptions', [PushSubscriptionController::class, 'store'])->middleware('throttle:20,1')->name('push.subscribe');
+    Route::delete('/push/subscriptions', [PushSubscriptionController::class, 'destroy'])->middleware('throttle:20,1')->name('push.unsubscribe');
     Route::get('/verify-email', VerifyEmail::class)->name('verification.email');
     Route::get('/verify-email/{user}/{hash}', VerifyEmailController::class)->middleware(['signed', 'throttle:6,1'])->name('verification.email.verify');
     Route::get('/verify-mobile', VerifyPhone::class)->name('verification.phone');

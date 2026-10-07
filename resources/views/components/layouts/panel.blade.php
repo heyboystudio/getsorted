@@ -20,11 +20,13 @@
         'map-pin' => 'M12 21s-6.75-5.7-6.75-11.25a6.75 6.75 0 1 1 13.5 0C18.75 15.3 12 21 12 21Zm0-8.25a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z',
     ];
 @endphp
-<x-layouts.app :title="$title ?? null" :brand="__('Get Sorted')">
+<x-layouts.app :title="$title ?? null" :brand="__('Get Sorted')" :hide-inbox-nav="true">
     <div @class(['lg:pl-56' => $showTabs, 'pb-24 lg:pb-0' => $showTabs && ! $focused, 'pb-8' => ! $showTabs || $focused])>
         <header class="mx-auto flex w-full max-w-xl items-center justify-between gap-4 px-5 pt-6">
             <a wire:navigate.hover href="{{ route($homeRoute) }}" @class(['text-xl font-semibold tracking-tight', 'lg:hidden' => $showTabs])>{{ __('Get Sorted') }}<span aria-hidden="true" class="text-emerald-700">.</span>@if ($panel === 'pro')<span class="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 align-middle text-xs font-medium text-emerald-900">{{ __('Pro') }}</span>@endif</a>
-            <div class="ml-auto flex items-center gap-4 text-sm">
+            <div class="ml-auto flex items-center gap-3 text-sm">
+                <span x-data="pushControl({ mode: 'silent' })" class="hidden" aria-hidden="true"></span>
+                <livewire:notification-bell />
                 @if ($switch)
                     <a wire:navigate.hover href="{{ route($switch['route']) }}" class="text-emerald-800 underline underline-offset-4">{{ $switch['label'] }}</a>
                 @endif

@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -37,7 +38,7 @@ use Spatie\Permission\Traits\HasRoles;
 final class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasName
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, HasUlids, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, Notifiable, SoftDeletes;
+    use HasFactory, HasPushSubscriptions, HasRoles, HasUlids, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, Notifiable, SoftDeletes;
 
     /** @var list<string> */
     protected $fillable = ['first_name', 'last_name', 'email', 'locale'];
@@ -120,6 +121,12 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
     public function consents(): HasMany
     {
         return $this->hasMany(Consent::class);
+    }
+
+    protected static function booted(): void
+    {
+        // A deleted account leaves no device that can still be pushed to (spec 022).
+        self::forceDeleted(fn (self $user) => $user->pushSubscriptions()->delete());
     }
 
     /** @return array<string, string> */

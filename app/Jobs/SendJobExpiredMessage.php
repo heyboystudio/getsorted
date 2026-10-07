@@ -42,7 +42,7 @@ final class SendJobExpiredMessage implements ShouldQueue
         }
 
         if ($this->attempts() === 1) {
-            Notify::user($job->customer, 'job_expired', __('Your :trade job ran out of time', ['trade' => mb_strtolower($job->trade->name)]), __('No quote was accepted in time. You can post it again whenever you are ready.'), route('book.trade', $job->trade), email: true);
+            Notify::user($job->customer, 'job_expired', __('Your :trade job ran out of time', ['trade' => mb_strtolower($job->trade->name)]), __('No quote was accepted in time. You can post it again whenever you are ready.'), route('book.trade', $job->trade), email: true, group: 'job_updates');
         }
 
         if ($job->customer->phone_e164 === null || ! NotificationPreferences::allows($job->customer, 'job_updates')) {

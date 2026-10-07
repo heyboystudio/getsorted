@@ -1,6 +1,6 @@
 # Spec 022 · Real notifications: browser and phone pop-ups, and a live inbox
 
-Status: Draft — founder gave direction 2026-10-07, awaiting approval of this spec · Phase: 3 · Owner: founder
+Status: Approved by the founder 2026-10-07; in progress · Phase: 3 · Owner: founder
 
 ## Goal
 Clients and pros today get notices only inside the app: the Notifications page fills in on refresh, and nothing pops up on a phone or desktop or asks the browser for permission. Make every existing notice also arrive as a real system notification (web push) on phones and desktops, and make the in-app inbox update without a refresh.
@@ -28,7 +28,7 @@ Clients and pros today get notices only inside the app: the Notifications page f
 10. Account → Notifications has a per-device switch "Pop-up notifications on this device" showing the real state: on, off, blocked by the browser, not supported, or needs the app installed (iPhone).
 11. Given an iPhone or iPad in Safari that has not been added to the Home Screen, then the card explains how to add the site to the Home Screen first (Apple only allows web push for installed sites, iOS 16.4 or later). The site gets a web app manifest and icons so installing works and opens full screen.
 12. A header bell on every signed-in screen shows the unread count and links to Notifications. The count and the Notifications page update on their own (polling about every 15 seconds while the tab is visible) without a refresh.
-13. Given a push arrives while the site is open and visible in a tab, then the in-app bell updates immediately and no duplicate system pop-up is shown for that tab.
+13. Given a push arrives while the site is open and visible in a tab, then the in-app bell updates immediately and, in Chrome, Edge and Firefox, no duplicate system pop-up is shown for that tab. Safari always shows the pop-up, because Apple requires every push to show a notification and withdraws permission from sites that do not.
 14. Without VAPID keys configured (local development, tests), push sending is skipped quietly and everything else works.
 
 ## Screens / UX
@@ -59,7 +59,7 @@ Clients and pros today get notices only inside the app: the Notifications page f
 Native mobile apps; offline support or caching; scheduled reminders; marketing messages; notification sounds and rich images; choosing different channels per kind beyond today's three groups; admin push.
 
 ## Open questions
-- Which Home Screen icon and name to use for the installed site (default: the Get Sorted mark and name).
+- Home Screen icon and name: the Get Sorted mark and name (founder, 2026-10-07).
 - Preview server needs VAPID keys added to `deploy/preview/.env` before push works there; the founder or I set them (a secret, so the founder decides who).
 
 ## Build order (one PR each)
@@ -69,4 +69,10 @@ Native mobile apps; offline support or caching; scheduled reminders; marketing m
 
 ## Progress
 - 2026-10-07: Drafted after the founder reported that clients and pros get in-app notices but no browser or system notifications. Findings: all notices go through `Notify::user` → `UserNotice` (database and optional mail only); there is no service worker, manifest, push library or permission prompt. Library check: `laravel-notification-channels/webpush` 13.0.1 installs cleanly on Laravel 13 (dry run). Local PHP has `openssl` and `bcmath`.
-- Next: founder approves this spec; then part 1.
+- 2026-10-07: Founder **approved** the spec, the icon, and asked me to add the keys to the preview server myself.
+- 2026-10-07: **Part 1 (server side) built** on `feat/022-web-push`: package installed (decision 054), `push_subscriptions` migrations, `HasPushSubscriptions` on `User`, a `webpush` channel on `UserNotice` that is skipped without VAPID keys, without a subscribed device, or when a customer switched that group off (call sites pass the group: quotes, messages, job updates; pro notices have none), a safe wrapper so a push problem never stops the in-app notice or email, subscribe and unsubscribe endpoints (`POST/DELETE /push/subscriptions`, auth, throttled, https only), cleanup on account deletion. Tests: `tests/Feature/Notifications/WebPushTest.php`.
+- 2026-10-07: **Part 2 (browser side) built.** `public/sw.js` (shows the pop-up, opens only pages on this site, refreshes open tabs, skips the duplicate pop-up only outside Safari), `manifest.webmanifest` and Get Sorted icons on a light background, `resources/js/push.js` (one Alpine component used as the card, the per-device switch and a silent copy in every signed-in page; permission is asked only from the button; this device is removed before signing out; concurrent registrations share one request), the card on customer Home and pro Today, the switch in Account → Notifications and on the pro Profile, a live bell (`NotificationBell`, polls every 15 seconds while visible and refreshes on a push) in the shell header, and the inbox moved into the shell and made live.
+  - **Fixed along the way:** spec 020's layout floated its own Messages and bell cluster in the top-right corner, which now overlapped the panel header; the shell hides it and uses the live bell, and pages outside the shell keep the cluster with the live bell.
+  - **Verified in a real browser engine (headless Chrome, push APIs stubbed):** tapping the button asks for permission, registers `/sw.js`, subscribes with a valid 65-byte key and tells the server; a blocked browser and an iPhone outside the Home Screen show the right explanation and make no server calls; an already-allowed browser registers quietly once. Tests: `tests/Feature/Notifications/PushBrowserTest.php`.
+  - **Not verified yet (needs a real device and the keys on the preview server):** an actual push arriving on a phone and a desktop, tapping it, and the iPhone Home Screen install.
+- Next: part 3: add the VAPID keys to the preview server, deploy, and check on a real phone and desktop.

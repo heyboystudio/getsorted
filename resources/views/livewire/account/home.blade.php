@@ -2,6 +2,8 @@
     <section class="w-full max-w-xl">
         <h1 class="text-3xl font-semibold tracking-tight">{{ __('Hi :name', ['name' => $firstName]) }} <span aria-hidden="true">👋</span></h1>
 
+        <x-push-card class="mt-4" />
+
         @if ($attention->isNotEmpty())
             <section class="mt-6" aria-labelledby="needs-you">
                 <h2 id="needs-you" class="text-sm font-semibold uppercase tracking-widest text-amber-800">{{ __('Needs you') }}</h2>

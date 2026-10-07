@@ -506,3 +506,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 
 **Watch:** remove the override once `concurrently` ships with a patched `shell-quote` of its own.
 >>>>>>> feat/021-panels-shell
+
+## 054 · Web push with `laravel-notification-channels/webpush` (spec 022)
+
+**Date:** 2026-10-07 · **Status:** Accepted (founder)
+
+**Decision:** Pop-up notifications on phones and desktops use `laravel-notification-channels/webpush` 13.x (brings `minishlink/web-push`, `web-token/jwt-library` and a few small HTTP helpers). Every notice sent through `Notify::user` also goes to the person's subscribed devices. VAPID keys live only in each environment's `.env`.
+
+**Why:** Clients and pros only got in-app notices that appeared on refresh. A browser push is the only way to pop up on a phone or desktop without a native app. This package is the standard Laravel channel for it, installs on Laravel 13 with no conflicts, stores each device's subscription and deletes subscriptions the push service reports as gone. `composer audit` reports no advisories.
+
+**Watch:** iPhone and iPad allow web push only for sites added to the Home Screen (iOS 16.4 or later), so the site has a manifest and an install hint. Safari requires every push to show a notification. Push is skipped quietly when no VAPID keys are set, so local development and tests need no setup.

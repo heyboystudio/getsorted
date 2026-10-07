@@ -42,7 +42,7 @@ final class SendJobPostedMessage implements ShouldQueue
         }
 
         if ($this->attempts() === 1) {
-            Notify::user($job->customer, 'job_posted', __('Your :trade job is posted', ['trade' => mb_strtolower($job->trade->name)]), __('We are sharing it with vetted pros near you. Quotes will show up on your job page.'), route('jobs.show', $job));
+            Notify::user($job->customer, 'job_posted', __('Your :trade job is posted', ['trade' => mb_strtolower($job->trade->name)]), __('We are sharing it with vetted pros near you. Quotes will show up on your job page.'), route('jobs.show', $job), group: 'job_updates');
         }
 
         if ($job->customer->phone_e164 === null || ! NotificationPreferences::allows($job->customer, 'job_updates')) {

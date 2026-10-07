@@ -80,7 +80,7 @@ final class SendChatNotification implements ShouldQueue
         }
 
         if ($this->attempts() === 1) {
-            Notify::user($toCustomer ? $job->customer : $send->pro->user, 'chat_message', __('New message about your :trade job', ['trade' => mb_strtolower($job->trade->name)]), __('Open the chat to read and reply.'), $toCustomer ? route('jobs.show', $job) : route('pros.jobs.show', $invite));
+            Notify::user($toCustomer ? $job->customer : $send->pro->user, 'chat_message', __('New message about your :trade job', ['trade' => mb_strtolower($job->trade->name)]), __('Open the chat to read and reply.'), $toCustomer ? route('jobs.show', $job) : route('pros.jobs.show', $invite), group: $toCustomer ? 'messages' : null);
         }
 
         // Customers choose which texts they get (spec 021, AC15); the in-app notice above is always sent.
