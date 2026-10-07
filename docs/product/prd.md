@@ -34,7 +34,7 @@ One account can be a customer or a pro (decision 027); v1 is one login per pro b
 
 1. **Account and identity:** email + password or Google, then a verified email and SA mobile before booking or quoting (039). Admins: email + strong password; MFA available, optional (047).
 2. **Booking with Siya:** one conversation (signed-in only, 056): the customer says what's wrong in their own words; Siya records the trade and short facts using only the customer's words, asks for an address (Google Places), a time (date + Morning / Afternoon / Flexible, or Urgent — today) and optional photos, shows an editable summary, and posts only on Confirm. It works by taps when the AI is off. It never gives prices and never posts on its own.
-3. **Safety:** possible emergencies (fire, gas, sparks, water near electrics) pause booking and show emergency numbers, even with the AI off; trade safety tips appear early for active leaks or urgent jobs.
+3. **No safety advice or emergency handling** (decision 060): every message is treated as an ordinary job; Siya does not give safety instructions.
 4. **Matching:** up to 10 approved pros of the trade, nearest first, within each pro's travel radius (default 15 km + 2 km soft edge); the first 5 quotes are accepted; invites expire after 24 hours, or 4 hours for urgent jobs (all admin settings; `matching.md`).
 5. **Privacy:** pros see the area and approximate distance, the customer's words, facts and photos; never the street address, customer phone or surname until **their** quote is accepted.
 6. **Quotes:** itemised lines (labour, materials, call-out), optional deposit, earliest start, validity; revise or withdraw; the customer compares and accepts one. Registrations are shown as verified or not; they are never a gate (051).
@@ -86,7 +86,7 @@ Native mobile apps · pro team members · subscriptions (unless chosen for Q14) 
 - Every job status change goes through the state machine and is written to the job timeline.
 - Pros never see street address, customer phone or surname before their quote is accepted.
 - Siya changes booking state only through validated tools, uses only the customer's own words as facts, never quotes prices, and never posts a job (051).
-- The AI gives guidance, not guarantees, and says so for safety-critical topics (electrical, gas).
+- GetSorted gives no safety advice and has no emergency handling (decision 060).
 - Copy never promises what is not built (decision 058).
 
 ## 8. Open questions

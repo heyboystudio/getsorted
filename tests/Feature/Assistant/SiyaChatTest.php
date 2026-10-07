@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Contracts\Data\ChatRequest;
 use App\Contracts\ScopingAssistant;
 use App\Domain\Assistant\Enums\AiPurpose;
-use App\Domain\Assistant\Support\EmergencyGuidance;
 use App\Integrations\Fakes\FakeScopingAssistant;
 use App\Livewire\Booking\Thread;
 use App\Models\AiUsage;
@@ -124,22 +123,6 @@ it('accepts a correction: removes a fact and changes the trade without losing th
         ->assertSet('parked', ['kitchen tap leaks']);
 });
 
-it('shows the stop-first card for gas, sparks, smoke or flooding', function (): void {
-    Livewire::test(Thread::class)->set('message', 'I can see sparks from the plug')->call('send')
-        ->assertSee('Safety first')->assertSee('031 361 0000')->assertSet('stage', 'emergency');
-});
-
-it('treats water on light fittings or the DB board as an emergency, but not a light drip or a water isolator valve', function (string $message, bool $emergency): void {
-    expect(EmergencyGuidance::required($message))->toBe($emergency);
-})->with([
-    'ceiling light fitting' => ['The water is now dripping onto the ceiling light fitting', true],
-    'DB board' => ['Water is coming out of the DB board', true],
-    'light switch' => ['The light switch is wet from the leak water', true],
-    'light drip' => ['There is a light drip of water under the sink', false],
-    'isolator valve' => ['I closed the water isolator valve', false],
-    'geyser through ceiling' => ['My geyser is leaking through the ceiling', false],
-]);
-
 it('stops after the message limit and can start over', function (): void {
     config()->set('getsorted.ai.chat_messages_per_conversation', 1);
 
@@ -189,7 +172,7 @@ it('works by taps alone when the assistant is off, keeping the customer’s own 
     expect(siya()->chatRequests())->toBe([]);
 });
 
-it('does not ask for the problem again after a trade is picked without the assistant, and gives the safety tip at once for an active leak (audit)', function (): void {
+it('does not ask for the problem again after a trade is picked without the assistant (audit)', function (): void {
     $settings = app(AiSettings::class);
     $settings->enabled = false;
     $settings->save();
@@ -199,7 +182,7 @@ it('does not ask for the problem again after a trade is picked without the assis
         ->call('pickTrade', 'plumbing')
         ->assertDontSee('Tell me in your own words')
         ->assertSee('your description is saved for the pros')
-        ->assertSee($this->plumbing->safety_advice[0]);
+        ->assertDontSee('Safety advice');
 });
 
 it('refuses to run the live evaluation without --live and without a provider, so it never spends budget by accident', function (): void {
@@ -220,4 +203,16 @@ it('evaluates conversations by state with the scripted assistant, using the same
     });
 
     $this->artisan('siya:eval', ['--live' => true, '--only' => 'dripping tap, stated once'])->expectsOutputToContain('PASS')->assertSuccessful();
+});
+
+it('treats every message as an ordinary job: no emergency stop and no safety advice (founder 2026-10-08, decision 060)', function (): void {
+    $settings = app(AiSettings::class);
+    $settings->enabled = false;
+    $settings->save();
+
+    Livewire::test(Thread::class)
+        ->set('message', 'I smell gas and there are sparks from the plug')->call('send')
+        ->assertSet('stage', 'chat')->assertSee('I can’t read messages right now')
+        ->assertDontSee('031 361 0000')->assertDontSee('Safety first')->assertDontSee('Discuss a later repair')
+        ->call('pickTrade', 'electrical')->assertSet('tradeId', tradeOf('electrical')->id)->assertDontSee('Safety advice');
 });

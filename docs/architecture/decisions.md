@@ -53,7 +53,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 047 | Admin MFA optional (changes 021 and the security baseline) | Accepted; confirmed for real data 2026-10-08 | 2026-10-05 |
 | 048 | Home page redesign and the name "Get Sorted" | Accepted (founder) | 2026-10-06 |
 | 049 | Google Gemini API for the AI assistant (supersedes the provider in 043) | Accepted (founder) | 2026-10-06 |
-| 050 | Siya understands the conversation before booking | Accepted (founder; spec 019) | 2026-10-06 |
+| 050 | Siya understands the conversation before booking | Accepted; safety parts superseded by 060 | 2026-10-06 |
 | 051 | Trades, extracted job facts and distance matching (supersedes the service/suburb model) | Accepted (founder; spec 020) | 2026-10-06 |
 | 052 | The app and the database share one clock: Africa/Johannesburg (SAST) | Accepted (founder) | 2026-10-07 |
 | 053 | Pin a patched `shell-quote` for the dev tool `concurrently` | Accepted (founder) | 2026-10-07 |
@@ -63,6 +63,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 057 | One name everywhere: GetSorted | Accepted (founder) | 2026-10-07 |
 | 058 | MVP launches on model B (quotes, then hand-off); payments after launch | Accepted (founder) | 2026-10-08 |
 | 059 | "Start a job" means sign in, then Siya | Accepted (founder) | 2026-10-08 |
+| 060 | No safety advice and no emergency handling | Accepted (founder) | 2026-10-08 |
 
 ---
 
@@ -602,3 +603,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Decision:** Every "Start a job" button (home hero, "One thread" section, footer, the home description form and the trade pages) goes to `/start`. Signed-in users land on `/book`. Guests are sent to **sign in** (the page offers "New to GetSorted? Create an account") and land on `/book` after signing in or signing up. No button scrolls to the form at the bottom of the home page any more. Starting a job forgets any page remembered from an earlier visit, so it cannot override Siya. This changes the "guests go to /register" update in decision 056.
 
 **Why:** The founder wanted one predictable behaviour; the hero button jumped about 11,000 px to the bottom of the page on a phone.
+
+## 060 · No safety advice and no emergency handling
+
+**Date:** 2026-10-08 · **Status:** Accepted (founder)
+
+**Decision:** GetSorted gives no safety advice and has no emergency handling: "that is not what we do". Removed: the trades' safety tips (the "Safety advice" cards in Siya, the advice and "guidance, not a guarantee" note on the booking summary, the admin "Safety advice for urgent jobs" field and the `trades.safety_advice` column), the emergency stop (keyword check that worked without AI, the 112 / 031 361 0000 card, the "Discuss a later repair" step), Siya's `flag_emergency` tool and its emergency instruction, and the "not an emergency service" product fact. Siya treats every message as an ordinary job. Siya still must not give safety, medical or legal instructions itself (prompt rule kept). This supersedes the safety parts of decisions 050 and 051 and the emergency and safety-tip fixes of PR #64.
+
+**Why:** Founder decision; Gemini handles conversation, and GetSorted's role is matching households with pros, not safety guidance.
+
+**Watch:** with the AI off or failing, a message describing danger (gas, sparks, fire) is now booked like any other job. Old saved Siya conversations drop their safety and emergency cards when reopened.

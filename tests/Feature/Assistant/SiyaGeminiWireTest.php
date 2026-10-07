@@ -71,7 +71,7 @@ it('sends Gemini the eight tools, the short instructions, a low temperature and 
     $toolNames = collect($body['tools'])->flatMap(fn (array $tool): array => collect($tool['function_declarations'] ?? [$tool])->pluck('name')->all())->all();
 
     expect($first->url())->toContain('/interactions')->and($first->hasHeader('x-goog-api-key', 'test-key'))->toBeTrue()
-        ->and($toolNames)->toBe(['get_booking_state', 'set_trade', 'add_job_fact', 'remove_job_fact', 'set_urgency', 'park_job', 'offer_next_step', 'flag_emergency'])
+        ->and($toolNames)->toBe(['get_booking_state', 'set_trade', 'add_job_fact', 'remove_job_fact', 'set_urgency', 'park_job', 'offer_next_step'])
         ->and($body['system_instruction'])->toContain('You are Siya')->and(strlen((string) $body['system_instruction']))->toBeLessThan(3000)
         ->and($body['generation_config']['temperature'])->toBe(0.3)
         ->and(json_encode($body['input']))->toContain('booking_state')->toContain('My roof leaks');

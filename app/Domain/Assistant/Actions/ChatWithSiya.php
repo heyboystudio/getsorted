@@ -35,7 +35,7 @@ final readonly class ChatWithSiya
 
     /**
      * @param  list<array{role: 'customer'|'assistant', text: string}>  $transcript  the whole chat; the last entry is the customer's new message
-     * @return array{outcome: AiOutcome, reply: ?string, state: BookingState, emergency: bool, nextStepOffered: bool, degraded: bool}
+     * @return array{outcome: AiOutcome, reply: ?string, state: BookingState, nextStepOffered: bool, degraded: bool}
      */
     public function handle(BookingState $state, array $transcript, string $visitorKey, string $bookingStage = 'chat'): array
     {
@@ -71,7 +71,6 @@ final readonly class ChatWithSiya
             'outcome' => $outcome,
             'reply' => null,
             'state' => $kept ? $working : $state,
-            'emergency' => $toolbox->emergencyFlagged,
             'nextStepOffered' => $working->nextStepOffered,
             'degraded' => false,
         ];

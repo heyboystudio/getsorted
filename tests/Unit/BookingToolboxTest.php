@@ -89,14 +89,6 @@ it('parks at most three other jobs', function (): void {
     expect($toolbox->state->parked)->toHaveCount(3);
 });
 
-it('flags an emergency without changing the booking', function (): void {
-    $toolbox = toolbox();
-
-    expect($toolbox->flagEmergency('smoke from the socket')['ok'])->toBeTrue()
-        ->and($toolbox->emergencyFlagged)->toBeTrue()
-        ->and($toolbox->state->facts)->toBe([]);
-});
-
 it('round-trips the state through an array', function (): void {
     $state = new BookingState('plumbing', [['id' => 'f1', 'text' => 'tap drips', 'turn' => 1]], true, ['gate motor stuck'], 2, true);
 

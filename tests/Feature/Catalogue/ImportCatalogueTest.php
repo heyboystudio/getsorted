@@ -21,7 +21,6 @@ function tradeYaml(array $overrides = []): array
         'name' => 'Plumbing',
         'status' => 'demo',
         'registration' => 'pirb',
-        'safety_advice' => ['Close the stopcock.'],
     ], $overrides);
 }
 
@@ -33,18 +32,17 @@ function importDefinitions(array ...$definitions): void
     ));
 }
 
-it('seeds every trade from the YAML files with its registration and safety advice (AC1, spec 020)', function (): void {
+it('seeds every trade from the YAML files with its registration (AC1, spec 020)', function (): void {
     $this->seed(CatalogueSeeder::class);
 
     expect(Trade::query()->orderBy('sort')->pluck('key')->all())->toBe(['electrical', 'painting', 'plumbing', 'tiling']);
 
     $plumbing = tradeOf('plumbing');
     expect($plumbing->name)->toBe('Plumbing')->and($plumbing->status)->toBe(TradeStatus::Demo)->and($plumbing->is_active)->toBeTrue()
-        ->and($plumbing->registration)->toBe(RegistrationType::Pirb)
-        ->and($plumbing->safety_advice)->toBe(['If water is flooding, close the main stopcock first.']);
+        ->and($plumbing->registration)->toBe(RegistrationType::Pirb);
 
     expect(tradeOf('electrical')->registration)->toBe(RegistrationType::ElectricalRegisteredPerson)
-        ->and(tradeOf('painting')->registration)->toBeNull()->and(tradeOf('painting')->safety_advice)->toBe([]);
+        ->and(tradeOf('painting')->registration)->toBeNull();
 });
 
 it('rejects invalid YAML with a clear message and writes nothing (AC2)', function (array $definition, string $message): void {
@@ -57,7 +55,6 @@ it('rejects invalid YAML with a clear message and writes nothing (AC2)', functio
     'bad key' => [tradeYaml(['trade' => 'Leak Trade']), 'file1.yaml: Leak Trade: key must be lowercase letters, digits and underscores'],
     'unknown status' => [tradeYaml(['status' => 'beta']), 'file1.yaml: plumbing: unknown status "beta"'],
     'unknown registration' => [tradeYaml(['registration' => 'gas_licence']), 'file1.yaml: plumbing: unknown registration "gas_licence"'],
-    'advice not text' => [tradeYaml(['safety_advice' => [['nested']]]), 'file1.yaml: plumbing: safety_advice lines must be text'],
 ]);
 
 it('rejects duplicate trade keys (AC2)', function (): void {
@@ -67,11 +64,11 @@ it('rejects duplicate trade keys (AC2)', function (): void {
 
 it('only adds new trades when run again, keeping admin edits (AC3)', function (): void {
     importDefinitions(tradeYaml());
-    Trade::query()->sole()->update(['safety_advice' => ['Edited by an admin.']]);
+    Trade::query()->sole()->update(['name' => 'Plumbing (edited by an admin)']);
 
-    importDefinitions(tradeYaml(['name' => 'Plumbing renamed in YAML', 'safety_advice' => ['Changed in YAML.']]), tradeYaml(['trade' => 'tiling', 'name' => 'Tiling', 'registration' => null, 'safety_advice' => []]));
+    importDefinitions(tradeYaml(['name' => 'Plumbing renamed in YAML']), tradeYaml(['trade' => 'tiling', 'name' => 'Tiling', 'registration' => null]));
 
-    expect(tradeOf('plumbing')->name)->toBe('Plumbing')->and(tradeOf('plumbing')->safety_advice)->toBe(['Edited by an admin.'])
+    expect(tradeOf('plumbing')->name)->toBe('Plumbing (edited by an admin)')
         ->and(Trade::query()->where('key', 'tiling')->exists())->toBeTrue();
 });
 

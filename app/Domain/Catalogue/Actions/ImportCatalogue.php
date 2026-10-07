@@ -44,7 +44,6 @@ final readonly class ImportCatalogue
                     'name' => $definition['name'],
                     'status' => TradeStatus::tryFrom((string) ($definition['status'] ?? '')) ?? TradeStatus::Demo,
                     'registration' => isset($definition['registration']) ? RegistrationType::from($definition['registration']) : null,
-                    'safety_advice' => array_values($definition['safety_advice'] ?? []),
                     'is_active' => true,
                     'sort' => ++$tradeSort,
                 ]);

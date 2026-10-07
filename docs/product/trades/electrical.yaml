@@ -2,6 +2,3 @@ trade: electrical
 name: Electrical
 status: demo
 registration: electrical_registered_person
-safety_advice:
-  - If you smell burning or see sparks, switch off the main switch at the DB board and keep away.
-  - Don’t keep resetting a breaker that trips repeatedly.

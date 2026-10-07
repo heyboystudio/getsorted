@@ -20,7 +20,6 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string $name
  * @property TradeStatus $status
  * @property RegistrationType|null $registration the registration a pro can verify for this trade (a badge, never a gate)
- * @property list<string> $safety_advice reviewed, static advice shown for urgent jobs
  * @property bool $is_active
  * @property int $sort
  */
@@ -30,10 +29,7 @@ final class Trade extends Model
     use HasFactory, LogsActivity;
 
     /** @var list<string> */
-    protected $fillable = ['key', 'name', 'status', 'registration', 'safety_advice', 'is_active', 'sort'];
-
-    /** @var array<string, mixed> */
-    protected $attributes = ['safety_advice' => '[]'];
+    protected $fillable = ['key', 'name', 'status', 'registration', 'is_active', 'sort'];
 
     /** @return BelongsToMany<Pro, $this> */
     public function pros(): BelongsToMany
@@ -68,7 +64,6 @@ final class Trade extends Model
         return [
             'status' => TradeStatus::class,
             'registration' => RegistrationType::class,
-            'safety_advice' => 'array',
             'is_active' => 'boolean',
             'sort' => 'integer',
         ];

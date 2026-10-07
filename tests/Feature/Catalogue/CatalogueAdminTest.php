@@ -48,19 +48,20 @@ it('lists trades with their pro counts (AC5, spec 020)', function (): void {
         ->assertSee('Plumbing');
 });
 
-it('edits a trade including its registration and safety advice (AC6)', function (): void {
+it('edits a trade including its registration, and has no safety advice field (AC6, decision 060)', function (): void {
     catalogueAdmin(Role::AdminSupport);
 
     Livewire::test(EditTrade::class, ['record' => 'plumbing'])
         ->fillForm([
             'name' => 'Plumbing & drains', 'status' => TradeStatus::Live->value, 'is_active' => false,
-            'registration' => RegistrationType::Pirb->value, 'safety_advice' => ['Turn off the water.', 'Keep away from wet electrics.'],
+            'registration' => RegistrationType::Pirb->value,
         ])
         ->call('save')
         ->assertHasNoFormErrors();
 
     expect(plumbing())->name->toBe('Plumbing & drains')->status->toBe(TradeStatus::Live)->is_active->toBeFalse()
-        ->registration->toBe(RegistrationType::Pirb)->safety_advice->toBe(['Turn off the water.', 'Keep away from wet electrics.']);
+        ->registration->toBe(RegistrationType::Pirb);
+    Livewire::test(EditTrade::class, ['record' => 'plumbing'])->assertDontSee('Safety advice');
 });
 
 it('adds a trade with a new key (AC7)', function (): void {
@@ -70,8 +71,7 @@ it('adds a trade with a new key (AC7)', function (): void {
         ->fillForm(['name' => 'Roofing', 'key' => 'roofing', 'status' => TradeStatus::Demo->value, 'is_active' => true])
         ->call('create')->assertHasNoFormErrors();
 
-    expect(Trade::query()->where('key', 'roofing')->sole()->name)->toBe('Roofing')
-        ->and(Trade::query()->where('key', 'roofing')->sole()->safety_advice)->toBe([]);
+    expect(Trade::query()->where('key', 'roofing')->sole()->name)->toBe('Roofing');
 });
 
 it('rejects badly formed and duplicate keys (AC7)', function (string $key): void {

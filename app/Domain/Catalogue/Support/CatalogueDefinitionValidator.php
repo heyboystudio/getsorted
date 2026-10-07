@@ -46,17 +46,6 @@ final class CatalogueDefinitionValidator
             }
 
             $tradeKeys[] = $tradeKey;
-            $advice = $trade['safety_advice'] ?? [];
-
-            if (! is_array($advice) || ! array_is_list($advice)) {
-                $this->fail($file, $tradeKey, 'safety_advice must be a list');
-            }
-
-            foreach ($advice as $line) {
-                if (! is_string($line) || trim($line) === '') {
-                    $this->fail($file, $tradeKey, 'safety_advice lines must be text');
-                }
-            }
         }
     }
 

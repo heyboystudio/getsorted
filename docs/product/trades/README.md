@@ -11,8 +11,6 @@ trade: plumbing            # stable key, never renamed
 name: Plumbing             # display name
 status: demo               # demo | live
 registration: pirb         # optional: pirb | electrical_registered_person. A pro can verify it for a badge; it never blocks matching.
-safety_advice:             # optional: short reviewed lines shown for urgent jobs. Siya never writes safety instructions itself.
-  - If water is flooding, close the main stopcock first.
 ```
 
 ## How the AI assistant uses this

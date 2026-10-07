@@ -1,7 +1,7 @@
 {{-- Spec 017: booking in one Siya thread. Every message is escaped text; nothing is rendered as HTML. --}}
 @php($chip = 'rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm hover:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-600 disabled:opacity-60')
 @php($primary = 'w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60')
-@php($tapped = 'startNextJob,pickTrade,send,continueAfterEmergency,retry,startBooking,selectProperty,chooseWhen,finishPhotos,confirmBooking,joinWaitlist,noThanks,differentTrade,removeFact')
+@php($tapped = 'startNextJob,pickTrade,send,retry,startBooking,selectProperty,chooseWhen,finishPhotos,confirmBooking,joinWaitlist,noThanks,differentTrade,removeFact')
 <main class="flex min-h-dvh justify-center" x-data="{ pending: '' }">
     <section class="flex w-full max-w-2xl flex-col px-4">
         <header class="gs-siya-head sticky top-0 z-10 -mx-4 border-b border-zinc-200 bg-stone-50/95 px-4 pb-3 pt-4 backdrop-blur">
@@ -22,11 +22,7 @@
             @foreach ($messages as $item)
                 @php($kind = $item['kind'] ?? null)
                 <li wire:key="msg-{{ $loop->index }}" @class(['flex', 'justify-end' => $item['role'] === 'customer'])>
-                    @if ($kind === 'emergency')
-                        <div class="w-full rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert"><strong>{{ __('Safety first') }}:</strong> {{ $item['text'] }}</div>
-                    @elseif ($kind === 'safety')
-                        <div class="w-full rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"><strong>{{ __('Safety advice') }}:</strong> {{ $item['text'] }} <span class="block pt-1 text-xs">{{ __('This is guidance, not a guarantee.') }}</span></div>
-                    @elseif ($kind === 'done')
+                    @if ($kind === 'done')
                         <div class="flex w-full items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
                             <div><p class="text-xs font-medium text-emerald-800">{{ $item['label'] ?? '' }}</p><p class="text-sm font-medium text-emerald-950">{{ $item['text'] }}</p></div>
                             <span class="text-emerald-700" aria-hidden="true">✓</span>
@@ -51,15 +47,15 @@
             </li>
         </ol>
 
-        @if ($retryPending && $stage !== 'emergency')
+        @if ($retryPending)
             <button type="button" wire:click="retry" wire:loading.attr="disabled" wire:target="retry" class="mb-3 {{ $chip }}">{{ __('Try again') }}</button>
         @endif
 
         @if ($limitReached)
-            <p class="mb-3 text-sm text-zinc-600">{{ __('This conversation has reached its message limit. Restart to continue booking. Emergency guidance is still available.') }}</p>
+            <p class="mb-3 text-sm text-zinc-600">{{ __('This conversation has reached its message limit. Restart to continue booking.') }}</p>
         @endif
 
-        @if (($trade || $facts !== []) && ! in_array($stage, ['emergency', 'posted', 'closed', 'notes'], true))
+        @if (($trade || $facts !== []) && ! in_array($stage, ['posted', 'closed', 'notes'], true))
             <details class="mb-3 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm" @if ($stage === 'chat') open @endif>
                 <summary class="cursor-pointer font-medium">{{ __('What I’ve got so far') }}</summary>
                 <p class="mt-2"><span class="text-zinc-500">{{ __('Trade') }}:</span> {{ $trade?->name ?? __('Not sure yet') }}</p>
@@ -79,10 +75,7 @@
 
         {{-- The current card --}}
         <div class="pb-4" wire:loading.class="opacity-60" wire:target="{{ $tapped }}">
-            @if ($stage === 'emergency')
-                <p class="mb-3 text-sm text-red-900">{{ __('Contact emergency services first. GetSorted can only help plan later repair work.') }}</p>
-                <button type="button" wire:click="continueAfterEmergency" wire:loading.attr="disabled" class="{{ $chip }}">{{ __('Discuss a later repair') }}</button>
-            @elseif ($stage === 'chat')
+            @if ($stage === 'chat')
                 @if ($trades->isNotEmpty())
                     <div class="grid grid-cols-2 gap-2">
                         @foreach ($trades as $tradeOption)
@@ -326,14 +319,6 @@
                     </dl>
                     @if ($summary['key'])
                         <div class="px-4"><livewire:booking.job-summary-card :job-public-id="$jobPublicId" :key="'job-summary-'.$summary['key']" /></div>
-                    @endif
-                    @if ($summary['guidance'])
-                        <div class="mx-4 mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-                            @if ($summary['advice'] !== [])
-                                <ul class="list-disc space-y-1 pl-5">@foreach ($summary['advice'] as $line) <li>{{ $line }}</li> @endforeach</ul>
-                            @endif
-                            <p class="mt-2">{{ __('This is guidance, not a guarantee.') }}</p>
-                        </div>
                     @endif
                     <div class="p-4">
                         @error('post') <p class="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror

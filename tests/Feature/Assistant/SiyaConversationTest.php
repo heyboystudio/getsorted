@@ -31,34 +31,6 @@ function conversationAssistant(): FakeScopingAssistant
     return app(ScopingAssistant::class);
 }
 
-it('pauses for explicit emergencies even without AI and keeps the pause after refresh', function (string $message): void {
-    $settings = app(AiSettings::class);
-    $settings->enabled = false;
-    $settings->save();
-
-    Livewire::test(Thread::class)->set('message', $message)->call('send')
-        ->assertSet('stage', 'emergency')->assertSee('031 361 0000')->assertSee('112')
-        ->assertDontSee('Electrical')->assertSet('tradeId', null)
-        ->call('pickTrade', 'plumbing')->assertNotFound();
-    Livewire::test(Thread::class)->assertSet('stage', 'emergency');
-    expect(conversationAssistant()->chatRequests())->toBe([]);
-})->with([
-    'fire brigade' => 'hey siya, please help me. i need fire brigade.',
-    'socket smoke' => 'There is smoke coming from the socket',
-    'active fire' => 'My house is on fire',
-    'gas leak' => 'I can smell gas in the kitchen',
-    'medical help' => 'I need an ambulance',
-    'negated smoke with ambulance' => 'There is no smoke and I need an ambulance',
-    'historic fire and current request' => 'The fire was last year and I need fire brigade now',
-    'current fire with power off' => 'The kitchen is on fire and the power is out',
-    'historic leak current fire' => 'Last year we had a leak and now my kitchen is on fire',
-    'negated fire current gas' => 'No fire here, I smell gas',
-    'water and sockets' => 'Water is flooding my kitchen and reaching electrical sockets',
-    'water comma sockets' => 'Water is flooding the kitchen, reaching electrical sockets',
-    'current flames' => 'There are flames now',
-    'current fire' => 'There is fire now',
-]);
-
 it('does not pause for ordinary fireplace work or a historical hazard', function (string $message): void {
     conversationAssistant()->willChat(fn (): string => 'Tell me about the work you need.');
 
@@ -113,18 +85,6 @@ it('does not allow a model or typed confirmation to post a job', function (): vo
     expect(ServiceJob::query()->sole()->status)->toBe(ServiceJobStatus::Draft);
 });
 
-it('allows only explicit continuation of a later repair after an emergency pause', function (): void {
-    [$customer] = bookingCustomer();
-    $this->actingAs($customer);
-
-    $thread = describeJob(threadFor($this->plumbing), $this->plumbing)->assertSet('stage', 'where')
-        ->set('message', 'I need fire brigade')->call('send')->assertSet('stage', 'emergency')
-        ->set('message', 'okay')->call('send')->assertSet('stage', 'emergency')
-        ->call('continueAfterEmergency')->assertSet('stage', 'where');
-
-    expect(array_column($thread->get('facts'), 'text'))->toBe(['tap drips when fully closed']);
-});
-
 it('rejects unknown trade proposals and says so plainly, rather than repeating a confident reply', function (): void {
     conversationAssistant()->willChat(function (ChatRequest $request): string {
         expect($request->toolbox->setTrade('roofing')['ok'])->toBeFalse();
@@ -134,17 +94,6 @@ it('rejects unknown trade proposals and says so plainly, rather than repeating a
 
     Livewire::test(Thread::class)->set('message', 'My roof is damaged')->call('send')
         ->assertSet('tradeId', null)->assertSee('Roofing isn’t something we offer yet.');
-});
-
-it('routes model-detected danger through stored guidance instead of its own instructions', function (): void {
-    conversationAssistant()->willChat(function (ChatRequest $request): string {
-        $request->toolbox->flagEmergency('live wire');
-
-        return 'Try touching the wire.';
-    });
-
-    Livewire::test(Thread::class)->set('message', 'Something dangerous is happening')->call('send')
-        ->assertSet('stage', 'emergency')->assertDontSee('Try touching the wire.')->assertSee('031 361 0000');
 });
 
 it('keeps the tool-validated facts of a turn even if the model’s wording was rejected, and a retry adds nothing twice', function (): void {
@@ -194,25 +143,6 @@ it('excludes private property labels and customer identity from subsequent model
     $thread->set('message', 'How many quotes will I receive?')->call('send')->assertSet('stage', 'summary');
 
     expect(json_encode(conversationAssistant()->chatRequests()[1]))->not->toContain('Secret Customer Fullname', '7 Private Lane', $property->public_id, (string) $customer->email);
-});
-
-it('retains the emergency pause when reopening the same owned draft', function (): void {
-    [$customer] = bookingCustomer();
-    $this->actingAs($customer);
-    describeJob(threadFor($this->plumbing), $this->plumbing)->set('message', 'My house is on fire')->call('send');
-    $job = ServiceJob::query()->sole();
-
-    Livewire::test(Thread::class, ['job' => $job])->assertSet('stage', 'emergency')->assertSee('031 361 0000');
-});
-
-it('prioritises an emergency description arriving through a preselected trade link', function (): void {
-    $settings = app(AiSettings::class);
-    $settings->enabled = false;
-    $settings->save();
-    session()->put(Thread::START_KEY, 'I need fire brigade');
-
-    threadFor($this->plumbing)->assertSet('stage', 'emergency')->assertSee('031 361 0000');
-    expect(conversationAssistant()->chatRequests())->toBe([]);
 });
 
 it('keeps photos and draft identity when changing the trade using the summary control', function (): void {
