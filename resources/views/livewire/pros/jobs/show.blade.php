@@ -193,7 +193,7 @@
                     <p class="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900" role="status">{{ __('You accepted this job. Send your estimate so the client can compare quotes.') }}</p>
                 @endif
                 <p class="mt-6 text-xs text-zinc-500">{{ __("You'll see the customer's name, contact details and address if they accept your quote.") }}</p>
-                <div class="fixed inset-x-0 bottom-0 border-t border-zinc-200 bg-white px-5 py-4" x-data="{ open: false }">
+                <div class="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]" x-data="{ open: false }">
                     <div class="mx-auto max-w-xl">
                         <div x-show="open" x-cloak class="mb-4 space-y-2">
                             <p class="font-medium">{{ __('Why not this one?') }}</p>

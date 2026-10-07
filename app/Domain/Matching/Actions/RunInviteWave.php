@@ -42,7 +42,7 @@ final readonly class RunInviteWave
                     'pro_id' => $pro->id,
                     'wave' => 1,
                     'invited_at' => $invitedAt,
-                    'expires_at' => $invitedAt->copy()->addHours($this->settings->invite_expiry_hours),
+                    'expires_at' => $invitedAt->copy()->addHours($locked->isUrgent() ? $this->settings->urgent_invite_expiry_hours : $this->settings->invite_expiry_hours),
                 ])->save();
                 $created[] = $invite;
             }

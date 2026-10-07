@@ -5,7 +5,7 @@
 <main class="flex min-h-dvh justify-center" x-data="{ pending: '' }">
     <section class="flex w-full max-w-2xl flex-col px-4">
         <header class="gs-siya-head sticky top-0 z-10 -mx-4 border-b border-zinc-200 bg-stone-50/95 px-4 pb-3 pt-4 backdrop-blur">
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center justify-between gap-3 pr-28 lg:pr-0">
                 <div class="flex items-center gap-3">
                     <a href="{{ auth()->check() ? route('account.home') : route('home') }}" wire:navigate class="text-zinc-500" aria-label="{{ __('Back') }}">←</a>
                     <span class="gs-siya-avatar flex size-10 items-center justify-center rounded-full bg-emerald-700 font-semibold text-white" aria-hidden="true">S</span>

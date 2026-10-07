@@ -107,6 +107,25 @@ it('uses the invite count and expiry from settings', function (): void {
         ->and($job->invites()->first()->expires_at->toDateTimeString())->toBe(now()->addHours(6)->toDateTimeString());
 });
 
+it('gives pros less time to answer an urgent job booked for today (audit 2026-10-07)', function (): void {
+    $this->freezeTime();
+    eligiblePros(2);
+    $customer = User::factory()->customer()->create();
+    $property = Property::factory()->for($customer)->create();
+    $draft = app(SaveBookingDraft::class)->handle($customer, tradeOf('plumbing'), null, new BookingData(
+        facts: [['id' => 'f1', 'text' => 'geyser leaking through the ceiling', 'turn' => 1]],
+        notes: '', propertyPublicId: $property->public_id,
+        preferredDate: now()->toImmutable(), timeWindow: TimeWindow::Today,
+    ));
+
+    $job = app(PostServiceJob::class)->handle($customer, $draft);
+
+    expect($job->isUrgent())->toBeTrue()
+        ->and($job->invites()->first()->expires_at->toDateTimeString())
+        ->toBe(now()->addHours(app(MatchingSettings::class)->urgent_invite_expiry_hours)->toDateTimeString())
+        ->and(app(MatchingSettings::class)->urgent_invite_expiry_hours)->toBe(4);
+});
+
 it('rotates work: pros with the fewest recent invites go first', function (): void {
     [$busy, $quiet] = eligiblePros(2);
     $settings = app(MatchingSettings::class);

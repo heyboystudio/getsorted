@@ -28,7 +28,7 @@ final class EmergencyGuidance
 
             if (preg_match('/\b(?:fire\s*(?:brigade|fighters?|department)|ambulance|emergency services|emergency help|there (?:is|are) (?:a )?(?:fire|flames?)|house is on fire|home is on fire|on fire|electrocut\w*|gas leak|smell(?:ing)? gas|smell of gas|burning smell|sparks?|sparking|smoke)\b/u', $sentence) === 1
                 || preg_match('/\b(?:fire|flames?)\b.{0,30}\b(?:house|home|kitchen|room|spreading|now)\b/u', $sentence) === 1
-                || preg_match('/\b(?:flood\w*|water)\b.{0,45}\b(?:electric\w*|socket|plug|wire\w*)\b/u', $sentence) === 1) {
+                || preg_match('/\b(?:flood\w*|water)\b.{0,45}\b(?:electric\w*|socket|plug|wire\w*|light fittings?|light switch(?:es)?|ceiling lights?|downlights?|db board|distribution board|breakers?)\b/u', $sentence) === 1) {
                 return true;
             }
         }
@@ -36,8 +36,8 @@ final class EmergencyGuidance
         // Water and live electrics can be related across conjunctions: keep the active context together.
         $active = implode(' ', $activeClauses);
 
-        return preg_match('/\b(?:flood\w*|water)\b.{0,100}\b(?:electric\w*|socket|plug|wire\w*)\b/u', $active) === 1
-            || preg_match('/\b(?:electric\w*|socket|plug|wire\w*)\b.{0,100}\b(?:flood\w*|water)\b/u', $active) === 1;
+        return preg_match('/\b(?:flood\w*|water)\b.{0,100}\b(?:electric\w*|socket|plug|wire\w*|light fittings?|light switch(?:es)?|ceiling lights?|downlights?|db board|distribution board|breakers?)\b/u', $active) === 1
+            || preg_match('/\b(?:electric\w*|socket|plug|wire\w*|light fittings?|light switch(?:es)?|ceiling lights?|downlights?|db board|distribution board|breakers?)\b.{0,100}\b(?:flood\w*|water)\b/u', $active) === 1;
     }
 
     public static function message(): string

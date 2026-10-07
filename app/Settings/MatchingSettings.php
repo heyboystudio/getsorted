@@ -23,6 +23,9 @@ final class MatchingSettings extends Settings
 
     public int $invite_expiry_hours;
 
+    /** Hours a pro has to answer an invite for an urgent job (urgent, or booked for today). */
+    public int $urgent_invite_expiry_hours;
+
     public static function group(): string
     {
         return 'matching';
