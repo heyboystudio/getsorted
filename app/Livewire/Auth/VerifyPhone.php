@@ -14,6 +14,7 @@ use App\Domain\Accounts\Support\LoginThrottle;
 use App\Domain\Accounts\Support\PhoneNumbers;
 use App\Models\User;
 use App\Support\AppMode;
+use App\Support\BookingStart;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Validation\ValidationException;
@@ -90,7 +91,7 @@ final class VerifyPhone extends Component
         }
 
         activity()->performedOn($this->user())->causedBy($this->user())->log('phone saved without code (test site)');
-        $this->redirectIntended(route($this->user()->homeRoute()));
+        $this->redirectIntended(BookingStart::landing($this->user()));
     }
 
     /** The other channel, offered after a short wait (spec 014, AC4). */
@@ -140,7 +141,7 @@ final class VerifyPhone extends Component
             throw ValidationException::withMessages(['phone' => $this->takenMessage()]);
         }
 
-        $this->redirectIntended(route($this->user()->homeRoute()));
+        $this->redirectIntended(BookingStart::landing($this->user()));
     }
 
     public function changeNumber(): void

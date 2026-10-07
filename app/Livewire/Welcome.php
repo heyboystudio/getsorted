@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
+use App\Support\BookingStart;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -24,6 +25,9 @@ final class Welcome extends Component
     /** An unused description expires after 30 minutes; drop it rather than keep it in the session (spec 007). */
     public function mount(): void
     {
+        // Browsing the home page cancels any earlier "start a job": a later sign-in goes to the account, not Siya.
+        BookingStart::clear();
+
         $stored = session(self::DESCRIPTION_KEY);
 
         if (is_array($stored) && ($stored['expires_at'] ?? 0) <= now()->getTimestamp()) {
@@ -50,7 +54,7 @@ final class Welcome extends Component
 
         if (auth()->guest()) {
             // Siya is for signed-in users only (decision 056): sign up first, then land in the booking thread.
-            session()->put('url.intended', route('book'));
+            BookingStart::begin();
 
             return $this->redirect(route('register'), navigate: true);
         }

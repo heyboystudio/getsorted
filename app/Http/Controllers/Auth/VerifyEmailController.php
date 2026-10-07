@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Auth;
 use App\Domain\Accounts\Actions\SendEmailVerification;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\BookingStart;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -28,6 +29,6 @@ final class VerifyEmailController extends Controller
 
         $next = $user->pendingVerificationRoute();
 
-        return $next === null ? redirect()->intended(route($user->homeRoute())) : redirect()->route($next);
+        return $next === null ? redirect()->intended(BookingStart::landing($user)) : redirect()->route($next);
     }
 }

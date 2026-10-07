@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Livewire\Welcome;
 use App\Models\User;
+use App\Support\BookingStart;
 use Database\Seeders\CatalogueSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -22,7 +23,7 @@ it('keeps the home page description and sends a guest to sign up, then on to Siy
         ->assertRedirect(route('register'));
 
     expect(session(Welcome::DESCRIPTION_KEY)['text'])->toBe('The kitchen tap will not stop dripping')
-        ->and(session('url.intended'))->toBe(route('book'));
+        ->and(BookingStart::pending())->toBeTrue();
 });
 
 it('sends a signed-in customer straight to the booking thread', function (): void {
@@ -72,4 +73,26 @@ it('does not list pros on the public home page (founder 2026-10-07)', function (
 it('offers a signed-in visitor their account instead of sign-up', function (): void {
     $this->actingAs(User::factory()->customer()->create())
         ->get('/')->assertOk()->assertSee(route('account.home'), false)->assertDontSee('>Sign up <', false);
+});
+
+it('only lands a new sign-in in Siya after "Start a job", never otherwise (founder 2026-10-07)', function (): void {
+    $user = User::factory()->customer()->create(['password' => 'a-long-password-1']);
+
+    $this->get(route('start'))->assertRedirect(route('register'));
+    expect(BookingStart::pending())->toBeTrue()->and(BookingStart::landing($user))->toBe(route('book'));
+
+    // Browsing the home page afterwards cancels it.
+    $this->get('/')->assertOk();
+    expect(BookingStart::pending())->toBeFalse()->and(BookingStart::landing($user))->toBe(route('account.home'));
+});
+
+it('sends a signed-in visitor straight to Siya from /start', function (): void {
+    $this->actingAs(User::factory()->customer()->create())->get(route('start'))->assertRedirect(route('book'));
+});
+
+it('lets the start marker expire', function (): void {
+    BookingStart::begin();
+    $this->travel(31)->minutes();
+
+    expect(BookingStart::pending())->toBeFalse();
 });

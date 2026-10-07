@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Auth;
 use App\Domain\Accounts\Support\GoogleSignIn;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\BookingStart;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -64,7 +65,7 @@ final class GoogleController extends Controller
             Auth::login($linked);
             $request->session()->regenerate();
 
-            return redirect()->intended(route($linked->homeRoute()));
+            return redirect()->intended(BookingStart::landing($linked));
         }
 
         $existing = User::withTrashed()->where('email', $email)->first();

@@ -10,6 +10,7 @@ use App\Domain\Accounts\Enums\Role;
 use App\Domain\Accounts\Exceptions\EmailAlreadyRegistered;
 use App\Domain\Accounts\Support\GoogleSignIn;
 use App\Domain\Accounts\Support\LoginThrottle;
+use App\Support\BookingStart;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
@@ -140,7 +141,7 @@ final class Register extends Component
         }
 
         // The verification gate sends them through email and mobile checks, then on (AC3, AC6).
-        $this->redirectIntended(route($user->homeRoute()));
+        $this->redirectIntended(BookingStart::landing($user));
     }
 
     public function render(): View

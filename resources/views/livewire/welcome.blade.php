@@ -1,4 +1,4 @@
-@php($bookTrade = fn (string $trade): string => auth()->check() ? route('book.trade', $trade) : route('register'))
+@php($bookTrade = fn (string $trade): string => auth()->check() ? route('book.trade', $trade) : route('start'))
 <div class="gs-home-v3">
 <a class="skip" href="#main">Skip to content</a>
 

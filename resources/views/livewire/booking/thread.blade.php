@@ -4,11 +4,11 @@
 @php($tapped = 'startNextJob,pickTrade,send,continueAfterEmergency,retry,startBooking,selectProperty,chooseWhen,finishPhotos,confirmBooking,joinWaitlist,noThanks,differentTrade,removeFact')
 <main class="flex min-h-dvh justify-center" x-data="{ pending: '' }">
     <section class="flex w-full max-w-2xl flex-col px-4">
-        <header class="sticky top-0 z-10 -mx-4 border-b border-zinc-200 bg-stone-50/95 px-4 pb-3 pt-4 backdrop-blur">
+        <header class="gs-siya-head sticky top-0 z-10 -mx-4 border-b border-zinc-200 bg-stone-50/95 px-4 pb-3 pt-4 backdrop-blur">
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <a href="{{ auth()->check() ? route('account.home') : route('home') }}" wire:navigate class="text-zinc-500" aria-label="{{ __('Back') }}">←</a>
-                    <span class="flex size-10 items-center justify-center rounded-full bg-emerald-700 font-semibold text-white" aria-hidden="true">S</span>
+                    <span class="gs-siya-avatar flex size-10 items-center justify-center rounded-full bg-emerald-700 font-semibold text-white" aria-hidden="true">S</span>
                     <div>
                         <h1 class="font-semibold leading-tight">{{ __('Siya') }}</h1>
                         <p class="text-xs text-zinc-500">{{ __('Get Sorted’s AI assistant · can make mistakes') }}</p>
@@ -354,7 +354,7 @@
         </div>
 
         @if (! in_array($stage, ['posted', 'closed'], true))
-            <form wire:submit="send" x-on:submit="pending = $wire.message" class="sticky bottom-0 -mx-4 flex gap-2 border-t border-zinc-200 bg-stone-50 px-4 py-3">
+            <form wire:submit="send" x-on:submit="pending = $wire.message" class="gs-siya-form sticky bottom-0 -mx-4 flex gap-2 border-t border-zinc-200 bg-stone-50 px-4 py-3">
                 <label for="siya-message" class="sr-only">{{ __('Message Siya') }}</label>
                 <input id="siya-message" type="text" wire:model="message" maxlength="1000" autocomplete="off"
                     placeholder="{{ $available ? __('Message Siya…') : __('Tap an option to continue') }}"

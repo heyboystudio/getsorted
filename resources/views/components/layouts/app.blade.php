@@ -9,7 +9,7 @@
         {{-- Installable site and pop-up notifications (spec 022). --}}
         <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
         <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
-        <meta name="theme-color" content="#047857">
+        <meta name="theme-color" content="{{ ($gs ?? false) ? '#F5F5F5' : '#047857' }}">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-title" content="Get Sorted">
@@ -18,9 +18,12 @@
             <meta name="vapid-public-key" content="{{ config('webpush.vapid.public_key') }}">
         @endif
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @if ($gs ?? false)
+            <link rel="stylesheet" href="{{ asset('home/panel.css') }}?v=3.5">
+        @endif
         @livewireStyles
     </head>
-    <body class="bg-stone-50 font-sans text-zinc-900 antialiased">
+    <body @class(['gs-ui antialiased' => $gs ?? false, 'bg-stone-50 font-sans text-zinc-900 antialiased' => ! ($gs ?? false)])>
         @auth
             @unless (($hideInboxNav ?? false) || request()->routeIs('notifications', 'messages'))
                 @php
