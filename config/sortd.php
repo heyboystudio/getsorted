@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 return [
 
-    // Host the admin panel lives on (e.g. admin.usesorted.co.za). Null keeps it at /admin on the main host (local and tests).
+    // Host the admin panel lives on (e.g. dashboard.usesorted.co.za). Null keeps it at /admin on the main host (local and tests).
     'admin_domain' => env('SORTD_ADMIN_DOMAIN') ?: null,
 
     // Set to true once the site sits behind the Cloudflare proxy, so visitors' real IPs are used.
