@@ -44,7 +44,7 @@ final class AdminPanelProvider extends PanelProvider
             // The whole panel uses the home v3 look (self-hosted fonts and CSS only).
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn (): string => Blade::render('<link rel="stylesheet" href="{{ asset(\'home/admin.css\') }}?v=3.6">'),
+                fn (): string => Blade::render('<link rel="stylesheet" href="{{ asset(\'home/admin.css\') }}?v=3.7">'),
             )
             ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)

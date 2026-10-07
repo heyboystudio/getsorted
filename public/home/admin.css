@@ -219,3 +219,8 @@ body.fi-panel-admin .fi-user-menu-trigger { box-shadow: none; }
   body.fi-panel-admin .fi-main-sidebar { border-right: 0; }
   body.fi-panel-admin .fi-wi-stats-overview-stat-value { font-size: 32px; }
 }
+
+/* Stats widget is wrapped in a section by Filament; the tiles are the cards, so the wrapper goes invisible. */
+body.fi-panel-admin .fi-section:has(.fi-wi-stats-overview-stat) { background: transparent; border: 0; box-shadow: none; --tw-ring-shadow: 0 0 #0000; overflow: visible; }
+body.fi-panel-admin .fi-section:has(.fi-wi-stats-overview-stat) > .fi-section-content-ctn { border: 0; padding: 0; background: transparent; }
+body.fi-panel-admin .fi-section:has(.fi-wi-stats-overview-stat) .fi-section-content { padding: 0; }
