@@ -51,7 +51,7 @@ final readonly class InviteProManually
                 'pro_id' => $pro->id,
                 'wave' => max(1, (int) $locked->invites()->max('wave')),
                 'invited_at' => $invitedAt,
-                'expires_at' => $invitedAt->copy()->addHours($this->settings->invite_expiry_hours),
+                'expires_at' => $invitedAt->copy()->addHours($locked->isUrgent() ? $this->settings->urgent_invite_expiry_hours : $this->settings->invite_expiry_hours),
                 'invited_by' => $admin->id,
             ])->save();
 

@@ -239,7 +239,27 @@ final class Thread extends Component
         $this->tradeId = $trade->id;
         $this->showTradeShortcuts = false;
         $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => $trade->name];
-        $this->say(__('What’s the :trade problem? Tell me in your own words.', ['trade' => mb_strtolower($trade->name)]));
+
+        if (trim($this->notes) === '') {
+            $this->say(__('What’s the :trade problem? Tell me in your own words.', ['trade' => mb_strtolower($trade->name)]));
+
+            return;
+        }
+
+        // The customer already described the problem (saved as notes while Siya could not read it): never ask again.
+        $this->say(__('Thanks, your description is saved for the pros. Add more detail or carry on to book.'));
+
+        if (self::soundsActive($this->notes) && ! $this->safetyShown()) {
+            $this->showSafetyAdvice();
+        }
+
+        $this->advance(speak: false);
+    }
+
+    /** Words that suggest a problem happening right now, so the trade's safety tip should not wait for the "when" step. */
+    private static function soundsActive(string $text): bool
+    {
+        return preg_match('/\b(?:leak\w*|burst\w*|flood\w*|drip\w*|pouring|overflow\w*|gushing|no water|tripp\w*|no power|smell\w*)\b/u', mb_strtolower($text)) === 1;
     }
 
     public function send(ChatWithSiya $siya): void

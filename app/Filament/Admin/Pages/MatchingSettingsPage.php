@@ -60,6 +60,7 @@ final class MatchingSettingsPage extends Page
             'default_radius_km' => $settings->default_radius_km,
             'soft_edge_km' => $settings->soft_edge_km,
             'invite_expiry_hours' => $settings->invite_expiry_hours,
+            'urgent_invite_expiry_hours' => $settings->urgent_invite_expiry_hours,
         ]);
     }
 
@@ -71,6 +72,7 @@ final class MatchingSettingsPage extends Page
             TextInput::make('default_radius_km')->label(__('Default travel radius for pros (km)'))->integer()->required()->minValue(1)->maxValue(50),
             TextInput::make('soft_edge_km')->label(__('Soft edge beyond a pro\'s radius (km)'))->integer()->required()->minValue(0)->maxValue(10),
             TextInput::make('invite_expiry_hours')->label(__('Hours a pro has to answer an invite'))->integer()->required()->minValue(1)->maxValue(168),
+            TextInput::make('urgent_invite_expiry_hours')->label(__('Hours a pro has to answer an urgent invite'))->integer()->required()->minValue(1)->maxValue(48),
         ]);
     }
 
@@ -96,7 +98,7 @@ final class MatchingSettingsPage extends Page
     {
         abort_unless(self::canAccess(), 403);
 
-        /** @var array{invite_count: int|string, max_quotes: int|string, default_radius_km: int|string, soft_edge_km: int|string, invite_expiry_hours: int|string} $state */
+        /** @var array{invite_count: int|string, max_quotes: int|string, default_radius_km: int|string, soft_edge_km: int|string, invite_expiry_hours: int|string, urgent_invite_expiry_hours: int|string} $state */
         $state = $this->settingsForm()->getState();
 
         $settings = app(MatchingSettings::class);
@@ -105,6 +107,7 @@ final class MatchingSettingsPage extends Page
         $settings->default_radius_km = (int) $state['default_radius_km'];
         $settings->soft_edge_km = (int) $state['soft_edge_km'];
         $settings->invite_expiry_hours = (int) $state['invite_expiry_hours'];
+        $settings->urgent_invite_expiry_hours = (int) $state['urgent_invite_expiry_hours'];
         $settings->save();
 
         activity()->causedBy(auth()->user())->withProperties($settings->toArray())->log('matching_settings_updated');

@@ -147,6 +147,12 @@ final class ServiceJob extends Model implements HasMedia
         return array_map(fn (array $fact): string => $fact['text'], $this->facts);
     }
 
+    /** Flagged urgent by Siya or booked for "Urgent — today": invites expire sooner and quotes may start today. */
+    public function isUrgent(): bool
+    {
+        return $this->urgency === Urgency::Urgent || $this->time_window === TimeWindow::Today;
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

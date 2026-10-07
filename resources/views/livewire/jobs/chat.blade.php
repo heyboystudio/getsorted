@@ -76,7 +76,7 @@
                         <div class="w-full max-w-sm rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm shadow-sm">
                             <p class="flex items-center gap-2 font-medium text-emerald-900"><span aria-hidden="true">🧾</span>{{ $quote->version > 1 ? __('Revised estimate') : __('Estimate') }} · {{ $R::format($quote->total_cents) }}</p>
                             <p class="mt-0.5 text-xs text-zinc-500">{{ \App\Livewire\Jobs\Chat::quoteStatus($quote) }} · {{ $quote->submitted_at?->translatedFormat('D j M, H:i') }}</p>
-                            @if ($side === $Customer)
+                            @if ($side === $Customer && $quote->status === \App\Domain\Quotes\Enums\QuoteStatus::Submitted)
                                 <p class="mt-1 text-xs text-zinc-600">{{ __('See the full estimate above to compare and accept.') }}</p>
                             @endif
                         </div>

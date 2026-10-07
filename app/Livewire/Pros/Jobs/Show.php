@@ -144,7 +144,7 @@ final class Show extends Component
         abort_unless($this->invite()->status === InviteStatus::Accepted, 403);
         $this->lines = [['kind' => LineKind::Labour->value, 'description' => '', 'quantity' => '1', 'unitPrice' => '']];
         $this->depositPercent = 0;
-        $this->earliestStartDate = LocalTime::today()->addDay()->toDateString();
+        $this->earliestStartDate = ($this->invite()->serviceJob->isUrgent() ? LocalTime::today() : LocalTime::today()->addDay())->toDateString();
         $this->validityDays = $settings->default_validity_days;
         $this->notes = '';
         $this->building = true;
