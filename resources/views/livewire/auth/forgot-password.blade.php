@@ -1,14 +1,19 @@
 @include('livewire.auth.partials.shell-start')
-        <h1 class="text-2xl font-semibold tracking-tight">{{ __('Reset your password') }}</h1>
+        <span class="auth-kicker"><i class="ph-bold ph-key" aria-hidden="true"></i>{{ __('Password help') }}</span>
+        <h1 class="auth-title">{{ __('Reset your password') }}</h1>
         @if ($sent)
-            <p class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 text-emerald-900" role="status">{{ __('If that email has an account, we\'ve sent a link to reset your password. It works for 60 minutes.') }}</p>
+            <p class="auth-note" role="status"><i class="ph-bold ph-check-circle" aria-hidden="true"></i>{{ __("If that email has an account, we've sent a link to reset your password. It works for 60 minutes.") }}</p>
         @else
-            <p class="mt-2 text-zinc-600">{{ __('Enter your email and we\'ll send you a link.') }}</p>
-            <form wire:submit="send" class="mt-8 space-y-4" novalidate>
+            <p class="auth-sub">{{ __("Enter your email and we'll send you a link.") }}</p>
+            <form wire:submit="send" class="auth-form" novalidate>
                 @include('livewire.auth.partials.field', ['name' => 'email', 'label' => __('Email'), 'type' => 'email', 'autocomplete' => 'email'])
-                <button type="submit" wire:loading.attr="disabled" wire:target="send" class="flex w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Send reset link') }}</button>
+                <button type="submit" wire:loading.attr="disabled" wire:target="send" class="btn-lime auth-submit">
+                    <span wire:loading.remove wire:target="send">{{ __('Send reset link') }}</span>
+                    <span wire:loading wire:target="send">{{ __('Sending…') }}</span>
+                    <span class="sq"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                </button>
             </form>
         @endif
-        <a wire:navigate.hover href="{{ route('login') }}" class="mt-6 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Back to sign in') }}</a>
+        <p class="auth-foot"><a wire:navigate.hover href="{{ route('login') }}" class="auth-link">← {{ __('Back to sign in') }}</a></p>
     </section>
 </main>

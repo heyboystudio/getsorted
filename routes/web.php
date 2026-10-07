@@ -56,9 +56,7 @@ Route::view('/trades', 'pages.trades.index')->name('trades.index');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('/contact', 'pages.contact')->name('contact');
 Route::get('/trades/{trade}', ShowTradeController::class)->name('trades.show');
-// Booking is one Siya thread (spec 017). Guests describe the problem, then sign in before Where & when.
-Route::get('/book', BookingThread::class)->name('book');
-Route::get('/book/{trade}', BookingThread::class)->name('book.trade');
+// Siya (the booking thread) is for signed-in users only; guests are sent to sign in and return afterwards.
 Route::redirect('/help', '/book')->name('assistant');
 
 Route::view('/terms', 'pages.terms')->name('terms');
@@ -107,6 +105,8 @@ Route::middleware('auth')->group(function (): void {
             Route::get('/app/jobs/{job}', JobShow::class)->name('jobs.show');
             Route::get('/app/jobs/{job}/continue', BookingThread::class)->name('booking.continue');
         });
+        Route::get('/book', BookingThread::class)->name('book');
+        Route::get('/book/{trade}', BookingThread::class)->name('book.trade');
         Route::get('/notifications', Inbox::class)->name('notifications');
         Route::get('/messages', Messages::class)->name('messages');
         Route::get('/pros/welcome', ProWelcome::class)->name('pros.welcome');

@@ -16,7 +16,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /** Sets a new password from an emailed reset link (spec 014, AC9). */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.auth')]
 #[Title('Choose a new password')]
 final class ResetPassword extends Component
 {

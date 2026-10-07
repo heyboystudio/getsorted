@@ -23,7 +23,7 @@ use Livewire\Component;
  * Client accounts register at /register and pro accounts at /pros/register: two separate pages and two separate
  * kinds of account (spec 011, founder 2026-10-07). Nobody gets both roles from one sign-up.
  */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.auth')]
 final class Register extends Component
 {
     #[Locked]

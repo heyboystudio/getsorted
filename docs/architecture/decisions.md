@@ -526,3 +526,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** The founder approved a ProjectOne-style redesign with full scroll animation. A separate layout keeps the home page's styles and libraries off every other page, and avoids adding npm dependencies to the app bundle.
 
 **Watch:** Animations switch off for visitors whose device asks for reduced motion; adding `?motion=on` to the URL forces them for previewing. The pro list was removed from the page: Get Sorted does not list pros publicly. Logo files (SVG, outlined lettering) are in `public/home/logo/`.
+
+## 056 · Siya is for signed-in users only; auth pages use the home v3 look
+
+**Date:** 2026-10-07 · **Status:** Accepted (founder)
+
+**Decision:** `/book` and `/book/{trade}` (the Siya booking thread) now require a signed-in user with a verified mobile. A guest who opens them, or who starts a job from the home page, is sent to sign in and returns to the thread afterwards. This supersedes spec 017's guest describe-first flow. `/help` still redirects to `/book`. The sign-in, sign-up, pro sign-up, password reset and verification pages use a dedicated layout, `components.layouts.auth`, with `public/home/auth.css` on top of the home v3 styles.
+
+**Why:** The founder changed their mind: under no circumstances may a visitor who is not logged in reach Siya.
+
+**Watch:** Guest handling inside `Thread` is now unreachable through routes; it can be removed in a later clean-up. The home page box still stores the description in the session so it survives sign-up (it expires after 30 minutes).

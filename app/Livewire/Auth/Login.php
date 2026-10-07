@@ -20,7 +20,7 @@ use Livewire\Component;
  * Sign in with email + password, or continue with Google (spec 014, AC8).
  * Admins sign in at /admin with their authenticator app, never here.
  */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.auth')]
 #[Title('Sign in')]
 final class Login extends Component
 {

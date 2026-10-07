@@ -13,7 +13,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /** "Check your email": waits for the link to be clicked and can resend it (spec 014, AC10). */
-#[Layout('components.layouts.app')]
+#[Layout('components.layouts.auth')]
 #[Title('Check your email')]
 final class VerifyEmail extends Component
 {
