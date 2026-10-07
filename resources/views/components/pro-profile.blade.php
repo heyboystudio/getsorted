@@ -9,8 +9,8 @@
         @endif
         <div class="min-w-0">
             <h1 class="text-2xl font-semibold tracking-tight">{{ $profile->businessName }}</h1>
-            @if ($profile->since)<p class="text-sm text-zinc-600">{{ __('On Get Sorted since :date', ['date' => $profile->since->translatedFormat('M Y')]) }}</p>@endif
-            <p class="mt-1 text-xs text-emerald-800">{{ __('Vetted by Get Sorted') }}</p>
+            @if ($profile->since)<p class="text-sm text-zinc-600">{{ __('On GetSorted since :date', ['date' => $profile->since->translatedFormat('M Y')]) }}</p>@endif
+            <p class="mt-1 text-xs text-emerald-800">{{ __('Vetted by GetSorted') }}</p>
         </div>
     </div>
 

@@ -6,19 +6,19 @@ services:
     ports:
       - "127.0.0.1:${DB_PORT:-5432}:5432"
     environment:
-      POSTGRES_DB: "${DB_DATABASE:-sortd}"
-      POSTGRES_USER: "${DB_USERNAME:-sortd}"
+      POSTGRES_DB: "${DB_DATABASE:-getsorted}"
+      POSTGRES_USER: "${DB_USERNAME:-getsorted}"
       POSTGRES_PASSWORD: "${DB_PASSWORD:?Set DB_PASSWORD in .env (see .env.example)}"
     volumes:
-      - sortd-pgsql:/var/lib/postgresql/data
+      - getsorted-pgsql:/var/lib/postgresql/data
       - ./docker/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/20-create-testing-database.sql:ro
     healthcheck:
       # Check over TCP: during first-start initialisation Postgres only listens on its
       # local socket, so this stays unhealthy until it is really ready for the app.
-      test: ["CMD", "pg_isready", "-q", "-h", "127.0.0.1", "-d", "${DB_DATABASE:-sortd}", "-U", "${DB_USERNAME:-sortd}"]
+      test: ["CMD", "pg_isready", "-q", "-h", "127.0.0.1", "-d", "${DB_DATABASE:-getsorted}", "-U", "${DB_USERNAME:-getsorted}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
-  sortd-pgsql:
+  getsorted-pgsql:

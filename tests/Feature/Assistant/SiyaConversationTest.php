@@ -69,7 +69,7 @@ it('does not pause for ordinary fireplace work or a historical hazard', function
 it('answers a product question without choosing a trade or recording facts', function (): void {
     conversationAssistant()->willChat(fn (): string => 'You can compare up to five quotes.');
 
-    Livewire::test(Thread::class)->set('message', 'How does Get Sorted work?')->call('send')
+    Livewire::test(Thread::class)->set('message', 'How does GetSorted work?')->call('send')
         ->assertSee('You can compare up to five quotes.')->assertSet('tradeId', null)->assertSet('facts', [])->assertSet('notes', '');
 });
 
@@ -165,7 +165,7 @@ it('keeps the tool-validated facts of a turn even if the model’s wording was r
 it('keeps draft identity and photos when the trade is corrected from the chat', function (): void {
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
-    config(['sortd.coverage.require_pros' => false]);
+    config(['getsorted.coverage.require_pros' => false]);
     $thread = bookUpToSummary(describeJob(threadFor($this->plumbing), $this->plumbing), $property)->assertSet('stage', 'summary');
     $job = ServiceJob::query()->sole();
     Storage::fake('private');
@@ -188,7 +188,7 @@ it('excludes private property labels and customer identity from subsequent model
     [$customer, $property] = bookingCustomer();
     $property->update(['label' => 'Secret Customer Fullname']);
     $this->actingAs($customer);
-    config(['sortd.coverage.require_pros' => false]);
+    config(['getsorted.coverage.require_pros' => false]);
     $thread = bookUpToSummary(describeJob(threadFor($this->plumbing), $this->plumbing), $property)->assertSet('stage', 'summary');
     conversationAssistant()->willChat(fn (): string => 'You may receive up to five quotes.');
     $thread->set('message', 'How many quotes will I receive?')->call('send')->assertSet('stage', 'summary');
@@ -218,7 +218,7 @@ it('prioritises an emergency description arriving through a preselected trade li
 it('keeps photos and draft identity when changing the trade using the summary control', function (): void {
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
-    config(['sortd.coverage.require_pros' => false]);
+    config(['getsorted.coverage.require_pros' => false]);
     $thread = bookUpToSummary(describeJob(threadFor($this->plumbing), $this->plumbing), $property)->assertSet('stage', 'summary');
     $job = ServiceJob::query()->sole();
     Storage::fake('private');
@@ -302,7 +302,7 @@ it('handles ordinary conversation without turning it into a job or changing what
 ]);
 
 it('keeps an unsupported request conversational instead of displaying unrelated trade choices', function (): void {
-    conversationAssistant()->willChat(fn (): string => 'Get Sorted doesn’t currently offer garden services. You would need a gardening service for that.');
+    conversationAssistant()->willChat(fn (): string => 'GetSorted doesn’t currently offer garden services. You would need a gardening service for that.');
 
     Livewire::test(Thread::class)->set('message', 'I need someone to mow my lawn')->call('send')
         ->assertSee('garden services')->assertSet('tradeId', null)->assertSet('notes', '')

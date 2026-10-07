@@ -18,12 +18,12 @@ function geminiChatRequest(string $customer): ChatRequest
 {
     $transcript = [['role' => 'customer', 'text' => $customer]];
 
-    return new ChatRequest(new BookingToolbox(new BookingState, ['plumbing' => 'Plumbing', 'electrical' => 'Electrical'], $transcript), $transcript, ['Get Sorted is free for customers.']);
+    return new ChatRequest(new BookingToolbox(new BookingState, ['plumbing' => 'Plumbing', 'electrical' => 'Electrical'], $transcript), $transcript, ['GetSorted is free for customers.']);
 }
 
 beforeEach(function (): void {
     config([
-        'sortd.ai.provider' => 'gemini', 'sortd.ai.model' => 'gemini-2.5-flash',
+        'getsorted.ai.provider' => 'gemini', 'getsorted.ai.model' => 'gemini-2.5-flash',
         'ai.providers.gemini.key' => 'test-key', 'ai.providers.gemini.driver' => 'gemini',
     ]);
 });

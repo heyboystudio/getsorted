@@ -29,7 +29,7 @@ final class DeclineInvite
 
         $limitKey = 'invite-declines:'.$user->id;
 
-        if (RateLimiter::tooManyAttempts($limitKey, (int) config('sortd.matching.declines_per_hour'))) {
+        if (RateLimiter::tooManyAttempts($limitKey, (int) config('getsorted.matching.declines_per_hour'))) {
             throw ValidationException::withMessages(['reason' => __('Please try again later.')]);
         }
 

@@ -31,7 +31,7 @@ final class ProPanelProvider extends PanelProvider
         return $panel
             ->id('pro')
             ->path('pro')
-            ->brandName('Get Sorted Pro')
+            ->brandName('GetSorted Pro')
             ->colors([
                 'primary' => Color::Emerald,
             ])

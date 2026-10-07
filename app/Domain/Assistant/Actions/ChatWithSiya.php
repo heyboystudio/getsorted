@@ -51,7 +51,7 @@ final readonly class ChatWithSiya
         [$outcome, $reply] = $this->calls->call(
             AiPurpose::Chat,
             'assistant:chat-rate:'.$visitorKey,
-            (int) config('sortd.ai.chat_messages_per_hour'),
+            (int) config('getsorted.ai.chat_messages_per_hour'),
             function (ScopingAssistant $assistant) use ($request, $toolbox, $transcript, $bookingStage): ChatReply {
                 $reply = $assistant->chat($request);
 

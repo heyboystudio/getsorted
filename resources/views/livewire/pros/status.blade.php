@@ -1,7 +1,7 @@
 @php($S = \App\Domain\Pros\Enums\ProStatus::class)
 <main class="flex items-start justify-center px-5 py-8">
     <section class="w-full max-w-xl">
-        <a wire:navigate.hover href="{{ route('pros.welcome') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('Get Sorted Pro') }}</a>
+        <a wire:navigate.hover href="{{ route('pros.welcome') }}" class="text-sm text-zinc-700 underline underline-offset-4">← {{ __('GetSorted Pro') }}</a>
         <h1 class="mt-6 text-2xl font-semibold tracking-tight">{{ __('Your application') }}</h1>
         <p class="mt-3">
             <span @class([

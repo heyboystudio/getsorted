@@ -25,7 +25,7 @@ use Livewire\Component;
 
 /**
  * Add and verify a South African mobile with a 6-digit code, by SMS first (or
- * WhatsApp, per `sortd.otp.default_channel`) with the other channel after 30 seconds (spec 014, AC4–AC7). Also used to change a verified number.
+ * WhatsApp, per `getsorted.otp.default_channel`) with the other channel after 30 seconds (spec 014, AC4–AC7). Also used to change a verified number.
  */
 #[Layout('components.layouts.auth')]
 #[Title('Verify your mobile')]
@@ -103,7 +103,7 @@ final class VerifyPhone extends Component
             return;
         }
 
-        if (now()->getTimestamp() - $this->codeSentAt < (int) config('sortd.otp.sms_fallback_after_seconds')) {
+        if (now()->getTimestamp() - $this->codeSentAt < (int) config('getsorted.otp.sms_fallback_after_seconds')) {
             throw ValidationException::withMessages(['code' => __('Please wait a moment before asking again.')]);
         }
 
@@ -119,7 +119,7 @@ final class VerifyPhone extends Component
             return;
         }
 
-        $digits = (int) config('sortd.otp.length');
+        $digits = (int) config('getsorted.otp.length');
         $this->validate(['code' => ['required', 'digits:'.$digits]], [
             'code.required' => __('Enter the :digits-digit code.', ['digits' => $digits]),
             'code.digits' => __('Enter the :digits-digit code.', ['digits' => $digits]),
@@ -160,7 +160,7 @@ final class VerifyPhone extends Component
             return 0;
         }
 
-        return max(0, (int) config('sortd.otp.sms_fallback_after_seconds') - (now()->getTimestamp() - $this->codeSentAt));
+        return max(0, (int) config('getsorted.otp.sms_fallback_after_seconds') - (now()->getTimestamp() - $this->codeSentAt));
     }
 
     public function render(): View
@@ -193,7 +193,7 @@ final class VerifyPhone extends Component
 
     public static function firstChannel(): MessageChannel
     {
-        return config('sortd.otp.default_channel') === 'whatsapp' ? MessageChannel::WhatsApp : MessageChannel::Sms;
+        return config('getsorted.otp.default_channel') === 'whatsapp' ? MessageChannel::WhatsApp : MessageChannel::Sms;
     }
 
     private function takenMessage(): string

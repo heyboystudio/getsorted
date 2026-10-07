@@ -42,6 +42,6 @@ final class EmergencyGuidance
 
     public static function message(): string
     {
-        return __('If there is immediate danger, call 112 from your cellphone or eThekwini Fire and Emergency on 031 361 0000 now. Get Sorted cannot dispatch emergency services. If a building is on fire, get out and do not go back inside. Follow the emergency operator’s instructions. We can help with a later repair after you have contacted emergency services.');
+        return __('If there is immediate danger, call 112 from your cellphone or eThekwini Fire and Emergency on 031 361 0000 now. GetSorted cannot dispatch emergency services. If a building is on fire, get out and do not go back inside. Follow the emergency operator’s instructions. We can help with a later repair after you have contacted emergency services.');
     }
 }

@@ -18,7 +18,7 @@ use function Laravel\Prompts\text;
  */
 final class CreateSuperAdminCommand extends Command
 {
-    protected $signature = 'sortd:create-super-admin';
+    protected $signature = 'getsorted:create-super-admin';
 
     protected $description = 'Create a super-admin account for the Filament admin panel';
 

@@ -37,7 +37,7 @@ final readonly class StoreProDocument
 
         $limitKey = 'pro-uploads:'.$user->id;
 
-        if (RateLimiter::tooManyAttempts($limitKey, (int) config('sortd.pros.uploads_per_hour'))) {
+        if (RateLimiter::tooManyAttempts($limitKey, (int) config('getsorted.pros.uploads_per_hour'))) {
             throw ValidationException::withMessages(['upload' => __('You have uploaded a lot of files. Please try again later.')]);
         }
 

@@ -46,7 +46,7 @@ final class SaveProperty
                 // Locking the owner serialises concurrent creates so the limit holds.
                 User::query()->lockForUpdate()->findOrFail($owner->id);
 
-                if ($owner->properties()->count() >= (int) config('sortd.properties.max_per_customer')) {
+                if ($owner->properties()->count() >= (int) config('getsorted.properties.max_per_customer')) {
                     throw new PropertyLimitReached('Property limit reached.');
                 }
 

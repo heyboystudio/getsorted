@@ -1,6 +1,6 @@
 # Private test site on a throwaway server (decision 037). Fake data only.
 x-app: &app
-  image: sortd-preview:latest
+  image: getsorted-preview:latest
   env_file: .env
   volumes:
     - storage:/app/storage
@@ -45,13 +45,13 @@ services:
   pgsql:
     image: postgis/postgis:17-3.5-alpine
     environment:
-      POSTGRES_DB: sortd
-      POSTGRES_USER: sortd
+      POSTGRES_DB: getsorted
+      POSTGRES_USER: getsorted
       POSTGRES_PASSWORD: "${DB_PASSWORD}"
     volumes:
       - pgsql:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-q", "-h", "127.0.0.1", "-d", "sortd", "-U", "sortd"]
+      test: ["CMD", "pg_isready", "-q", "-h", "127.0.0.1", "-d", "getsorted", "-U", "getsorted"]
       interval: 5s
       timeout: 5s
       retries: 20

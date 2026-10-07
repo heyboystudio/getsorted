@@ -33,10 +33,10 @@ final class AdminPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('admin')
-            ->domain(config('sortd.admin_domain'))
-            ->path(config('sortd.admin_domain') === null ? 'admin' : '')
-            ->brandName('Get Sorted Admin')
-            ->brandLogo(fn (): string => asset('home/logo/get-sorted-logo.svg'))
+            ->domain(config('getsorted.admin_domain'))
+            ->path(config('getsorted.admin_domain') === null ? 'admin' : '')
+            ->brandName('GetSorted Admin')
+            ->brandLogo(fn (): string => asset('home/logo/getsorted-logo.svg'))
             ->brandLogoHeight('2rem')
             ->favicon(asset('favicon-v2.png'))
             ->darkMode(false)
@@ -50,7 +50,7 @@ final class AdminPanelProvider extends PanelProvider
             ->profile(EditProfile::class, isSimple: false)
             // Optional since decision 047: an admin can switch it on in their profile.
             ->multiFactorAuthentication(
-                [AppAuthentication::make()->recoverable()->brandName('Get Sorted')],
+                [AppAuthentication::make()->recoverable()->brandName('GetSorted')],
                 isRequired: false,
             )
             ->colors([

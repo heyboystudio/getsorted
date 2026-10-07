@@ -69,7 +69,7 @@ it('shows a quoting pro\'s profile to the customer and nothing private (spec 021
     Livewire::test(CustomerProProfile::class, ['quote' => $quote])
         ->assertSee('Dlamini Plumbing')->assertSee('Twenty years fixing Durban leaks.')
         ->assertSee('Plumbing')->assertSee('Works around')->assertSee('Musgrave')
-        ->assertSee('On Get Sorted since')->assertSee('PIRB registration')->assertSee('Valid')
+        ->assertSee('On GetSorted since')->assertSee('PIRB registration')->assertSee('Valid')
         ->assertDontSee('+27821110000')->assertDontSee('thabo.secret@example.com')->assertDontSee('4123456789')
         ->assertDontSee('Identity document')->assertDontSee('Proof of address')->assertDontSee('PIRB123');
 });

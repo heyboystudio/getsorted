@@ -7,7 +7,7 @@ RUN install-php-extensions pdo_pgsql pgsql intl gd imagick bcmath zip exif pcntl
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-COPY deploy/preview/php.ini /usr/local/etc/php/conf.d/zz-sortd.ini
+COPY deploy/preview/php.ini /usr/local/etc/php/conf.d/zz-getsorted.ini
 COPY deploy/preview/Caddyfile /etc/frankenphp/Caddyfile
 
 WORKDIR /app

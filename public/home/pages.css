@@ -1,4 +1,4 @@
-/* Get Sorted — public content pages in the home v3 look (first user: /pros/join). */
+/* GetSorted — public content pages in the home v3 look (first user: /pros/join). */
 
 .pg-head { position: absolute; z-index: 5; inset: 0 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 24px var(--pad); }
 .pg-head img { display: block; height: 32px; width: auto; }

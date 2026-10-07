@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 /** POPIA retention for vetting records (spec 008, AC14). Safe to run repeatedly. */
 final class PruneVettingRecordsCommand extends Command
 {
-    protected $signature = 'sortd:prune-vetting-records';
+    protected $signature = 'getsorted:prune-vetting-records';
 
     protected $description = 'Delete documents and references of rejected or abandoned pro applications after the retention period';
 

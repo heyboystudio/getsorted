@@ -11,7 +11,7 @@
                     <span class="gs-siya-avatar flex size-10 items-center justify-center rounded-full bg-emerald-700 font-semibold text-white" aria-hidden="true">S</span>
                     <div>
                         <h1 class="font-semibold leading-tight">{{ __('Siya') }}</h1>
-                        <p class="text-xs text-zinc-500">{{ __('Get Sorted’s AI assistant · can make mistakes') }}</p>
+                        <p class="text-xs text-zinc-500">{{ __('GetSorted’s AI assistant · can make mistakes') }}</p>
                     </div>
                 </div>
                 <button type="button" wire:click="restart" wire:confirm="{{ __('Start over? This clears the chat.') }}" class="text-sm text-zinc-600 underline underline-offset-4">{{ __('Restart') }}</button>
@@ -80,7 +80,7 @@
         {{-- The current card --}}
         <div class="pb-4" wire:loading.class="opacity-60" wire:target="{{ $tapped }}">
             @if ($stage === 'emergency')
-                <p class="mb-3 text-sm text-red-900">{{ __('Contact emergency services first. Get Sorted can only help plan later repair work.') }}</p>
+                <p class="mb-3 text-sm text-red-900">{{ __('Contact emergency services first. GetSorted can only help plan later repair work.') }}</p>
                 <button type="button" wire:click="continueAfterEmergency" wire:loading.attr="disabled" class="{{ $chip }}">{{ __('Discuss a later repair') }}</button>
             @elseif ($stage === 'chat')
                 @if ($trades->isNotEmpty())
@@ -160,7 +160,7 @@
                     <button type="button" wire:click="differentTrade" x-on:click="pending = @js(__('Choose a different trade'))" class="{{ $chip }}">{{ __('Choose a different trade') }}</button>
                     <button type="button" wire:click="noThanks" x-on:click="pending = @js(__('No thanks'))" class="{{ $chip }}">{{ __('No thanks') }}</button>
                 </div>
-                <p class="mt-2 text-xs text-zinc-500">{{ __('“Keep me updated” lets Get Sorted contact you about this trade near your address.') }} <a href="{{ route('privacy') }}" wire:navigate class="underline">{{ __('Privacy notice') }}</a></p>
+                <p class="mt-2 text-xs text-zinc-500">{{ __('“Keep me updated” lets GetSorted contact you about this trade near your address.') }} <a href="{{ route('privacy') }}" wire:navigate class="underline">{{ __('Privacy notice') }}</a></p>
                 @error('waitlist') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
             @elseif ($stage === 'closed')
                 <button type="button" wire:click="differentTrade" x-on:click="pending = @js(__('Choose a different trade'))" class="{{ $chip }}">{{ __('Choose a different trade') }}</button>
@@ -241,7 +241,7 @@
             @elseif ($stage === 'photos')
                 <div class="rounded-xl border border-zinc-200 bg-white p-4">
                     <p class="font-medium">{{ __('Add a few quick photos') }}</p>
-                    <p class="text-sm text-zinc-500">{{ __('Optional, but recommended. Up to :count photos.', ['count' => config('sortd.job_photos.max_count')]) }}</p>
+                    <p class="text-sm text-zinc-500">{{ __('Optional, but recommended. Up to :count photos.', ['count' => config('getsorted.job_photos.max_count')]) }}</p>
                     @if ($photos->isNotEmpty())
                         <div class="mt-3 grid grid-cols-3 gap-2">
                             @foreach ($photos as $photo)
@@ -252,7 +252,7 @@
                             @endforeach
                         </div>
                     @endif
-                    @if ($photos->count() < config('sortd.job_photos.max_count'))
+                    @if ($photos->count() < config('getsorted.job_photos.max_count'))
                         <div class="mt-3 grid grid-cols-2 gap-2">
                             <label class="cursor-pointer rounded-lg bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-900">
                                 <input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" wire:model="photoUpload" class="sr-only"> {{ __('Upload from gallery') }}
@@ -280,7 +280,7 @@
                         </ul>
                     @endif
                     <label for="notes-draft" class="mt-4 block text-sm font-medium">{{ __('Notes for your pro') }}</label>
-                    <textarea id="notes-draft" rows="4" maxlength="{{ config('sortd.jobs.notes_max_length') }}" wire:model="notesDraft" class="mt-2 block w-full rounded-lg border border-zinc-300 px-3 py-2"></textarea>
+                    <textarea id="notes-draft" rows="4" maxlength="{{ config('getsorted.jobs.notes_max_length') }}" wire:model="notesDraft" class="mt-2 block w-full rounded-lg border border-zinc-300 px-3 py-2"></textarea>
                     @error('notesDraft') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                     <button type="button" wire:click="saveNotes" class="mt-3 {{ $primary }}">{{ __('Save') }}</button>
                 </div>

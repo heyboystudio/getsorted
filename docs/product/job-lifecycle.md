@@ -2,7 +2,7 @@
 
 > Naming: the customer-facing word is **job**. In code the entity is `ServiceJob` (table `service_jobs`) because Laravel already uses `jobs` / `App\Jobs` for queued work.
 
-The job state machine is the heart of Get Sorted. **All status changes go through one class (`App\Domain\ServiceJobs\ServiceJobStateMachine`) and one action per transition.** Nothing else may write `service_jobs.status`. Every transition writes a row to `service_job_events` (the timeline and audit trail).
+The job state machine is the heart of GetSorted. **All status changes go through one class (`App\Domain\ServiceJobs\ServiceJobStateMachine`) and one action per transition.** Nothing else may write `service_jobs.status`. Every transition writes a row to `service_job_events` (the timeline and audit trail).
 
 ## States
 

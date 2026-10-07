@@ -1,4 +1,4 @@
-/* Get Sorted — signed-in pages (account, jobs, messages, settings, Siya) in the home v3 look.
+/* GetSorted — signed-in pages (account, jobs, messages, settings, Siya) in the home v3 look.
    Loaded only when a layout passes `gs`. It re-themes Tailwind's palette for the page, so every
    existing view picks up the new colours; the shell and the main cards get the ProjectOne treatment. */
 @font-face { font-family: "Satoshi"; src: url("fonts/Satoshi-Medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }

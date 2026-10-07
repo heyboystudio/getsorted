@@ -240,8 +240,8 @@ it('cancels drafts untouched for 7 days, safely when run twice', function (): vo
     app(PostServiceJob::class)->handle($this->customer, $posted);
     ServiceJob::query()->whereKey([$old->id, $posted->id])->update(['updated_at' => now()->subDays(8)]);
 
-    $this->artisan('sortd:cancel-stale-drafts')->assertSuccessful();
-    $this->artisan('sortd:cancel-stale-drafts')->assertSuccessful();
+    $this->artisan('getsorted:cancel-stale-drafts')->assertSuccessful();
+    $this->artisan('getsorted:cancel-stale-drafts')->assertSuccessful();
 
     expect($old->fresh()->status)->toBe(ServiceJobStatus::Cancelled)
         ->and($recent->fresh()->status)->toBe(ServiceJobStatus::Draft)

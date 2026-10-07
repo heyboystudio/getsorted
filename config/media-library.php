@@ -120,7 +120,7 @@ return [
      *
      * This model is only used in Media Library Pro (https://medialibrary.pro)
      */
-    // Get Sorted does not use Media Library Pro (paid), so there is no temporary upload model.
+    // GetSorted does not use Media Library Pro (paid), so there is no temporary upload model.
     'temporary_upload_model' => null,
 
     /*

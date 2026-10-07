@@ -10,7 +10,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 /** Home: describe the problem (spec 007) or pick a trade to start a booking (spec 005, AC1). Page design: home v3 (decision 055). */
-#[Layout('components.layouts.home', ['brand' => 'Get Sorted', 'description' => 'Describe the job, compare quotes from vetted Durban pros, and keep everything in one place.'])]
+#[Layout('components.layouts.home', ['brand' => 'GetSorted', 'description' => 'Describe the job, compare quotes from vetted Durban pros, and keep everything in one place.'])]
 final class Welcome extends Component
 {
     /** Session key the booking wizard reads to prefill its notes step (spec 007, AC4). */
@@ -48,7 +48,7 @@ final class Welcome extends Component
 
             session()->put(self::DESCRIPTION_KEY, [
                 'text' => $description,
-                'expires_at' => now()->addMinutes((int) config('sortd.ai.description_ttl_minutes'))->getTimestamp(),
+                'expires_at' => now()->addMinutes((int) config('getsorted.ai.description_ttl_minutes'))->getTimestamp(),
             ]);
         }
 

@@ -8,7 +8,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
 
 /**
- * OTP and sign-up rate limits (security baseline §1; values in config/sortd.php).
+ * OTP and sign-up rate limits (security baseline §1; values in config/getsorted.php).
  * Phone keys use the normalised number, so formatting tricks don't bypass them,
  * and are HMAC'd with the app key so the cache table never holds a reversible number.
  */
@@ -19,7 +19,7 @@ final class LoginThrottle
     {
         $phoneKey = hash_hmac('sha256', $phoneE164, (string) config('app.key'));
 
-        $dailyCap = ! app()->environment('local') || (bool) config('sortd.otp.daily_cap_in_local');
+        $dailyCap = ! app()->environment('local') || (bool) config('getsorted.otp.daily_cap_in_local');
 
         return array_values(array_filter([
             self::limit('send_per_phone', 'otp-send:phone:'.$phoneKey),
@@ -63,7 +63,7 @@ final class LoginThrottle
     private static function limit(string $name, string $key): Limit
     {
         /** @var array{max: int, minutes: int} $config */
-        $config = config('sortd.otp.'.$name);
+        $config = config('getsorted.otp.'.$name);
 
         return Limit::perMinutes($config['minutes'], $config['max'])->by($key);
     }

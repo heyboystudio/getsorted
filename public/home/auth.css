@@ -1,4 +1,4 @@
-/* Get Sorted — sign-in, sign-up and verification pages. Builds on home.css (tokens, buttons). */
+/* GetSorted — sign-in, sign-up and verification pages. Builds on home.css (tokens, buttons). */
 
 .auth-body { min-height: 100dvh; background: var(--paper); }
 .auth { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; align-items: center; min-height: 100dvh; padding: 120px 20px 64px; }

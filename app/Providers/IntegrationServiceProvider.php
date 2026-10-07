@@ -73,7 +73,7 @@ final class IntegrationServiceProvider extends ServiceProvider
     /** Bedrock needs no key (the server role); Gemini and Anthropic need theirs. */
     private function assistantProviderConfigured(bool $includeAnthropic): bool
     {
-        return match (config('sortd.ai.provider')) {
+        return match (config('getsorted.ai.provider')) {
             'bedrock' => true,
             'gemini' => filled(config('ai.providers.gemini.key')),
             default => $includeAnthropic && filled(config('ai.providers.anthropic.key')),

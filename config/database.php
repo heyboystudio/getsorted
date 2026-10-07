@@ -25,7 +25,7 @@ return [
     | Database Connections
     |--------------------------------------------------------------------------
     |
-    | Get Sorted uses PostgreSQL + PostGIS as its only database (decision 002),
+    | GetSorted uses PostgreSQL + PostGIS as its only database (decision 002),
     | including for the queue, cache and sessions.
     |
     */
@@ -37,8 +37,8 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'sortd'),
-            'username' => env('DB_USERNAME', 'sortd'),
+            'database' => env('DB_DATABASE', 'getsorted'),
+            'username' => env('DB_USERNAME', 'getsorted'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',

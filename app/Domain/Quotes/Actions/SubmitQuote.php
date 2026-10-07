@@ -74,7 +74,7 @@ final readonly class SubmitQuote
     {
         $key = 'quotes:'.$user->id;
 
-        if (RateLimiter::tooManyAttempts($key, (int) config('sortd.quotes.changes_per_hour'))) {
+        if (RateLimiter::tooManyAttempts($key, (int) config('getsorted.quotes.changes_per_hour'))) {
             throw ValidationException::withMessages(['quote' => __('Please try again later.')]);
         }
 

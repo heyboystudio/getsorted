@@ -11,7 +11,7 @@ uses(RefreshDatabase::class);
 /** Decision 044 (spec 020): before launch, a customer can book anywhere, even with no pros signed up. */
 beforeEach(function (): void {
     $this->seed(CatalogueSeeder::class);
-    config()->set('sortd.coverage.require_pros', false);
+    config()->set('getsorted.coverage.require_pros', false);
     $this->plumbing = tradeOf('plumbing');
 });
 
@@ -33,7 +33,7 @@ it('still refuses inactive trades', function (): void {
 });
 
 it('requires a pro of the trade within range again when switched back on', function (): void {
-    config()->set('sortd.coverage.require_pros', true);
+    config()->set('getsorted.coverage.require_pros', true);
 
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
@@ -43,7 +43,7 @@ it('requires a pro of the trade within range again when switched back on', funct
 });
 
 it('lets the customer carry on when a pro is within range and pros are required', function (): void {
-    config()->set('sortd.coverage.require_pros', true);
+    config()->set('getsorted.coverage.require_pros', true);
     proNear(['plumbing'], 5);
 
     [$customer, $property] = bookingCustomer();
@@ -54,7 +54,7 @@ it('lets the customer carry on when a pro is within range and pros are required'
 });
 
 it('does not count a pro beyond their radius and the soft edge', function (): void {
-    config()->set('sortd.coverage.require_pros', true);
+    config()->set('getsorted.coverage.require_pros', true);
     proNear(['plumbing'], 25);
 
     expect(app(EligibleProsQuery::class)->covers($this->plumbing, durban()))->toBeFalse();

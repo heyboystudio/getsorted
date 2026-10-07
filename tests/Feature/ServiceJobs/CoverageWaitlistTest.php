@@ -42,7 +42,7 @@ it('checks coverage when the address is picked and sends an uncovered trade to t
 });
 
 it('throttles repeated coverage checks', function (): void {
-    config()->set('sortd.waitlist.checks_per_hour', 1);
+    config()->set('getsorted.waitlist.checks_per_hour', 1);
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
 
@@ -131,7 +131,7 @@ it('stores the waitlist request by trade, area and point, never a street address
 });
 
 it('answers a throttled visitor the same way whether or not the phone is already waitlisted', function (): void {
-    config()->set('sortd.waitlist.submissions_per_ip_hour', 1);
+    config()->set('getsorted.waitlist.submissions_per_ip_hour', 1);
     $join = fn (string $phone) => app(JoinWaitlist::class)->handle($this->trade, 'Musgrave', $this->point, 'Andy', $phone, true, '10.0.0.1');
 
     $join('065 910 7772');
@@ -142,7 +142,7 @@ it('answers a throttled visitor the same way whether or not the phone is already
 });
 
 it('shows a throttled waitlist tap as a message in the thread', function (): void {
-    config()->set('sortd.waitlist.submissions_per_ip_hour', 1);
+    config()->set('getsorted.waitlist.submissions_per_ip_hour', 1);
     [$customer, $property] = bookingCustomer();
     $this->actingAs($customer);
     app(JoinWaitlist::class)->handle($this->trade, 'Musgrave', $this->point, 'Sam', '071 234 5678', true, '127.0.0.1');
@@ -168,7 +168,7 @@ it('requires valid contact and consent', function (): void {
 });
 
 it('throttles repeated waitlist submissions from one visitor', function (): void {
-    config()->set('sortd.waitlist.submissions_per_ip_hour', 1);
+    config()->set('getsorted.waitlist.submissions_per_ip_hour', 1);
     app(JoinWaitlist::class)->handle($this->trade, 'Musgrave', $this->point, 'Andy', '065 910 7772', true, '10.0.0.1');
 
     expect(fn () => app(JoinWaitlist::class)->handle($this->trade, 'Musgrave', $this->point, 'Sam', '071 234 5678', true, '10.0.0.1'))

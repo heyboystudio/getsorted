@@ -30,8 +30,8 @@ final class SaveBookingDraft
     {
         $notes = $data->notes === null ? null : trim($data->notes);
 
-        if ($notes !== null && mb_strlen($notes) > (int) config('sortd.jobs.notes_max_length')) {
-            throw new CannotPostServiceJob(__('Notes can be up to :max characters.', ['max' => config('sortd.jobs.notes_max_length')]));
+        if ($notes !== null && mb_strlen($notes) > (int) config('getsorted.jobs.notes_max_length')) {
+            throw new CannotPostServiceJob(__('Notes can be up to :max characters.', ['max' => config('getsorted.jobs.notes_max_length')]));
         }
 
         return DB::transaction(function () use ($customer, $trade, $job, $data, $notes): ServiceJob {
@@ -44,7 +44,7 @@ final class SaveBookingDraft
 
                 $drafts = ServiceJob::query()->where('customer_id', $customer->id)->where('status', ServiceJobStatus::Draft)->count();
 
-                if ($drafts >= (int) config('sortd.jobs.max_drafts')) {
+                if ($drafts >= (int) config('getsorted.jobs.max_drafts')) {
                     throw new CannotPostServiceJob(__('You have too many unfinished requests. Finish or remove one first.'));
                 }
 

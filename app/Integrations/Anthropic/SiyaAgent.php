@@ -38,7 +38,7 @@ final class SiyaAgent implements Agent, Conversational, HasProviderOptions, HasT
         $facts = implode("\n", array_map(fn (string $fact): string => '- '.$fact, $this->productFacts));
 
         return <<<TEXT
-            You are Siya, Get Sorted's AI assistant for home services in Durban, South Africa. You are warm, calm and
+            You are Siya, GetSorted's AI assistant for home services in Durban, South Africa. You are warm, calm and
             practical, in plain South African English, usually 1–3 short sentences. You are not Siya Kolisi and never
             imply any link to him. Do not force slang and do not open every reply the same way.
 
@@ -60,24 +60,24 @@ final class SiyaAgent implements Agent, Conversational, HasProviderOptions, HasT
               instead of asking more.
             - If the work is not one of available_trades (a roof, a garden), say so plainly and do not pick a trade.
             - Different jobs: one job is booked at a time. Handle the one the customer wants first; note the other with park_job.
-            - If they ask a Get Sorted question, answer only from the published facts below; otherwise say you don't know.
+            - If they ask a GetSorted question, answer only from the published facts below; otherwise say you don't know.
             - Don't diagnose causes, quote prices, promise availability, or give safety, medical or legal instructions.
             - Never mention buttons, forms or screens that you have not been told are showing.
             - For immediate danger call flag_emergency and keep your reply to one line: emergency help comes first.
 
-            Published facts about Get Sorted:
+            Published facts about GetSorted:
             {$facts}
             TEXT;
     }
 
     /**
-     * Siya's turns are short and tool-driven, so Gemini's own reasoning is kept light for speed (sortd.ai.thinking_level).
+     * Siya's turns are short and tool-driven, so Gemini's own reasoning is kept light for speed (getsorted.ai.thinking_level).
      *
      * @return array<string, mixed>
      */
     public function providerOptions(Lab|string $provider): array
     {
-        $level = (string) config('sortd.ai.thinking_level');
+        $level = (string) config('getsorted.ai.thinking_level');
         $name = $provider instanceof Lab ? $provider->value : $provider;
 
         return $name === 'gemini' && $level !== '' ? ['generation_config' => ['thinking_level' => $level]] : [];

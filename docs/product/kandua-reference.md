@@ -1,6 +1,6 @@
 # Kandua reference: how Jess and booking work
 
-Observed on 2026-10-05 at kandua.com (signed out) and marketplace.kandua.com (signed in as the founder). Nothing was posted. This is the flow Get Sorted copies (spec 017).
+Observed on 2026-10-05 at kandua.com (signed out) and marketplace.kandua.com (signed in as the founder). Nothing was posted. This is the flow GetSorted copies (spec 017).
 
 ## The big idea
 
@@ -54,9 +54,9 @@ Progress bar: **Service → Describe → Where and when → Confirm**.
 - Job page: date, suburb, invoices with **Pay**, deposit, quote, **WhatsApp** button, **Cancel job**.
 - Marketing promise: "a top-rated expert matched to your needs, not a dozen pros competing for your phone number"; pay only through the Pay Now button.
 
-## What Get Sorted does today (same day, dev site)
+## What GetSorted does today (same day, dev site)
 
-| # | Get Sorted today | Kandua |
+| # | GetSorted today | Kandua |
 |---|---|---|
 | 1 | Siya chat is its own page; "Continue booking" **leaves the chat** for an 8-step wizard | Everything happens in one chat thread |
 | 2 | Siya asks "Is this correct?" in its bubble **and** in the confirm card | One confirmation, as a tick card |

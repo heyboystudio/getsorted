@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::table('suburbs')->where('municipality', config('sortd.places.municipality'))->update(['is_active' => true]);
+        DB::table('suburbs')->where('municipality', config('getsorted.places.municipality'))->update(['is_active' => true]);
     }
 
     public function down(): void

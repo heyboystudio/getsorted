@@ -91,7 +91,7 @@ final class EvaluateSiyaCommand extends Command
     private function converse(ChatWithSiya $siya, array $turns): array
     {
         $state = new BookingState;
-        $transcript = [['role' => 'assistant', 'text' => 'Hi, I’m Siya, Get Sorted’s AI assistant. Tell me what’s happening at home.']];
+        $transcript = [['role' => 'assistant', 'text' => 'Hi, I’m Siya, GetSorted’s AI assistant. Tell me what’s happening at home.']];
         $replies = [];
         $outcome = AiOutcome::Ok;
         $started = hrtime(true);

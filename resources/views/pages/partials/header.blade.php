@@ -1,6 +1,6 @@
 <header class="site-header">
     <div class="site-container header-inner">
-        <a wire:navigate.hover class="brand" href="{{ route('home') }}" aria-label="Get Sorted home"><img class="brand-logo" src="{{ asset('images/sortd-logo-v2.png') }}" alt="Get Sorted" width="160" height="54"></a>
+        <a wire:navigate.hover class="brand" href="{{ route('home') }}" aria-label="GetSorted home"><img class="brand-logo" src="{{ asset('images/getsorted-logo-v2.png') }}" alt="GetSorted" width="160" height="54"></a>
         <nav class="desktop-nav" aria-label="Main navigation">
             <a wire:navigate.hover href="{{ route('home') }}" @if(request()->routeIs('home')) aria-current="page" @endif>Home</a>
             <a wire:navigate.hover href="{{ route('about') }}" @if(request()->routeIs('about')) aria-current="page" @endif>About</a>

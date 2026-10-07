@@ -24,7 +24,7 @@ final class VerifyPhoneCode
      */
     public function handle(User $user, string $phoneE164, string $code): void
     {
-        $maxAttempts = (int) config('sortd.otp.max_attempts');
+        $maxAttempts = (int) config('getsorted.otp.max_attempts');
 
         // Wrong attempts must be saved, so the outcome is decided inside the
         // transaction and only thrown after it commits.

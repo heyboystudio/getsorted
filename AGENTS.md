@@ -1,7 +1,7 @@
 <laravel-boost-guidelines>
-=== .ai/sortd-domain rules ===
+=== .ai/getsorted-domain rules ===
 
-# Get Sorted — domain rules
+# GetSorted — domain rules
 
 ## Vocabulary
 
@@ -37,11 +37,11 @@ Rules: `docs/product/matching.md`. Eligibility is one query object (`EligiblePro
 
 Timers, commission rate, deposit cap and invite wave sizes come from settings (`spatie/laravel-settings`), never literals in code. Defaults are listed in the lifecycle, money-flow and matching docs.
 
-=== .ai/sortd-project rules ===
+=== .ai/getsorted-project rules ===
 
-# Get Sorted — project rules (read before any task)
+# GetSorted — project rules (read before any task)
 
-Get Sorted is a Durban/eThekwini marketplace connecting households with vetted tradespeople (plumbing, electrical, painting, tiling in v1). The founder does not write code: you write all code, tests and docs, and you explain decisions in plain language.
+GetSorted is a Durban/eThekwini marketplace connecting households with vetted tradespeople (plumbing, electrical, painting, tiling in v1). The founder does not write code: you write all code, tests and docs, and you explain decisions in plain language.
 
 ## Where things are
 
@@ -63,7 +63,7 @@ Get Sorted is a Durban/eThekwini marketplace connecting households with vetted t
 
 ## Hard rules
 
-- These Get Sorted rules take precedence over the generic Laravel Boost guidelines that follow them in `CLAUDE.md` (for example, docs **must** be updated in the same change, and hosting stays undecided until decision 014).
+- These GetSorted rules take precedence over the generic Laravel Boost guidelines that follow them in `CLAUDE.md` (for example, docs **must** be updated in the same change, and hosting stays undecided until decision 014).
 - Follow `docs/security/security-baseline.md` in every change.
 - Business logic lives in `app/Domain/*/Actions`. Livewire components, Filament resources, controllers and queued jobs stay thin.
 - Job status changes only through `ServiceJobStateMachine` transitions; every transition writes a `service_job_events` row.

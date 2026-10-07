@@ -37,7 +37,7 @@
                     @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::AwaitingDeposit)
                         <p class="mt-3 text-sm text-emerald-900">{{ __('Waiting for the customer\'s deposit of :amount. Payment opens soon.', ['amount' => $R::format($quote->deposit_cents)]) }}</p>
                     @endif
-                    <p class="mt-3 text-sm text-emerald-900">{{ __('Keep payments on Get Sorted. It protects you and the customer.') }}</p>
+                    <p class="mt-3 text-sm text-emerald-900">{{ __('Keep payments on GetSorted. It protects you and the customer.') }}</p>
                 </section>
             @endif
 
@@ -173,7 +173,7 @@
                         @endif
                         <div class="mt-4 rounded-lg bg-zinc-50 p-3 text-sm">
                             <p class="font-medium">{{ __('Estimated payout: :amount', ['amount' => $R::format($previewTotals->payoutEstimateCents)]) }}</p>
-                            <p class="mt-1 text-zinc-600">{{ __('After Get Sorted\'s commission of about :amount on labour and call-out. This is an estimate.', ['amount' => $R::format($previewTotals->commissionEstimateCents)]) }}</p>
+                            <p class="mt-1 text-zinc-600">{{ __('After GetSorted\'s commission of about :amount on labour and call-out. This is an estimate.', ['amount' => $R::format($previewTotals->commissionEstimateCents)]) }}</p>
                         </div>
                         @error('quote') <p class="mt-3 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                         <div class="mt-4 grid grid-cols-2 gap-3">

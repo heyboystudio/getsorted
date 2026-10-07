@@ -14,7 +14,7 @@
                 ['properties.index', __('Properties'), __('Addresses you book for')],
                 ['account.notifications', __('Notifications'), __('Which messages you get, and where')],
                 ['account.privacy', __('Privacy and data'), __('Download or delete your data')],
-                ['contact', __('Help'), __('Talk to the Get Sorted team')],
+                ['contact', __('Help'), __('Talk to the GetSorted team')],
             ] as [$route, $title, $hint])
                 <li>
                     <a wire:navigate.hover href="{{ route($route) }}" class="flex items-center justify-between gap-3 p-4 hover:bg-zinc-50">

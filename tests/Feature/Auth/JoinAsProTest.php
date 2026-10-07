@@ -51,7 +51,7 @@ it('tells a signed-in client that pro accounts are separate, with no way to conv
 
 it('has separate sign-up pages for clients and pros', function (): void {
     $this->get('/register')->assertOk()->assertSee('Create your client account')->assertDontSee('pro agreement')->assertSee(route('pros.register'), false);
-    $this->get('/pros/register')->assertOk()->assertSee('Join Get Sorted as a pro')->assertSee('pro agreement')->assertDontSee('Create your client account');
+    $this->get('/pros/register')->assertOk()->assertSee('Join GetSorted as a pro')->assertSee('pro agreement')->assertDontSee('Create your client account');
 });
 
 it('sends old pro sign-up links to the pro page', function (): void {
@@ -59,7 +59,7 @@ it('sends old pro sign-up links to the pro page', function (): void {
 });
 
 it('uses the pro sign-up page with pro wording (AC2, spec 014)', function (): void {
-    Livewire::test(Register::class, ['as' => 'pro'])->assertSet('asPro', true)->assertSee('Join Get Sorted as a pro');
+    Livewire::test(Register::class, ['as' => 'pro'])->assertSet('asPro', true)->assertSee('Join GetSorted as a pro');
 });
 
 it('signs up a new pro with the pro role and three consents (AC3, AC4, AC6)', function (): void {

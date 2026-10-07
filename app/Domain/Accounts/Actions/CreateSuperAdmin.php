@@ -14,7 +14,7 @@ use SensitiveParameter;
 
 /**
  * Creates a super-admin account. Only reachable from the
- * `sortd:create-super-admin` console command, never from a seeder or the web.
+ * `getsorted:create-super-admin` console command, never from a seeder or the web.
  */
 final class CreateSuperAdmin
 {

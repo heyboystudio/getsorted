@@ -25,13 +25,13 @@ jobs:
       pgsql:
         image: postgis/postgis:17-3.5-alpine
         env:
-          POSTGRES_DB: sortd_testing
-          POSTGRES_USER: sortd
-          POSTGRES_PASSWORD: sortd_ci
+          POSTGRES_DB: getsorted_testing
+          POSTGRES_USER: getsorted
+          POSTGRES_PASSWORD: getsorted_ci
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U sortd -d sortd_testing"
+          --health-cmd "pg_isready -U getsorted -d getsorted_testing"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -39,9 +39,9 @@ jobs:
     env:
       DB_HOST: 127.0.0.1
       DB_PORT: 5432
-      DB_DATABASE: sortd_testing
-      DB_USERNAME: sortd
-      DB_PASSWORD: sortd_ci
+      DB_DATABASE: getsorted_testing
+      DB_USERNAME: getsorted
+      DB_PASSWORD: getsorted_ci
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

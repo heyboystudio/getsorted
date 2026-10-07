@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
 /** Cancels drafts untouched for the configured number of days (spec 005, AC12). Safe to run repeatedly. */
 final class CancelStaleDraftsCommand extends Command
 {
-    protected $signature = 'sortd:cancel-stale-drafts';
+    protected $signature = 'getsorted:cancel-stale-drafts';
 
     protected $description = 'Cancel booking drafts that have not been touched for the draft expiry period';
 

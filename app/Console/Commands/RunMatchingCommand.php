@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 /** Spec 009: expire invites, close finished jobs' invites, send due waves. Safe to run repeatedly. */
 final class RunMatchingCommand extends Command
 {
-    protected $signature = 'sortd:run-matching';
+    protected $signature = 'getsorted:run-matching';
 
     protected $description = 'Expire invites and send due invite waves';
 

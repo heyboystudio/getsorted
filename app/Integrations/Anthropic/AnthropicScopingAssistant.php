@@ -22,7 +22,7 @@ use Throwable;
 /**
  * ScopingAssistant through the Laravel AI SDK (spec 007, 016): the Anthropic API,
  * Amazon Bedrock (EU, decision 043) or the Google Gemini API (decision 049), per
- * `sortd.ai.provider`. The class name predates the other providers.
+ * `getsorted.ai.provider`. The class name predates the other providers.
  * Bound only when a provider is configured; the domain still keeps it idle
  * until the `ai.enabled` setting is on (founder decision 1).
  */
@@ -51,7 +51,7 @@ final class AnthropicScopingAssistant implements ScopingAssistant
             ."\n<customer_message>".$this->json($latest['text'] ?? '').'</customer_message>'
             .($request->guardFeedback === null ? '' : "\n<reviewer_note>".$this->json($request->guardFeedback).'</reviewer_note>');
 
-        $response = $this->ask(new SiyaAgent($toolbox, $transcript, $request->productFacts), $prompt, (int) config('sortd.ai.chat_timeout_seconds'));
+        $response = $this->ask(new SiyaAgent($toolbox, $transcript, $request->productFacts), $prompt, (int) config('getsorted.ai.chat_timeout_seconds'));
 
         return new ChatReply(trim($response->text) === '' ? null : trim($response->text), $this->usage($response), max(1, $response->steps->count()), $response->toolCalls->count());
     }
@@ -74,7 +74,7 @@ final class AnthropicScopingAssistant implements ScopingAssistant
     /** @throws AssistantUnavailable */
     private function ask(Agent $agent, string $prompt, ?int $timeout = null): AgentResponse
     {
-        $send = fn (): AgentResponse => $agent->prompt($prompt, provider: $this->provider(), model: $this->model(), timeout: $timeout ?? (int) config('sortd.ai.timeout_seconds'));
+        $send = fn (): AgentResponse => $agent->prompt($prompt, provider: $this->provider(), model: $this->model(), timeout: $timeout ?? (int) config('getsorted.ai.timeout_seconds'));
 
         try {
             try {
@@ -108,7 +108,7 @@ final class AnthropicScopingAssistant implements ScopingAssistant
 
     private function provider(): string
     {
-        return match (config('sortd.ai.provider')) {
+        return match (config('getsorted.ai.provider')) {
             'bedrock' => 'bedrock',
             'gemini' => 'gemini',
             default => 'anthropic',
@@ -117,7 +117,7 @@ final class AnthropicScopingAssistant implements ScopingAssistant
 
     private function model(): string
     {
-        return (string) config('sortd.ai.model');
+        return (string) config('getsorted.ai.model');
     }
 
     /** JSON with <, > and & escaped so customer text cannot close the data tags. */

@@ -106,16 +106,16 @@ final readonly class SendJobMessage
             throw ValidationException::withMessages(['message' => __('Type a message or add a photo.')]);
         }
 
-        if (mb_strlen($body) > (int) config('sortd.chat.max_length')) {
-            throw ValidationException::withMessages(['message' => __('Messages can be up to :max characters.', ['max' => config('sortd.chat.max_length')])]);
+        if (mb_strlen($body) > (int) config('getsorted.chat.max_length')) {
+            throw ValidationException::withMessages(['message' => __('Messages can be up to :max characters.', ['max' => config('getsorted.chat.max_length')])]);
         }
 
-        if (count($photos) > (int) config('sortd.chat.photos_per_message')) {
-            throw ValidationException::withMessages(['photos' => __('Send up to :count photos at a time.', ['count' => config('sortd.chat.photos_per_message')])]);
+        if (count($photos) > (int) config('getsorted.chat.photos_per_message')) {
+            throw ValidationException::withMessages(['photos' => __('Send up to :count photos at a time.', ['count' => config('getsorted.chat.photos_per_message')])]);
         }
 
         foreach ($photos as $photo) {
-            if ($photo->getSize() === false || $photo->getSize() > (int) config('sortd.job_photos.max_kilobytes') * 1024) {
+            if ($photo->getSize() === false || $photo->getSize() > (int) config('getsorted.job_photos.max_kilobytes') * 1024) {
                 throw ValidationException::withMessages(['photos' => __('Each photo must be 10 MB or smaller.')]);
             }
         }
@@ -126,11 +126,11 @@ final readonly class SendJobMessage
         $messages = 'chat:messages:'.$sender->id.':'.$job->id.':'.$pro->id;
         $dailyPhotos = 'chat:photos:'.$sender->id;
 
-        if (RateLimiter::tooManyAttempts($messages, (int) config('sortd.chat.messages_per_hour'))) {
+        if (RateLimiter::tooManyAttempts($messages, (int) config('getsorted.chat.messages_per_hour'))) {
             throw ValidationException::withMessages(['message' => __('You’re sending messages too quickly. Try again in a little while.')]);
         }
 
-        if ($photoCount > 0 && RateLimiter::attempts($dailyPhotos) + $photoCount > (int) config('sortd.chat.photos_per_day')) {
+        if ($photoCount > 0 && RateLimiter::attempts($dailyPhotos) + $photoCount > (int) config('getsorted.chat.photos_per_day')) {
             throw ValidationException::withMessages(['photos' => __('You’ve sent the most photos allowed today.')]);
         }
 

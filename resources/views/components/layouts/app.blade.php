@@ -3,8 +3,8 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="{{ $description ?? __('Get Sorted connects Durban homes with local tradespeople for plumbing, electrical, painting and tiling work.') }}">
-        <title>{{ isset($title) ? $title.' · '.($brand ?? __('Get Sorted')) : ($brand ?? __('Get Sorted')) }}</title>
+        <meta name="description" content="{{ $description ?? __('GetSorted connects Durban homes with local tradespeople for plumbing, electrical, painting and tiling work.') }}">
+        <title>{{ isset($title) ? $title.' · '.($brand ?? __('GetSorted')) : ($brand ?? __('GetSorted')) }}</title>
         <link rel="icon" href="{{ asset('favicon-v2.png') }}" type="image/png">
         {{-- Installable site and pop-up notifications (spec 022). --}}
         <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
@@ -12,7 +12,7 @@
         <meta name="theme-color" content="{{ ($gs ?? false) ? '#F5F5F5' : '#047857' }}">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-title" content="Get Sorted">
+        <meta name="apple-mobile-web-app-title" content="GetSorted">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         @if (filled(config('webpush.vapid.public_key')) && filled(config('webpush.vapid.private_key')))
             <meta name="vapid-public-key" content="{{ config('webpush.vapid.public_key') }}">

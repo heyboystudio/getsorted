@@ -63,9 +63,9 @@ final class Chat extends Component
     public function send(SendJobMessage $sendJobMessage): void
     {
         $this->validate([
-            'message' => ['nullable', 'string', 'max:'.config('sortd.chat.max_length')],
-            'photos' => ['array', 'max:'.config('sortd.chat.photos_per_message')],
-            'photos.*' => ['file', 'max:'.config('sortd.job_photos.max_kilobytes')],
+            'message' => ['nullable', 'string', 'max:'.config('getsorted.chat.max_length')],
+            'photos' => ['array', 'max:'.config('getsorted.chat.photos_per_message')],
+            'photos.*' => ['file', 'max:'.config('getsorted.job_photos.max_kilobytes')],
         ]);
 
         $sendJobMessage->handle($this->user(), $this->job(), $this->pro(), $this->message, $this->photos);
@@ -134,8 +134,8 @@ final class Chat extends Component
             'reasons' => MessageReportReason::cases(),
             // Messages from this side that the other side has opened (shown as "Seen").
             'otherReadAt' => $otherReadAt,
-            'otherOnline' => $otherReadAt?->gt(now()->subSeconds((int) config('sortd.chat.online_seconds'))) === true,
-            'maxLength' => (int) config('sortd.chat.max_length'),
+            'otherOnline' => $otherReadAt?->gt(now()->subSeconds((int) config('getsorted.chat.online_seconds'))) === true,
+            'maxLength' => (int) config('getsorted.chat.max_length'),
             'starters' => $this->starters($side),
         ]);
     }

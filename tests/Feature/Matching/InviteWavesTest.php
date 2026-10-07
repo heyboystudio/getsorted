@@ -325,7 +325,7 @@ it('stops matching with a reason, so no further invites go out (AC11)', function
 
 it('schedules matching every five minutes (rules)', function (): void {
     $events = collect(app(Schedule::class)->events());
-    $matching = $events->first(fn ($event): bool => str_contains((string) $event->command, 'sortd:run-matching'));
+    $matching = $events->first(fn ($event): bool => str_contains((string) $event->command, 'getsorted:run-matching'));
 
     expect($matching)->not->toBeNull()->and($matching->expression)->toBe('*/5 * * * *');
 });

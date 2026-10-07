@@ -544,3 +544,15 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Update 2026-10-07 (founder):** The product is now called **Get Sorted** everywhere users and docs see it (it was "Sortd"). Technical identifiers are unchanged for now: the `sortd` config file and `SORTD_*` environment variables, package names, database names, the `sortd.heyboy.co.za` preview host and the `~/sortd` server folder. The whole admin panel uses the home v3 look (`public/home/admin.css`), light theme only, with initials avatars drawn inline (`App\Support\InitialsAvatarProvider`) because the security headers block outside images.
 
 **Update 2026-10-07 (founder):** The admin panel moved from `admin.usesorted.co.za` to **`dashboard.usesorted.co.za`** (`SORTD_ADMIN_DOMAIN` and `SERVER_NAME` on the server). Cloudflare proxy is switched on for the site hosts; `SORTD_BEHIND_CLOUDFLARE=true` was already set and SSL mode must be Full (strict).
+
+## 057 · One name everywhere: GetSorted
+
+**Date:** 2026-10-07 · **Status:** Accepted (founder)
+
+**Decision:** The product is **GetSorted** (one word) in every user-facing string, email, document and page title. Every technical identifier follows: `config/getsorted.php` and `config('getsorted.…')`, `GETSORTED_*` environment variables, `getsorted:*` console commands, the `getsorted` / `getsorted_testing` databases and role (local password `getsorted_local`), the `heyboystudio/getsorted` package name, the `.getsorted-site` CSS class, `.ai/guidelines/getsorted-*.md`, and the logo files (`public/home/logo/getsorted-*.svg`, `public/images/getsorted-*.png`). This supersedes the "technical identifiers are unchanged for now" note in decision 056.
+
+**Why:** Three spellings (Sortd, Get Sorted, Sorted.) were in use at once, before launch, while the brand is still being cleared (Q11). Renaming now is cheap; after launch it is not.
+
+**Kept on purpose:** historical records (this log above 057, specs 001–022, the Phase 0 reports) keep the names that were true when they were written. The old preview host `sortd.heyboy.co.za` (also the current mail sender domain) and the AWS role `sortd-preview-bedrock` stay until the server steps in `docs/engineering/rename-server-checklist.md` are done; the customer domain `usesorted.co.za` is unchanged.
+
+**Watch:** the test server must have its database and role renamed **before** this code is deployed, or the app cannot connect. Existing sessions are signed out once (the session cookie name follows `APP_NAME`).

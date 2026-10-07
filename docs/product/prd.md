@@ -1,4 +1,4 @@
-# Get Sorted — Product Requirements (v1)
+# GetSorted — Product Requirements (v1)
 
 Status: Draft v1 · Owner: founder · Last updated: 2026-10-03
 
@@ -10,7 +10,7 @@ Tradespeople, meanwhile, lose 20% of labour to commission and wait 3 business da
 
 ## 2. Product in one sentence
 
-Get Sorted turns a household's description of a problem into a clear, scoped job, invites vetted Durban pros in waves to collect up to three quotes, and runs quote → deposit → work → final payment → review in one place, with WhatsApp updates throughout.
+GetSorted turns a household's description of a problem into a clear, scoped job, invites vetted Durban pros in waves to collect up to three quotes, and runs quote → deposit → work → final payment → review in one place, with WhatsApp updates throughout.
 
 ## 3. Users and roles
 
@@ -18,7 +18,7 @@ Get Sorted turns a household's description of a problem into a clear, scoped job
 |---|---|---|
 | Customer | A Durban homeowner or tenant | Public website + customer web app (`/app`) |
 | Pro | A vetted tradesperson or small trade business | Mobile web pages (`/pros/...`) |
-| Admin | Get Sorted staff: support, vetting, finance | Admin panel (`/admin`, Filament panel) |
+| Admin | GetSorted staff: support, vetting, finance | Admin panel (`/admin`, Filament panel) |
 
 Pros may later have team members; v1 is one login per pro business.
 
