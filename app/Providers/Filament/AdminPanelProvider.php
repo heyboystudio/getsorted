@@ -42,7 +42,7 @@ final class AdminPanelProvider extends PanelProvider
             // The sign-in page uses the home v3 look (self-hosted fonts and CSS only).
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn (): string => Blade::render('<link rel="stylesheet" href="{{ asset(\'home/admin.css\') }}?v=3.3">'),
+                fn (): string => Blade::render('<link rel="stylesheet" href="{{ asset(\'home/admin.css\') }}?v=3.4">'),
                 scopes: Login::class,
             )
             ->login(Login::class)

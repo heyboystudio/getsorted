@@ -19,12 +19,8 @@ body.fi-panel-admin .fi-simple-main {
   box-shadow: 8px 8px 0 var(--ink); padding: 36px 36px 32px; max-width: 460px; --tw-ring-shadow: 0 0 #0000;
 }
 body.fi-panel-admin .fi-simple-header { align-items: flex-start; text-align: left; margin-bottom: 8px; }
-body.fi-panel-admin .fi-logo { height: 2rem; }
-body.fi-panel-admin .fi-simple-header::after {
-  content: "Admin"; order: -1; display: inline-block; margin-bottom: 20px; padding: 7px 12px; border-radius: 8px;
-  background: var(--ink); color: #FAFAFA; font-size: 12px; font-weight: 700; text-transform: uppercase;
-}
-body.fi-panel-admin .fi-simple-header-heading { margin-top: 20px; font-size: 38px; line-height: 1.05; font-weight: 900; letter-spacing: -.01em; color: var(--ink); text-align: left; }
+body.fi-panel-admin .fi-simple-header .fi-logo, body.fi-panel-admin .fi-simple-header .fi-logo img { height: 3.5rem !important; width: auto; max-width: 100%; }
+body.fi-panel-admin .fi-simple-header-heading { margin-top: 24px; font-size: 38px; line-height: 1.05; font-weight: 900; letter-spacing: -.01em; color: var(--ink); text-align: left; }
 body.fi-panel-admin .fi-fo-field-label-content { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--ink); }
 body.fi-panel-admin .fi-input-wrp {
   border-radius: 10px; background: #F2F2F2; --tw-ring-color: var(--ink); box-shadow: 0 0 0 1.5px var(--ink); transition: background-color .2s, box-shadow .2s;
