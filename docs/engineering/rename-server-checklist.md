@@ -68,7 +68,7 @@ deploy/preview/deploy.sh        # now copies to ~/getsorted on the server
 
 ## 6. Later (no rush, no downtime)
 
-- [ ] **Mail sender:** verify a sender domain in Resend (for example `usesorted.co.za`), then change `MAIL_FROM_ADDRESS` in the server `.env` and redeploy.
+- [ ] **Mail sender:** once `usesorted.co.za` is verified in Resend (pending), change `MAIL_FROM_ADDRESS` in the server `.env` to an `@usesorted.co.za` address and redeploy. The contact page already shows info@usesorted.co.za.
 - [ ] **Old host:** in Cloudflare, retire `sortd.heyboy.co.za` or redirect it to `usesorted.co.za`.
 - [ ] **AWS:** the IAM role `sortd-preview-bedrock` is unused since the move to Gemini (decision 049). Delete or rename it.
 - [ ] Delete `~/getsorted/deploy/preview/.env.before-rename` once all is well.
