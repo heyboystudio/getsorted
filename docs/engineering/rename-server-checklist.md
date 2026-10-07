@@ -43,12 +43,10 @@ docker compose down
 cd ~ && mv sortd getsorted
 cd ~/getsorted/deploy/preview
 cp .env .env.before-rename
-sed -i 's/^SORTD_/GETSORTED_/; s/^APP_NAME=.*/APP_NAME=GetSorted/; s/^DB_DATABASE=sortd$/DB_DATABASE=getsorted/; s/^DB_USERNAME=sortd$/DB_USERNAME=getsorted/' .env
-grep -n -i sortd .env   # only MAIL_FROM_ADDRESS (and any sortd.heyboy.co.za host) should remain
+sed -i 's/^SORTD_/GETSORTED_/; s/^APP_NAME=.*/APP_NAME=GetSorted/; s/^DB_DATABASE=sortd$/DB_DATABASE=getsorted/; s/^DB_USERNAME=sortd$/DB_USERNAME=getsorted/; s/^MAIL_FROM_ADDRESS=.*/MAIL_FROM_ADDRESS=info@usesorted.co.za/' .env
+grep -n -i sortd .env   # should print nothing (or only an old sortd.heyboy.co.za host line)
 crontab -l 2>/dev/null | grep -i sortd   # should print nothing; the scheduler runs inside Docker
 ```
-
-Leave `MAIL_FROM_ADDRESS` on `@sortd.heyboy.co.za` until a new sender domain is verified in Resend (step 6).
 
 ## 4. Deploy from your Mac
 
@@ -68,7 +66,6 @@ deploy/preview/deploy.sh        # now copies to ~/getsorted on the server
 
 ## 6. Later (no rush, no downtime)
 
-- [ ] **Mail sender:** once `usesorted.co.za` is verified in Resend (pending), change `MAIL_FROM_ADDRESS` in the server `.env` to an `@usesorted.co.za` address and redeploy. The contact page already shows info@usesorted.co.za.
 - [ ] **Old host:** in Cloudflare, retire `sortd.heyboy.co.za` or redirect it to `usesorted.co.za`.
 - [ ] **AWS:** the IAM role `sortd-preview-bedrock` is unused since the move to Gemini (decision 049). Delete or rename it.
 - [ ] Delete `~/getsorted/deploy/preview/.env.before-rename` once all is well.

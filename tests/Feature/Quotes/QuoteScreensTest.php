@@ -96,7 +96,7 @@ it('builds, previews and sends a quote from the invite page (AC1–AC3)', functi
         ->set('lines.1.kind', 'materials')->set('lines.1.description', 'Washer kit')->set('lines.1.quantity', '1')->set('lines.1.unitPrice', '120.50')
         ->set('depositPercent', 20)->set('earliestStartDate', now('Africa/Johannesburg')->addDay()->toDateString())->set('validityDays', 7)
         ->call('preview')->assertHasNoErrors()
-        ->assertSee('R 570.50')->assertSee('R 114.10')->assertSee('Estimated payout')->assertSee('R 516.50')
+        ->assertSee('R 570.50')->assertSee('R 114.10')->assertSee('The customer pays you directly')->assertDontSee('Estimated payout')
         ->call('submitQuote')->assertHasNoErrors()
         ->assertSee('Quote sent');
 
@@ -264,7 +264,7 @@ it('accepts a quote after confirmation and then shows the pro\'s contact details
     Livewire::test(CustomerJob::class, ['job' => $job])
         ->call('confirmAccept', $quote->public_id)->assertSee('Accept this estimate for R 570.50?')
         ->call('accept')->assertHasNoErrors()
-        ->assertSee('Booked with Dlamini Plumbing')->assertSee($pro->user->phone_e164)->assertSee('Keep payments on GetSorted');
+        ->assertSee('Booked with Dlamini Plumbing')->assertSee($pro->user->phone_e164)->assertSee('GetSorted does not handle payments yet');
 
     expect($job->fresh()->status)->toBe(ServiceJobStatus::Scheduled);
 });
@@ -276,7 +276,7 @@ it('shows "payment opens soon" when the accepted quote has a deposit (AC8, decis
     app(AcceptQuote::class)->handle($job->customer, $quote);
     $this->actingAs($job->customer);
 
-    Livewire::test(CustomerJob::class, ['job' => $job])->assertSee('Payment opens soon')->assertSee('R 114.10');
+    Livewire::test(CustomerJob::class, ['job' => $job])->assertSee('paid directly to your pro')->assertSee('R 114.10')->assertDontSee('Payment opens soon');
 });
 
 // --- Contact details (AC9) -----------------------------------------------------------------
@@ -296,7 +296,7 @@ it('reveals the customer\'s contact details and address only to the accepted pro
 
     Livewire::test(ProJob::class, ['invite' => screenInvite($job, $winner)])
         ->assertSee('Nomvula')->assertSee('+27829990000')->assertSee('7 Private Lane')->assertSee('Home')
-        ->assertSee('Keep payments on GetSorted')->assertDontSee('Secretname');
+        ->assertSee('GetSorted does not handle payments yet')->assertDontSee('Secretname');
 
     $this->actingAs($loser->user);
     Livewire::test(ProJob::class, ['invite' => screenInvite($job, $loser)])

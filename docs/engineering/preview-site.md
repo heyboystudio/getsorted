@@ -36,7 +36,7 @@ The home page (home v3, decision 055) has its own layout, `components.layouts.ho
 
 The website's logo and photographs are generated visual assets stored in `public/images/`. They are illustrative and do not depict actual GetSorted customers, pros or completed jobs.
 
-The public navigation includes Home, About, Customers, Pros and Contact. The Contact page routes visitors to the customer or pro journey and displays founder-approved contact details: info@usesorted.co.za (real) and 031 000 0000 (placeholder phone). The subdomain has no receiving MX record yet; replace these details when real contact channels are connected.
+The public navigation includes Home, About, Customers, Pros and Contact. The Contact page routes visitors to the customer or pro journey and displays founder-approved contact details: info@usesorted.co.za and 031 007 0622. The subdomain has no receiving MX record yet; replace these details when real contact channels are connected.
 
 ## Pop-up notifications (spec 022)
 Push needs a VAPID key pair in `~/getsorted/deploy/preview/.env` (`VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`); without them push is skipped quietly. The keys were generated on 2026-10-07 and are never committed or printed.

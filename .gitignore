@@ -43,3 +43,6 @@ yarn-error.log
 /.pi
 /opencode.json
 /opencode.jsonc
+
+# macOS
+.DS_Store

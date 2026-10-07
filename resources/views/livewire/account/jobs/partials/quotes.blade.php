@@ -10,14 +10,13 @@
         <p class="mt-2 text-sm">{{ __('Mobile') }}: <a href="tel:{{ $acceptedQuote->pro->user->phone_e164 }}" class="font-medium underline">{{ $acceptedQuote->pro->user->phone_e164 }}</a></p>
         <p class="mt-1 text-sm">{{ __('Starting') }}: {{ $job->scheduled_for?->translatedFormat('D j M Y') }} · {{ __('Total') }} {{ $R::format($acceptedQuote->total_cents) }}</p>
         @if ($job->status === $S::AwaitingDeposit)
-            <p class="mt-3 rounded-lg bg-white p-3 text-sm">{{ __('Deposit due: :amount. Payment opens soon. We\'ll WhatsApp you when you can pay.', ['amount' => $R::format($acceptedQuote->deposit_cents)]) }}</p>
+            <p class="mt-3 rounded-lg bg-white p-3 text-sm">{{ __('Deposit due: :amount, paid directly to your pro. Agree with them how and when to pay.', ['amount' => $R::format($acceptedQuote->deposit_cents)]) }}</p>
         @endif
-        <p class="mt-3 text-sm text-emerald-900">{{ __('Keep payments on GetSorted. It protects you and the pro.') }}</p>
+        <p class="mt-3 text-sm text-emerald-900">{{ __('GetSorted does not handle payments yet: you pay your pro directly. Ask for a receipt.') }}</p>
     </section>
 @elseif ($job->status === $S::Open && $quotes->isNotEmpty())
     <section class="mt-6">
         <h2 class="font-semibold">{{ __('Estimates (:count of :max)', ['count' => $quotes->count(), 'max' => \App\Domain\Quotes\Support\QuoteFlow::maxQuotes()]) }}</h2>
-        <p class="mt-1 text-sm text-zinc-600">{{ __('Your pro can adjust the final amount after seeing the job. You’ll approve any change.') }}</p>
         @error('accept') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
         <div class="mt-3 grid gap-4 lg:grid-cols-3">
             @foreach ($quotes as $quote)
@@ -81,7 +80,7 @@
                 <h2 id="accept-title" class="text-lg font-semibold">{{ __('Accept this estimate for :total?', ['total' => $R::format($accepting->total_cents)]) }}</h2>
                 <p class="mt-2 text-sm text-zinc-600">
                     {{ $accepting->deposit_cents > 0
-                        ? __('A deposit of :deposit will be due. The other pros will be told you chose someone else.', ['deposit' => $R::format($accepting->deposit_cents)])
+                        ? __('A deposit of :deposit will be due, paid directly to the pro. The other pros will be told you chose someone else.', ['deposit' => $R::format($accepting->deposit_cents)])
                         : __('The other pros will be told you chose someone else.') }}
                 </p>
                 <div class="mt-5 grid grid-cols-2 gap-3">
