@@ -17,6 +17,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Posted and draft jobs for admins (spec 005, AC15). View only; never shows
@@ -29,6 +30,15 @@ final class ServiceJobResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected static ?string $recordTitleAttribute = 'public_id';
+
+    public static function getRecordTitle(?Model $record): ?string
+    {
+        if (! $record instanceof ServiceJob) {
+            return null;
+        }
+
+        return collect([$record->trade?->name, $record->area_label])->filter()->implode(' · ') ?: __('Job');
+    }
 
     public static function getModelLabel(): string
     {

@@ -61,7 +61,7 @@ body.fi-panel-admin .fi-topbar { background: #fff; box-shadow: none; border-bott
 body.fi-panel-admin .fi-topbar nav { background: transparent; box-shadow: none; --tw-ring-shadow: 0 0 #0000; }
 body.fi-panel-admin .fi-sidebar { background: var(--paper); }
 body.fi-panel-admin .fi-sidebar-header { background: var(--paper); box-shadow: none; border-bottom: 2px solid var(--ink); --tw-ring-shadow: 0 0 #0000; }
-body.fi-panel-admin .fi-sidebar-nav { background: var(--paper); border-right: 2px solid var(--ink); }
+body.fi-panel-admin .fi-sidebar-nav { background: var(--paper); }
 body.fi-panel-admin .fi-main-sidebar { border-right: 2px solid var(--ink); box-shadow: none; --tw-ring-shadow: 0 0 #0000; }
 body.fi-panel-admin .fi-sidebar-group-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #5A5A56; }
 body.fi-panel-admin .fi-sidebar-item-btn { border-radius: 10px; font-weight: 700; color: var(--ink); transition: background-color .15s; }
@@ -77,7 +77,7 @@ body.fi-panel-admin .fi-user-menu-trigger, body.fi-panel-admin .fi-avatar { bord
 body.fi-panel-admin .fi-global-search-field .fi-input-wrp { border-radius: 10px; }
 
 /* Page header */
-body.fi-panel-admin .fi-header-heading { font-size: 34px; line-height: 1.05; font-weight: 900; letter-spacing: -.01em; color: var(--ink); }
+body.fi-panel-admin .fi-header-heading { font-size: 30px; line-height: 1.05; font-weight: 900; letter-spacing: -.01em; color: var(--ink); }
 body.fi-panel-admin .fi-breadcrumbs-item-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #5A5A56; }
 
 /* Cards: sections, tables, widgets, infolists */
@@ -150,4 +150,72 @@ body.fi-panel-admin .fi-in-entry-label, body.fi-panel-admin .fi-in-entry-label-c
 @media (max-width: 640px) {
   body.fi-panel-admin .fi-header-heading { font-size: 26px; }
   body.fi-panel-admin .fi-section, body.fi-panel-admin .fi-ta-ctn { box-shadow: 3px 3px 0 var(--ink); }
+}
+
+/* ======================================================================
+   v3.6 refinements: calmer hierarchy, flat nested cards, full-height sidebar,
+   readable stats and tables.
+   ====================================================================== */
+body.fi-panel-admin .fi-main-sidebar { border-right: 2px solid var(--ink); min-height: 100%; }
+body.fi-panel-admin .fi-sidebar-nav { padding-block: 20px; }
+body.fi-panel-admin .fi-sidebar-item-btn { padding: 9px 12px; gap: 12px; }
+body.fi-panel-admin .fi-sidebar-item.fi-active > .fi-sidebar-item-btn { box-shadow: 2px 2px 0 var(--ink); }
+body.fi-panel-admin .fi-sidebar-group-btn { padding-inline: 12px; }
+body.fi-panel-admin .fi-sidebar-group-label { letter-spacing: .06em; }
+body.fi-panel-admin .fi-topbar nav { padding-inline: 24px; }
+body.fi-panel-admin .fi-main { padding-block: 8px 56px; }
+body.fi-panel-admin .fi-header { margin-bottom: 4px; }
+body.fi-panel-admin .fi-breadcrumbs-item-label { letter-spacing: .04em; }
+
+/* One level of hard shadow: nested cards, tables inside tabs/relation managers, and info entries go flat. */
+body.fi-panel-admin .fi-section .fi-section, body.fi-panel-admin .fi-section .fi-ta-ctn, body.fi-panel-admin .fi-sc-tabs .fi-ta-ctn,
+body.fi-panel-admin .fi-sc-tabs .fi-section, body.fi-panel-admin .fi-resource-relation-manager .fi-ta-ctn {
+  border: 1.5px solid var(--line); border-radius: 12px; box-shadow: none;
+}
+body.fi-panel-admin .fi-sc-tabs { padding-bottom: 4px; }
+body.fi-panel-admin .fi-sc-tabs .fi-tabs { margin: 12px auto 4px; background: var(--paper); border: 1.5px solid var(--line); box-shadow: none; --tw-ring-shadow: 0 0 #0000; }
+body.fi-panel-admin .fi-section-header { padding-block: 16px; }
+body.fi-panel-admin .fi-section-header-heading { font-size: 16px; }
+body.fi-panel-admin .fi-section-content-ctn { border-top: 1.5px solid var(--line); }
+
+/* Info entries read as label above value, label quiet, value strong. */
+body.fi-panel-admin .fi-in-entry-label-content { font-size: 11px; letter-spacing: .05em; color: #5A5A56; }
+body.fi-panel-admin .fi-in-text-item, body.fi-panel-admin .fi-in-entry-content { font-weight: 500; color: var(--ink); }
+
+/* Stats tiles: big number, quiet label, link-card hover. */
+body.fi-panel-admin .fi-wi-stats-overview-stat { padding: 20px 22px; transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
+body.fi-panel-admin a.fi-wi-stats-overview-stat:hover, body.fi-panel-admin .fi-wi-stats-overview-stat:has(a:hover) { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+body.fi-panel-admin .fi-wi-stats-overview-stat-label { color: #5A5A56; letter-spacing: .04em; }
+body.fi-panel-admin .fi-wi-stats-overview-stat-value { font-size: 40px; line-height: 1; letter-spacing: -.02em; margin-top: 10px; }
+body.fi-panel-admin .fi-wi-stats-overview-stat-description { font-size: 13px; font-weight: 500; color: #5A5A56 !important; }
+body.fi-panel-admin .fi-wi-stats-overview-stat-description svg { display: none; }
+body.fi-panel-admin .fi-wi-stats-overview-stat.fi-color-warning, body.fi-panel-admin .fi-wi-stats-overview-stat:has(.fi-color-warning) { background: #FFF6D6; }
+body.fi-panel-admin .fi-wi-widget, body.fi-panel-admin .fi-wi { margin: 0; }
+
+/* Tables: roomier rows, quiet header, tidy toolbar. */
+body.fi-panel-admin .fi-ta-header-cell { padding-block: 12px; border-bottom: 2px solid var(--ink); color: #3A3A36; }
+body.fi-panel-admin .fi-ta-cell { padding-block: 4px; }
+body.fi-panel-admin .fi-ta-text-item-label { font-weight: 700; }
+body.fi-panel-admin .fi-ta-text-item-description { font-weight: 500; color: #5A5A56; }
+body.fi-panel-admin .fi-ta-header-toolbar { padding: 12px 16px; min-height: 0; }
+body.fi-panel-admin .fi-ta-ctn:not(:has(.fi-ta-header-toolbar > *)) .fi-ta-header-toolbar { display: none; }
+body.fi-panel-admin .fi-ta-filters-trigger-action, body.fi-panel-admin .fi-ta-header-toolbar .fi-icon-btn { border: 1.5px solid var(--ink); border-radius: 8px; background: #fff; }
+body.fi-panel-admin .fi-icon-btn-badge-ctn .fi-badge { border-width: 1.5px; background: var(--lime); }
+body.fi-panel-admin .fi-ta-footer, body.fi-panel-admin .fi-ta-pagination { border-top: 1.5px solid var(--line); }
+body.fi-panel-admin .fi-pagination-overview { color: #5A5A56; }
+body.fi-panel-admin .fi-ta-record-link, body.fi-panel-admin .fi-ta-actions .fi-link { white-space: nowrap; }
+
+/* Badges: semantic colours stay distinct (lime means good/primary only). */
+body.fi-panel-admin .fi-badge { padding: 2px 8px; }
+body.fi-panel-admin .fi-badge.fi-color-gray { background: #EDEDEA; }
+body.fi-panel-admin .fi-badge.fi-color-info { background: #DDEBFF; }
+body.fi-panel-admin .fi-badge.fi-color-warning { background: #FFE9A8; }
+
+/* Account/user menu avatar and search */
+body.fi-panel-admin .fi-global-search-field .fi-input-wrp { background: var(--paper); }
+body.fi-panel-admin .fi-user-menu-trigger { box-shadow: none; }
+
+@media (max-width: 1023px) {
+  body.fi-panel-admin .fi-main-sidebar { border-right: 0; }
+  body.fi-panel-admin .fi-wi-stats-overview-stat-value { font-size: 32px; }
 }

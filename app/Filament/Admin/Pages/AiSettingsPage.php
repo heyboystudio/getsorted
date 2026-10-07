@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Pages;
 use App\Domain\Accounts\Enums\Role;
 use App\Models\User;
 use App\Settings\AiSettings;
+use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -16,10 +17,18 @@ use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 
 /** Spec 007: super-admins switch the AI assistant on or off and set its limits (founder decisions 1 and 2). */
 final class AiSettingsPage extends Page
 {
+    protected static string|UnitEnum|null $navigationGroup = 'Settings';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSparkles;
+
+    protected static ?int $navigationSort = 1;
+
     protected static ?string $slug = 'ai-settings';
 
     public static function getNavigationLabel(): string

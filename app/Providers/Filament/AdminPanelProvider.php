@@ -18,7 +18,6 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
-use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -45,7 +44,7 @@ final class AdminPanelProvider extends PanelProvider
             // The whole panel uses the home v3 look (self-hosted fonts and CSS only).
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn (): string => Blade::render('<link rel="stylesheet" href="{{ asset(\'home/admin.css\') }}?v=3.5">'),
+                fn (): string => Blade::render('<link rel="stylesheet" href="{{ asset(\'home/admin.css\') }}?v=3.6">'),
             )
             ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)
@@ -63,9 +62,7 @@ final class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\Filament\Admin\Widgets')
-            ->widgets([
-                AccountWidget::class,
-            ])
+            ->navigationGroups(['Jobs', 'Pros', 'Customers', 'Catalogue', 'Insights', 'Settings'])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

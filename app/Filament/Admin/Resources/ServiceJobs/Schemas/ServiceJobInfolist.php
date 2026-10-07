@@ -22,7 +22,7 @@ final class ServiceJobInfolist
             ->components([
                 Section::make(__('Job'))->columns(2)->schema([
                     TextEntry::make('trade.name')->label(__('Trade')),
-                    TextEntry::make('status')->label(__('Status'))->badge()->formatStateUsing(fn ($state): string => __(str($state->value)->replace('_', ' ')->ucfirst()->toString())),
+                    TextEntry::make('status')->label(__('Status'))->badge()->formatStateUsing(fn ($state): string => __(str($state->value)->replace('_', ' ')->ucfirst()->toString()))->color(fn ($state): string => $state->badgeColor()),
                     TextEntry::make('urgency')->label(__('Urgency'))->formatStateUsing(fn ($state): string => __(ucfirst($state->value))),
                     TextEntry::make('area_label')->label(__('Area'))->placeholder('—'),
                     TextEntry::make('time_window')->label(__('When'))

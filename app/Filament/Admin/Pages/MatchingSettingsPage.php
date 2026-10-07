@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Pages;
 use App\Domain\Accounts\Enums\Role;
 use App\Models\User;
 use App\Settings\MatchingSettings;
+use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -15,10 +16,18 @@ use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use UnitEnum;
 
 /** Spec 009, AC12; spec 020: super-admins tune distance matching and the quote cap. */
 final class MatchingSettingsPage extends Page
 {
+    protected static string|UnitEnum|null $navigationGroup = 'Settings';
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAdjustmentsHorizontal;
+
+    protected static ?int $navigationSort = 2;
+
     protected static ?string $slug = 'matching-settings';
 
     public static function getNavigationLabel(): string
