@@ -140,7 +140,7 @@ it('strips personal data from facts and notes before summarising (AC10, security
 // --- The home page hands over what the customer typed (AC4; spec 017 AC1) ------------
 
 it('starts the booking thread with the home-page description, used once (AC4; spec 017 AC1)', function (): void {
-    Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('start')->assertRedirect(route('register'));
+    Livewire::test(Welcome::class)->set('description', 'Tap drips all night long')->call('start')->assertRedirect(route('login'));
 
     threadFor()->assertSee('Tap drips all night long');
 

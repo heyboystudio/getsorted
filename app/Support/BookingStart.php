@@ -19,6 +19,8 @@ final class BookingStart
     public static function begin(): void
     {
         session()->put(self::KEY, now()->addMinutes(self::MINUTES)->getTimestamp());
+        // A page remembered from an earlier visit (for example the admin panel) must not win over Siya.
+        session()->forget('url.intended');
     }
 
     public static function pending(): bool
