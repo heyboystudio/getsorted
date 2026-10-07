@@ -23,7 +23,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 017 | Official Livewire scaffold with closed account routes | Accepted | 2026-10-03 |
 | 018 | Laravel Boost for AI guidelines and MCP | Accepted | 2026-10-03 |
 | 019 | Quality gate: Pint, Larastan, Pest arch tests, Rector | Accepted | 2026-10-03 |
-| 020 | CI workflow paused; free GitHub plan without branch protection | Accepted (temporary) | 2026-10-03 |
+| 020 | CI workflow paused; free GitHub plan without branch protection | Accepted (temporary); billing fix on hold by founder 2026-10-08 | 2026-10-03 |
 | 021 | Filament 5 admin panel with mandatory MFA; pro panel locked | Accepted; MFA made optional by 047 | 2026-10-03 |
 | 022 | Roles via spatie/laravel-permission; super-admin by console command | Accepted | 2026-10-03 |
 | 023 | Supporting packages: audit log, settings, media, money, phone, PostGIS | Accepted | 2026-10-03 |
@@ -50,7 +50,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 044 | Take requests from all of Durban before pros are signed up | Accepted (founder) | 2026-10-05 |
 | 045 | Booking follows Kandua: one Siya thread (spec 017) | Quote and wave rules superseded by 051 | 2026-10-05 |
 | 046 | Test site moves to Cape Town on usesorted.co.za | Accepted (founder) | 2026-10-05 |
-| 047 | Admin MFA optional (changes 021 and the security baseline) | Accepted | 2026-10-05 |
+| 047 | Admin MFA optional (changes 021 and the security baseline) | Accepted; confirmed for real data 2026-10-08 | 2026-10-05 |
 | 048 | Home page redesign and the name "Get Sorted" | Accepted (founder) | 2026-10-06 |
 | 049 | Google Gemini API for the AI assistant (supersedes the provider in 043) | Accepted (founder) | 2026-10-06 |
 | 050 | Siya understands the conversation before booking | Accepted (founder; spec 019) | 2026-10-06 |
@@ -62,6 +62,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 056 | Siya is for signed-in users only; auth pages use the home v3 look | Accepted (founder) | 2026-10-07 |
 | 057 | One name everywhere: GetSorted | Accepted (founder) | 2026-10-07 |
 | 058 | MVP launches on model B (quotes, then hand-off); payments after launch | Accepted (founder) | 2026-10-08 |
+| 059 | "Start a job" means sign in, then Siya | Accepted (founder) | 2026-10-08 |
 
 ---
 
@@ -593,3 +594,11 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 - Phase L must close the loop without money: a job can be marked done, then reviewed, so jobs do not stay in "Awaiting deposit"/"Booked" forever.
 - How GetSorted earns money on model B (lead fee, subscription, or nothing until Phase M) is a new open question (Q14).
 - Supersedes the PRD v1 payment scope, the roadmap's Phase 4 order and the money promises in spec 018. `docs/product/prd.md` (v2) and `docs/roadmap.md` describe the new plan.
+
+## 059 · "Start a job" means sign in, then Siya
+
+**Date:** 2026-10-08 · **Status:** Accepted (founder)
+
+**Decision:** Every "Start a job" button (home hero, "One thread" section, footer, the home description form and the trade pages) goes to `/start`. Signed-in users land on `/book`. Guests are sent to **sign in** (the page offers "New to GetSorted? Create an account") and land on `/book` after signing in or signing up. No button scrolls to the form at the bottom of the home page any more. Starting a job forgets any page remembered from an earlier visit, so it cannot override Siya. This changes the "guests go to /register" update in decision 056.
+
+**Why:** The founder wanted one predictable behaviour; the hero button jumped about 11,000 px to the bottom of the page on a phone.
