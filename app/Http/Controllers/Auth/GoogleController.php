@@ -24,6 +24,8 @@ final class GoogleController extends Controller
     public function redirect(Request $request): SymfonyRedirect
     {
         $request->session()->put('auth.as_pro', $request->query('as') === 'pro');
+        // "register" means the visitor pressed Google on a sign-up page: it may never sign an existing account in.
+        $request->session()->put('auth.google_intent', $request->query('intent') === 'register' ? 'register' : 'login');
 
         // Socialite's Google driver asks only for openid, profile and email.
         return Socialite::driver('google')->redirect();
@@ -46,7 +48,13 @@ final class GoogleController extends Controller
         }
 
         $asPro = $request->session()->get('auth.as_pro') === true;
+        $registering = $request->session()->pull('auth.google_intent') === 'register';
         $linked = User::query()->where('google_id', (string) $google->getId())->first();
+
+        if ($registering && ($linked instanceof User || User::withTrashed()->where('email', $email)->exists())) {
+            return redirect()->route('login', $asPro ? ['as' => 'pro'] : [])
+                ->with('status', __('You already have an account with this email. Sign in instead.'));
+        }
 
         if ($linked instanceof User) {
             if ($linked->isAdmin()) {

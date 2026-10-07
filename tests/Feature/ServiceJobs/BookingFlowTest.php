@@ -50,8 +50,8 @@ function remoteProperty(User $customer): Property
 }
 
 it('opens the thread from the home page and trade pages (AC1, AC3)', function (): void {
-    $this->get('/')->assertOk()->assertSee(route('book'), false);
-    $this->get(route('trades.show', $this->plumbing))->assertOk()->assertSee('Start a plumbing job')->assertSee(route('book.trade', $this->plumbing), false);
+    $this->get('/')->assertOk()->assertSee(route('register'), false);
+    $this->get(route('trades.show', $this->plumbing))->assertOk()->assertSee('Start a plumbing job')->assertSee(route('register'), false);
     $this->get(route('assistant'))->assertRedirect('/book');
 
     [$customer] = bookingCustomer();

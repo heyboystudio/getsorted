@@ -5,6 +5,9 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        @isset($description)
+        <meta name="description" content="{{ $description }}">
+        @endisset
         <title>{{ isset($title) ? $title.' · Get Sorted' : 'Get Sorted' }}</title>
         <link rel="icon" type="image/svg+xml" href="{{ asset('home/logo/get-sorted-mark.svg') }}">
         <link rel="icon" href="{{ asset('favicon-v2.png') }}" type="image/png">
@@ -19,6 +22,9 @@
         <link rel="stylesheet" href="{{ asset('home/lib/phosphor/bold.css') }}?v={{ $v }}">
         <link rel="stylesheet" href="{{ asset('home/home.css') }}?v={{ $v }}">
         <link rel="stylesheet" href="{{ asset('home/auth.css') }}?v={{ $v }}">
+        @isset($extraCss)
+            <link rel="stylesheet" href="{{ asset('home/'.$extraCss) }}?v={{ $v }}">
+        @endisset
         @livewireStyles
     </head>
     <body class="auth-body">

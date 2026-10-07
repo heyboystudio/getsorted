@@ -1,5 +1,5 @@
 @unless ($withGoogle)
-    @include('livewire.auth.partials.google-button')
+    @include('livewire.auth.partials.google-button', ['intent' => 'register'])
 @else
     <p class="auth-note"><i class="ph-bold ph-google-logo" aria-hidden="true"></i>{{ __('Signing up with Google. Check your name and accept the terms to finish.') }}</p>
 @endunless

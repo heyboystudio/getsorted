@@ -61,21 +61,6 @@
   const track = document.querySelector('.rev-track');
   if (track && !reduced) track.innerHTML += track.innerHTML.replace(/<figure /g, '<figure aria-hidden="true" ');
 
-  /* Start-a-job form: a job idea fills the description and trade. Livewire (wire:model) owns the
-     values and the submit, so fire the events it listens for after changing them. */
-  const form = document.querySelector('[data-ask]');
-  const text = form.querySelector('textarea');
-  const trade = form.querySelector('#trade');
-  const idea = form.querySelector('#idea');
-  idea.addEventListener('change', () => {
-    const opt = idea.selectedOptions[0];
-    if (!opt || !opt.value) return;
-    text.value = opt.value;
-    text.dispatchEvent(new Event('input', { bubbles: true }));
-    trade.value = opt.dataset.trade || '';
-    trade.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-
   /* Footer wordmark spans the full content width */
   const word = document.querySelector('.foot-word');
   const fitWord = () => {

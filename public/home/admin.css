@@ -1,0 +1,45 @@
+/* Get Sorted — admin sign-in page in the home v3 look (loaded on the Filament login page only). */
+@font-face { font-family: "Satoshi"; src: url("fonts/Satoshi-Medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Satoshi"; src: url("fonts/Satoshi-Bold.woff2") format("woff2"); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: "Satoshi"; src: url("fonts/Satoshi-Black.woff2") format("woff2"); font-weight: 800 900; font-display: swap; }
+
+body.fi-panel-admin .fi-simple-layout {
+  --ink: #131311; --lime: #C6FD50; --paper: #F5F5F5;
+  position: relative; isolation: isolate; overflow: hidden; min-height: 100dvh;
+  background: var(--paper); color: var(--ink); color-scheme: light;
+  font-family: "Satoshi", ui-sans-serif, system-ui, sans-serif; font-weight: 500;
+}
+body.fi-panel-admin .fi-simple-layout::before {
+  content: ""; position: absolute; z-index: -1; left: 50%; top: 50%; width: 1000px; height: 1000px;
+  margin: -500px 0 0 -500px; border-radius: 50%; background: #EDEDED;
+}
+body.fi-panel-admin .fi-simple-main-ctn { background: transparent; }
+body.fi-panel-admin .fi-simple-main {
+  background: #fff; color: var(--ink); border: 2px solid var(--ink); border-radius: 20px;
+  box-shadow: 8px 8px 0 var(--ink); padding: 36px 36px 32px; max-width: 460px; --tw-ring-shadow: 0 0 #0000;
+}
+body.fi-panel-admin .fi-simple-header { align-items: flex-start; text-align: left; margin-bottom: 8px; }
+body.fi-panel-admin .fi-logo { height: 2rem; }
+body.fi-panel-admin .fi-simple-header::after {
+  content: "Admin"; order: -1; display: inline-block; margin-bottom: 20px; padding: 7px 12px; border-radius: 8px;
+  background: var(--ink); color: #FAFAFA; font-size: 12px; font-weight: 700; text-transform: uppercase;
+}
+body.fi-panel-admin .fi-simple-header-heading { margin-top: 20px; font-size: 38px; line-height: 1.05; font-weight: 900; letter-spacing: -.01em; color: var(--ink); text-align: left; }
+body.fi-panel-admin .fi-fo-field-label-content { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--ink); }
+body.fi-panel-admin .fi-input-wrp {
+  border-radius: 10px; background: #F2F2F2; --tw-ring-color: var(--ink); box-shadow: 0 0 0 1.5px var(--ink); transition: background-color .2s, box-shadow .2s;
+}
+body.fi-panel-admin .fi-input-wrp:focus-within, body.fi-panel-admin .fi-input-wrp.fi-focused { background: #fff; box-shadow: 0 0 0 1.5px var(--ink), 3px 3px 0 1.5px var(--lime); }
+body.fi-panel-admin .fi-input { color: var(--ink); font-size: 15px; font-weight: 500; padding-block: 12px; }
+body.fi-panel-admin .fi-form-actions .fi-btn, body.fi-panel-admin .fi-ac .fi-btn, body.fi-panel-admin button.fi-btn[type="submit"] {
+  width: 100%; justify-content: center; padding: 14px 24px; border: 2px solid var(--ink); border-radius: 6px;
+  background: var(--lime); color: var(--ink); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .01em;
+  box-shadow: 4px 4px 0 var(--ink); transition: transform .2s, box-shadow .2s;
+}
+body.fi-panel-admin button.fi-btn[type="submit"]:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); background: var(--lime); }
+body.fi-panel-admin button.fi-btn[type="submit"]:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
+body.fi-panel-admin .fi-simple-main a { color: var(--ink); font-weight: 700; text-decoration: underline; text-decoration-color: var(--lime); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+@media (max-width: 640px) {
+  body.fi-panel-admin .fi-simple-main { padding: 28px 22px 24px; border-radius: 16px; box-shadow: 6px 6px 0 var(--ink); }
+  body.fi-panel-admin .fi-simple-header-heading { font-size: 32px; }
+}

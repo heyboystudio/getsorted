@@ -536,3 +536,5 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** The founder changed their mind: under no circumstances may a visitor who is not logged in reach Siya.
 
 **Watch:** Guest handling inside `Thread` is now unreachable through routes; it can be removed in a later clean-up. The home page box still stores the description in the session so it survives sign-up (it expires after 30 minutes).
+
+**Update 2026-10-07 (founder):** "Start a job" on the home and trade pages sends guests to `/register` (the description is kept and they land in Siya after sign-up and verification). The home start form is the description box only: no trade list and no common-job list. Pressing Google on a sign-up page never signs an existing account in; it sends the visitor to sign in instead. `/pros/join` and the admin sign-in page use the home v3 look (`public/home/pages.css`, `public/home/admin.css`).

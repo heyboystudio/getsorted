@@ -16,12 +16,14 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 final class AdminPanelProvider extends PanelProvider
@@ -33,7 +35,16 @@ final class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->domain(config('sortd.admin_domain'))
             ->path(config('sortd.admin_domain') === null ? 'admin' : '')
-            ->brandName('Sortd Admin')
+            ->brandName('Get Sorted Admin')
+            ->brandLogo(fn (): string => asset('home/logo/get-sorted-logo.svg'))
+            ->brandLogoHeight('2rem')
+            ->favicon(asset('favicon-v2.png'))
+            // The sign-in page uses the home v3 look (self-hosted fonts and CSS only).
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => Blade::render('<link rel="stylesheet" href="{{ asset(\'home/admin.css\') }}?v=3.3">'),
+                scopes: Login::class,
+            )
             ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)
             // Optional since decision 047: an admin can switch it on in their profile.

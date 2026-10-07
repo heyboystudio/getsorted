@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
-use App\Models\Trade;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -22,9 +21,6 @@ final class Welcome extends Component
 
     public string $description = '';
 
-    /** Trade picked with the chips next to the home page box ('' for any trade). */
-    public string $tradeKey = '';
-
     /** An unused description expires after 30 minutes; drop it rather than keep it in the session (spec 007). */
     public function mount(): void
     {
@@ -35,7 +31,7 @@ final class Welcome extends Component
         }
     }
 
-    /** Home page box: hand the description to the Siya booking thread (it reads DESCRIPTION_KEY once) and go there. */
+    /** Home page box: keep the description for the Siya booking thread (it reads DESCRIPTION_KEY once); guests sign up first. */
     public function start(): mixed
     {
         $description = trim($this->description);
@@ -52,9 +48,14 @@ final class Welcome extends Component
             ]);
         }
 
-        $trade = $this->tradeKey === '' ? null : Trade::query()->where('is_active', true)->where('key', $this->tradeKey)->first();
+        if (auth()->guest()) {
+            // Siya is for signed-in users only (decision 056): sign up first, then land in the booking thread.
+            session()->put('url.intended', route('book'));
 
-        return $this->redirect($trade instanceof Trade ? route('book.trade', $trade) : route('book'), navigate: true);
+            return $this->redirect(route('register'), navigate: true);
+        }
+
+        return $this->redirect(route('book'), navigate: true);
     }
 
     public function render(): View

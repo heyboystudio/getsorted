@@ -1,3 +1,4 @@
+@php($bookTrade = fn (string $trade): string => auth()->check() ? route('book.trade', $trade) : route('register'))
 <div class="gs-home-v3">
 <a class="skip" href="#main">Skip to content</a>
 
@@ -168,10 +169,10 @@
     <h2 class="h-xl light appear" id="trades-h">Four Trades, Checked Before They Start</h2>
     <p class="trades-sub appear">Every pro applies and is vetted before taking a single job through Get Sorted.</p>
     <ul class="trade-links appear">
-      <li><a href="{{ route('book.trade', 'plumbing') }}"><b>Plumbing</b><span>Leaks, geysers, drains and new fittings</span><svg aria-hidden="true"><use href="#arrow-ur"/></svg></a></li>
-      <li><a href="{{ route('book.trade', 'electrical') }}"><b>Electrical</b><span>Fault finding, DB boards, certificates</span><svg aria-hidden="true"><use href="#arrow-ur"/></svg></a></li>
-      <li><a href="{{ route('book.trade', 'painting') }}"><b>Painting</b><span>Interior and exterior</span><svg aria-hidden="true"><use href="#arrow-ur"/></svg></a></li>
-      <li><a href="{{ route('book.trade', 'tiling') }}"><b>Tiling</b><span>Floors and walls</span><svg aria-hidden="true"><use href="#arrow-ur"/></svg></a></li>
+      <li><a href="{{ $bookTrade('plumbing') }}"><b>Plumbing</b><span>Leaks, geysers, drains and new fittings</span><svg aria-hidden="true"><use href="#arrow-ur"/></svg></a></li>
+      <li><a href="{{ $bookTrade('electrical') }}"><b>Electrical</b><span>Fault finding, DB boards, certificates</span><svg aria-hidden="true"><use href="#arrow-ur"/></svg></a></li>
+      <li><a href="{{ $bookTrade('painting') }}"><b>Painting</b><span>Interior and exterior</span><svg aria-hidden="true"><use href="#arrow-ur"/></svg></a></li>
+      <li><a href="{{ $bookTrade('tiling') }}"><b>Tiling</b><span>Floors and walls</span><svg aria-hidden="true"><use href="#arrow-ur"/></svg></a></li>
     </ul>
     <div class="arc" aria-hidden="true"></div>
   </section>
@@ -307,18 +308,6 @@
       <h3><strong>Start a Job</strong></h3>
       <label class="sr" for="job">What needs sorting?</label>
       <textarea id="job" wire:model="description" @error('description') aria-invalid="true" @enderror rows="3" maxlength="500" placeholder="What needs sorting?* For example, the geyser is leaking in the ceiling" aria-describedby="ask-err"></textarea>
-      <div class="form-row">
-        <div class="sel"><label class="sr" for="trade">Trade</label><select id="trade" wire:model="tradeKey">
-          <option value="">Any trade</option><option value="plumbing">Plumbing</option><option value="electrical">Electrical</option><option value="painting">Painting</option><option value="tiling">Tiling</option>
-        </select><i class="ph-bold ph-caret-down" aria-hidden="true"></i></div>
-        <div class="sel"><label class="sr" for="idea">Job ideas</label><select id="idea">
-          <option value="">Pick a common job (optional)</option>
-          <optgroup label="Popular"><option data-trade="plumbing">Fix a leaking tap or toilet</option><option data-trade="electrical">Replace a distribution board</option><option data-trade="painting">Repaint a lounge and passage</option><option data-trade="tiling">Regrout a bathroom</option><option data-trade="plumbing">Unblock a kitchen drain</option><option data-trade="electrical">Add plug points to a bedroom</option></optgroup>
-          <optgroup label="Urgent"><option data-trade="plumbing">Burst pipe, water off now</option><option data-trade="electrical">Power trips as soon as I reset it</option><option data-trade="plumbing">Geyser leaking into the ceiling</option><option data-trade="electrical">Burning smell from a plug</option><option data-trade="plumbing">Sewer smell in the yard</option><option data-trade="electrical">Gate motor stopped working</option></optgroup>
-          <optgroup label="Planned"><option data-trade="painting">Paint the outside of the house</option><option data-trade="tiling">Tile a new kitchen floor</option><option data-trade="plumbing">Install a new shower</option><option data-trade="electrical">Wire a new outbuilding</option><option data-trade="painting">Waterproof and paint a roof</option><option data-trade="tiling">Tile a braai area</option></optgroup>
-          <optgroup label="This season"><option data-trade="plumbing">Clear gutters before the rains</option><option data-trade="painting">Treat damp and mould on walls</option><option data-trade="electrical">Surge protection for storm season</option><option data-trade="tiling">Seal outdoor tiles against humidity</option><option data-trade="plumbing">Check the geyser before winter</option><option data-trade="painting">Refresh a rental between tenants</option></optgroup>
-        </select><i class="ph-bold ph-caret-down" aria-hidden="true"></i></div>
-      </div>
       @error('description')<p class="ask-err" id="ask-err" role="alert">{{ $message }}</p>@enderror
       <div class="form-foot">
         <button class="btn-submit" type="submit" wire:loading.attr="disabled"><span wire:loading.remove wire:target="start">Start a job</span><span wire:loading wire:target="start">Starting…</span><span class="circ"><svg aria-hidden="true"><use href="#arrow-r"/></svg></span></button>
@@ -338,7 +327,7 @@
     </div>
     <div class="foot-cols">
       <div><p class="foot-k">Navigation</p><ul><li><a href="#how">How it works</a></li><li><a href="#trades">Trades</a></li><li><a href="#quotes">Quotes</a></li><li><a href="#faqs">FAQs</a></li></ul></div>
-      <div><p class="foot-k">Trades</p><ul><li><a href="{{ route('book.trade', 'plumbing') }}">Plumbing</a></li><li><a href="{{ route('book.trade', 'electrical') }}">Electrical</a></li><li><a href="{{ route('book.trade', 'painting') }}">Painting</a></li><li><a href="{{ route('book.trade', 'tiling') }}">Tiling</a></li></ul></div>
+      <div><p class="foot-k">Trades</p><ul><li><a href="{{ $bookTrade('plumbing') }}">Plumbing</a></li><li><a href="{{ $bookTrade('electrical') }}">Electrical</a></li><li><a href="{{ $bookTrade('painting') }}">Painting</a></li><li><a href="{{ $bookTrade('tiling') }}">Tiling</a></li></ul></div>
       <div><p class="foot-k">Pros</p><ul><li><a href="{{ route('pros.join') }}">Join as a pro</a></li><li><a href="{{ route('pros.agreement') }}">Pro agreement</a></li><li><a href="{{ route('login') }}">Sign in</a></li></ul></div>
     </div>
   </div>
