@@ -202,7 +202,7 @@ it('logs each profile edit without storing the text (spec 021, AC26)', function 
     app(UpdateProProfile::class)->bio($pro->user, $pro, 'A private little bio');
     app(UpdateProProfile::class)->weeklyCap($pro->user, $pro, 5);
 
-    $entries = Activity::query()->where('description', 'pro profile edited')->get();
+    $entries = Activity::query()->where('description', 'pro profile edited')->orderBy('id')->get();
 
     expect($entries)->toHaveCount(2)->and($entries->pluck('properties.field')->all())->toBe(['bio', 'weekly_job_cap']);
     expect(json_encode($entries->pluck('properties')->all()))->not->toContain('private little bio');

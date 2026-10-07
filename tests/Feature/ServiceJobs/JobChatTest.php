@@ -94,7 +94,7 @@ it('lets a pro who opened the invite start the chat, shown on their job page (AC
 it('masks contact and bank details before a quote is accepted and flags pros who try (AC3)', function (): void {
     chatAs($this->proA->user, $this->proA, 'Thandi')
         ->set('message', 'WhatsApp me on 082 123 4567 or pay FNB acc 62812345678')->call('send')
-        ->assertDontSee('082 123 4567')->assertSee('Keep chats and payments on GetSorted');
+        ->assertDontSee('082 123 4567')->assertSee('Keep chats on GetSorted');
 
     $stored = JobMessage::query()->sole()->body;
     expect($stored)->not->toContain('082 123 4567')->not->toContain('62812345678')
@@ -217,7 +217,7 @@ it('shows estimate cards in the chat and calls quotes estimates (AC7)', function
 
     $this->actingAs($this->customer);
     Livewire::test(CustomerJob::class, ['job' => $this->job])->assertSee('Estimates (1 of 5)')
-        ->assertSee('Your pro can adjust the final amount after seeing the job. You’ll approve any change.');
+        ->assertDontSee('adjust the final amount');
 });
 
 it('shows admins the chats read-only, logs each view, and lets support close one (AC15)', function (): void {

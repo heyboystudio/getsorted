@@ -185,8 +185,10 @@
   });
   ScrollTrigger.addEventListener('scrollEnd', () => { loops.forEach((l) => gsap.to(l, { timeScale: Math.sign(l.timeScale()) || 1, duration: 1.2 })); skewTo(0); });
   const rail = $('.rev-rail');
-  rail.addEventListener('mouseenter', () => gsap.to(loops[1], { timeScale: 0, duration: 0.6 }));
-  rail.addEventListener('mouseleave', () => gsap.to(loops[1], { timeScale: 1, duration: 0.6 }));
+  if (rail && loops[1]) {
+    rail.addEventListener('mouseenter', () => gsap.to(loops[1], { timeScale: 0, duration: 0.6 }));
+    rail.addEventListener('mouseleave', () => gsap.to(loops[1], { timeScale: 1, duration: 0.6 }));
+  }
 
   /* ---------- trades ---------- */
   gsap.fromTo('.t-left', { y: 160, rotation: -26 }, { y: -120, rotation: -8, ease: 'none', scrollTrigger: { trigger: '.trades', start: 'top bottom', end: 'bottom top', scrub: true } });
@@ -212,8 +214,10 @@
     .fromTo('.cmp .tot', { backgroundColor: 'rgba(198,253,80,0)' }, { backgroundColor: 'rgba(198,253,80,.55)', duration: 0.5, yoyo: true, repeat: 1 }, '>-0.1'), 'top 78%');
 
   /* ---------- reviews ---------- */
-  gsap.from('.faces span', { scale: 0, autoAlpha: 0, stagger: 0.07, duration: 0.6, ease: 'back.out(3)', clearProps: 'transform', scrollTrigger: { trigger: '.faces', start: 'top 90%', once: true } });
-  gsap.from('.rule-dark', { scaleX: 0, transformOrigin: 'left', ease: 'none', scrollTrigger: { trigger: '.rule-dark', start: 'top 95%', end: 'top 65%', scrub: true } });
+  if ($('.reviews')) {
+    gsap.from('.faces span', { scale: 0, autoAlpha: 0, stagger: 0.07, duration: 0.6, ease: 'back.out(3)', clearProps: 'transform', scrollTrigger: { trigger: '.faces', start: 'top 90%', once: true } });
+    gsap.from('.rule-dark', { scaleX: 0, transformOrigin: 'left', ease: 'none', scrollTrigger: { trigger: '.rule-dark', start: 'top 95%', end: 'top 65%', scrub: true } });
+  }
 
   /* ---------- FAQ ---------- */
   gsap.from('.faq-panel', { y: 80, autoAlpha: 0, duration: 1.1, ease: 'power4.out', clearProps: 'transform', scrollTrigger: { trigger: '.faq-sec', start: 'top 85%', once: true } });

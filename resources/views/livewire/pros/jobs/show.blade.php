@@ -35,9 +35,9 @@
                         <div><dt class="text-zinc-600">{{ __('Starting') }}</dt><dd>{{ $job->scheduled_for?->translatedFormat('D j M Y') }}</dd></div>
                     </dl>
                     @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::AwaitingDeposit)
-                        <p class="mt-3 text-sm text-emerald-900">{{ __('Waiting for the customer\'s deposit of :amount. Payment opens soon.', ['amount' => $R::format($quote->deposit_cents)]) }}</p>
+                        <p class="mt-3 text-sm text-emerald-900">{{ __('The customer will pay your deposit of :amount directly to you. Agree with them how and when.', ['amount' => $R::format($quote->deposit_cents)]) }}</p>
                     @endif
-                    <p class="mt-3 text-sm text-emerald-900">{{ __('Keep payments on GetSorted. It protects you and the customer.') }}</p>
+                    <p class="mt-3 text-sm text-emerald-900">{{ __('GetSorted does not handle payments yet: the customer pays you directly. Give them a receipt.') }}</p>
                 </section>
             @endif
 
@@ -171,10 +171,7 @@
                         @if ($previewText['notes'])
                             <p class="mt-3 whitespace-pre-line text-sm text-zinc-700">{{ $previewText['notes'] }}</p>
                         @endif
-                        <div class="mt-4 rounded-lg bg-zinc-50 p-3 text-sm">
-                            <p class="font-medium">{{ __('Estimated payout: :amount', ['amount' => $R::format($previewTotals->payoutEstimateCents)]) }}</p>
-                            <p class="mt-1 text-zinc-600">{{ __('After GetSorted\'s commission of about :amount on labour and call-out. This is an estimate.', ['amount' => $R::format($previewTotals->commissionEstimateCents)]) }}</p>
-                        </div>
+                        <p class="mt-4 rounded-lg bg-zinc-50 p-3 text-sm text-zinc-600">{{ __('The customer pays you directly. GetSorted does not handle payments yet.') }}</p>
                         @error('quote') <p class="mt-3 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                         <div class="mt-4 grid grid-cols-2 gap-3">
                             <button type="button" wire:click="editQuote" class="rounded-lg border border-zinc-300 px-4 py-3 font-medium">{{ __('Edit') }}</button>

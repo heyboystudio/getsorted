@@ -63,7 +63,7 @@
       <div class="par p6"><figure class="pol"><img src="{{ asset('images/home/step-compare-v3.webp') }}" alt="" width="1024" height="1024"><figcaption>Durban North</figcaption></figure></div>
     </div>
     <div class="hero-inner">
-      <a class="badge-dark appear" href="{{ route('about') }}"><i class="ph-fill ph-map-pin" aria-hidden="true"></i> Now covering Umhlanga and Durban North</a>
+      <a class="badge-dark appear" href="{{ route('about') }}"><i class="ph-fill ph-map-pin" aria-hidden="true"></i> Starting in Durban</a>
       <p class="kicker appear">Vetted pros. Itemised quotes. One thread.</p>
       <h1 class="h-hero appear" id="hero-h">Get Your Home Sorted, Properly.</h1>
       <p class="hero-sub appear">Describe the job once. Vetted Durban pros send itemised quotes you can compare in one thread.</p>
@@ -120,7 +120,7 @@
       <li class="tile cream appear"><svg class="tick" aria-hidden="true"><use href="#check"/></svg><span>Your street address stays private</span></li>
       <li class="tile lime appear"><svg class="tick" aria-hidden="true"><use href="#check"/></svg><span>Up to five itemised quotes</span></li>
       <li class="tile cream appear"><svg class="tick" aria-hidden="true"><use href="#check"/></svg><span>Ask a pro before you decide</span></li>
-      <li class="tile lime appear"><svg class="tick" aria-hidden="true"><use href="#check"/></svg><span>Deposit now, settle when it’s done</span></li>
+      <li class="tile lime appear"><svg class="tick" aria-hidden="true"><use href="#check"/></svg><span>Contact details only after you choose</span></li>
       <li class="tile ink appear"><span class="logo logo-inv" aria-label="GetSorted"><svg class="logo-svg" viewBox="0 0 552.5 97" aria-hidden="true"><use href="#logo"/></svg></span></li>
     </ul>
   </section>
@@ -140,13 +140,13 @@
 
     <div class="timeline">
       <div class="tl-cols" aria-hidden="true">
-        <span>Describe it</span><span>Meet vetted pros</span><span>Compare quotes</span><span>Book and pay</span><span>Sorted!</span>
+        <span>Describe it</span><span>Meet vetted pros</span><span>Compare quotes</span><span>Book your pro</span><span>Sorted!</span>
       </div>
       <ol class="tl-cards">
         <li class="tl c1 appear"><h3>Describe it</h3><b class="num">1</b><p>Chat with Siya or tap through a few questions. Add photos when you are ready.</p></li>
         <li class="tl c2 appear"><h3>Meet vetted pros</h3><b class="num">2</b><p>We invite vetted pros near you. Your street address stays private until you choose.</p></li>
         <li class="tl c3 appear"><h3>Compare quotes</h3><b class="num">3</b><p>Up to five itemised quotes side by side. Ask a pro a question before you decide.</p></li>
-        <li class="tl c4 appear"><h3>Book and pay</h3><b class="num">4</b><p>Pick a slot, pay a deposit, and settle the rest when the work is done.</p></li>
+        <li class="tl c4 appear"><h3>Book your pro</h3><b class="num">4</b><p>Accept the quote you like. You get the pro’s details and arrange the work and payment with them.</p></li>
         <li class="tl c5 appear"><h3>Stay in the loop</h3><b class="num">5</b><p>Updates arrive on WhatsApp, so you don’t have to stay home waiting for a call.</p></li>
         <li class="tl c6 appear"><h3>Review your pro</h3><b class="num">6</b><p>Every pro can be reviewed after each finished job.</p></li>
       </ol>
@@ -197,8 +197,8 @@
           <li><svg class="tick" aria-hidden="true"><use href="#check"/></svg> Local work that fits your trade</li>
           <li><svg class="tick" aria-hidden="true"><use href="#check"/></svg> Jobs within how far you travel</li>
           <li><svg class="tick" aria-hidden="true"><use href="#check"/></svg> Itemised quote builder on your phone</li>
-          <li><svg class="tick" aria-hidden="true"><use href="#check"/></svg> Deposits held securely</li>
-          <li><svg class="tick" aria-hidden="true"><use href="#check"/></svg> Payouts tracked in one place</li>
+          <li><svg class="tick" aria-hidden="true"><use href="#check"/></svg> Messages and photos in one thread</li>
+          <li><svg class="tick" aria-hidden="true"><use href="#check"/></svg> Customers see your registrations</li>
           <li class="hl"><svg class="tick" aria-hidden="true"><use href="#check"/></svg> Free to join</li>
         </ul>
       </article>
@@ -216,7 +216,7 @@
         </article>
         <article class="pc pc-note appear">
           <span class="bang">!</span>
-          <p>Customers pay a deposit when they accept your quote and settle the final amount when the work is done. Any change to the price needs their approval first.</p>
+          <p>For now, customers pay you directly, including any deposit in your quote. GetSorted does not handle payments yet.</p>
         </article>
       </div>
       <article class="pc pc-work appear">
@@ -256,44 +256,18 @@
     </div>
   </section>
 
-  <!-- ============ REVIEWS (dark) ============ -->
-  <section class="reviews" aria-labelledby="rev-h">
-    <div class="rev-top">
-      <div>
-        <h2 class="h-md light appear" id="rev-h">Sorted This Week. Homeowners Who Never Had to Chase Anyone.</h2>
-        <div class="faces" aria-hidden="true"><span>LM</span><span>DP</span><span>SK</span><span>TN</span><span>AF</span><span>GR</span></div>
-        <p class="scribble rev-note" aria-hidden="true">Sample reviews from<br>finished jobs<svg viewBox="0 0 60 80"><path class="draw" d="M48 2C46 30 34 52 6 72M6 72l4-16M6 72l16-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></p>
-      </div>
-      <div class="rev-copy appear">
-        <p>Every pro can be reviewed after each finished job. Quotes, messages and payments sit in one record, so you always know where a job stands.</p>
-        <a class="btn-lime" href="#start">Start a job <span class="sq"><svg aria-hidden="true"><use href="#arrow-r"/></svg></span></a>
-      </div>
-    </div>
-    <hr class="rule rule-dark">
-    <div class="rev-rail" aria-label="Sample reviews">
-      <div class="rev-track">
-        <figure class="rcard"><div class="rc-head"><span class="av">LM</span><i class="ph-fill ph-quotes" aria-hidden="true"></i></div><blockquote>Three quotes by lunchtime and the geyser was replaced on Thursday.</blockquote><figcaption>Lerato Mokoena | Homeowner in Morningside</figcaption></figure>
-        <figure class="rcard"><div class="rc-head"><span class="av">DP</span><i class="ph-fill ph-quotes" aria-hidden="true"></i></div><blockquote>Seeing labour and materials split out made it easy to choose.</blockquote><figcaption>Dev Pillay | Homeowner in Berea</figcaption></figure>
-        <figure class="rcard"><div class="rc-head"><span class="av">SK</span><i class="ph-fill ph-quotes" aria-hidden="true"></i></div><blockquote>Painted and sealed in two days.</blockquote><figcaption>Sarah Kruger | Homeowner in Westville</figcaption></figure>
-        <figure class="rcard"><div class="rc-head"><span class="av">TN</span><i class="ph-fill ph-quotes" aria-hidden="true"></i></div><blockquote>I did not have to stay home waiting for a call.</blockquote><figcaption>Thabo Ndlovu | Tenant in Umhlanga</figcaption></figure>
-        <figure class="rcard"><div class="rc-head"><span class="av">AF</span><i class="ph-fill ph-quotes" aria-hidden="true"></i></div><blockquote>Fair price, clean work, and my number stayed private.</blockquote><figcaption>Aisha Ferreira | Homeowner in Glenwood</figcaption></figure>
-        <figure class="rcard"><div class="rc-head"><span class="av">GR</span><i class="ph-fill ph-quotes" aria-hidden="true"></i></div><blockquote>Every quote and payment sits in one record.</blockquote><figcaption>Greg Rossouw | Landlord in Musgrave</figcaption></figure>
-      </div>
-    </div>
-  </section>
-
   <!-- ============ FAQ (lime panel) ============ -->
   <section class="faq-sec" id="faqs" aria-labelledby="faq-h">
     <div class="faq-panel">
       <h2 class="h-faq appear" id="faq-h">FAQs</h2>
       <div class="faq-list">
-        <div class="qa"><button type="button" aria-expanded="false">Where is GetSorted available?<i class="chev" aria-hidden="true"></i></button><div class="qa-a"><p>We are starting in Durban and eThekwini and adding more over time. If there are no pros near you yet, join the waitlist and we will tell you when we arrive.</p></div></div>
+        <div class="qa"><button type="button" aria-expanded="false">Where is GetSorted available?<i class="chev" aria-hidden="true"></i></button><div class="qa-a"><p>We are starting in Durban (eThekwini) and adding more areas over time. Outside Durban you can join the waitlist and we will tell you when we arrive.</p></div></div>
         <div class="qa"><button type="button" aria-expanded="false">What does it cost to join?<i class="chev" aria-hidden="true"></i></button><div class="qa-a"><p>Creating a customer account is free. Tradespeople can also join for free.</p></div></div>
         <div class="qa"><button type="button" aria-expanded="false">How do you choose pros?<i class="chev" aria-hidden="true"></i></button><div class="qa-a"><p>Pros apply to join and go through checks before they can take on work through GetSorted.</p></div></div>
         <div class="qa"><button type="button" aria-expanded="false">Can I sign up with Google?<i class="chev" aria-hidden="true"></i></button><div class="qa-a"><p>Yes. Use Google or your email address, then verify a South African mobile number.</p></div></div>
         <div class="qa"><button type="button" aria-expanded="false">Who sees my address?<i class="chev" aria-hidden="true"></i></button><div class="qa-a"><p>Pros see your area and roughly how far away you are, never your street. Your street address and contact details are shared once you accept a quote.</p></div></div>
         <div class="qa"><button type="button" aria-expanded="false">How many quotes will I get?<i class="chev" aria-hidden="true"></i></button><div class="qa-a"><p>Up to five, from vetted pros near you who do the trade you need.</p></div></div>
-        <div class="qa"><button type="button" aria-expanded="false">How do payments work?<i class="chev" aria-hidden="true"></i></button><div class="qa-a"><p>You pay a deposit when you accept a quote and settle the final amount when the work is done. Any change to the price needs your approval first.</p></div></div>
+        <div class="qa"><button type="button" aria-expanded="false">How do payments work?<i class="chev" aria-hidden="true"></i></button><div class="qa-a"><p>You pay your pro directly, as agreed in their quote, including any deposit. GetSorted does not take payments yet. Ask your pro for a receipt.</p></div></div>
         <div class="qa"><button type="button" aria-expanded="false">What if something goes wrong?<i class="chev" aria-hidden="true"></i></button><div class="qa-a"><p>Message your pro in the thread first. If it cannot be resolved, our support team steps in and can review the job record.</p></div></div>
       </div>
     </div>
