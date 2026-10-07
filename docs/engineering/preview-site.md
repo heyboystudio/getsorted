@@ -32,6 +32,8 @@ Nothing depends on it. Its database and uploads go with it.
 ## Public website pages
 The preview includes a multi-page public website: home, customer guide, trade directory and trade detail pages, pro guide, about, and the legal pages. Sign-up and sign-in use the application routes, including Google and pro registration. The homepage has a "What needs sorting?" box that starts the Siya booking thread with the typed description (decision 048). Terms, privacy and pro agreement are visibly marked as drafts and require legal review before a live launch.
 
+The home page (home v3, decision 055) has its own layout, `components.layouts.home`, and serves its CSS, scripts, fonts and logo files from `public/home/`; its photos are in `public/images/home/`. Its animations switch off for visitors whose device asks for reduced motion; add `?motion=on` to the URL to preview them anyway.
+
 The website's logo and photographs are generated visual assets stored in `public/images/`. They are illustrative and do not depict actual Sortd customers, pros or completed jobs.
 
 The public navigation includes Home, About, Customers, Pros and Contact. The Contact page routes visitors to the customer or pro journey and displays founder-approved placeholder contact details: hello@sortd.heyboy.co.za and 031 000 0000. The subdomain has no receiving MX record yet; replace these details when real contact channels are connected.

@@ -516,3 +516,13 @@ Q5 is answered. Costs: about US$0.01 per WhatsApp code and US$0.03–0.05 per SM
 **Why:** Clients and pros only got in-app notices that appeared on refresh. A browser push is the only way to pop up on a phone or desktop without a native app. This package is the standard Laravel channel for it, installs on Laravel 13 with no conflicts, stores each device's subscription and deletes subscriptions the push service reports as gone. `composer audit` reports no advisories.
 
 **Watch:** iPhone and iPad allow web push only for sites added to the Home Screen (iOS 16.4 or later), so the site has a manifest and an install hint. Safari requires every push to show a notification. Push is skipped quietly when no VAPID keys are set, so local development and tests need no setup.
+
+## 055 · Home page v3: its own layout, self-hosted fonts and GSAP motion
+
+**Date:** 2026-10-07 · **Status:** Accepted (founder)
+
+**Decision:** The public home page (`/`, `App\Livewire\Welcome`) uses a dedicated layout, `components.layouts.home`, with plain CSS and JS in `public/home/` instead of the Vite bundle. Motion uses GSAP 3.13 (core, ScrollTrigger, SplitText; free under the GSAP Standard License since 3.13) and Lenis 1.1.20 (MIT) for smooth scrolling. Fonts are Satoshi (ITF Free Font License) and Sedgwick Ave (SIL OFL); icons are Phosphor bold and fill (MIT). Every file is self-hosted under `public/home/` because the security headers only allow `'self'` (no CDN was added to the CSP). Images live in `public/images/home/` with a `-v3` suffix so the week-long image cache never serves stale copies. The "Start a job" form keeps the existing Livewire `start()` action, so the typed description still reaches Siya.
+
+**Why:** The founder approved a ProjectOne-style redesign with full scroll animation. A separate layout keeps the home page's styles and libraries off every other page, and avoids adding npm dependencies to the app bundle.
+
+**Watch:** Animations switch off for visitors whose device asks for reduced motion; adding `?motion=on` to the URL forces them for previewing. The pro list was removed from the page: Get Sorted does not list pros publicly. Logo files (SVG, outlined lettering) are in `public/home/logo/`.

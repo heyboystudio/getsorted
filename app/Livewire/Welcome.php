@@ -9,8 +9,8 @@ use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-/** Home: describe the problem (spec 007) or pick a trade to start a booking (spec 005, AC1). */
-#[Layout('components.layouts.app', ['brand' => 'Get Sorted', 'description' => 'Describe the job, compare quotes from vetted Durban pros, and keep everything in one place.'])]
+/** Home: describe the problem (spec 007) or pick a trade to start a booking (spec 005, AC1). Page design: home v3 (decision 055). */
+#[Layout('components.layouts.home', ['brand' => 'Get Sorted', 'description' => 'Describe the job, compare quotes from vetted Durban pros, and keep everything in one place.'])]
 final class Welcome extends Component
 {
     /** Session key the booking wizard reads to prefill its notes step (spec 007, AC4). */
@@ -59,30 +59,6 @@ final class Welcome extends Component
 
     public function render(): View
     {
-        $trades = Trade::query()->where('is_active', true)
-            ->orderBy('sort')->get()
-            ->sortBy(fn (Trade $trade): int => (int) (array_search($trade->key, ['plumbing', 'electrical', 'painting', 'tiling'], true) === false ? 99 : array_search($trade->key, ['plumbing', 'electrical', 'painting', 'tiling'], true)))
-            ->values();
-
-        $icons = ['plumbing' => 'drop', 'electrical' => 'lightning', 'painting' => 'paint-roller', 'tiling' => 'squares-four'];
-        $blurbs = [
-            'plumbing' => 'Leaks, geysers, drains and new fittings',
-            'electrical' => 'Fault finding, DB boards, certificates',
-            'painting' => 'Interior and exterior',
-            'tiling' => 'Floors and walls',
-        ];
-
-        return view('livewire.welcome', [
-            'trades' => $trades,
-            'tradeLinks' => $trades->map(fn (Trade $trade): array => [
-                'key' => $trade->key,
-                'name' => $trade->name,
-                'url' => route('book.trade', $trade),
-                'show' => route('trades.show', $trade),
-                'icon' => $icons[$trade->key] ?? 'sparkle',
-                'blurb' => $blurbs[$trade->key] ?? '',
-                'short' => $blurbs[$trade->key] ?? '',
-            ])->all(),
-        ]);
+        return view('livewire.welcome');
     }
 }

@@ -12,7 +12,7 @@ it('serves the Get Sorted public home page', function (): void {
     $this->get('/')
         ->assertOk()
         ->assertSeeText('Get Sorted')
-        ->assertSeeText('Get your home sorted, properly')
+        ->assertSeeText('Get Your Home Sorted, Properly.')
         ->assertSee(route('register'), false);
 });
 
