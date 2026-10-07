@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Domain\Accounts\Enums\Role;
+use App\Domain\Matching\Enums\InviteStatus;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\ServiceJobs\Support\JobChat;
 use App\Models\Pro;
+use App\Models\ServiceJobInvite;
 use App\Models\User;
 
 /**
@@ -31,7 +33,7 @@ final class PanelNavigation
         if ($panel === self::PRO) {
             return [
                 ['label' => __('Today'), 'route' => 'pros.welcome', 'icon' => 'home', 'active' => ['pros.welcome'], 'badge' => 0],
-                ['label' => __('Jobs'), 'route' => 'pros.jobs', 'icon' => 'briefcase', 'active' => ['pros.jobs', 'pros.jobs.*'], 'badge' => 0],
+                ['label' => __('Jobs'), 'route' => 'pros.jobs', 'icon' => 'briefcase', 'active' => ['pros.jobs', 'pros.jobs.*'], 'badge' => $user instanceof User ? self::openInvites($user) : 0],
                 ['label' => __('Application'), 'route' => 'pros.status', 'icon' => 'user', 'active' => ['pros.status'], 'badge' => 0],
             ];
         }
@@ -78,5 +80,15 @@ final class PanelNavigation
     public static function homeRoute(string $panel): string
     {
         return $panel === self::PRO ? 'pros.welcome' : 'account.home';
+    }
+
+    /** Invites still waiting for this pro, shown as a badge on their Jobs tab. */
+    private static function openInvites(User $user): int
+    {
+        $pro = Pro::query()->where('user_id', $user->id)->where('status', ProStatus::Approved)->first();
+
+        return $pro instanceof Pro
+            ? ServiceJobInvite::query()->where('pro_id', $pro->id)->whereIn('status', InviteStatus::open())->where('expires_at', '>', now())->count()
+            : 0;
     }
 }

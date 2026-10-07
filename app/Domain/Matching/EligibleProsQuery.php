@@ -23,6 +23,7 @@ final class EligibleProsQuery
         return Pro::query()
             ->where('status', ProStatus::Approved)
             ->whereNotNull('approved_at')
+            ->whereNull('paused_at')
             ->whereHas('services', fn (Builder $query): Builder => $query->whereKey($service->id))
             ->whereHas('serviceAreas', fn (Builder $query): Builder => $query->whereKey($suburb->id))
             ->where(function (Builder $query): void {

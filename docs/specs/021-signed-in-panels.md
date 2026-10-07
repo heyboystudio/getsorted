@@ -1,6 +1,6 @@
 # Spec 021 · Customer and pro signed-in panels
 
-Status: In progress (parts 1–3 of 5 built) — approved by the founder 2026-10-07 · Phase: 2–3 · Owner: founder
+Status: In progress (parts 1–4 of 5 built) — approved by the founder 2026-10-07 · Phase: 2–3 · Owner: founder
 
 ## Goal
 Replace the bare signed-in screens with two real panels. Customers get a home that says what needs them, a jobs area, a messages inbox and an account area with a profile. Pros get a "Today" home, a job pipeline and a profile that works as their shop front. Customers can see a pro's profile when comparing quotes. Both roles get persistent navigation that works one-handed at 360 px.
@@ -154,4 +154,11 @@ Earnings, payouts and statements (Phase 4); reviews, ratings, performance stats 
   - Migration `2026_10_07_090000`; `docs/architecture/data-model.md` updated.
   - **Deviations from the spec text:** (a) Notifications offers WhatsApp or SMS only, not email, because the app sends no customer emails other than verification; email can join when there are emails to choose. (b) The waitlist-removal block also stays on Home (an existing test relies on it) as well as appearing on the privacy page, and the Saved properties shortcut stays on Home; both can be dropped from Home later.
   - Tests: `tests/Feature/Panels/CustomerAccountTest.php`.
-- Next: part 4 (pro Today and Jobs pipeline, Available/Paused toggle).
+- 2026-10-07: **Part 4 (pro Today and Jobs) built** (AC20–AC21, AC23–AC24).
+  - Today (the `pros.welcome` page for an approved pro; other statuses keep the application welcome): Available / Paused toggle with a clear banner; "Answer these first" (open invites, least time left first, urgent flagged); "Coming up" (won jobs in the next 7 days, with the customer's name, phone and street address, only through the existing `viewContact` rule); "Waiting for the customer" (sent quotes). Sections with nothing in them are hidden.
+  - Jobs is a pipeline: Invites · Quoted · Booked · Done, all rows open their job (past ones to the existing "no longer available" explanation) and past jobs show a reason (Expired, You declined, You withdrew your quote, Quote not chosen, Cancelled, Closed, Completed). The old `new` and `past` tab names still work. `ProPipeline` sorts every invite once so Today and Jobs agree. The Jobs tab shows a badge of open invites.
+  - Pause: `pros.paused_at` (migration `2026_10_07_100000`), `SetProAvailability` (approved pro, own account only, idempotent, logged as `pro paused` / `pro resumed`), and `EligibleProsQuery` skips paused pros, so waves and manual invites exclude them. Existing invites, quotes, booked jobs and approval are untouched.
+  - **Deviations:** pause and resume are written to the activity log, not `pro_events` (that table only records status changes). The profile-completeness prompt (AC22) and the "final amount waiting" section move to part 5 and spec 018 part 2.
+  - Tests: `tests/Feature/Panels/ProPanelTest.php`.
+- **Environment finding:** this Mac's Postgres session timezone is Africa/Johannesburg while the app writes UTC, so stored times shift by 2 hours. This is the cause of the 9 test failures that already exist on `main` (and why panel tests that use times use margins over 2 hours). Fix is a founder decision: set the pgsql connection timezone to UTC in `config/database.php`, which is safe on a fresh test database but would shift already-stored times on any database that has data written under another setting.
+- Next: part 5 (pro Profile, pending-review edits, preview, and the customer's view of a pro).

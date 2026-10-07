@@ -36,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $decided_at
  * @property CarbonImmutable|null $approved_at
  * @property CarbonImmutable|null $suspended_at
+ * @property CarbonImmutable|null $paused_at
  * @property CarbonImmutable|null $reapply_after
  * @property CarbonImmutable|null $last_activity_at
  * @property int $contact_masking_count
@@ -106,6 +107,12 @@ final class Pro extends Model
         return $this->hasMany(ServiceJobInvite::class);
     }
 
+    /** Paused pros get no new invites; jobs they already have carry on (spec 021, AC21). */
+    public function isPaused(): bool
+    {
+        return $this->paused_at !== null;
+    }
+
     /** Repeated attempts to share contact details in quotes (spec 010, AC6). */
     public function isMaskingFlagged(): bool
     {
@@ -160,6 +167,7 @@ final class Pro extends Model
             'decided_at' => 'immutable_datetime',
             'approved_at' => 'immutable_datetime',
             'suspended_at' => 'immutable_datetime',
+            'paused_at' => 'immutable_datetime',
             'reapply_after' => 'immutable_datetime',
             'last_activity_at' => 'immutable_datetime',
         ];
