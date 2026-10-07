@@ -12,7 +12,7 @@
                 <button type="button" x-on:click="enable()" x-bind:disabled="busy" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Turn on notifications') }}</button>
                 <button type="button" x-on:click="dismiss()" class="text-sm text-emerald-900 underline underline-offset-4">{{ __('Not now') }}</button>
             </div>
-            <p x-show="failed" style="display: none" class="mt-2 text-sm text-red-800" role="alert">{{ __('That did not work. Please try again.') }}</p>
+            <p x-show="failed || reason" style="display: none" class="mt-2 text-sm text-red-800" role="alert" x-text="reason || '{{ __('That did not work. Please try again.') }}'"></p>
         </div>
     </template>
 
@@ -24,7 +24,7 @@
                 <button type="button" x-on:click="enable()" x-bind:disabled="busy" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Try again') }}</button>
                 <button type="button" x-on:click="dismiss()" class="text-sm text-emerald-900 underline underline-offset-4">{{ __('Not now') }}</button>
             </div>
-            <p x-show="failed" style="display: none" class="mt-2 text-sm text-red-800" role="alert">{{ __('That did not work. Please try again.') }}</p>
+            <p x-show="failed || reason" style="display: none" class="mt-2 text-sm text-red-800" role="alert" x-text="reason || '{{ __('That did not work. Please try again.') }}'"></p>
         </div>
     </template>
 

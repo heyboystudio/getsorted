@@ -6,9 +6,17 @@ use App\Domain\Notifications\Notify;
 use App\Models\User;
 use App\Notifications\Channels\SafeWebPushChannel;
 use App\Notifications\UserNotice;
+use GuzzleHttp\Psr7\Request as PsrRequest;
+use GuzzleHttp\Psr7\Response as PsrResponse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Minishlink\WebPush\MessageSentReport;
+use NotificationChannels\WebPush\Events\NotificationFailed;
+use NotificationChannels\WebPush\Events\NotificationSent;
 use NotificationChannels\WebPush\PushSubscription;
+use NotificationChannels\WebPush\ReportHandler;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 use Spatie\Activitylog\Models\Activity;
@@ -236,4 +244,43 @@ it('says how many devices will get the pop-up and fails for an unknown account (
 
     $this->artisan('sortd:send-test-notification', ['email' => 'phone@example.com'])->expectsOutputToContain('1 subscribed device')->assertSuccessful();
     $this->artisan('sortd:send-test-notification', ['email' => 'nobody@example.com'])->expectsOutputToContain('No account has that email')->assertFailed();
+});
+
+// --- Knowing how each push went ----------------------------------------------------------
+
+it('logs whether the push service accepted a push, with the status and nothing private (spec 022)', function (): void {
+    $user = subscribed(User::factory()->customer()->create());
+    $subscription = $user->pushSubscriptions()->firstOrFail();
+    $message = (new UserNotice('chat_message', 'T', 'B', url('/app')))->toWebPush($user);
+
+    $logged = [];
+    Log::shouldReceive('log')->andReturnUsing(function (string $level, string $text, array $context) use (&$logged): void {
+        $logged[] = [$level, $text, $context];
+    });
+
+    $ok = new MessageSentReport(new PsrRequest('POST', 'https://push.example.test/send/secret-endpoint'), new PsrResponse(201));
+    $gone = new MessageSentReport(new PsrRequest('POST', 'https://push.example.test/send/secret-endpoint'), new PsrResponse(410), false, 'Gone');
+
+    Event::dispatch(new NotificationSent($ok, $subscription, $message));
+    Event::dispatch(new NotificationFailed($gone, $subscription, $message));
+
+    expect($logged)->toBe([
+        ['info', 'Web push result.', ['accepted' => true, 'status' => 201, 'device_gone' => false]],
+        ['warning', 'Web push result.', ['accepted' => false, 'status' => 410, 'device_gone' => true]],
+    ]);
+    expect(json_encode($logged))->not->toContain('secret-endpoint')->not->toContain('p256dh-key');
+});
+
+it('deletes a device the push service says is gone (spec 022, AC5)', function (): void {
+    $user = subscribed(User::factory()->customer()->create());
+    $subscription = $user->pushSubscriptions()->firstOrFail();
+    $message = (new UserNotice('chat_message', 'T', 'B', url('/app')))->toWebPush($user);
+
+    app(ReportHandler::class)->handleReport(
+        new MessageSentReport(new PsrRequest('POST', $subscription->endpoint), new PsrResponse(410), false, 'Gone'),
+        $subscription,
+        $message,
+    );
+
+    expect(PushSubscription::query()->count())->toBe(0);
 });

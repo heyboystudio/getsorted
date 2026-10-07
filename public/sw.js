@@ -6,10 +6,6 @@
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
-// Safari requires every push to show a notification (it withdraws permission from sites that do not), so
-// only the other browsers skip the pop-up while the site is open and visible.
-const isSafari = () => /^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(self.navigator.userAgent);
-
 self.addEventListener('push', (event) => {
     let payload = {};
 
@@ -25,15 +21,14 @@ self.addEventListener('push', (event) => {
         // Open tabs refresh their bell and inbox straight away.
         windows.forEach((client) => client.postMessage({ type: 'push-received' }));
 
-        if (windows.some((client) => client.visibilityState === 'visible') && !isSafari()) {
-            return;
-        }
-
+        // Always show the pop-up, even when the site is open: Safari requires it, and it means a tester or a
+        // busy pro cannot miss one. A newer notice with the same tag replaces the older and alerts again.
         await self.registration.showNotification(payload.title || 'Get Sorted', {
             body: payload.body || '',
             icon: payload.icon || '/icons/icon-192.png',
             badge: payload.badge || '/icons/badge-96.png',
             tag: payload.tag || undefined,
+            renotify: Boolean(payload.tag),
             data: payload.data || {},
         });
     })());

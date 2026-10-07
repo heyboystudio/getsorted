@@ -54,11 +54,12 @@ it('tells the browser the public push key only when push is set up (spec 022, AC
     $this->get(route('login'))->assertSee('name="vapid-public-key" content="BPublicKeyForTests"', false)->assertDontSee('privateKeyForTests', false);
 });
 
-it('ships a service worker that shows pushes and only opens pages on this site (spec 022, AC3, AC13)', function (): void {
+it('ships a service worker that always shows the pop-up and only opens pages on this site (spec 022, AC3, AC13)', function (): void {
     $worker = (string) file_get_contents(public_path('sw.js'));
 
     expect($worker)->toContain("addEventListener('push'")->toContain('showNotification')->toContain("addEventListener('notificationclick'")
-        ->toContain('requested.origin === self.location.origin')->toContain('isSafari')->toContain('push-received');
+        ->toContain('requested.origin === self.location.origin')->toContain('push-received')
+        ->toContain('renotify: Boolean(payload.tag)')->not->toContain('visibilityState');
 });
 
 // --- The card and the switch (AC1, AC10) -------------------------------------------------
@@ -167,4 +168,14 @@ it('shows a pro their own notifications in the pro panel (spec 022, AC12, AC31)'
     notice($other, 'Somebody else notice');
 
     $this->actingAs($proUser)->get(route('notifications'))->assertOk()->assertSee('New job near you')->assertDontSee('Somebody else notice')->assertSee(route('pros.jobs'), false);
+});
+
+it('tells a person why connecting failed, and recovers from a leftover subscription (spec 022, AC2)', function (): void {
+    $script = (string) file_get_contents(resource_path('js/push.js'));
+
+    expect($script)->toContain("case 'AbortError'")->toContain('Brave')->toContain("case 'NotAllowedError'")->toContain("case 'ServerError'")
+        ->toContain("error.name !== 'InvalidStateError'")->toContain('console.error');
+
+    $card = $this->actingAs(User::factory()->customer()->create())->get(route('account.home'))->getContent();
+    expect($card)->toContain('x-text="reason ||');
 });

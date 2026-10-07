@@ -10,5 +10,5 @@
 
     <button type="button" x-show="state === 'on'" style="display: none" x-on:click="disable()" x-bind:disabled="busy" class="mt-3 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-60">{{ __('Turn off on this device') }}</button>
     <button type="button" x-show="state === 'off' || state === 'ask'" style="display: none" x-on:click="enable()" x-bind:disabled="busy" class="mt-3 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60">{{ __('Turn on on this device') }}</button>
-    <p x-show="failed" style="display: none" class="mt-2 text-sm text-red-800" role="alert">{{ __('That did not work. Please try again.') }}</p>
+    <p x-show="failed || (reason && state === 'off')" style="display: none" class="mt-2 text-sm text-red-800" role="alert" x-text="reason || '{{ __('That did not work. Please try again.') }}'"></p>
 </section>

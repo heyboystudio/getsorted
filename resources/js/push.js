@@ -58,18 +58,53 @@ const register = () => {
         const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
         await navigator.serviceWorker.ready;
 
-        const subscription = (await registration.pushManager.getSubscription())
-            || (await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyToBytes(meta('vapid-public-key')) }));
+        const subscribe = () => registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyToBytes(meta('vapid-public-key')) });
+        let subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+            try {
+                subscription = await subscribe();
+            } catch (error) {
+                // A leftover subscription made with other keys blocks a new one: drop it and try once more.
+                if (error.name !== 'InvalidStateError') {
+                    throw error;
+                }
+
+                const stale = await registration.pushManager.getSubscription();
+
+                if (stale) {
+                    await stale.unsubscribe();
+                }
+
+                subscription = await subscribe();
+            }
+        }
 
         const { endpoint, keys } = subscription.toJSON();
         const response = await call('POST', { endpoint, keys, contentEncoding: 'aes128gcm' });
 
         if (!response.ok) {
-            throw new Error('The server did not accept this device.');
+            throw Object.assign(new Error('The server did not accept this device.'), { name: 'ServerError', status: response.status });
         }
     })().finally(() => { registering = null; });
 
     return registering;
+};
+
+/** What went wrong, in words a person can act on (the technical name stays in the browser console). */
+const explain = (error) => {
+    switch (error && error.name) {
+        case 'AbortError':
+            return 'Your browser could not reach its push service. In Brave, turn on Settings, Privacy and security, "Use Google Services for Push Messaging", then try again. A VPN or strict privacy setting can also block it.';
+        case 'NotAllowedError':
+            return 'The browser did not allow notifications for this site. Check the site permission in your browser settings.';
+        case 'SecurityError':
+            return 'This page cannot use notifications. It has to be opened over https.';
+        case 'ServerError':
+            return `The server did not accept this device (error ${error.status}). Please try again.`;
+        default:
+            return `Something went wrong (${(error && error.name) || 'unknown'}). Please try again.`;
+    }
 };
 
 /** Stops pop-ups on this device and tells the server. Safe to call when nothing is subscribed. */
@@ -95,6 +130,7 @@ document.addEventListener('alpine:init', () => {
         state: 'checking',
         busy: false,
         failed: false,
+        reason: '',
         justEnabled: false,
         dismissed: dismissedNow(),
 
@@ -127,6 +163,9 @@ document.addEventListener('alpine:init', () => {
 
                     return 'on';
                 } catch (error) {
+                    console.error('Pop-up notifications could not connect this device.', error);
+                    this.reason = explain(error);
+
                     return 'off';
                 }
             }
@@ -163,6 +202,8 @@ document.addEventListener('alpine:init', () => {
                     this.state = permission === 'denied' ? 'blocked' : 'ask';
                 }
             } catch (error) {
+                console.error('Pop-up notifications could not connect this device.', error);
+                this.reason = explain(error);
                 this.failed = true;
                 this.state = 'off';
             } finally {
