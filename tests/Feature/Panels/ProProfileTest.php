@@ -67,7 +67,7 @@ it('shows a quoting pro\'s profile to the customer and nothing private (spec 021
     $this->actingAs($this->customer);
 
     Livewire::test(CustomerProProfile::class, ['quote' => $quote])
-        ->assertSee('Dlamini Plumbing')->assertSee('Twenty years fixing Durban leaks.')
+        ->assertDontSee('Dlamini Plumbing')->assertSee($pro->user->first_name)->assertSee('Twenty years fixing Durban leaks.')
         ->assertSee('Plumbing')->assertSee('Works around')->assertSee('Musgrave')
         ->assertSee('On GetSorted since')->assertSee('PIRB registration')->assertSee('Valid')
         ->assertDontSee('+27821110000')->assertDontSee('thabo.secret@example.com')->assertDontSee('4123456789')
@@ -114,7 +114,7 @@ it('shows a profile only to the customer whose job has a live quote from that pr
     auth()->logout();
     $this->get(route('account.pro-profile', $quote))->assertRedirect(route('login'));
 
-    $this->actingAs($this->customer)->get(route('account.pro-profile', $quote))->assertOk()->assertSee('Dlamini Plumbing');
+    $this->actingAs($this->customer)->get(route('account.pro-profile', $quote))->assertOk()->assertDontSee('Dlamini Plumbing')->assertSee($pro->user->first_name);
 });
 
 it('hides the profile once the quote is withdrawn, declined or expired, or the pro is suspended (spec 021, AC19)', function (string $status): void {
@@ -235,7 +235,7 @@ it('previews the profile exactly as customers see it, with no contact details (s
     $this->actingAs($pro->user);
 
     Livewire::test(ProfilePreview::class)
-        ->assertSee('Dlamini Plumbing')->assertSee('Twenty years fixing Durban leaks.')->assertSee('Plumbing')->assertSee('PIRB registration')
+        ->assertDontSee('Dlamini Plumbing')->assertSee($pro->user->first_name)->assertSee('Twenty years fixing Durban leaks.')->assertSee('Plumbing')->assertSee('PIRB registration')
         ->assertSee('never shown')
         ->assertDontSee('+27821110000')->assertDontSee('thabo.secret@example.com')->assertDontSee('4123456789');
 

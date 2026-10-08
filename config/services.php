@@ -33,6 +33,16 @@ return [
         'timeout' => 3,
     ],
 
+    // Pros' prepaid introduction credit (spec 023, decision 063). Sandbox until the live merchant account exists.
+    'payfast' => [
+        'merchant_id' => env('PAYFAST_MERCHANT_ID'),
+        'merchant_key' => env('PAYFAST_MERCHANT_KEY'),
+        'passphrase' => env('PAYFAST_PASSPHRASE'),
+        'sandbox' => (bool) env('PAYFAST_SANDBOX', true),
+        // Switch off only for local tests; production always checks the sender's address.
+        'check_source_ip' => (bool) env('PAYFAST_CHECK_SOURCE_IP', true),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

@@ -66,6 +66,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 060 | No safety advice and no emergency handling | Accepted (founder) | 2026-10-08 |
 | 061 | GetSorted earns from introductions: free at launch, then a fixed fee paid by the pro | Accepted (founder) | 2026-10-08 |
 | 062 | No WhatsApp or SMS in the MVP: Twilio removed, email through Resend only | Accepted (founder) | 2026-10-08 |
+| 063 | PayFast for pros' introduction credit | Accepted (founder) | 2026-10-08 |
 
 ---
 
@@ -649,3 +650,20 @@ Before the introduction there is a paywall: chat is allowed but contact details 
 **Why:** Founder decision: emails only until there is a reason and the time to do WhatsApp properly.
 
 **Consequences:** Anything urgent for a pro (a new job near them) now depends on email and push being seen. Revisit WhatsApp after launch with approved templates (the earlier research is in 040). Remove the `TWILIO_*`, `OTP_DEFAULT_CHANNEL` and `PHONE_CODES_ENABLED` lines from each server's `.env`. Numbers saved without a code can be mistyped or someone else's; do not rely on them for security.
+
+## 063 · PayFast for pros' introduction credit
+
+**Date:** 2026-10-08 · **Status:** Accepted (founder: "integrate PayFast for the paywall")
+
+**Context:** Decision 061 makes the pro pay a fixed fee per introduction from prepaid credit, switched off at launch. Q4 (payment provider) was open for the Phase M job payments; the fee needs a provider now.
+
+**Decision:** PayFast, behind the existing `PaymentGateway` contract (`App\Integrations\PayFast\PayFastGateway`), used only for pros buying credit. No SDK: signed redirect link and the instant transaction notification (ITN) handled with Laravel's HTTP client.
+- The pro picks a pack on `/pros/credit`; a pending `credit_purchases` row is written; the pro is sent to PayFast.
+- Credit is added only from the ITN, and only after PayFast's four checks: signature (MD5 with passphrase), sender address (PayFast hosts), PayFast confirms the notification, amount matches the purchase. Returning to the site adds nothing.
+- Credit is an append-only ledger (`pro_credit_entries`) with a unique idempotency key; an introduction fee is a negative row written in the same transaction as the booking.
+- `PAYFAST_MERCHANT_ID`, `PAYFAST_MERCHANT_KEY`, `PAYFAST_PASSPHRASE`, `PAYFAST_SANDBOX` per environment. The test site uses PayFast's sandbox; local development and tests use the fake gateway.
+- Added `PaymentEventType::PaymentPending` for PayFast's PENDING status. `refund` and `payout` throw: not used in the MVP.
+
+**Why:** PayFast is the common South African gateway, takes cards, instant EFT and wallets, needs no SDK for this flow, and has a free sandbox. Credit (not a charge per introduction) means the client's choice is never held up by a payment.
+
+**Consequences:** Phase M still decides the provider for job payments (Q4); PayFast stays on the shortlist and this adapter can grow. Before the fee is switched on: live merchant account, live keys on the server, accountant on VAT for credit, and the pro agreement and terms must mention the fee. Pack sizes, fee and free allowance are admin settings (`introductions` group).

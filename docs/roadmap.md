@@ -48,7 +48,7 @@ Goal: real customers get real quotes from real pros in a few Durban suburbs, and
 3. **Supply.** Registration fields on the pro application (PIRB number, electrical registration) so "verified" can be shown; recruit 5–10 approved pros per trade in 2–3 launch suburbs; then set `GETSORTED_REQUIRE_PROS=true` so nobody is promised quotes that cannot come.
 4. **Operations.** Admin list of stalled jobs (no quote after N hours, urgent with no reply); the PRD's success measures on the admin dashboard (time to first quote, jobs with ≥ 2 quotes, quote → accept).
 5. **Launch readiness.** Lawyer-reviewed terms, privacy notice (naming Google, Gemini, Resend) and pro agreement; POPIA checklist done; Sentry error tracking; database backups tested; South African production host decided (decision 014); admin MFA stays optional (founder, 2026-10-08).
-6. **Introductions (decision 061).** Pros send estimates (range + call-out); the client chooses a pro to visit, which unlocks contact details; before that, a paywall (contact details blocked in chat, business name hidden). Record every introduction; the fee setting stays off at launch ("first 10 jobs free"). PayFast credits come when the fee is switched on.
+6. **Introductions (decision 061, spec 023, built 2026-10-08).** Pros send estimates (range + call-out); the client chooses a pro to visit, which unlocks contact details; before that, a paywall (contact details blocked in chat, business name hidden). Record every introduction; the fee setting stays off at launch ("first 10 jobs free"). PayFast credits come when the fee is switched on.
 
 **Exit criteria:** soft launch in 2–3 suburbs; the first 20 real jobs posted; ≥ 60% get 2+ quotes; every accepted job can be marked done and reviewed; no known P1 bugs.
 

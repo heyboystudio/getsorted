@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Pros;
 
+use App\Domain\Introductions\Support\ProIdentity;
 use App\Domain\Pros\Enums\DocumentStatus;
 use App\Domain\Pros\Enums\DocumentType;
 use App\Domain\Pros\Support\ProPublicProfile;
@@ -31,7 +32,7 @@ final class ProfilePreview extends Component
         $photo = $pro->document(DocumentType::ProfilePhoto);
 
         return view('livewire.pros.profile-preview', [
-            'profile' => ProPublicProfile::from($pro, $photo?->file() !== null && $photo->status === DocumentStatus::Verified ? $photo->temporaryUrl() : null),
+            'profile' => ProPublicProfile::from($pro, $photo?->file() !== null && $photo->status === DocumentStatus::Verified ? $photo->temporaryUrl() : null, ProIdentity::beforeIntroduction($pro)),
         ]);
     }
 }

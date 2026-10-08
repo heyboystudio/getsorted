@@ -10,6 +10,8 @@
             <div class="min-w-0">
                 <h1 class="truncate text-2xl font-semibold tracking-tight">{{ $pro->business_name }}</h1>
                 <a wire:navigate.hover href="{{ route('pros.profile.preview') }}" class="text-sm text-emerald-800 underline underline-offset-4">{{ __('Preview as customers see it') }}</a>
+                <span aria-hidden="true" class="text-zinc-400"> · </span>
+                <a wire:navigate.hover href="{{ route('pros.credit') }}" class="text-sm text-emerald-800 underline underline-offset-4">{{ __('Introduction credit') }}</a>
             </div>
         </div>
 

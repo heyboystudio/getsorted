@@ -85,6 +85,9 @@ final class Show extends Component
 
     public string $notes = '';
 
+    /** The top of the estimate range in rand, if the price could rise. */
+    public string $highTotal = '';
+
     public string $withdrawReason = '';
 
     public function mount(ServiceJobInvite $invite, OpenInvite $openInvite): void
@@ -147,6 +150,7 @@ final class Show extends Component
         $this->earliestStartDate = ($this->invite()->serviceJob->isUrgent() ? LocalTime::today() : LocalTime::today()->addDay())->toDateString();
         $this->validityDays = $settings->default_validity_days;
         $this->notes = '';
+        $this->highTotal = '';
         $this->building = true;
         $this->previewing = false;
     }
@@ -169,6 +173,7 @@ final class Show extends Component
         $this->earliestStartDate = max($quote->earliest_start_date->toDateString(), LocalTime::today()->toDateString());
         $this->validityDays = max(1, (int) $quote->submitted_at->setTimezone(LocalTime::timezone())->startOfDay()->diffInDays($quote->valid_until));
         $this->notes = (string) $quote->notes;
+        $this->highTotal = $quote->high_total_cents === null ? '' : (string) BigDecimal::ofUnscaledValue($quote->high_total_cents, 2);
         $this->building = true;
         $this->previewing = false;
     }
@@ -285,6 +290,7 @@ final class Show extends Component
             ] : null,
             'previewTotals' => $this->building && $this->previewing ? $this->previewTotals($calculator) : null,
             'previewText' => $this->building && $this->previewing ? $this->previewText() : null,
+            'previewHigh' => trim($this->highTotal) === '' ? null : Rand::toCents($this->highTotal),
             'lineKinds' => LineKind::cases(),
             // Spec 018: the chat shows while this pro can still write, or once a conversation exists.
             'chat' => JobChat::canWrite($job, $invite->pro) || $job->conversations()->where('pro_id', $invite->pro_id)->exists(),
@@ -299,6 +305,12 @@ final class Show extends Component
      */
     private function previewText(): array
     {
+        $high = trim($this->highTotal) === '' ? null : Rand::toCents($this->highTotal);
+
+        if (trim($this->highTotal) !== '' && $high === null) {
+            $errors['highTotal'] = __('Enter the top of your range in rand, e.g. 650.');
+        }
+
         $start = CarbonImmutable::createFromFormat('Y-m-d', $this->earliestStartDate, LocalTime::timezone());
         $notes = trim($this->notes) === '' ? null : ContactMasker::mask($this->notes)[0];
 
@@ -340,6 +352,12 @@ final class Show extends Component
             $lines[] = new QuoteLineData($kind ?? LineKind::Labour, (string) $line['description'], trim((string) $line['quantity']), $cents ?? 0);
         }
 
+        $high = trim($this->highTotal) === '' ? null : Rand::toCents($this->highTotal);
+
+        if (trim($this->highTotal) !== '' && $high === null) {
+            $errors['highTotal'] = __('Enter the top of your range in rand, e.g. 650.');
+        }
+
         $start = CarbonImmutable::createFromFormat('Y-m-d', $this->earliestStartDate, LocalTime::timezone());
 
         if (! $start instanceof CarbonImmutable) {
@@ -349,7 +367,7 @@ final class Show extends Component
         if ($errors !== []) {
             // Also report line problems the domain would find, so every field is marked at once.
             try {
-                app(QuoteRules::class)->check(new QuoteDraft($lines, $this->depositPercent, $start ?: LocalTime::today(), $this->validityDays, $this->notes), app(QuoteCalculator::class)->calculate(new QuoteDraft($lines, 0, LocalTime::today(), 7, null), false));
+                app(QuoteRules::class)->check(new QuoteDraft($lines, $this->depositPercent, $start ?: LocalTime::today(), $this->validityDays, $this->notes, $high), app(QuoteCalculator::class)->calculate(new QuoteDraft($lines, 0, LocalTime::today(), 7, null), false));
             } catch (ValidationException $exception) {
                 foreach ($exception->errors() as $key => $messages) {
                     $errors[$this->field($key)] ??= $messages[0];
@@ -359,7 +377,7 @@ final class Show extends Component
             throw ValidationException::withMessages($errors);
         }
 
-        return new QuoteDraft($lines, $this->depositPercent, $start->startOfDay(), $this->validityDays, $this->notes === '' ? null : $this->notes);
+        return new QuoteDraft($lines, $this->depositPercent, $start->startOfDay(), $this->validityDays, $this->notes === '' ? null : $this->notes, $high);
     }
 
     /** Runs a domain call and renames its error keys to the builder's fields. */
@@ -384,6 +402,7 @@ final class Show extends Component
             $key === 'deposit_percent' => 'depositPercent',
             $key === 'earliest_start_date' => 'earliestStartDate',
             $key === 'validity_days' => 'validityDays',
+            $key === 'high_total' => 'highTotal',
             $key === 'withdraw_reason' => 'withdrawReason',
             default => $key,
         };

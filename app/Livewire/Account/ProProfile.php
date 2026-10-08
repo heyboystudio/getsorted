@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Account;
 
+use App\Domain\Introductions\Support\ProIdentity;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\Pros\Support\ProPublicProfile;
 use App\Models\Quote;
@@ -42,7 +43,7 @@ final class ProProfile extends Component
         abort_unless(auth()->user()?->can('viewPro', $quote) === true, 404);
 
         return view('livewire.account.pro-profile', [
-            'profile' => ProPublicProfile::from($quote->pro, $quote->hasProPhoto() ? $quote->proPhotoUrl() : null),
+            'profile' => ProPublicProfile::from($quote->pro, $quote->hasProPhoto() ? $quote->proPhotoUrl() : null, ProIdentity::displayName($quote->pro, $quote->serviceJob)),
             'job' => $quote->serviceJob,
         ]);
     }

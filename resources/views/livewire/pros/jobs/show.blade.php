@@ -140,6 +140,11 @@
                                 <input type="number" min="1" max="30" wire:model="validityDays" class="mt-1 block w-28 rounded-lg border border-zinc-300 px-3 py-2">
                             </label>
                             @error('validityDays') <p class="text-sm text-red-700">{{ $message }}</p> @enderror
+                            <label class="block text-sm">{{ __('Could be up to, in rand (optional)') }}
+                                <input type="text" inputmode="decimal" wire:model="highTotal" placeholder="650" class="mt-1 block w-36 rounded-lg border border-zinc-300 px-3 py-2">
+                                <span class="mt-1 block text-xs text-zinc-500">{{ __('If the price could rise after you see the problem, enter the most it could be. Clients see a range.') }}</span>
+                            </label>
+                            @error('highTotal') <p class="text-sm text-red-700">{{ $message }}</p> @enderror
                             <label class="block text-sm">{{ __('Notes for the customer (optional)') }}
                                 <textarea wire:model="notes" rows="3" maxlength="1000" class="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2"></textarea>
                             </label>
@@ -161,7 +166,7 @@
                             @if ($previewTotals->vatCents > 0)
                                 <div class="flex justify-between gap-3 text-zinc-600"><dt>{{ __('VAT') }}</dt><dd>{{ $R::format($previewTotals->vatCents) }}</dd></div>
                             @endif
-                            <div class="flex justify-between gap-3 border-t border-zinc-200 pt-2 font-semibold"><dt>{{ __('Total') }}</dt><dd>{{ $R::format($previewTotals->totalCents) }}</dd></div>
+                            <div class="flex justify-between gap-3 border-t border-zinc-200 pt-2 font-semibold"><dt>{{ __('Total') }}</dt><dd>{{ $R::format($previewTotals->totalCents) }}@if ($previewHigh !== null) {{ __('to') }} {{ $R::format($previewHigh) }}@endif</dd></div>
                             <div class="flex justify-between gap-3"><dt>{{ __('Deposit') }}</dt><dd>{{ $R::format($previewTotals->depositCents) }}</dd></div>
                             @if ($previewText['start'])
                                 <div class="flex justify-between gap-3 text-zinc-600"><dt>{{ __('Earliest start') }}</dt><dd>{{ $previewText['start'] }}</dd></div>

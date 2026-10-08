@@ -14,7 +14,7 @@ Updated 2026-10-08 for decision 058 (model B now, payments in Phase M). "Phase" 
 
 | # | Question | Default until decided | Blocks |
 |---|---|---|---|
-| Q4 | Which payment provider? Shortlist in `money-flow.md`: Paystack, Peach, Ozow, PayFast | Fake gateway in dev | All of Phase M |
+| Q4 | Which payment provider for job payments (Phase M)? Shortlist in `money-flow.md`: Paystack, Peach, Ozow, PayFast. PayFast is chosen only for pros' introduction credit (decision 063) | Fake gateway in dev | All of Phase M |
 | Q1 | Commission rate: 10%, 11% or 12% of labour? Is the call-out fee included? (The old quote preview assumed 12% of labour + call-out; removed in PR #65.) | 12% of labour, admin setting | Payouts |
 | Q2 | Commission on materials? | No | Payouts |
 | Q3 | Customer booking/service fee? | R0, admin setting | Checkout |

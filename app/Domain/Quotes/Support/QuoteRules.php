@@ -75,6 +75,10 @@ final readonly class QuoteRules
             $errors['total'] = __('A quote cannot be more than R :max.', ['max' => number_format($this->settings->max_total_cents / 100, 0, '.', ' ')]);
         }
 
+        if ($draft->highTotalCents !== null && ($draft->highTotalCents <= $totals->totalCents || $draft->highTotalCents > $this->settings->max_total_cents)) {
+            $errors['high_total'] = __('The top of your range must be more than the total, and not over R :max.', ['max' => number_format($this->settings->max_total_cents / 100, 0, '.', ' ')]);
+        }
+
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
         }

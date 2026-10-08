@@ -31,6 +31,7 @@ final class QuoteWriter
             'callout_cents' => $totals->calloutCents,
             'vat_cents' => $totals->vatCents,
             'total_cents' => $totals->totalCents,
+            'high_total_cents' => $draft->highTotalCents,
             'deposit_percent' => $draft->depositPercent,
             'deposit_cents' => $totals->depositCents,
             'earliest_start_date' => $draft->earliestStartDate->setTimezone(LocalTime::timezone())->toDateString(),

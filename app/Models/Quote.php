@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\URL;
  * @property int $callout_cents
  * @property int $vat_cents
  * @property int $total_cents
+ * @property int|null $high_total_cents
  * @property int $deposit_percent
  * @property int $deposit_cents
  * @property CarbonImmutable $earliest_start_date
@@ -122,6 +123,7 @@ final class Quote extends Model
             'callout_cents' => 'integer',
             'vat_cents' => 'integer',
             'total_cents' => 'integer',
+            'high_total_cents' => 'integer',
             'deposit_percent' => 'integer',
             'deposit_cents' => 'integer',
             'earliest_start_date' => 'immutable_date',
