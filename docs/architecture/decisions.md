@@ -67,6 +67,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 061 | GetSorted earns from introductions: free at launch, then a fixed fee paid by the pro | Accepted (founder) | 2026-10-08 |
 | 062 | No WhatsApp or SMS in the MVP: Twilio removed, email through Resend only | Accepted (founder) | 2026-10-08 |
 | 063 | PayFast for pros' introduction credit | Accepted (founder) | 2026-10-08 |
+| 064 | Backups, parallel tests and a browser test of the core path | Accepted (founder) | 2026-10-08 |
 
 ---
 
@@ -667,3 +668,16 @@ Before the introduction there is a paywall: chat is allowed but contact details 
 **Why:** PayFast is the common South African gateway, takes cards, instant EFT and wallets, needs no SDK for this flow, and has a free sandbox. Credit (not a charge per introduction) means the client's choice is never held up by a payment.
 
 **Consequences:** Phase M still decides the provider for job payments (Q4); PayFast stays on the shortlist and this adapter can grow. Before the fee is switched on: live merchant account, live keys on the server, accountant on VAT for credit, and the pro agreement and terms must mention the fee. Pack sizes, fee and free allowance are admin settings (`introductions` group).
+
+## 064 · Backups, parallel tests and a browser test of the core path
+
+**Date:** 2026-10-08 · **Status:** Accepted (founder: "implement")
+
+**Decision:**
+- **Backups:** `deploy/backup/backup.sh` (nightly database dump and uploaded files, 14 daily and 8 weekly kept, optional copy to S3) and `restore-check.sh` (weekly: restore into a scratch database, compare row counts, check PostGIS, drop it). Installed in the test server's crontab; proven on 2026-10-08.
+- **Tests:** `composer test:parallel` runs Pest with 4 processes using the installed `brianium/paratest`. It is opt-in, not the default: on the 4-core development Mac it took about 190 s against about 230 s serial, so the gain is modest. Composer's 300-second process limit is removed (`process-timeout: 0`), which had made the full `composer check` abort on a slow run.
+- **Browser test:** `tests/E2E/core-path.mjs` (`npm run e2e`) drives Brave through the whole core path on a running site. It adds **`playwright-core`** as a dev dependency (no browsers are downloaded; it uses the installed Brave). It is not part of `composer check` because it needs a live site and accounts.
+
+**Why:** Founder request. Backups protect the only copy of client and vetting data; the browser test catches layout and flow breaks the unit tests cannot.
+
+**Consequences:** Backups on the same disk do not protect against losing the server: a bucket for `BACKUP_S3_URI` is still needed, and production uses RDS snapshots (`docs/engineering/production-move.md`). The `.env` is deliberately not backed up. The browser test stops with a clear message when the introduction fee is on and the test pro has no credit.
