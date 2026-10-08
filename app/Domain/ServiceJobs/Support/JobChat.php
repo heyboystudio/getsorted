@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\ServiceJobs\Support;
 
 use App\Domain\Accounts\Enums\Role;
+use App\Domain\Introductions\Support\ProIdentity;
 use App\Domain\Matching\Enums\InviteStatus;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\ServiceJobs\Enums\MessageSender;
@@ -109,7 +110,7 @@ final class JobChat
 
             return [
                 'pro' => $invite->pro,
-                'label' => $named && $invite->pro->business_name !== null ? $invite->pro->business_name : (string) __('Pro :letter', ['letter' => self::letter($index)]),
+                'label' => $named ? ProIdentity::displayName($invite->pro, $job) : (string) __('Pro :letter', ['letter' => self::letter($index)]),
                 'named' => $named,
                 'conversation' => $conversation,
                 'writable' => $writable,

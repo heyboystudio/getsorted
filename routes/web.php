@@ -14,6 +14,7 @@ use App\Http\Controllers\ProJobPhotoController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\QuoteProPhotoController;
 use App\Http\Controllers\ShowTradeController;
+use App\Http\Controllers\Webhooks\PayFastNotificationController;
 use App\Http\Middleware\EnsureCustomer;
 use App\Http\Middleware\EnsurePhoneIsVerified;
 use App\Livewire\Account\Home;
@@ -36,6 +37,7 @@ use App\Livewire\Auth\VerifyEmail;
 use App\Livewire\Auth\VerifyPhone;
 use App\Livewire\Booking\Thread as BookingThread;
 use App\Livewire\Pros\Application as ProApplication;
+use App\Livewire\Pros\Credit as ProCredit;
 use App\Livewire\Pros\Jobs\Index as ProJobs;
 use App\Livewire\Pros\Jobs\Show as ProJob;
 use App\Livewire\Pros\Profile as ProProfilePage;
@@ -69,6 +71,8 @@ Route::get('/start', function () {
 
     return redirect()->route('login');
 })->name('start');
+
+Route::post('/webhooks/payfast', PayFastNotificationController::class)->middleware('throttle:webhooks')->name('webhooks.payfast');
 
 Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/privacy', 'pages.privacy')->name('privacy');
@@ -124,6 +128,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/pros/apply', ProApplication::class)->name('pros.apply');
         Route::get('/pros/status', ProStatusPage::class)->name('pros.status');
         Route::get('/pros/profile', ProProfilePage::class)->name('pros.profile');
+        Route::get('/pros/credit', ProCredit::class)->name('pros.credit');
         Route::get('/pros/profile/preview', ProProfilePreview::class)->name('pros.profile.preview');
         Route::get('/pros/jobs', ProJobs::class)->name('pros.jobs');
         Route::get('/pros/jobs/{invite}', ProJob::class)->name('pros.jobs.show');

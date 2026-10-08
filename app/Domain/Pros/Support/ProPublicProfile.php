@@ -30,7 +30,7 @@ final readonly class ProPublicProfile
         public ?string $photoUrl,
     ) {}
 
-    public static function from(Pro $pro, ?string $photoUrl = null): self
+    public static function from(Pro $pro, ?string $photoUrl = null, ?string $displayName = null): self
     {
         $pro->loadMissing(['trades', 'documents']);
 
@@ -44,7 +44,7 @@ final readonly class ProPublicProfile
         }
 
         return new self(
-            businessName: (string) $pro->business_name,
+            businessName: $displayName ?? (string) $pro->business_name,
             bio: $pro->bio === null || trim($pro->bio) === '' ? null : $pro->bio,
             trades: $trades,
             area: $pro->base_area_label,

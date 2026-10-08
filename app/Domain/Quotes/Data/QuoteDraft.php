@@ -18,5 +18,6 @@ final readonly class QuoteDraft
         public CarbonImmutable $earliestStartDate,
         public int $validityDays,
         public ?string $notes,
+        public ?int $highTotalCents = null,
     ) {}
 }

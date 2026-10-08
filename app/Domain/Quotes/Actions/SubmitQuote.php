@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Quotes\Actions;
 
+use App\Domain\Introductions\Support\ProCredit;
 use App\Domain\Matching\Enums\InviteStatus;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\Quotes\Data\QuoteDraft;
@@ -27,7 +28,7 @@ use Illuminate\Validation\ValidationException;
 /** A pro sends their first quote on an invite (spec 010, AC1–AC4, AC6). */
 final readonly class SubmitQuote
 {
-    public function __construct(private QuoteCalculator $calculator, private QuoteRules $rules, private QuoteWriter $writer) {}
+    public function __construct(private QuoteCalculator $calculator, private QuoteRules $rules, private QuoteWriter $writer, private ProCredit $credit) {}
 
     public function handle(User $user, ServiceJobInvite $invite, QuoteDraft $draft): Quote
     {
@@ -52,6 +53,10 @@ final readonly class SubmitQuote
 
             if (! $locked->isAvailable() || $pro->status !== ProStatus::Approved) {
                 throw new CannotQuote(__('This job is no longer available.'));
+            }
+
+            if (! $this->credit->canQuote($pro)) {
+                throw new CannotQuote(__('Top up your introduction credit to send another estimate.'));
             }
 
             if ($locked->status !== InviteStatus::Accepted) {

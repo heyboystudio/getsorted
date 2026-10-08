@@ -19,6 +19,9 @@ use App\Contracts\Exceptions\InvalidWebhookSignature;
  */
 interface PaymentGateway
 {
+    /** The webhook header carrying the sender's IP address, for providers that verify it (PayFast). */
+    public const string SOURCE_IP_HEADER = 'x-source-ip';
+
     public function createCheckout(CheckoutRequest $request): Checkout;
 
     /**

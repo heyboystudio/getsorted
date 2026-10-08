@@ -78,7 +78,7 @@ it('lets the customer message an invited pro first, who stays anonymous until th
         ->set('message', 'Yes, I can come at 3pm.')->call('send')->assertHasNoErrors();
 
     $this->actingAs($this->customer);
-    Livewire::test(CustomerJob::class, ['job' => $this->job])->assertSee('Dlamini Plumbing')->assertSee('Pro B');
+    Livewire::test(CustomerJob::class, ['job' => $this->job])->assertDontSee('Dlamini Plumbing')->assertSee($this->proA->user->first_name)->assertSee('Pro B');
 });
 
 it('lets a pro who opened the invite start the chat, shown on their job page (AC1)', function (): void {

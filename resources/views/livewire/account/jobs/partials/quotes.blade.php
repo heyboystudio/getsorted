@@ -30,7 +30,7 @@
                             <img src="{{ $quote->proPhotoUrl() }}" alt="" class="size-12 rounded-full object-cover">
                         @endif
                         <div>
-                            <p class="font-semibold">{{ $pro->business_name }}</p>
+                            <p class="font-semibold">{{ \App\Domain\Introductions\Support\ProIdentity::displayName($pro, $job) }}</p>
                             <a wire:navigate.hover href="{{ route('account.pro-profile', $quote) }}" class="text-xs text-emerald-800 underline underline-offset-4">{{ __('View profile') }}</a>
                             <p class="text-xs text-zinc-500">{{ __('On GetSorted since :date', ['date' => $pro->approved_at?->translatedFormat('M Y')]) }}</p>
                             @foreach ($registrations as $registration)
@@ -46,7 +46,7 @@
                         @if ($quote->materials_cents > 0)<div class="flex justify-between"><dt>{{ __('Materials') }}</dt><dd>{{ $R::format($quote->materials_cents) }}</dd></div>@endif
                         @if ($quote->callout_cents > 0)<div class="flex justify-between"><dt>{{ __('Call-out') }}</dt><dd>{{ $R::format($quote->callout_cents) }}</dd></div>@endif
                         @if ($quote->vat_cents > 0)<div class="flex justify-between text-zinc-600"><dt>{{ __('VAT') }}</dt><dd>{{ $R::format($quote->vat_cents) }}</dd></div>@endif
-                        <div class="flex justify-between border-t border-zinc-200 pt-2 text-base font-semibold"><dt>{{ __('Total') }}</dt><dd>{{ $R::format($quote->total_cents) }}</dd></div>
+                        <div class="flex justify-between border-t border-zinc-200 pt-2 text-base font-semibold"><dt>{{ __('Estimate') }}</dt><dd>{{ $R::format($quote->total_cents) }}@if ($quote->high_total_cents !== null) {{ __('to') }} {{ $R::format($quote->high_total_cents) }}@endif</dd></div>
                         <div class="flex justify-between"><dt>{{ __('Deposit') }}</dt><dd>{{ $R::format($quote->deposit_cents) }}</dd></div>
                         <div class="flex justify-between text-zinc-600"><dt>{{ __('Earliest start') }}</dt><dd>{{ $quote->earliest_start_date->translatedFormat('D j M') }}</dd></div>
                         <div class="flex justify-between text-zinc-600"><dt>{{ __('Valid until') }}</dt><dd>{{ $quote->valid_until->translatedFormat('D j M') }}</dd></div>
@@ -67,7 +67,7 @@
                     @elseif ($pro->status !== \App\Domain\Pros\Enums\ProStatus::Approved)
                         <p class="mt-4 text-sm text-zinc-600">{{ __('This pro is unavailable.') }}</p>
                     @else
-                        <button type="button" wire:click="confirmAccept('{{ $quote->public_id }}')" class="mt-4 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Accept this estimate') }}</button>
+                        <button type="button" wire:click="confirmAccept('{{ $quote->public_id }}')" class="mt-4 w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Choose this pro to visit') }}</button>
                     @endif
                 </article>
             @endforeach
@@ -77,7 +77,8 @@
     @if ($accepting)
         <div class="fixed inset-0 z-10 flex items-end justify-center bg-black/40 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="accept-title">
             <div class="w-full max-w-md rounded-xl bg-white p-5">
-                <h2 id="accept-title" class="text-lg font-semibold">{{ __('Accept this estimate for :total?', ['total' => $R::format($accepting->total_cents)]) }}</h2>
+                <h2 id="accept-title" class="text-lg font-semibold">{{ __('Choose :name to visit?', ['name' => \App\Domain\Introductions\Support\ProIdentity::displayName($accepting->pro, $job)]) }}</h2>
+                <p class="mt-2 text-sm text-zinc-600">{{ __('We will share your name, phone number and address so you can arrange the visit. The visit, the final price and the payment are between you and the pro.') }}</p>
                 <p class="mt-2 text-sm text-zinc-600">
                     {{ $accepting->deposit_cents > 0
                         ? __('A deposit of :deposit will be due, paid directly to the pro. The other pros will be told you chose someone else.', ['deposit' => $R::format($accepting->deposit_cents)])
@@ -85,7 +86,7 @@
                 </p>
                 <div class="mt-5 grid grid-cols-2 gap-3">
                     <button type="button" wire:click="cancelAccept" class="rounded-lg border border-zinc-300 px-4 py-3 font-medium">{{ __('Cancel') }}</button>
-                    <button type="button" wire:click="accept" wire:loading.attr="disabled" wire:target="accept" class="rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white disabled:opacity-60">{{ __('Accept') }}</button>
+                    <button type="button" wire:click="accept" wire:loading.attr="disabled" wire:target="accept" class="rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white disabled:opacity-60">{{ __('Choose this pro') }}</button>
                 </div>
             </div>
         </div>

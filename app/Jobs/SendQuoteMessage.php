@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Domain\Introductions\Support\ProIdentity;
 use App\Domain\Notifications\Notify;
 use App\Models\Quote;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -42,7 +43,7 @@ final class SendQuoteMessage implements ShouldQueue
 
         if ($this->attempts() === 1) {
             $trade = mb_strtolower($quote->serviceJob->trade->name);
-            $pro = (string) $quote->pro->business_name;
+            $pro = $toCustomer ? ProIdentity::displayName($quote->pro, $quote->serviceJob) : (string) $quote->pro->business_name;
             [$title, $body] = match ($this->template) {
                 'quote_received' => [__('New quote for your :trade job', ['trade' => $trade]), __(':pro sent you a quote. Compare quotes and choose the one you like.', ['pro' => $pro])],
                 'quote_revised' => [__('A quote was updated', []), __(':pro updated their quote for your :trade job.', ['pro' => $pro, 'trade' => $trade])],

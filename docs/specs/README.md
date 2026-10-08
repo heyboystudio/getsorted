@@ -1,6 +1,6 @@
 # Specs
 
-One file per feature: `NNN-short-name.md`, created with `/spec` from `docs/templates/feature-spec.md`. A spec must be **Approved** by the founder before `/build-feature` will build it. Feature freeze until Phase S is done (decision 058): no new specs are built before then.
+One file per feature: `NNN-short-name.md`, created with `/spec` from `docs/templates/feature-spec.md`. A spec must be **Approved** by the founder before `/build-feature` will build it. Phase S (feature freeze, decision 058) finished on 2026-10-08.
 
 Statuses checked against the code on 2026-10-08. "Superseded" means a later spec or decision replaced the design; the file is kept as history.
 
@@ -28,12 +28,12 @@ Statuses checked against the code on 2026-10-08. "Superseded" means a later spec
 | 020 | [Trades, facts, distance matching, Siya agent](020-trade-and-distance-matching.md) | Built (PR #57) | 2–3 |
 | 021 | [Customer and pro signed-in panels](021-signed-in-panels.md) | Built (PR #58) | 2–3 |
 | 022 | [Web push and live inbox](022-web-push-notifications.md) | Built (PR #61) | 3 |
+| 023 | [Estimates, introductions and PayFast credit](023-introductions-and-payfast-credit.md) | Built (PR #76); fee switched off | L |
 
 ## Next specs (Phase L, not started)
 
 | # | Spec | Notes |
 |---|---|---|
-| 023 | Estimates, introductions and the paywall (decision 061) | Estimate range + call-out; "choose a pro to visit" unlocks contacts; contact details blocked and business name hidden before; introduction record; fee setting off |
 | 024 | Finish a job without payments | Mark done, cancel after acceptance; no job stuck in "Awaiting deposit" |
 | 025 | Reviews | After "done"; one pro reply; shown on quotes |
 | 026 | Registration capture and verified badges | PIRB / electrical registration numbers |
