@@ -7,6 +7,8 @@ namespace App\Livewire\Account\Jobs;
 use App\Domain\Quotes\Actions\AcceptQuote;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Exceptions\CannotQuote;
+use App\Domain\Reviews\Actions\SubmitReview;
+use App\Domain\Reviews\Exceptions\CannotReview;
 use App\Domain\ServiceJobs\Actions\CancelBookedJob;
 use App\Domain\ServiceJobs\Actions\CancelJobByCustomer;
 use App\Domain\ServiceJobs\Actions\MarkJobDone;
@@ -19,6 +21,7 @@ use App\Domain\ServiceJobs\Support\JobTimeline;
 use App\Models\JobConversation;
 use App\Models\Pro;
 use App\Models\Quote;
+use App\Models\Review;
 use App\Models\ServiceJob;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
@@ -174,6 +177,31 @@ final class Show extends Component
         $this->bookedCancelReason = '';
     }
 
+    // ── Reviewing the pro (spec 025) ──
+
+    public int $rating = 0;
+
+    public string $reviewComment = '';
+
+    public function setRating(int $stars): void
+    {
+        $this->rating = max(0, min(5, $stars));
+    }
+
+    public function submitReview(SubmitReview $submitReview): void
+    {
+        $this->resetErrorBag();
+
+        try {
+            $submitReview->handle($this->customer(), $this->ownJob(), $this->rating, $this->reviewComment);
+        } catch (CannotReview $exception) {
+            throw ValidationException::withMessages(['review' => $exception->getMessage()]);
+        }
+
+        $this->rating = 0;
+        $this->reviewComment = '';
+    }
+
     private function customer(): User
     {
         /** @var User $user */
@@ -199,6 +227,8 @@ final class Show extends Component
             'justPosted' => session('job_posted') === true,
             'stages' => JobStages::for($job->status),
             'timeline' => JobTimeline::forJob($job),
+            'review' => Review::query()->where('service_job_id', $job->id)->visible()->first(),
+            'reviewable' => $job->status === ServiceJobStatus::Completed && ! Review::query()->where('service_job_id', $job->id)->exists() && $job->completed_at?->gte(now()->subDays(SubmitReview::WINDOW_DAYS)) === true,
             // The same trade again; the customer describes the new problem and picks the address in the thread (spec 021, AC11).
             'bookAgain' => in_array($job->status, ServiceJobStatus::finished(), true) && $job->trade->is_active
                 ? route('book.trade', $job->trade)

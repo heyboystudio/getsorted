@@ -43,6 +43,30 @@
 
         @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Completed)
             <div class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950" role="status">{{ __('This job is done. Thanks for using GetSorted!') }}</div>
+
+            @if ($review)
+                <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-4" aria-labelledby="your-review">
+                    <h2 id="your-review" class="font-semibold">{{ __('Your review') }}</h2>
+                    <p class="mt-1 text-amber-700" aria-label="{{ trans_choice(':count star|:count stars', $review->rating) }}">{{ str_repeat('★', $review->rating).str_repeat('☆', 5 - $review->rating) }}</p>
+                    @if ($review->comment)<p class="mt-2 whitespace-pre-line text-sm text-zinc-800">{{ $review->comment }}</p>@endif
+                    @if ($review->reply)<p class="mt-3 border-l-2 border-zinc-200 pl-3 text-sm text-zinc-700"><span class="font-medium">{{ __('Reply from your pro') }}:</span> {{ $review->reply }}</p>@endif
+                </section>
+            @elseif ($reviewable)
+                <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-4" aria-labelledby="leave-review">
+                    <h2 id="leave-review" class="font-semibold">{{ __('How was the work?') }}</h2>
+                    <p class="text-sm text-zinc-600">{{ __('Your review helps other households choose. Your first name is shown with it.') }}</p>
+                    <div class="mt-3 flex gap-1" role="radiogroup" aria-label="{{ __('Stars') }}">
+                        @foreach (range(1, 5) as $star)
+                            <button type="button" wire:click="setRating({{ $star }})" role="radio" aria-checked="{{ $rating === $star ? 'true' : 'false' }}" aria-label="{{ trans_choice(':count star|:count stars', $star) }}" class="text-3xl leading-none {{ $star <= $rating ? 'text-amber-600' : 'text-zinc-300' }}">★</button>
+                        @endforeach
+                    </div>
+                    <label for="reviewComment" class="mt-4 block text-sm">{{ __('Add a comment (optional)') }}</label>
+                    <textarea id="reviewComment" wire:model="reviewComment" rows="3" maxlength="1000" class="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-base"></textarea>
+                    <p class="text-xs text-zinc-500">{{ __('Please leave out phone numbers and email addresses.') }}</p>
+                    @error('review') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                    <button type="button" wire:click="submitReview" wire:loading.attr="disabled" @disabled($rating === 0) class="mt-3 rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-50">{{ __('Send review') }}</button>
+                </section>
+            @endif
         @endif
 
         @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Cancelled)

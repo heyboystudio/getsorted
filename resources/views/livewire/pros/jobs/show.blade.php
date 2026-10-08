@@ -68,6 +68,21 @@
                     </section>
                 @elseif ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Completed)
                     <p class="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900" role="status">{{ __('This job is done.') }}</p>
+                    @if ($review)
+                        <section class="mt-4 rounded-xl border border-zinc-200 bg-white p-4" aria-labelledby="client-review">
+                            <h2 id="client-review" class="font-semibold">{{ __('The client\'s review') }}</h2>
+                            <p class="mt-1 text-amber-700" aria-label="{{ trans_choice(':count star|:count stars', $review->rating) }}">{{ str_repeat('★', $review->rating).str_repeat('☆', 5 - $review->rating) }}</p>
+                            @if ($review->comment)<p class="mt-2 whitespace-pre-line text-sm text-zinc-800">{{ $review->comment }}</p>@endif
+                            @if ($review->reply)
+                                <p class="mt-3 border-l-2 border-zinc-200 pl-3 text-sm text-zinc-700"><span class="font-medium">{{ __('Your reply') }}:</span> {{ $review->reply }}</p>
+                            @else
+                                <label for="replyText" class="mt-3 block text-sm">{{ __('Reply (once, shown with the review)') }}</label>
+                                <textarea id="replyText" wire:model="replyText" rows="3" maxlength="500" class="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-base"></textarea>
+                                @error('replyText') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                                <button type="button" wire:click="reply" wire:loading.attr="disabled" class="mt-2 rounded-lg bg-emerald-700 px-4 py-2.5 font-medium text-white hover:bg-emerald-800">{{ __('Send reply') }}</button>
+                            @endif
+                        </section>
+                    @endif
                 @elseif ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Cancelled)
                     <p class="mt-4 rounded-lg bg-zinc-50 p-3 text-sm text-zinc-700" role="status">{{ __('This booking was cancelled.') }}</p>
                 @endif
