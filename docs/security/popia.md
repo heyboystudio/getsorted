@@ -22,6 +22,6 @@
 | Special personal information | V1 does not perform criminal-record checks (decision 034). Reassess consent, access and retention requirements before adding any such checks. |
 | Data-subject access | "Download my data" in account settings (JSON + PDFs). |
 | Correction and deletion | Users edit their profile; "Delete my account" anonymises personal data while keeping financial records required by law. |
-| Retention | Financial records: 5 years (confirm with accountant). Job photos: 2 years after completion. AI raw text: 30 days. OTP records: 90 days. Waitlist: 12 months. Some prune jobs are in place; complete and verify the remaining retention schedules before launch. |
+| Retention | Financial records: 5 years (confirm with accountant). Job photos and job content: deleted 24 months after the job ends (`getsorted:prune-old-jobs`, decision 066); the bare record behind an introduction stays at least 5 years. AI raw text: 30 days. OTP records: 90 days. Waitlist: 12 months. Some prune jobs are in place; complete and verify the remaining retention schedules before launch. |
 | Security safeguards | `security-baseline.md`. |
 | Sharing with pros | Pros receive suburb-level location and job details; address and contact only after their quote is accepted. |

@@ -3,7 +3,6 @@
 <section class="page-hero legal-hero">
 <div class="site-container">
 <p class="section-kicker">LEGAL INFORMATION</p>
-<span class="reviewed-badge">Reviewed by a South African attorney on 8 October 2026</span>
 <h1>Terms of service.</h1>
 <p>Version {{ config('getsorted.legal.terms_version') }}. These terms cover clients who use GetSorted to find and book tradespeople.</p>
 </div>

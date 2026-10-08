@@ -23,6 +23,11 @@ it('says mobile numbers are not verified and no SMS or WhatsApp is sent, in term
     $this->get('/privacy')->assertOk()->assertSee('we do not verify it by code')->assertSee('do not send SMS or WhatsApp');
 });
 
+it('promises the 24-month deletion of jobs that the scheduled prune delivers', function (): void {
+    $this->get('/privacy')->assertOk()->assertSee('24 months after the job ends')->assertSee('at least 5 years')->assertSee('deleted completely');
+    expect(config('getsorted.jobs.retention_months'))->toBe(24);
+});
+
 it('tells clients they never pay GetSorted and that the pro pays an introduction fee', function (): void {
     $this->get('/terms')->assertOk()->assertSee('free for clients')->assertSee('You never pay GetSorted')->assertSee('Choose this pro to visit');
 });
