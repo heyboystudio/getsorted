@@ -34,11 +34,43 @@
                         <div><dt class="text-zinc-600">{{ __('Address') }}</dt><dd>{{ $contact['label'] }} — {{ $contact['address'] }}, {{ $contact['suburb'] }}</dd></div>
                         <div><dt class="text-zinc-600">{{ __('Starting') }}</dt><dd>{{ $job->scheduled_for?->translatedFormat('D j M Y') }}</dd></div>
                     </dl>
-                    @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::AwaitingDeposit)
-                        <p class="mt-3 text-sm text-emerald-900">{{ __('The customer will pay your deposit of :amount directly to you. Agree with them how and when.', ['amount' => $R::format($quote->deposit_cents)]) }}</p>
-                    @endif
                     <p class="mt-3 text-sm text-emerald-900">{{ __('GetSorted does not handle payments yet: the customer pays you directly. Give them a receipt.') }}</p>
                 </section>
+
+                @if (\App\Domain\ServiceJobs\Support\BookedJob::isOpen($job))
+                    <section class="mt-4" aria-label="{{ __('Finish or cancel this booking') }}">
+                        @error('finish') <p class="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
+                        @if ($confirmingDone)
+                            <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4" role="alertdialog" aria-labelledby="done-title">
+                                <p id="done-title" class="font-semibold text-emerald-950">{{ __('Is the work finished?') }}</p>
+                                <p class="mt-1 text-sm text-emerald-950">{{ __('The client will be told.') }}</p>
+                                <div class="mt-4 flex gap-3">
+                                    <button type="button" wire:click="markDone" wire:loading.attr="disabled" class="rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Yes, it is done') }}</button>
+                                    <button type="button" wire:click="keepBooking" class="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium">{{ __('Not yet') }}</button>
+                                </div>
+                            </div>
+                        @elseif ($confirmingBookedCancel)
+                            <div class="rounded-xl border border-red-200 bg-red-50 p-4" role="alertdialog" aria-labelledby="booked-cancel-title">
+                                <p id="booked-cancel-title" class="font-semibold text-red-900">{{ __('Cancel this booking?') }}</p>
+                                <p class="mt-1 text-sm text-red-900">{{ __('The client will be told and can choose another pro. Please only cancel if you really cannot do the job.') }}</p>
+                                <label for="bookedCancelReason" class="mt-3 block text-sm text-red-900">{{ __('Why are you cancelling?') }}</label>
+                                <input id="bookedCancelReason" type="text" wire:model="bookedCancelReason" maxlength="300" class="mt-1 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-base">
+                                @error('bookedCancelReason') <p class="mt-1 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
+                                <div class="mt-4 flex gap-3">
+                                    <button type="button" wire:click="cancelBooked" wire:loading.attr="disabled" class="rounded-lg bg-red-700 px-4 py-3 font-medium text-white hover:bg-red-800">{{ __('Yes, cancel booking') }}</button>
+                                    <button type="button" wire:click="keepBooking" class="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium">{{ __('Keep booking') }}</button>
+                                </div>
+                            </div>
+                        @else
+                            <button type="button" wire:click="confirmDone" class="w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Mark as done') }}</button>
+                            <button type="button" wire:click="confirmBookedCancel" class="mt-4 text-sm text-red-700 underline underline-offset-4">{{ __('Cancel this booking') }}</button>
+                        @endif
+                    </section>
+                @elseif ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Completed)
+                    <p class="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900" role="status">{{ __('This job is done.') }}</p>
+                @elseif ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Cancelled)
+                    <p class="mt-4 rounded-lg bg-zinc-50 p-3 text-sm text-zinc-700" role="status">{{ __('This booking was cancelled.') }}</p>
+                @endif
             @endif
 
             @if ($description)
@@ -128,10 +160,6 @@
                             @error('lines') <p class="text-sm text-red-700">{{ $message }}</p> @enderror
                             <button type="button" wire:click="addLine" class="text-sm font-medium text-emerald-800 underline">+ {{ __('Add a line') }}</button>
 
-                            <label class="block text-sm">{{ __('Deposit (0 to :max%)', ['max' => $maxDeposit]) }}
-                                <input type="number" min="0" max="{{ $maxDeposit }}" wire:model="depositPercent" class="mt-1 block w-28 rounded-lg border border-zinc-300 px-3 py-2">
-                            </label>
-                            @error('depositPercent') <p class="text-sm text-red-700">{{ $message }}</p> @enderror
                             <label class="block text-sm">{{ __('Earliest start date') }}
                                 <input type="date" wire:model="earliestStartDate" class="mt-1 block rounded-lg border border-zinc-300 px-3 py-2">
                             </label>
@@ -167,7 +195,6 @@
                                 <div class="flex justify-between gap-3 text-zinc-600"><dt>{{ __('VAT') }}</dt><dd>{{ $R::format($previewTotals->vatCents) }}</dd></div>
                             @endif
                             <div class="flex justify-between gap-3 border-t border-zinc-200 pt-2 font-semibold"><dt>{{ __('Total') }}</dt><dd>{{ $R::format($previewTotals->totalCents) }}@if ($previewHigh !== null) {{ __('to') }} {{ $R::format($previewHigh) }}@endif</dd></div>
-                            <div class="flex justify-between gap-3"><dt>{{ __('Deposit') }}</dt><dd>{{ $R::format($previewTotals->depositCents) }}</dd></div>
                             @if ($previewText['start'])
                                 <div class="flex justify-between gap-3 text-zinc-600"><dt>{{ __('Earliest start') }}</dt><dd>{{ $previewText['start'] }}</dd></div>
                             @endif

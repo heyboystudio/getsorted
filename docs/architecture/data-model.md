@@ -60,6 +60,7 @@ Enums: `TradeStatus`, `QuestionType`, `RegistrationType` (`App\Domain\Catalogue\
 ### Pros
 | Table | Key columns |
 |---|---|
+| `service_jobs` (spec 024 additions) | completed_at, completed_by (customer/pro), cancelled_by (customer/pro), finish_nudged_at — **in place** |
 | `introductions` | public_id, service_job_id (unique), quote_id, pro_id, customer_id, kind (free/credit), fee_cents, created_at — append-only; written when a client chooses a pro (spec 023) — **in place** |
 | `credit_purchases` | public_id, pro_id, amount_cents, status (pending/complete/failed), provider_reference (PayFast payment id), completed_at — changes only from a verified PayFast notification — **in place** |
 | `pro_credit_entries` | pro_id, type (purchase/introduction/adjustment), amount_cents (signed), credit_purchase_id, introduction_id, note, idempotency_key (unique), created_at — append-only ledger; balance is the sum — **in place** |

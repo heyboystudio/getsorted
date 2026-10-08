@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Gate;
 
 /**
  * The customer accepts one quote (spec 010, AC8, AC10), which is the introduction (spec 023): the job is booked
- * (or awaits a deposit, decision 1), the other quotes are declined and the
+ * (deposits are agreed directly with the pro, decision 058), the other quotes are declined and the
  * remaining invites close, all under the job lock.
  */
 final readonly class AcceptQuote
@@ -58,7 +58,7 @@ final readonly class AcceptQuote
             $job->forceFill(['accepted_quote_id' => $chosen->id, 'scheduled_for' => $chosen->earliest_start_date->toDateString(), 'quotes_count' => 0]);
             $this->stateMachine->transition(
                 $job,
-                $chosen->deposit_cents > 0 ? ServiceJobStatus::AwaitingDeposit : ServiceJobStatus::Scheduled,
+                ServiceJobStatus::Scheduled,
                 'quote_accepted',
                 ActorType::Customer,
                 $customer->id,

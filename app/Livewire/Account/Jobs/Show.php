@@ -7,9 +7,12 @@ namespace App\Livewire\Account\Jobs;
 use App\Domain\Quotes\Actions\AcceptQuote;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Exceptions\CannotQuote;
+use App\Domain\ServiceJobs\Actions\CancelBookedJob;
 use App\Domain\ServiceJobs\Actions\CancelJobByCustomer;
+use App\Domain\ServiceJobs\Actions\MarkJobDone;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Exceptions\CannotCancelJob;
+use App\Domain\ServiceJobs\Exceptions\CannotFinishJob;
 use App\Domain\ServiceJobs\Support\JobChat;
 use App\Domain\ServiceJobs\Support\JobStages;
 use App\Domain\ServiceJobs\Support\JobTimeline;
@@ -118,6 +121,70 @@ final class Show extends Component
 
         $this->confirmingCancel = false;
         $this->cancelReason = '';
+    }
+
+    // ── After booking (spec 024) ──
+
+    public bool $confirmingDone = false;
+
+    public bool $confirmingBookedCancel = false;
+
+    public string $bookedCancelReason = '';
+
+    public function confirmDone(): void
+    {
+        $this->resetErrorBag();
+        $this->confirmingDone = true;
+        $this->confirmingBookedCancel = false;
+    }
+
+    public function confirmBookedCancel(): void
+    {
+        $this->resetErrorBag();
+        $this->confirmingBookedCancel = true;
+        $this->confirmingDone = false;
+    }
+
+    public function keepBooking(): void
+    {
+        $this->confirmingDone = false;
+        $this->confirmingBookedCancel = false;
+    }
+
+    public function markDone(MarkJobDone $markJobDone): void
+    {
+        try {
+            $markJobDone->handle($this->customer(), $this->ownJob());
+        } catch (CannotFinishJob $exception) {
+            throw ValidationException::withMessages(['finish' => $exception->getMessage()]);
+        } finally {
+            $this->confirmingDone = false;
+        }
+    }
+
+    public function cancelBooked(CancelBookedJob $cancelBookedJob): void
+    {
+        try {
+            $cancelBookedJob->handle($this->customer(), $this->ownJob(), $this->bookedCancelReason);
+        } catch (CannotCancelJob $exception) {
+            throw ValidationException::withMessages(['bookedCancelReason' => $exception->getMessage()]);
+        }
+
+        $this->confirmingBookedCancel = false;
+        $this->bookedCancelReason = '';
+    }
+
+    private function customer(): User
+    {
+        /** @var User $user */
+        $user = auth()->user();
+
+        return $user;
+    }
+
+    private function ownJob(): ServiceJob
+    {
+        return ServiceJob::query()->where('public_id', $this->publicId)->where('customer_id', $this->customer()->id)->firstOrFail();
     }
 
     public function render(): View

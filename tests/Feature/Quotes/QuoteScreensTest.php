@@ -94,14 +94,14 @@ it('builds, previews and sends a quote from the invite page (AC1–AC3)', functi
         ->set('lines.0.kind', 'labour')->set('lines.0.description', 'Replace washer')->set('lines.0.quantity', '1.5')->set('lines.0.unitPrice', '300')
         ->call('addLine')
         ->set('lines.1.kind', 'materials')->set('lines.1.description', 'Washer kit')->set('lines.1.quantity', '1')->set('lines.1.unitPrice', '120.50')
-        ->set('depositPercent', 20)->set('earliestStartDate', now('Africa/Johannesburg')->addDay()->toDateString())->set('validityDays', 7)
+        ->set('earliestStartDate', now('Africa/Johannesburg')->addDay()->toDateString())->set('validityDays', 7)
         ->call('preview')->assertHasNoErrors()
-        ->assertSee('R 570.50')->assertSee('R 114.10')->assertSee('The customer pays you directly')->assertDontSee('Estimated payout')
+        ->assertSee('R 570.50')->assertDontSee('Deposit')->assertSee('The customer pays you directly')->assertDontSee('Estimated payout')
         ->call('submitQuote')->assertHasNoErrors()
         ->assertSee('Quote sent');
 
     $quote = Quote::query()->sole();
-    expect($quote->total_cents)->toBe(57050)->and($quote->deposit_cents)->toBe(11410)->and($quote->lines)->toHaveCount(2);
+    expect($quote->total_cents)->toBe(57050)->and($quote->deposit_cents)->toBe(0)->and($quote->lines)->toHaveCount(2);
 });
 
 it('shows field errors instead of saving a bad quote (AC1)', function (): void {
@@ -269,7 +269,7 @@ it('accepts a quote after confirmation and then shows the pro\'s contact details
     expect($job->fresh()->status)->toBe(ServiceJobStatus::Scheduled);
 });
 
-it('shows "payment opens soon" when the accepted quote has a deposit (AC8, decision 1)', function (): void {
+it('tells the customer about an agreed deposit on a booked job, paid directly to the pro (decision 058)', function (): void {
     $pro = screenQuotingPro();
     $job = screenQuoteJob();
     $quote = screenSubmit($job, $pro, deposit: 20);
