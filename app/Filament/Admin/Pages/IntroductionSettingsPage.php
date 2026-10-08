@@ -101,8 +101,8 @@ final class IntroductionSettingsPage extends Page
 
         $packs = array_values(array_filter(array_map(fn (string $pack): int => (int) trim($pack) * 100, explode(',', $state['packs_rand'])), fn (int $cents): bool => $cents > 0));
 
-        if ($packs === []) {
-            Notification::make()->danger()->title(__('Add at least one credit pack, e.g. 297, 495, 990'))->send();
+        if ($packs === [] || min($packs) < IntroductionSettings::MIN_PACK_CENTS) {
+            Notification::make()->danger()->title(__('Add at least one credit pack of R5 or more (PayFast does not take smaller payments), e.g. 297, 495, 990'))->send();
 
             return;
         }

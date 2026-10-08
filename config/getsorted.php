@@ -117,10 +117,16 @@ return [
     ],
 
     'legal' => [
-        // Placeholder documents until lawyer-reviewed text exists (spec 001 decision 1).
-        'terms_version' => '2026-10-draft',
-        'privacy_version' => '2026-10-draft',
-        'pro_agreement_version' => '2026-10-draft',
+        // Full drafts written 2026-10-08, still to be reviewed by a South African lawyer before launch.
+        'terms_version' => '2026-10-08-draft',
+        'privacy_version' => '2026-10-08-draft',
+        'pro_agreement_version' => '2026-10-08-draft',
+
+        // Shown in the legal pages. Fill these in when the company is registered (open question Q11) and the Information Officer is appointed.
+        'company_name' => env('GETSORTED_COMPANY_NAME', 'GetSorted (company to be registered)'),
+        'company_registration' => env('GETSORTED_COMPANY_REGISTRATION', 'to be added'),
+        'physical_address' => env('GETSORTED_PHYSICAL_ADDRESS', 'Durban, KwaZulu-Natal (street address to be added)'),
+        'information_officer' => env('GETSORTED_INFORMATION_OFFICER', 'to be appointed'),
     ],
 
 ];

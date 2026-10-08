@@ -32,7 +32,7 @@ final readonly class StartCreditPurchase
             throw new CannotBuyCredit(__('Credit is not needed right now: introductions are free.'));
         }
 
-        if (! in_array($packCents, $this->settings->credit_pack_cents, true)) {
+        if ($packCents < IntroductionSettings::MIN_PACK_CENTS || ! in_array($packCents, $this->settings->credit_pack_cents, true)) {
             throw new CannotBuyCredit(__('Choose one of the credit packs.'));
         }
 

@@ -9,6 +9,9 @@ use Spatie\LaravelSettings\Settings;
 /** The fee a pro pays when a client chooses them (spec 023, decision 061). Off at launch. */
 final class IntroductionSettings extends Settings
 {
+    /** PayFast refuses payments under R5.00 on every method, so no credit pack may be smaller. */
+    public const int MIN_PACK_CENTS = 500;
+
     public bool $fee_enabled;
 
     /** Per introduction, in cents. */

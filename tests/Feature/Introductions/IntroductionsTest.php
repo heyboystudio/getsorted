@@ -312,3 +312,28 @@ it('shows the credit balance with an add button on the pro\'s Today screen only 
     introSettings(true, 0);
     Livewire::test(Welcome::class)->assertSee('R 50.00')->assertSee('Add credit');
 });
+
+// --- PayFast's R5 minimum ------------------------------------------------------------------------
+
+it('never sells or shows a credit pack under R5, which PayFast would refuse', function (): void {
+    app(IntroductionSettings::class)->fill(['fee_enabled' => true, 'fee_cents' => 100, 'free_introductions' => 0, 'credit_pack_cents' => [100, 500, 29_700]])->save();
+    $pro = Pro::factory()->approved()->create();
+
+    expect(fn () => app(StartCreditPurchase::class)->handle($pro->user, $pro, 100))->toThrow(CannotBuyCredit::class);
+    expect(app(StartCreditPurchase::class)->handle($pro->user, $pro, 500))->toStartWith('https://payments.fake.test/');
+
+    $this->actingAs($pro->user);
+    Livewire::test(Credit::class)->assertSee('R 5')->assertSee('R 297')->assertDontSeeHtml('buy(100)');
+});
+
+it('does not let an admin save a credit pack under R5', function (): void {
+    $super = User::factory()->create();
+    $super->assignRole(Role::AdminSuper->value);
+    $this->actingAs($super);
+    Filament\Facades\Filament::setCurrentPanel('admin');
+
+    Livewire::test(IntroductionSettingsPage::class)
+        ->fillForm(['fee_enabled' => false, 'fee_rand' => 99, 'free_introductions' => 10, 'packs_rand' => '1, 297'])->call('save');
+
+    expect(app(IntroductionSettings::class)->refresh()->credit_pack_cents)->not->toContain(100);
+});
