@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Contracts\Data\OutgoingMessage;
-use App\Contracts\MessagingChannel;
 use App\Domain\ServiceJobs\Actions\CancelServiceJob;
 use App\Domain\ServiceJobs\Actions\PostServiceJob;
 use App\Domain\ServiceJobs\Actions\SaveBookingDraft;
@@ -16,7 +14,6 @@ use App\Domain\ServiceJobs\Exceptions\CannotPostServiceJob;
 use App\Domain\ServiceJobs\Exceptions\NoEligiblePros;
 use App\Domain\ServiceJobs\Exceptions\TransitionNotAllowed;
 use App\Domain\ServiceJobs\ServiceJobStateMachine;
-use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Models\Property;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobEvent;
@@ -90,9 +87,7 @@ it('posts a draft: open, timestamps, one event, message after commit (AC9, AC11)
         ->and($event->actor_type)->toBe(ActorType::Customer)
         ->and($event->actor_id)->toBe($this->customer->id);
 
-    /** @var FakeMessagingChannel $messaging */
-    $messaging = app(MessagingChannel::class);
-    $messaging->assertSent('job_posted', fn (OutgoingMessage $message): bool => $message->phoneE164 === $this->customer->phone_e164);
+    expect(noticeCount($this->customer, 'job_posted'))->toBe(1);
 });
 
 it('uses the quote window from settings', function (): void {
@@ -111,7 +106,7 @@ it('refuses to post when a guard fails and leaves the draft untouched (AC10)', f
     expect(fn () => app(PostServiceJob::class)->handle($this->customer, $job))->toThrow(CannotPostServiceJob::class, $message);
 
     expect($job->fresh()->status)->toBe(ServiceJobStatus::Draft)->and(ServiceJobEvent::query()->count())->toBe(0);
-    app(MessagingChannel::class)->assertNothingSent();
+    expect(allNoticeCount('job_posted'))->toBe(0);
 })->with([
     'phone not verified' => [function ($test): ServiceJob {
         $job = draftJob($test->customer, $test->plumbing);

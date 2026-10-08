@@ -1,7 +1,6 @@
 <?php
 
 declare(strict_types=1);
-use App\Contracts\Data\MessageChannel;
 use App\Contracts\Data\PaymentEventType;
 
 arch('domain does not depend on UI')
@@ -37,7 +36,7 @@ arch('contract data objects are immutable')
     ->classes()
     ->toBeReadonly()
     ->toBeFinal()
-    ->ignoring([PaymentEventType::class, MessageChannel::class]);
+    ->ignoring([PaymentEventType::class]);
 
 arch('fakes implement a contract')
     ->expect('App\Integrations\Fakes')

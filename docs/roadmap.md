@@ -11,7 +11,7 @@ Phases are done when their **exit criteria** pass, not when a date arrives. Rewr
 | Matching | Up to 10 approved pros of the trade, nearest first, within each pro's radius; first 5 quotes; urgent invites expire after 4 hours (settings). |
 | Pros | Application, documents, references, admin vetting with a real approval guard, profile and change requests, pause. |
 | Quotes | Itemised quotes, revise and withdraw, customer compares and accepts; contact details shared on acceptance. |
-| Comms | Job chat, notifications inbox, web push (spec 022), WhatsApp/SMS through Twilio. |
+| Comms | Job chat, notifications inbox, web push (spec 022), email through Resend. No WhatsApp or SMS (decision 062). |
 | Money, reviews, disputes | **Not built** (`app/Domain/Payments`, `Reviews`, `Disputes` are empty). Customers pay pros directly (058). |
 | Quality | 883 tests pass; `composer check` passes locally. GitHub CI is blocked by a billing lock on the GitHub account (decision 020). |
 | After acceptance | **Dead end:** nothing moves a job past "Awaiting deposit" or "Booked". Phase L fixes this. |
@@ -46,7 +46,7 @@ Goal: real customers get real quotes from real pros in a few Durban suburbs, and
 2. **Reviews.** After "done", the customer rates the pro (1–5 + comment), the pro can reply once; ratings show on quotes. Needs a spec.
 3. **Supply.** Registration fields on the pro application (PIRB number, electrical registration) so "verified" can be shown; recruit 5–10 approved pros per trade in 2–3 launch suburbs; then set `GETSORTED_REQUIRE_PROS=true` so nobody is promised quotes that cannot come.
 4. **Operations.** Admin list of stalled jobs (no quote after N hours, urgent with no reply); the PRD's success measures on the admin dashboard (time to first quote, jobs with ≥ 2 quotes, quote → accept).
-5. **Launch readiness.** Lawyer-reviewed terms, privacy notice (naming Google, Gemini, Twilio, Resend) and pro agreement; POPIA checklist done; Sentry error tracking; database backups tested; South African production host decided (decision 014); WhatsApp templates approved and live; admin MFA stays optional (founder, 2026-10-08).
+5. **Launch readiness.** Lawyer-reviewed terms, privacy notice (naming Google, Gemini, Resend) and pro agreement; POPIA checklist done; Sentry error tracking; database backups tested; South African production host decided (decision 014); admin MFA stays optional (founder, 2026-10-08).
 6. **Introductions (decision 061).** Pros send estimates (range + call-out); the client chooses a pro to visit, which unlocks contact details; before that, a paywall (contact details blocked in chat, business name hidden). Record every introduction; the fee setting stays off at launch ("first 10 jobs free"). PayFast credits come when the fee is switched on.
 
 **Exit criteria:** soft launch in 2–3 suburbs; the first 20 real jobs posted; ≥ 60% get 2+ quotes; every accepted job can be marked done and reviewed; no known P1 bugs.
@@ -82,5 +82,5 @@ Public SEO pages per suburb × trade, pro performance dashboards, more trades, i
 | 2 · Booking | Booking flow, coverage, AI, photos | Done, then redesigned as one Siya thread (017, 019, 020). |
 | 3 · Pros & quotes | Vetting, matching, quotes | Done, plus chat, panels and push. Waves replaced by distance matching (051). |
 | 4 · Payments | Money on-platform | Not started; moved to Phase M (058). |
-| 5 · Trust & comms | WhatsApp, reviews, disputes | Partly (WhatsApp/SMS, notifications); reviews in Phase L, disputes in M. |
+| 5 · Trust & comms | WhatsApp, reviews, disputes | Partly (notifications by email and push; no WhatsApp/SMS); reviews in Phase L, disputes in M. |
 | 6 · Launch readiness | Legal, POPIA, backups, monitoring | Folded into Phase L. |

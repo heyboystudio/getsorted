@@ -18,37 +18,11 @@ return [
     // Customers' local time for "today" and booking dates; storage stays UTC.
     'timezone' => 'Africa/Johannesburg',
 
-    'otp' => [
-        // Security baseline §1: 6 digits, 10-minute expiry, 5 attempts, single use.
-        'length' => 6,
-        'ttl_minutes' => 10,
-        'max_attempts' => 5,
-        // The first channel for codes; the other is offered after the wait below.
-        // SMS first until the WhatsApp sender is set up (founder, 2026-10-05).
-        'default_channel' => env('OTP_DEFAULT_CHANNEL', 'sms'),
-        // Test site only (decision 041): when false, the mobile is saved without
-        // a code. Ignored everywhere except local and preview.
-        'phone_codes_enabled' => (bool) env('PHONE_CODES_ENABLED', true),
-        'sms_fallback_after_seconds' => 30,
-        // POPIA checklist: OTP records kept 90 days.
-        'retention_days' => 90,
-        // How long a verified phone stays valid for finishing sign-up.
-        'verified_phone_ttl_minutes' => 15,
-        // Rate limits (security baseline §1). The daily cap per number blunts
-        // slow guessing from rotating IP addresses.
-        'send_per_phone' => ['max' => 3, 'minutes' => 15],
-        'send_per_phone_daily' => ['max' => 10, 'minutes' => 24 * 60],
-        // Temporarily off on local development machines only, for testing (founder, 2026-10-04).
-        // Always enforced in testing, staging and production. Set true to turn it back on locally.
-        'daily_cap_in_local' => false,
-        'send_per_ip' => ['max' => 10, 'minutes' => 60],
-        'verify_per_ip' => ['max' => 10, 'minutes' => 15],
-        'register_per_ip' => ['max' => 5, 'minutes' => 15],
-    ],
-
     'auth' => [
         // "Keep me logged in" for customers and pros (security baseline §1).
         'remember_days' => 30,
+        // Sign-up attempts per IP address (security baseline §1).
+        'register_per_ip' => ['max' => 5, 'minutes' => 15],
     ],
 
     'places' => [

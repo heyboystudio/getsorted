@@ -5,7 +5,7 @@ These rules are **non-negotiable**. Claude Code must follow them in every change
 ## 1. Authentication
 
 - Customers and pros: phone + 6-digit OTP. Code stored **hashed**, expires in 10 minutes, max 5 attempts, single use.
-- Rate limits: 3 OTP sends per phone per 15 min, 10 per IP per hour; exponential back-off; alert on spikes (SMS/WhatsApp pumping fraud).
+- Rate limits: 5 sign-up attempts per IP per 15 min; exponential back-off. No codes are sent by SMS or WhatsApp (decision 062).
 - Admins: email + strong password; Filament app-based MFA is **optional** (each admin can switch it on in their profile; decision 047 dropped the requirement). Admin panel can additionally be IP-restricted.
 - Sessions: secure, HTTP-only, SameSite=Lax cookies; regenerate on login; idle timeout 2 h for admins, 30 days remember-me for customers/pros.
 - Changing phone or email requires verifying the new one; notify the old one.

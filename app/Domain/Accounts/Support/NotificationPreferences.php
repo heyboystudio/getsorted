@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domain\Accounts\Support;
 
-use App\Contracts\Data\MessageChannel;
 use App\Models\User;
 
 /**
- * A customer's choices about text messages (spec 021, AC15): which kinds they get, and by
- * WhatsApp or SMS. Everything is on by default so nobody loses a message on release. Login
- * codes and other security messages never go through these choices.
+ * A customer's choices about notices (spec 021, AC15): which kinds they get by email and
+ * pop-up. Everything is on by default so nobody loses a notice on release. Security
+ * messages never go through these choices.
  */
 final class NotificationPreferences
 {
@@ -31,20 +30,15 @@ final class NotificationPreferences
         return ! is_array($groups) || ($groups[$group] ?? true) !== false;
     }
 
-    public static function channel(User $user): MessageChannel
-    {
-        return MessageChannel::tryFrom((string) ($user->notification_preferences['channel'] ?? '')) ?? MessageChannel::WhatsApp;
-    }
-
     /** @param array<string, bool> $groups */
-    public static function save(User $user, array $groups, MessageChannel $channel): void
+    public static function save(User $user, array $groups): void
     {
         $known = [];
         foreach (array_keys(self::groups()) as $group) {
             $known[$group] = (bool) ($groups[$group] ?? true);
         }
 
-        $user->forceFill(['notification_preferences' => ['groups' => $known, 'channel' => $channel->value]])->save();
-        activity()->performedOn($user)->causedBy($user)->withProperties(['groups' => $known, 'channel' => $channel->value])->log('notification preferences changed');
+        $user->forceFill(['notification_preferences' => ['groups' => $known]])->save();
+        activity()->performedOn($user)->causedBy($user)->withProperties(['groups' => $known])->log('notification preferences changed');
     }
 }

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Contracts\MessagingChannel;
 use App\Domain\Matching\Enums\InviteStatus;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
@@ -94,7 +93,7 @@ it('only emails verified people, and only when the event asks for it', function 
 it('tells an invited pro in the app and by email when a job is sent to them', function (): void {
     Notification::fake();
 
-    (new SendInviteMessage($this->invite->id))->handle(app(MessagingChannel::class));
+    (new SendInviteMessage($this->invite->id))->handle();
 
     Notification::assertSentTo($this->pro->user, UserNotice::class, fn (UserNotice $notice): bool => $notice->kind === 'job_invite' && $notice->email);
 });

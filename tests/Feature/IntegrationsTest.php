@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 use App\Contracts\Data\ChatRequest;
 use App\Contracts\Data\CheckoutRequest;
-use App\Contracts\Data\MessageChannel;
-use App\Contracts\Data\OutgoingMessage;
 use App\Contracts\Data\PaymentEventType;
 use App\Contracts\Data\PayoutRequest;
 use App\Contracts\Data\RefundRequest;
 use App\Contracts\Exceptions\InvalidWebhookSignature;
 use App\Contracts\Geocoder;
-use App\Contracts\MessagingChannel;
 use App\Contracts\PaymentGateway;
 use App\Contracts\ScopingAssistant;
 use App\Domain\Assistant\State\BookingState;
 use App\Domain\Assistant\Support\BookingToolbox;
 use App\Integrations\Fakes\FakeGeocoder;
-use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Integrations\Fakes\FakePaymentGateway;
 use App\Integrations\Fakes\FakeScopingAssistant;
 use Brick\Money\Money;
@@ -28,7 +24,6 @@ it('binds every contract to its fake, once per app, in tests', function (string 
         ->and(new $fake)->toBeInstanceOf($contract);
 })->with([
     [PaymentGateway::class, FakePaymentGateway::class],
-    [MessagingChannel::class, FakeMessagingChannel::class],
     [ScopingAssistant::class, FakeScopingAssistant::class],
     [Geocoder::class, FakeGeocoder::class],
 ]);
@@ -75,15 +70,6 @@ it('rejects webhooks with a missing or wrong signature', function (array $header
     'missing' => [[]],
     'wrong' => [[FakePaymentGateway::SIGNATURE_HEADER => 'not-a-signature']],
 ])->throws(InvalidWebhookSignature::class);
-
-it('records messages instead of sending them', function (): void {
-    $channel = new FakeMessagingChannel;
-
-    $receipt = $channel->send(new OutgoingMessage('+27821234567', 'otp_code', ['code' => '123456']));
-
-    expect($receipt->channel)->toBe(MessageChannel::WhatsApp);
-    $channel->assertSent('otp_code', fn (OutgoingMessage $message): bool => $message->phoneE164 === '+27821234567');
-});
 
 it('gives a plain reply unless a test scripts the chat turn, and keeps the scripted tool calls honest', function (): void {
     $toolbox = new BookingToolbox(new BookingState, ['plumbing' => 'Plumbing'], [['role' => 'customer', 'text' => 'My geyser is leaking']]);

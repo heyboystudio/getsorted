@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Contracts\Data\GeocodedAddress;
-use App\Contracts\MessagingChannel;
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Matching\EligibleProsQuery;
 use App\Domain\Pros\Actions\ChangeProStanding;
@@ -24,7 +23,6 @@ use App\Domain\Pros\Enums\DocumentType;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\Pros\Enums\ReferenceOutcome;
 use App\Domain\Pros\Exceptions\CannotChangeApplication;
-use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Models\Pro;
 use App\Models\ProEvent;
 use App\Models\Trade;
@@ -46,11 +44,6 @@ beforeEach(function (): void {
     $this->seed(CatalogueSeeder::class);
     Storage::fake('media');
 });
-
-function proMessaging(): FakeMessagingChannel
-{
-    return app(MessagingChannel::class);
-}
 
 function applicant(): User
 {
@@ -280,7 +273,7 @@ it('approves a fully checked application, records who did it, messages the pro a
         ->and($pro->decided_by)->toBe($admin->id)
         ->and(app(EligibleProsQuery::class)->exists(tradeOf('plumbing'), durban()))->toBeTrue();
 
-    proMessaging()->assertSent('pro_approved', fn ($message): bool => $message->phoneE164 === $pro->user->phone_e164);
+    expect(noticeCount($pro->user, 'pro_approved'))->toBe(1);
     expect(ProEvent::query()->where('pro_id', $pro->id)->latest('id')->first())
         ->to_status->toBe(ProStatus::Approved)->actor_id->toBe($admin->id);
 });
@@ -334,7 +327,7 @@ it('requires a reason to reject, messages the pro and makes them wait before rea
 
     expect($pro->status)->toBe(ProStatus::Rejected)
         ->and($pro->reapply_after->toDateString())->toBe(now()->addDays(90)->toDateString());
-    proMessaging()->assertSent('pro_rejected');
+    expect(allNoticeCount('pro_rejected'))->toBe(1);
 
     expect(fn () => app(StartApplication::class)->handle($pro->user))->toThrow(CannotChangeApplication::class);
 
@@ -573,7 +566,7 @@ it('lets a pro replace a reference vetting could not use, with the new referee\'
     $bad = $pro->references()->first();
     app(CheckReference::class)->handle($admin, $bad, ReferenceOutcome::NoAnswer, null);
     app(DecideApplication::class)->requestChanges($admin, $pro->fresh(), 'One referee did not answer.');
-    proMessaging()->assertSent('pro_changes_requested');
+    expect(allNoticeCount('pro_changes_requested'))->toBe(1);
     $steps = app(SaveApplicationStep::class);
     $good = $pro->references()->whereKeyNot($bad->id)->sole();
 

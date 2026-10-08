@@ -2,7 +2,7 @@
     <section class="w-full max-w-xl">
         <a wire:navigate.hover href="{{ route('account.settings') }}" class="mb-6 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Account') }}</a>
         <h1 class="text-2xl font-semibold tracking-tight">{{ __('Notifications') }}</h1>
-        <p class="mt-2 text-sm text-zinc-600">{{ __('We tell you about your jobs by pop-up and by text. Choose what you want to hear about. Sign-in codes and security messages always arrive.') }}</p>
+        <p class="mt-2 text-sm text-zinc-600">{{ __('We tell you about your jobs by email and by pop-up. Choose what you want to hear about. Security messages always arrive.') }}</p>
 
         <x-push-switch class="mt-6" />
 
@@ -17,19 +17,6 @@
                         </label>
                     @endforeach
                 </div>
-            </fieldset>
-
-            <fieldset>
-                <legend class="font-semibold">{{ __('Where to send it') }}</legend>
-                <div class="mt-3 space-y-3">
-                    @foreach (['whatsapp' => __('WhatsApp'), 'sms' => __('SMS')] as $value => $label)
-                        <label class="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
-                            <input type="radio" wire:model="channel" value="{{ $value }}" class="size-5 border-zinc-300 text-emerald-700 focus:ring-emerald-700">
-                            <span>{{ $label }}</span>
-                        </label>
-                    @endforeach
-                </div>
-                <p class="mt-2 text-xs text-zinc-500">{{ __('Messages go to your verified mobile number. Email messages are not offered yet.') }}</p>
             </fieldset>
 
             <div>

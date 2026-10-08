@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Contracts\MessagingChannel;
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Matching\Actions\DeclineInvite;
 use App\Domain\Matching\Actions\InviteProManually;
@@ -17,7 +16,6 @@ use App\Domain\ServiceJobs\Actions\SaveBookingDraft;
 use App\Domain\ServiceJobs\Data\BookingData;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
-use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Models\Pro;
 use App\Models\Property;
 use App\Models\ServiceJob;
@@ -28,6 +26,7 @@ use Database\Seeders\CatalogueSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -36,11 +35,6 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     $this->seed(CatalogueSeeder::class);
 });
-
-function matchingMessages(): FakeMessagingChannel
-{
-    return app(MessagingChannel::class);
-}
 
 /**
  * Approved plumbers based within a few km of the job (spec 020).
@@ -88,9 +82,9 @@ it('invites up to ten eligible pros at once after posting, each with a WhatsApp 
         ->and($invites->first()->expires_at->toDateTimeString())->toBe($invites->first()->invited_at->addHours(24)->toDateTimeString())
         ->and($job->fresh()->last_wave_at)->not->toBeNull();
 
-    matchingMessages()->assertSent('job_invite', times: 10);
-    matchingMessages()->assertSent('job_invite', fn ($message): bool => $message->parameters['suburb'] === 'Musgrave'
-        && ! str_contains(json_encode($message->parameters), '7 Private Lane') && ! str_contains(json_encode($message->parameters), '082'), times: 10);
+    expect(allNoticeCount('job_invite'))->toBe(10);
+    $bodies = DatabaseNotification::query()->get()->map(fn ($notice): string => json_encode($notice->data))->implode(' ');
+    expect($bodies)->toContain('Musgrave')->not->toContain('7 Private Lane')->not->toContain('082');
 });
 
 it('uses the invite count and expiry from settings', function (): void {
@@ -323,7 +317,7 @@ it('lets support and super admins invite an eligible, not-yet-invited pro by han
 
     expect($invite->invited_by)->toBe($admin->id)->and($invite->status)->toBe(InviteStatus::Invited)
         ->and(DB::table('activity_log')->where('description', 'job_pro_invited')->count())->toBe(1);
-    matchingMessages()->assertSent('job_invite', times: 6);
+    expect(allNoticeCount('job_invite'))->toBe(6);
 });
 
 it('stops matching with a reason, so no further invites go out (AC11)', function (): void {

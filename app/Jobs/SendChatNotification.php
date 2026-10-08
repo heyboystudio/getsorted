@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Contracts\Data\MessageChannel;
-use App\Contracts\Data\OutgoingMessage;
-use App\Contracts\MessagingChannel;
-use App\Domain\Accounts\Support\NotificationPreferences;
 use App\Domain\Notifications\Notify;
 use App\Domain\ServiceJobs\Enums\MessageSender;
 use App\Domain\ServiceJobs\Support\JobChat;
@@ -17,7 +13,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 
 /**
- * "You have a new message" by WhatsApp/SMS (spec 018, AC4). Never the message
+ * "You have a new message" notice (spec 018, AC4). Never the message
  * itself; at most one per conversation and person in the notify window, and
  * none while the person has the chat open.
  */
@@ -27,13 +23,6 @@ final class SendChatNotification implements ShouldQueue
 
     public int $tries = 3;
 
-    /**
-     * Twilio rate-limits bursts (429), so retry after a pause rather than at once.
-     *
-     * @var list<int>
-     */
-    public array $backoff = [30, 120];
-
     public function __construct(
         public readonly int $conversationId,
         public readonly MessageSender $recipient,
@@ -42,7 +31,7 @@ final class SendChatNotification implements ShouldQueue
         $this->afterCommit();
     }
 
-    public function handle(MessagingChannel $messaging): void
+    public function handle(): void
     {
         $toCustomer = $this->recipient === MessageSender::Customer;
         $readColumn = $toCustomer ? 'customer_read_at' : 'pro_read_at';
@@ -72,7 +61,6 @@ final class SendChatNotification implements ShouldQueue
         }
 
         $job = $send->serviceJob;
-        $phone = $toCustomer ? $job->customer->phone_e164 : $send->pro->user->phone_e164;
         $invite = JobChat::inviteFor($job, $send->pro);
 
         if (! $toCustomer && $invite === null) {
@@ -82,15 +70,5 @@ final class SendChatNotification implements ShouldQueue
         if ($this->attempts() === 1) {
             Notify::user($toCustomer ? $job->customer : $send->pro->user, 'chat_message', __('New message about your :trade job', ['trade' => mb_strtolower($job->trade->name)]), __('Open the chat to read and reply.'), $toCustomer ? route('jobs.show', $job) : route('pros.jobs.show', $invite), group: $toCustomer ? 'messages' : null);
         }
-
-        // Customers choose which texts they get (spec 021, AC15); the in-app notice above is always sent.
-        if ($phone === null || ($toCustomer && ! NotificationPreferences::allows($job->customer, 'messages'))) {
-            return;
-        }
-
-        $messaging->send(new OutgoingMessage($phone, 'chat_message', [
-            'service' => $job->trade->name,
-            'link' => $toCustomer ? route('jobs.show', $job) : route('pros.jobs.show', $invite),
-        ], $toCustomer ? NotificationPreferences::channel($job->customer) : MessageChannel::WhatsApp));
     }
 }

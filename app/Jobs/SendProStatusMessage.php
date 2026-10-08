@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Contracts\Data\OutgoingMessage;
-use App\Contracts\MessagingChannel;
 use App\Domain\Notifications\Notify;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Models\Pro;
@@ -19,13 +17,6 @@ final class SendProStatusMessage implements ShouldQueue
 
     public int $tries = 3;
 
-    /**
-     * Twilio rate-limits bursts (429), so retry after a pause rather than at once.
-     *
-     * @var list<int>
-     */
-    public array $backoff = [30, 120];
-
     public function __construct(
         public readonly int $proId,
         public readonly string $template,
@@ -34,7 +25,7 @@ final class SendProStatusMessage implements ShouldQueue
         $this->afterCommit();
     }
 
-    public function handle(MessagingChannel $messaging): void
+    public function handle(): void
     {
         $pro = Pro::query()->with('user')->find($this->proId);
 
@@ -68,11 +59,5 @@ final class SendProStatusMessage implements ShouldQueue
                 Notify::user($pro->user, $this->template, $title, $body, route('pros.status'), email: true);
             }
         }
-
-        if ($pro->user->phone_e164 === null) {
-            return;
-        }
-
-        $messaging->send(new OutgoingMessage($pro->user->phone_e164, $this->template, ['first_name' => (string) $pro->user->first_name]));
     }
 }

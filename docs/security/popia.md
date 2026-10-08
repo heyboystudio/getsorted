@@ -7,7 +7,7 @@
 - [ ] Register an **Information Officer** (and deputy) with the Information Regulator.
 - [ ] Publish a **PAIA manual**.
 - [ ] Privacy notice (customer and pro versions) explaining what is collected, why, who receives it (pros, payment provider, messaging provider, AI provider, hosting), retention, and rights.
-- [ ] Written operator agreements with every processor (hosting, payments, WhatsApp/SMS, AI model, email, error tracking).
+- [ ] Written operator agreements with every processor (hosting, payments, AI model, email, error tracking).
 - [ ] If any data is processed outside South Africa (e.g. AI model, error tracking, hosting region), document the lawful basis for cross-border transfer and tell users in the privacy notice.
 - [ ] Breach procedure: notify the Information Regulator and affected people as soon as reasonably possible after discovering a security compromise; keep an incident log.
 

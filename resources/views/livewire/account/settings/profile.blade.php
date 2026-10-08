@@ -42,7 +42,7 @@
         </form>
 
         <h2 class="mt-10 font-semibold">{{ __('Mobile number') }}</h2>
-        <p class="mt-1 text-sm text-zinc-700">{{ $user->phone_e164 ?? __('Not added yet') }}@if ($user->phone_verified_at) <span class="ml-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-900">{{ __('Verified') }}</span>@endif</p>
+        <p class="mt-1 text-sm text-zinc-700">{{ $user->phone_e164 ?? __('Not added yet') }}</p>
         <a wire:navigate.hover href="{{ route('verification.phone') }}" class="mt-2 inline-block text-sm text-emerald-800 underline underline-offset-4">{{ __('Change mobile number') }}</a>
         <p class="mt-1 text-xs text-zinc-500">{{ __('We keep your current number until the new one is verified with a code.') }}</p>
     </section>

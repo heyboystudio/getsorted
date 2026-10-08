@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Contracts\Data\ChatRequest;
-use App\Contracts\MessagingChannel;
 use App\Contracts\ScopingAssistant;
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\ServiceJobs\Enums\ActorType;
@@ -232,7 +231,6 @@ it('books end to end in one thread: address, day and window, photos, summary, co
         ->and($job->factTexts())->toBe(['tap drips when fully closed'])
         ->and($job->area_label)->toBe('Musgrave')->and($job->trade_id)->toBe($this->plumbing->id);
     Queue::assertPushedOn('notifications', SendJobPostedMessage::class);
-    app(MessagingChannel::class)->assertNothingSent();
 });
 
 it('never books without the Confirm booking tap', function (): void {

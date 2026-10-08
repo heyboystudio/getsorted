@@ -16,7 +16,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 010 | Scoping trees stored as data, seeded from YAML | Superseded by 051 | 2026-10-03 |
 | 011 | ULID `public_id` in URLs; never expose numeric IDs | Accepted | 2026-10-03 |
 | 012 | Payment provider | Open (Phase M; decision 058) | — |
-| 013 | WhatsApp provider | Superseded by 040 (Twilio) | — |
+| 013 | WhatsApp provider | Superseded by 040, then dropped by 062 | — |
 | 014 | Hosting: a South African provider; deployment deferred | Accepted (provider TBD) | 2026-10-03 |
 | 015 | Error tracking: Sentry (EU data region) | Accepted | 2026-10-03 |
 | 016 | Local foundation tools and rootless Docker | Accepted | 2026-10-03 |
@@ -43,8 +43,8 @@ Short architecture decision records. **Add an entry for every significant choice
 | 037 | Private test site on a temporary AWS server ("preview" mode) | Accepted | 2026-10-04 |
 | 038 | Email through Resend | Accepted | 2026-10-04 |
 | 039 | Email or Google sign-in, then verified email and mobile (supersedes 004 for customers and pros) | Accepted | 2026-10-05 |
-| 040 | Twilio for WhatsApp and SMS (Q5) | Accepted | 2026-10-05 |
-| 041 | Test site: mobile saved without a code while SMS is blocked | Accepted | 2026-10-05 |
+| 040 | Twilio for WhatsApp and SMS (Q5) | Superseded by 062 | 2026-10-05 |
+| 041 | Test site: mobile saved without a code while SMS is blocked | Superseded by 062 | 2026-10-05 |
 | 042 | Test site without a password | Accepted (founder) | 2026-10-05 |
 | 043 | Amazon Bedrock (EU) for the AI assistant (spec 016) | Superseded by 049 | 2026-10-05 |
 | 044 | Take requests from all of Durban before pros are signed up | Accepted (founder) | 2026-10-05 |
@@ -65,6 +65,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 059 | "Start a job" means sign in, then Siya | Accepted (founder) | 2026-10-08 |
 | 060 | No safety advice and no emergency handling | Accepted (founder) | 2026-10-08 |
 | 061 | GetSorted earns from introductions: free at launch, then a fixed fee paid by the pro | Accepted (founder) | 2026-10-08 |
+| 062 | No WhatsApp or SMS in the MVP: Twilio removed, email through Resend only | Accepted (founder) | 2026-10-08 |
 
 ---
 
@@ -632,3 +633,19 @@ Before the introduction there is a paywall: chat is allowed but contact details 
 **Why:** Client and pro meet at the visit, so anything charged on the final price can be bypassed; the introduction is the one thing GetSorted controls. Charging pros only for clients who chose them is the norm for home-services marketplaces (Bark, Thumbtack, MyBuilder), and keeping clients free maximises jobs posted. A percentage on the client was considered and rejected (fee on an estimate that changes; large jobs invite bypass).
 
 **Consequences:** answers Q14. Phase L: estimates wording and "choose a pro to visit" (replacing "accept quote"), the paywall, an introduction record with a switched-off fee setting. PayFast integration (credits, notifications, receipts) comes when the fee is switched on. Decision 058 (no on-platform job payments) still holds.
+
+## 062 · No WhatsApp or SMS in the MVP: Twilio removed, email through Resend only
+
+**Date:** 2026-10-08 · **Status:** Accepted (founder). Supersedes 040 and 041.
+
+**Context:** Twilio refused every WhatsApp and SMS message on the test site: the WhatsApp templates are not approved and SMS is blocked (041). Waiting on Meta and Twilio would hold up the launch.
+
+**Decision:** The MVP sends no WhatsApp or SMS at all. Everything GetSorted tells people goes through the in-app inbox, web push (spec 022) and email through Resend (038).
+- Removed: `TwilioMessagingChannel`, the `MessagingChannel` contract and its data objects, `FakeMessagingChannel`, the `TWILIO_*` settings and the phone-code flow (`SendPhoneCode`, `VerifyPhoneCode`, `PhoneOtp`, the `phone_otps` table, the OTP settings and rate limits). No dependency was involved: Twilio was called through the HTTP client.
+- A mobile number is still asked for after sign-up and kept as a contact detail, saved as typed (normalised, one account per number). It is not proven by a code, so the "Verified" badge is gone. `phone_verified_at` now means "number on file" and still gates booking.
+- Customers' notification choices keep the three kinds (quotes, job updates, messages) for email and pop-ups; the WhatsApp/SMS channel choice is gone.
+- Sign-in stays email + password or Google (039); the sign-up rate limit stays.
+
+**Why:** Founder decision: emails only until there is a reason and the time to do WhatsApp properly.
+
+**Consequences:** Anything urgent for a pro (a new job near them) now depends on email and push being seen. Revisit WhatsApp after launch with approved templates (the earlier research is in 040). Remove the `TWILIO_*`, `OTP_DEFAULT_CHANNEL` and `PHONE_CODES_ENABLED` lines from each server's `.env`. Numbers saved without a code can be mistyped or someone else's; do not rely on them for security.

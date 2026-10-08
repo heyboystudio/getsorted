@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Contracts\MessagingChannel;
 use App\Domain\Accounts\Enums\Role;
 use App\Domain\Quotes\Actions\AcceptQuote;
 use App\Domain\ServiceJobs\Actions\SendJobMessage;
@@ -162,23 +161,22 @@ it('refuses empty, too long and too many-photo messages', function (): void {
     expect(JobMessage::query()->count())->toBe(0);
 });
 
-it('notifies the other side by template without the message text, at most once per window, and not while they are on the page (AC4)', function (): void {
+it('notifies the other side without the message text, at most once per window, and not while they are on the page (AC4)', function (): void {
     chatAs($this->customer, $this->proA)->set('message', 'My private message text')->call('send');
 
-    $messaging = app(MessagingChannel::class);
-    $messaging->assertSent('chat_message', fn ($message): bool => $message->phoneE164 === $this->proA->user->phone_e164
-        && ! str_contains(json_encode($message->parameters), 'private message text'));
+    expect(noticeCount($this->proA->user, 'chat_message'))->toBe(1)
+        ->and(json_encode($this->proA->user->notifications()->get()->pluck('data')))->not->toContain('private message text');
 
     chatAs($this->customer, $this->proA)->set('message', 'Another one')->call('send');
-    $messaging->assertSent('chat_message', times: 1);
+    expect(noticeCount($this->proA->user, 'chat_message'))->toBe(1);
 
     // The customer has the chat open (just polled), so a reply sends them nothing.
     chatAs($this->proA->user, $this->proA, 'Thandi')->set('message', 'Reply')->call('send');
-    $messaging->assertSent('chat_message', times: 1);
+    expect(noticeCount($this->customer, 'chat_message'))->toBe(0);
 
     $this->travel(16)->minutes();
     chatAs($this->proA->user, $this->proA, 'Thandi')->set('message', 'Later reply')->call('send');
-    $messaging->assertSent('chat_message', fn ($message): bool => $message->phoneE164 === $this->customer->phone_e164);
+    expect(noticeCount($this->customer, 'chat_message'))->toBe(1);
 });
 
 it('queues notifications on the notifications queue after the message is saved (AC4)', function (): void {
