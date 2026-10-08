@@ -28,6 +28,8 @@ Statuses checked against the code on 2026-10-08. "Superseded" means a later spec
 | 020 | [Trades, facts, distance matching, Siya agent](020-trade-and-distance-matching.md) | Built (PR #57) | 2–3 |
 | 021 | [Customer and pro signed-in panels](021-signed-in-panels.md) | Built (PR #58) | 2–3 |
 | 022 | [Web push and live inbox](022-web-push-notifications.md) | Built (PR #61) | 3 |
+| 027 | [Operations: stalled jobs and success measures](027-operations-dashboard.md) | Built | L |
+| 026 | Registration capture and verified badges | Already built by specs 008, 020 and 021 (number captured and encrypted at application, checked by vetting, badge and expiry shown); no new work | L |
 | 025 | [Reviews](025-reviews.md) | Built | L |
 | 024 | [Finish a job without payments](024-finish-a-job.md) | Built | L |
 | 023 | [Estimates, introductions and PayFast credit](023-introductions-and-payfast-credit.md) | Built (PR #76); fee switched off | L |
@@ -36,5 +38,3 @@ Statuses checked against the code on 2026-10-08. "Superseded" means a later spec
 
 | # | Spec | Notes |
 |---|---|---|
-| 026 | Registration capture and verified badges | PIRB / electrical registration numbers |
-| 027 | Operations: stalled jobs and success measures | Admin queue and dashboard metrics |

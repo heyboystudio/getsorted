@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 /** The ten most recently touched jobs, newest first. */
 final class RecentJobs extends TableWidget
 {
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 4;
 
     protected int|string|array $columnSpan = 'full';
 

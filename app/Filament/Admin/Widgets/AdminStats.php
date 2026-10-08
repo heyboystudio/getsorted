@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Widgets;
 
 use App\Domain\Accounts\Enums\DataRequestStatus;
+use App\Domain\Operations\Support\StalledJobs;
 use App\Domain\Pros\Enums\ProChangeStatus;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
@@ -15,7 +16,7 @@ use App\Filament\Admin\Resources\ServiceJobs\ServiceJobResource;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
-/** What needs an admin today: money waiting on customers, vetting queue, privacy requests. */
+/** What needs an admin today: stalled jobs, vetting queue, privacy requests. */
 final class AdminStats extends StatsOverviewWidget
 {
     protected static ?int $sort = 1;
@@ -33,9 +34,9 @@ final class AdminStats extends StatsOverviewWidget
             Stat::make(__('Finding pros'), $jobs(ServiceJobStatus::Open))
                 ->description(__('Jobs open for quotes'))
                 ->url(ServiceJobResource::getUrl()),
-            Stat::make(__('Awaiting deposit'), $jobs(ServiceJobStatus::AwaitingDeposit))
-                ->description(__('Quote accepted, deposit not paid'))
-                ->color($jobs(ServiceJobStatus::AwaitingDeposit) > 0 ? 'warning' : 'gray')
+            Stat::make(__('Stalled jobs'), StalledJobs::all()->count())
+                ->description(__('No estimate yet, or booked and not done'))
+                ->color(StalledJobs::all()->isNotEmpty() ? 'warning' : 'gray')
                 ->url(ServiceJobResource::getUrl()),
             Stat::make(__('Underway'), $jobs(ServiceJobStatus::Scheduled, ServiceJobStatus::InProgress, ServiceJobStatus::AwaitingFinalPayment))
                 ->description(__('Booked or in progress'))
