@@ -263,8 +263,9 @@ it('still hides another customer\'s job page (spec 021, AC31)', function (): voi
 it('marks Jobs as the current tab on the jobs list and on a job (spec 021, AC1)', function (): void {
     $job = panelJob($this->customer);
 
-    foreach ([route('jobs.index'), route('jobs.show', $job)] as $url) {
-        $html = $this->get($url)->getContent();
-        expect($html)->toMatch('/aria-current="page"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<span>Jobs<\/span>/s');
-    }
+    // The jobs list still uses the old shell; a job's page uses the new Flux workspace (spec 028), which marks the item with data-current.
+    expect($this->get(route('jobs.index'))->getContent())->toMatch('/aria-current="page"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<span>Jobs<\/span>/s');
+
+    preg_match('/<a[^>]*href="[^"]*\/app\/jobs"[^>]*>/', $this->get(route('jobs.show', $job))->getContent(), $link);
+    expect($link[0] ?? '')->toContain('data-current');
 });

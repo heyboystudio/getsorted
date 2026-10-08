@@ -1,59 +1,108 @@
-<main class="flex items-start justify-center px-5 py-8">
-    <section class="w-full max-w-xl">
-        <a wire:navigate.hover href="{{ route('jobs.index') }}" class="mb-6 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Your jobs') }}</a>
+<div class="mx-auto w-full max-w-7xl px-4 py-6 lg:px-8">
+    <flux:breadcrumbs class="mb-4">
+        <flux:breadcrumbs.item :href="route('jobs.index')" wire:navigate>{{ __('Your jobs') }}</flux:breadcrumbs.item>
+        <flux:breadcrumbs.item>{{ $job->trade->name }}</flux:breadcrumbs.item>
+    </flux:breadcrumbs>
 
-        @if ($justPosted)
-            <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900" role="status">
-                <p class="text-lg font-semibold">{{ __('Your job is posted') }} ✓</p>
-                <p class="mt-1 text-sm">{{ __("We're finding vetted pros near you. We'll email you as quotes come in.") }}</p>
-            </div>
-        @endif
+    @if ($justPosted)
+        <flux:callout variant="success" icon="check-circle" class="mb-6" role="status">
+            <flux:callout.heading>{{ __('Your job is posted') }} ✓</flux:callout.heading>
+            <flux:callout.text>{{ __("We're finding vetted pros near you. We'll email you as quotes come in.") }}</flux:callout.text>
+        </flux:callout>
+    @endif
 
-        <p class="text-sm font-medium uppercase tracking-widest text-emerald-800">{{ $job->trade->name }}</p>
-        <h1 class="mt-1 text-3xl font-semibold tracking-tight">{{ $job->factTexts()[0] ?? $job->trade->name }}</h1>
-        <p class="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-sm">{{ $job->status->customerLabel() }}@if ($job->urgency === \App\Domain\ServiceJobs\Enums\Urgency::Urgent) · {{ __('Urgent') }}@endif</p>
+    <header id="job-status" class="rounded-xl">
+        <p class="text-xs font-medium uppercase tracking-widest text-zinc-500">{{ $job->trade->name }}</p>
+        <flux:heading size="xl" level="1" class="mt-1">{{ $job->factTexts()[0] ?? $job->trade->name }}</flux:heading>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+            <flux:badge size="lg" :color="$job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Completed ? 'green' : ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Cancelled ? 'zinc' : 'blue')">{{ $job->status->customerLabel() }}</flux:badge>
+            @if ($job->urgency === \App\Domain\ServiceJobs\Enums\Urgency::Urgent)<flux:badge size="lg" color="red">{{ __('Urgent') }}</flux:badge>@endif
+        </div>
 
         @if ($stages)
-            <ol class="mt-6 flex items-center gap-1 text-xs" aria-label="{{ __('Job progress') }}">
+            <ol class="mt-6 grid max-w-2xl grid-cols-5 gap-2 text-xs" aria-label="{{ __('Job progress') }}">
                 @foreach ($stages as $stage)
-                    <li class="flex flex-1 flex-col items-center gap-1 text-center" @if ($stage['state'] === 'current') aria-current="step" @endif>
-                        <span @class(['h-1.5 w-full rounded-full', 'bg-emerald-700' => $stage['state'] !== 'upcoming', 'bg-zinc-200' => $stage['state'] === 'upcoming'])></span>
-                        <span @class(['font-medium text-emerald-900' => $stage['state'] === 'current', 'text-zinc-700' => $stage['state'] === 'done', 'text-zinc-500' => $stage['state'] === 'upcoming'])>@if ($stage['state'] === 'done')<span class="sr-only">{{ __('Done:') }} </span>@endif{{ $stage['label'] }}</span>
+                    <li class="flex flex-col gap-1.5" @if ($stage['state'] === 'current') aria-current="step" @endif>
+                        <span @class(['h-1.5 w-full rounded-full', 'bg-zinc-900' => $stage['state'] !== 'upcoming', 'bg-zinc-200' => $stage['state'] === 'upcoming'])></span>
+                        <span @class(['font-semibold text-zinc-900' => $stage['state'] === 'current', 'text-zinc-700' => $stage['state'] === 'done', 'text-zinc-500' => $stage['state'] === 'upcoming'])>@if ($stage['state'] === 'done')<span class="sr-only">{{ __('Done:') }} </span>@endif{{ $stage['label'] }}</span>
                     </li>
                 @endforeach
             </ol>
         @endif
+    </header>
 
-        @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Open)
-            <div class="mt-6 rounded-xl border border-zinc-200 bg-white p-4" role="status">
-                <p class="font-medium">{{ __('Finding your pros') }}</p>
-                <p class="mt-1 text-sm text-zinc-600">
-                    @if ($invitedCount > 0 && $quotes->isEmpty())
-                        {{ __('Waiting for quotes.') }} {{ trans_choice(':count pro invited so far.|:count pros invited so far.', $invitedCount, ['count' => $invitedCount]) }}
-                    @elseif ($invitedCount > 0)
-                        {{ trans_choice(':count pro invited so far. Quotes will appear here.|:count pros invited so far. Quotes will appear here.', $invitedCount, ['count' => $invitedCount]) }}
+    @error('cancel') <flux:callout variant="danger" icon="exclamation-triangle" class="mt-4" :heading="$message" /> @enderror
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-3">
+        {{-- What you can do next comes first on phones and sits in the side column on desktop. --}}
+        <div class="order-1 space-y-4 lg:order-none lg:col-start-3 lg:row-start-1">
+            @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Draft)
+                <flux:button variant="primary" class="w-full" :href="route('booking.continue', $job)" wire:navigate>{{ __('Finish your request') }}</flux:button>
+            @endif
+
+            @can('cancel', $job)
+                <flux:card class="space-y-3">
+                    @if ($confirmingCancel)
+                        <flux:callout variant="danger" icon="exclamation-triangle" role="alertdialog" aria-labelledby="cancel-title">
+                            <flux:callout.heading id="cancel-title">{{ __('Cancel this job?') }}</flux:callout.heading>
+                            <flux:callout.text>{{ __('Pros who were sent the job will be told. You can post a new job later.') }}</flux:callout.text>
+                            <div class="mt-3">
+                                <flux:field>
+                                    <flux:label for="cancelReason">{{ __('Reason (optional)') }}</flux:label>
+                                    <flux:input id="cancelReason" wire:model="cancelReason" maxlength="300" />
+                                    <flux:error name="cancelReason" />
+                                </flux:field>
+                            </div>
+                            <x-slot name="actions">
+                                <flux:button variant="danger" wire:click="cancelJob" wire:loading.attr="disabled">{{ __('Yes, cancel job') }}</flux:button>
+                                <flux:button wire:click="keepJob">{{ __('Keep job') }}</flux:button>
+                            </x-slot>
+                        </flux:callout>
                     @else
-                        {{ __("We're still looking for a pro who can take this job. We'll email you as soon as quotes come in.") }}
+                        <flux:button variant="subtle" size="sm" class="!text-red-700" wire:click="confirmCancel">{{ __('Cancel this job') }}</flux:button>
                     @endif
-                </p>
-            </div>
-        @endif
+                </flux:card>
+            @else
+                @include('livewire.shared.booked-actions', ['job' => $job, 'audience' => 'client'])
+            @endcan
 
-        @error('cancel') <p class="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
+            @if ($bookAgain)
+                <flux:button class="w-full" :href="$bookAgain" wire:navigate>{{ __('Book :trade again', ['trade' => mb_strtolower($job->trade->name)]) }}</flux:button>
+            @endif
+        </div>
 
-        @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Completed)
-            <div class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950" role="status">{{ __('This job is done. Thanks for using GetSorted!') }}</div>
+        <div class="order-2 space-y-6 lg:order-none lg:col-span-2 lg:col-start-1 lg:row-span-3 lg:row-start-1">
+            @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Open)
+                <flux:callout icon="magnifying-glass" role="status">
+                    <flux:callout.heading>{{ __('Finding your pros') }}</flux:callout.heading>
+                    <flux:callout.text>
+                        @if ($invitedCount > 0 && $quotes->isEmpty())
+                            {{ __('Waiting for quotes.') }} {{ trans_choice(':count pro invited so far.|:count pros invited so far.', $invitedCount, ['count' => $invitedCount]) }}
+                        @elseif ($invitedCount > 0)
+                            {{ trans_choice(':count pro invited so far. Quotes will appear here.|:count pros invited so far. Quotes will appear here.', $invitedCount, ['count' => $invitedCount]) }}
+                        @else
+                            {{ __("We're still looking for a pro who can take this job. We'll email you as soon as quotes come in.") }}
+                        @endif
+                    </flux:callout.text>
+                </flux:callout>
+            @endif
 
+            @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Completed)
+                <flux:callout variant="success" icon="check-circle" role="status">
+                    <flux:callout.text>{{ __('This job is done. Thanks for using GetSorted!') }}</flux:callout.text>
+                </flux:callout>
+
+                <div id="review-card" class="rounded-xl">
             @if ($review)
-                <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-4" aria-labelledby="your-review">
-                    <h2 id="your-review" class="font-semibold">{{ __('Your review') }}</h2>
+                <flux:card aria-labelledby="your-review">
+                    <flux:heading id="your-review" size="lg">{{ __('Your review') }}</flux:heading>
                     <p class="mt-1 text-amber-700" aria-label="{{ trans_choice(':count star|:count stars', $review->rating) }}">{{ str_repeat('★', $review->rating).str_repeat('☆', 5 - $review->rating) }}</p>
                     @if ($review->comment)<p class="mt-2 whitespace-pre-line text-sm text-zinc-800">{{ $review->comment }}</p>@endif
                     @if ($review->reply)<p class="mt-3 border-l-2 border-zinc-200 pl-3 text-sm text-zinc-700"><span class="font-medium">{{ __('Reply from your pro') }}:</span> {{ $review->reply }}</p>@endif
-                </section>
+                </flux:card>
             @elseif ($reviewable)
-                <section class="mt-6 rounded-xl border border-zinc-200 bg-white p-4" aria-labelledby="leave-review">
-                    <h2 id="leave-review" class="font-semibold">{{ __('How was the work?') }}</h2>
+                <flux:card aria-labelledby="leave-review">
+                    <flux:heading id="leave-review" size="lg">{{ __('How was the work?') }}</flux:heading>
                     <p class="text-sm text-zinc-600">{{ __('Your review helps other households choose. Your first name is shown with it.') }}</p>
                     <div class="mt-3 flex gap-1" role="radiogroup" aria-label="{{ __('Stars') }}">
                         @foreach (range(1, 5) as $star)
@@ -65,15 +114,26 @@
                     <p class="text-xs text-zinc-500">{{ __('Please leave out phone numbers and email addresses.') }}</p>
                     @error('review') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                     <button type="button" wire:click="submitReview" wire:loading.attr="disabled" @disabled($rating === 0) class="mt-3 rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-50">{{ __('Send review') }}</button>
-                </section>
+                </flux:card>
             @endif
-        @endif
 
-        @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Cancelled)
-            <div class="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm" role="status">{{ __('This job was cancelled. You can post a new one any time.') }}</div>
-        @endif
+                </div>
+            @endif
 
-        <dl class="mt-6 space-y-4 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
+            @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Cancelled)
+                <flux:callout icon="x-circle" role="status">
+                    <flux:callout.text>{{ __('This job was cancelled. You can post a new one any time.') }}</flux:callout.text>
+                </flux:callout>
+            @endif
+
+            <div id="estimates">
+                @include('livewire.account.jobs.partials.quotes')
+            </div>
+
+            <flux:card>
+                <flux:heading size="lg" class="mb-4">{{ __('Your request') }}</flux:heading>
+                <dl class="space-y-4 text-sm">
+
             @if ($job->facts !== [])
                 <div><dt class="text-zinc-500">{{ __('What you told us') }}</dt><dd class="mt-1 flex flex-wrap gap-2">@foreach ($job->factTexts() as $fact)<span class="rounded-full bg-amber-100 px-3 py-1 text-amber-950">{{ $fact }}</span>@endforeach</dd></div>
             @endif
@@ -86,25 +146,27 @@
             @if ($job->time_window)
                 <div><dt class="text-zinc-500">{{ __('When') }}</dt><dd>{{ $job->time_window->label() }}@if ($job->preferred_date && $job->time_window !== \App\Domain\ServiceJobs\Enums\TimeWindow::Today), {{ $job->preferred_date->translatedFormat('D j M') }}@endif</dd></div>
             @endif
-        </dl>
+        
 
-        @if ($job->getMedia(\App\Models\ServiceJob::PHOTO_COLLECTION)->isNotEmpty())
-            <section class="mt-6">
-                <h2 class="font-semibold">{{ __('Photos') }}</h2>
-                <div class="mt-3 grid grid-cols-2 gap-3">
-                    @foreach ($job->getMedia(\App\Models\ServiceJob::PHOTO_COLLECTION) as $photo)
-                        <img src="{{ $job->photoUrl($photo) }}" alt="{{ __('Job photo :number', ['number' => $loop->iteration]) }}" class="aspect-square w-full rounded-xl object-cover" loading="lazy">
-                    @endforeach
-                </div>
-            </section>
-        @endif
+                </dl>
+            </flux:card>
 
-        @include('livewire.account.jobs.partials.quotes')
+            @if ($job->getMedia(\App\Models\ServiceJob::PHOTO_COLLECTION)->isNotEmpty())
+                <flux:card>
+                    <flux:heading size="lg">{{ __('Photos') }}</flux:heading>
+                    <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        @foreach ($job->getMedia(\App\Models\ServiceJob::PHOTO_COLLECTION) as $photo)
+                            <img src="{{ $job->photoUrl($photo) }}" alt="{{ __('Job photo :number', ['number' => $loop->iteration]) }}" class="aspect-square w-full rounded-lg object-cover" loading="lazy">
+                        @endforeach
+                    </div>
+                </flux:card>
+            @endif
+        </div>
 
         {{-- Spec 018: chat with each pro looking at the job. Invited pros stay anonymous until they reply or quote (spec 009 AC13). --}}
         @if ($chats->isNotEmpty())
-            <section class="mt-6" id="chats">
-                <h2 class="font-semibold">{{ $job->accepted_quote_id ? __('Chat with your pro') : __('Chat with your pros') }}</h2>
+            <flux:card class="order-3 lg:order-none lg:col-start-3" id="chats">
+                <flux:heading size="lg">{{ $job->accepted_quote_id ? __('Chat with your pro') : __('Chat with your pros') }}</flux:heading>
                 @if ($chats->count() > 1 || ! $openChat)
                     <div class="mt-3 flex flex-wrap gap-2">
                         @foreach ($chats as $chat)
@@ -122,12 +184,13 @@
                 @else
                     <p class="mt-2 text-sm text-zinc-600">{{ __('Ask a pro a question or send more photos before they send their estimate.') }}</p>
                 @endif
-            </section>
+
+            </flux:card>
         @endif
 
         @if ($timeline->isNotEmpty())
-            <section class="mt-8" aria-labelledby="timeline-title">
-                <h2 id="timeline-title" class="font-semibold">{{ __('Timeline') }}</h2>
+            <flux:card class="order-4 lg:order-none lg:col-start-3" aria-labelledby="timeline-title">
+                <flux:heading size="lg" id="timeline-title">{{ __('Timeline') }}</flux:heading>
                 <ol class="mt-3 space-y-3 border-l-2 border-zinc-200 pl-4 text-sm">
                     @foreach ($timeline as $entry)
                         <li wire:key="timeline-{{ $loop->index }}">
@@ -136,64 +199,7 @@
                         </li>
                     @endforeach
                 </ol>
-            </section>
+            </flux:card>
         @endif
-
-        @if ($bookAgain)
-            <a wire:navigate.hover href="{{ $bookAgain }}" class="mt-8 block w-full rounded-lg border border-emerald-700 px-4 py-3 text-center font-medium text-emerald-900 hover:bg-emerald-50">{{ __('Book :trade again', ['trade' => mb_strtolower($job->trade->name)]) }}</a>
-        @endif
-
-        @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Draft)
-            <a wire:navigate.hover href="{{ route('booking.continue', $job) }}" class="mt-6 block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center font-medium text-white hover:bg-emerald-800">{{ __('Finish your request') }}</a>
-        @endif
-
-        @can('cancel', $job)
-            <section class="mt-10 border-t border-zinc-200 pt-6">
-                @if ($confirmingCancel)
-                    <div class="rounded-xl border border-red-200 bg-red-50 p-4" role="alertdialog" aria-labelledby="cancel-title">
-                        <p id="cancel-title" class="font-semibold text-red-900">{{ __('Cancel this job?') }}</p>
-                        <p class="mt-1 text-sm text-red-900">{{ __('Pros who were sent the job will be told. You can post a new job later.') }}</p>
-                        <label for="cancelReason" class="mt-3 block text-sm text-red-900">{{ __('Reason (optional)') }}</label>
-                        <input id="cancelReason" type="text" wire:model="cancelReason" maxlength="300" class="mt-1 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-base">
-                        @error('cancelReason') <p class="mt-1 text-sm text-red-800">{{ $message }}</p> @enderror
-                        <div class="mt-4 flex gap-3">
-                            <button type="button" wire:click="cancelJob" wire:loading.attr="disabled" class="rounded-lg bg-red-700 px-4 py-3 font-medium text-white hover:bg-red-800">{{ __('Yes, cancel job') }}</button>
-                            <button type="button" wire:click="keepJob" class="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium">{{ __('Keep job') }}</button>
-                        </div>
-                    </div>
-                @else
-                    <button type="button" wire:click="confirmCancel" class="text-sm text-red-700 underline underline-offset-4">{{ __('Cancel this job') }}</button>
-                @endif
-            </section>
-        @elseif (\App\Domain\ServiceJobs\Support\BookedJob::isOpen($job))
-            <section class="mt-10 border-t border-zinc-200 pt-6" aria-label="{{ __('Finish or cancel this booking') }}">
-                @error('finish') <p class="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
-                @if ($confirmingDone)
-                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4" role="alertdialog" aria-labelledby="done-title">
-                        <p id="done-title" class="font-semibold text-emerald-950">{{ __('Is the work finished?') }}</p>
-                        <p class="mt-1 text-sm text-emerald-950">{{ __('Your pro will be told. Make sure you are happy with the work and have a receipt.') }}</p>
-                        <div class="mt-4 flex gap-3">
-                            <button type="button" wire:click="markDone" wire:loading.attr="disabled" class="rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Yes, it is done') }}</button>
-                            <button type="button" wire:click="keepBooking" class="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium">{{ __('Not yet') }}</button>
-                        </div>
-                    </div>
-                @elseif ($confirmingBookedCancel)
-                    <div class="rounded-xl border border-red-200 bg-red-50 p-4" role="alertdialog" aria-labelledby="booked-cancel-title">
-                        <p id="booked-cancel-title" class="font-semibold text-red-900">{{ __('Cancel this booking?') }}</p>
-                        <p class="mt-1 text-sm text-red-900">{{ __('Your pro will be told. You can post the job again and choose someone else.') }}</p>
-                        <label for="bookedCancelReason" class="mt-3 block text-sm text-red-900">{{ __('Why are you cancelling?') }}</label>
-                        <input id="bookedCancelReason" type="text" wire:model="bookedCancelReason" maxlength="300" class="mt-1 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-base">
-                        @error('bookedCancelReason') <p class="mt-1 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
-                        <div class="mt-4 flex gap-3">
-                            <button type="button" wire:click="cancelBooked" wire:loading.attr="disabled" class="rounded-lg bg-red-700 px-4 py-3 font-medium text-white hover:bg-red-800">{{ __('Yes, cancel booking') }}</button>
-                            <button type="button" wire:click="keepBooking" class="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium">{{ __('Keep booking') }}</button>
-                        </div>
-                    </div>
-                @else
-                    <button type="button" wire:click="confirmDone" class="w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Mark as done') }}</button>
-                    <button type="button" wire:click="confirmBookedCancel" class="mt-4 text-sm text-red-700 underline underline-offset-4">{{ __('Cancel this booking') }}</button>
-                @endif
-            </section>
-        @endcan
-    </section>
-</main>
+    </div>
+</div>
