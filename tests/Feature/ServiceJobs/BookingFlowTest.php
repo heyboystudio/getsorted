@@ -61,10 +61,9 @@ it('opens the thread from the home page and trade pages (AC1, AC3)', function ()
     $this->get(route('book.trade', $this->plumbing))->assertNotFound();
 });
 
-it('starts with Siya’s greeting and optional trade shortcuts (AC2, AC5)', function (): void {
+it('starts with Siya’s greeting, with no trade picker unless Siya is unavailable (AC2, AC5)', function (): void {
     Livewire::test(Thread::class)
-        ->assertSee('I’m Siya, GetSorted’s AI assistant')->assertSet('stage', 'chat')->assertDontSee('Continue to book')
-        ->call('showTrades')->assertSee('Plumbing')
+        ->assertSee('I’m Siya, GetSorted’s AI assistant')->assertSet('stage', 'chat')->assertDontSee('Continue to book')->assertDontSee('Choose a trade instead')
         ->call('pickTrade', 'plumbing')->assertSee('What’s the plumbing problem?')->assertSet('tradeId', $this->plumbing->id);
 });
 
@@ -176,7 +175,7 @@ it('keeps the customer’s own words as notes and lets them carry on when Siya i
     $settings->enabled = false;
     $settings->save();
 
-    threadFor()->call('showTrades')->call('pickTrade', 'plumbing')
+    threadFor()->call('pickTrade', 'plumbing')
         ->set('message', 'The tap in the kitchen drips all day')->call('send')
         ->assertSet('notes', 'The tap in the kitchen drips all day')->assertSee('Continue to book')
         ->call('startBooking')->assertSet('stage', 'signin');

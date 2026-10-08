@@ -214,14 +214,6 @@ final class Thread extends Component
 
     // ── Chat ────────────────────────────────────────────────────────────
 
-    public function showTrades(): void
-    {
-        abort_unless($this->stage === 'chat', 404);
-        $this->showTradeShortcuts = true;
-        $this->retryPending = false;
-        $this->persist();
-    }
-
     /** An optional shortcut: the trade is set directly and Siya asks what is going on. */
     public function pickTrade(string $key): void
     {
