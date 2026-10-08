@@ -134,7 +134,7 @@
       <li>Vetted before they start</li>
       <li>Up to five itemised quotes</li>
       <li>Address private until you accept</li>
-      <li>Updates arrive on WhatsApp</li>
+      <li>Updates arrive by email and pop-up</li>
     </ul>
     <p class="scribble meet-note" aria-hidden="true">All of this in<br>one thread!<svg viewBox="0 0 60 80"><path class="draw" d="M48 2C46 30 34 52 6 72M6 72l4-16M6 72l16-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></p>
 
@@ -147,7 +147,7 @@
         <li class="tl c2 appear"><h3>Meet vetted pros</h3><b class="num">2</b><p>We invite vetted pros near you. Your street address stays private until you choose.</p></li>
         <li class="tl c3 appear"><h3>Compare quotes</h3><b class="num">3</b><p>Up to five itemised quotes side by side. Ask a pro a question before you decide.</p></li>
         <li class="tl c4 appear"><h3>Book your pro</h3><b class="num">4</b><p>Accept the quote you like. You get the pro’s details and arrange the work and payment with them.</p></li>
-        <li class="tl c5 appear"><h3>Stay in the loop</h3><b class="num">5</b><p>Updates arrive on WhatsApp, so you don’t have to stay home waiting for a call.</p></li>
+        <li class="tl c5 appear"><h3>Stay in the loop</h3><b class="num">5</b><p>Updates arrive by email and pop-up, so you don’t have to stay home waiting for a call.</p></li>
         <li class="tl c6 appear"><h3>Review your pro</h3><b class="num">6</b><p>Every pro can be reviewed after each finished job.</p></li>
       </ol>
     </div>
@@ -156,8 +156,8 @@
   <!-- ============ MARQUEE ============ -->
   <div class="band" aria-hidden="true">
     <div class="band-track">
-      <span>Vetted pros</span><i></i><span>Itemised quotes</span><i></i><span>One thread</span><i></i><span>Private address</span><i></i><span>WhatsApp updates</span><i></i><span>Free to join</span><i></i>
-      <span>Vetted pros</span><i></i><span>Itemised quotes</span><i></i><span>One thread</span><i></i><span>Private address</span><i></i><span>WhatsApp updates</span><i></i><span>Free to join</span><i></i>
+      <span>Vetted pros</span><i></i><span>Itemised quotes</span><i></i><span>One thread</span><i></i><span>Private address</span><i></i><span>Email updates</span><i></i><span>Free to join</span><i></i>
+      <span>Vetted pros</span><i></i><span>Itemised quotes</span><i></i><span>One thread</span><i></i><span>Private address</span><i></i><span>Email updates</span><i></i><span>Free to join</span><i></i>
     </div>
   </div>
 

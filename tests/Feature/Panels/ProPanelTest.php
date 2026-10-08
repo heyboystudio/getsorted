@@ -65,7 +65,7 @@ it('lists open invites with the least time left first (spec 021, AC20)', functio
 it('hides sections with nothing in them and shows a calm empty state (spec 021, AC20)', function (): void {
     Livewire::test(Welcome::class)
         ->assertDontSee('Answer these first')->assertDontSee('Coming up')->assertDontSee('Waiting for the customer')
-        ->assertSee("No new jobs right now. We'll WhatsApp you when one fits.");
+        ->assertSee("No new jobs right now. We'll email you when one fits.");
 });
 
 it('shows quotes still waiting on the customer (spec 021, AC20)', function (): void {

@@ -7,7 +7,7 @@
             <div class="mt-8 rounded-xl border border-zinc-200 bg-white p-6 text-center">
                 @if ($full ?? false)
                     <p class="text-lg font-medium">{{ __('This job is full') }}</p>
-                    <p class="mt-2 text-zinc-600">{{ __('The customer already has all the quotes they asked for. We\'ll WhatsApp you about the next job that fits.') }}</p>
+                    <p class="mt-2 text-zinc-600">{{ __('The customer already has all the quotes they asked for. We\'ll email you about the next job that fits.') }}</p>
                 @else
                     <p class="text-lg font-medium">{{ __('This job is no longer available') }}</p>
                     <p class="mt-2 text-zinc-600">{{ __('It may have expired, been filled, or you already answered it.') }}</p>
@@ -75,7 +75,7 @@
             @endif
 
             @if ($sent)
-                <p class="mt-6 rounded-lg bg-emerald-50 p-3 text-sm font-medium text-emerald-900" role="status">{{ __('Quote sent. We\'ll WhatsApp you when the customer decides.') }}</p>
+                <p class="mt-6 rounded-lg bg-emerald-50 p-3 text-sm font-medium text-emerald-900" role="status">{{ __('Quote sent. We\'ll email you when the customer decides.') }}</p>
             @endif
 
             @if ($quote && ! $building)
