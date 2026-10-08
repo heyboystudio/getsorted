@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Domain\Pros\Support;
 
 use App\Domain\Pros\Enums\DocumentStatus;
+use App\Domain\Reviews\Support\RatingSummary;
 use App\Models\Pro;
+use App\Models\Review;
 use Carbon\CarbonImmutable;
 
 /**
@@ -18,6 +20,8 @@ final readonly class ProPublicProfile
     /**
      * @param  list<array{name: string, verified: bool}>  $trades  each trade the pro offers, and whether they hold a valid registration for it
      * @param  list<array{label: string, valid: bool}>  $registrations
+     * @param  array{average: float, count: int}|null  $rating  null until the pro has a review
+     * @param  list<array{stars: int, comment: string|null, reply: string|null, by: string, when: string}>  $reviews  the latest visible reviews
      */
     public function __construct(
         public string $businessName,
@@ -28,6 +32,8 @@ final readonly class ProPublicProfile
         public array $registrations,
         public ?CarbonImmutable $since,
         public ?string $photoUrl,
+        public ?array $rating = null,
+        public array $reviews = [],
     ) {}
 
     public static function from(Pro $pro, ?string $photoUrl = null, ?string $displayName = null): self
@@ -52,6 +58,14 @@ final readonly class ProPublicProfile
             registrations: $registrations,
             since: $pro->approved_at,
             photoUrl: $photoUrl,
+            rating: RatingSummary::for($pro),
+            reviews: Review::query()->visible()->where('pro_id', $pro->id)->with('customer')->latest()->limit(10)->get()->map(fn (Review $review): array => [
+                'stars' => $review->rating,
+                'comment' => $review->comment,
+                'reply' => $review->reply,
+                'by' => (string) $review->customer->first_name,
+                'when' => $review->created_at->translatedFormat('M Y'),
+            ])->all(),
         );
     }
 }

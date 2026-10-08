@@ -101,7 +101,7 @@ it('invents no rating, review or count (spec 021, AC18)', function (): void {
 
 it('builds the customer view from a short allow-list only (spec 021, AC17)', function (): void {
     expect(array_map(fn (ReflectionProperty $property): string => $property->getName(), (new ReflectionClass(ProPublicProfile::class))->getProperties()))
-        ->toBe(['businessName', 'bio', 'trades', 'area', 'radiusKm', 'registrations', 'since', 'photoUrl']);
+        ->toBe(['businessName', 'bio', 'trades', 'area', 'radiusKm', 'registrations', 'since', 'photoUrl', 'rating', 'reviews']);
 });
 
 it('shows a profile only to the customer whose job has a live quote from that pro (spec 021, AC19)', function (): void {

@@ -11,6 +11,7 @@
             <h1 class="text-2xl font-semibold tracking-tight">{{ $profile->businessName }}</h1>
             @if ($profile->since)<p class="text-sm text-zinc-600">{{ __('On GetSorted since :date', ['date' => $profile->since->translatedFormat('M Y')]) }}</p>@endif
             <p class="mt-1 text-xs text-emerald-800">{{ __('Vetted by GetSorted') }}</p>
+            <p class="mt-1 text-sm {{ $profile->rating ? 'font-medium text-amber-800' : 'text-zinc-500' }}">{{ $profile->rating ? '★ '.number_format($profile->rating['average'], 1).' ('.trans_choice(':count review|:count reviews', $profile->rating['count']).')' : __('New on GetSorted') }}</p>
         </div>
     </div>
 
@@ -39,6 +40,21 @@
             @endforeach
         </ul>
     </section>
+
+    @if ($profile->reviews !== [])
+        <section class="mt-6" aria-labelledby="pro-reviews">
+            <h2 id="pro-reviews" class="text-sm font-semibold uppercase tracking-widest text-zinc-500">{{ __('Reviews') }}</h2>
+            <ul class="mt-2 space-y-4">
+                @foreach ($profile->reviews as $review)
+                    <li class="text-sm">
+                        <p><span class="text-amber-700" aria-label="{{ trans_choice(':count star|:count stars', $review['stars']) }}">{{ str_repeat('★', $review['stars']).str_repeat('☆', 5 - $review['stars']) }}</span> <span class="text-zinc-500">{{ $review['by'] }} · {{ $review['when'] }}</span></p>
+                        @if ($review['comment'])<p class="mt-1 whitespace-pre-line text-zinc-800">{{ $review['comment'] }}</p>@endif
+                        @if ($review['reply'])<p class="mt-2 border-l-2 border-zinc-200 pl-3 text-zinc-700"><span class="font-medium">{{ __('Reply from the pro') }}:</span> {{ $review['reply'] }}</p>@endif
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
 
     @if ($profile->area)
         <section class="mt-6" aria-labelledby="pro-area">

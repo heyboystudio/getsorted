@@ -25,6 +25,8 @@ use App\Domain\Quotes\Support\ContactMasker;
 use App\Domain\Quotes\Support\QuoteCalculator;
 use App\Domain\Quotes\Support\QuoteFlow;
 use App\Domain\Quotes\Support\QuoteRules;
+use App\Domain\Reviews\Actions\ReplyToReview;
+use App\Domain\Reviews\Exceptions\CannotReview;
 use App\Domain\ServiceJobs\Actions\CancelBookedJob;
 use App\Domain\ServiceJobs\Actions\MarkJobDone;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
@@ -33,6 +35,7 @@ use App\Domain\ServiceJobs\Exceptions\CannotFinishJob;
 use App\Domain\ServiceJobs\Support\JobChat;
 use App\Livewire\Pros\Jobs\Concerns\EnsuresApprovedPro;
 use App\Models\Quote;
+use App\Models\Review;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobInvite;
 use App\Settings\QuoteSettings;
@@ -300,6 +303,23 @@ final class Show extends Component
         $this->bookedCancelReason = '';
     }
 
+    // ── Replying to a review (spec 025) ──
+
+    public string $replyText = '';
+
+    public function reply(ReplyToReview $replyToReview): void
+    {
+        $review = Review::query()->where('service_job_id', $this->invite()->service_job_id)->where('pro_id', $this->invite()->pro_id)->firstOrFail();
+
+        try {
+            $replyToReview->handle($this->currentUser(), $review, $this->replyText);
+        } catch (CannotReview $exception) {
+            throw ValidationException::withMessages(['replyText' => $exception->getMessage()]);
+        }
+
+        $this->replyText = '';
+    }
+
     private function bookedJob(): ServiceJob
     {
         return ServiceJob::query()->findOrFail($this->invite()->service_job_id);
@@ -338,6 +358,7 @@ final class Show extends Component
             'reasons' => DeclineReason::cases(),
             'canQuote' => $canQuote,
             'jobAccepted' => $invite->status === InviteStatus::Accepted,
+            'review' => $accepted ? Review::query()->visible()->where('service_job_id', $job->id)->where('pro_id', $invite->pro_id)->first() : null,
             'quote' => $quote,
             'accepted' => $accepted,
             // Contact details only for the pro whose quote was accepted (AC9).
