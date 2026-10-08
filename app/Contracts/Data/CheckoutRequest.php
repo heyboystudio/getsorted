@@ -15,5 +15,7 @@ final readonly class CheckoutRequest
         public string $description,
         public string $returnUrl,
         public string $idempotencyKey,
+        public ?string $buyerFirstName = null,
+        public ?string $buyerEmail = null,
     ) {}
 }

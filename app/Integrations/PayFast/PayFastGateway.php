@@ -45,11 +45,15 @@ final readonly class PayFastGateway implements PaymentGateway
             'return_url' => $request->returnUrl,
             'cancel_url' => $request->returnUrl,
             'notify_url' => $this->notifyUrl,
+            'name_first' => (string) $request->buyerFirstName,
+            'email_address' => (string) $request->buyerEmail,
             'm_payment_id' => $request->reference,
             'amount' => number_format($request->amount->getMinorAmount()->toInt() / 100, 2, '.', ''),
             'item_name' => mb_substr($request->description, 0, 100),
         ];
 
+        // Empty fields are left out of the link and of the signature, so a missing name or email is harmless.
+        $fields = array_filter($fields, fn (string $value): bool => $value !== '');
         $fields['signature'] = $this->signature($fields);
 
         return new Checkout($request->reference, 'https://'.$this->host().'/eng/process?'.http_build_query($fields));

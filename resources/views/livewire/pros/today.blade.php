@@ -5,6 +5,16 @@
 
         <x-push-card class="mt-4" />
 
+        @if ($creditBalanceCents !== null)
+            <a wire:navigate.hover href="{{ route('pros.credit') }}" class="mt-4 flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white p-4 hover:border-emerald-700">
+                <span>
+                    <span class="block text-sm text-zinc-600">{{ __('Introduction credit') }}</span>
+                    <span class="block text-xl font-semibold">R {{ number_format($creditBalanceCents / 100, 2, '.', ' ') }}</span>
+                </span>
+                <span class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white">{{ __('Add credit') }}</span>
+            </a>
+        @endif
+
         <div @class(['mt-5 flex items-center justify-between gap-4 rounded-xl border p-4', 'border-amber-300 bg-amber-50' => $paused, 'border-zinc-200 bg-white' => ! $paused])>
             <div>
                 <p class="font-medium">{{ $paused ? __("You're paused") : __("You're available") }}</p>

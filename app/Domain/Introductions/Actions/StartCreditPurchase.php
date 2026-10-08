@@ -21,7 +21,8 @@ final readonly class StartCreditPurchase
     public function __construct(private IntroductionSettings $settings, private PaymentGateway $gateway) {}
 
     /** @return string where to send the pro to pay */
-    public function handle(User $user, Pro $pro, int $packCents): string
+    /** @param  string|null  $returnUrl  where PayFast sends the pro afterwards; their credit page by default */
+    public function handle(User $user, Pro $pro, int $packCents, ?string $returnUrl = null): string
     {
         if ($pro->user_id !== $user->id || $pro->status !== ProStatus::Approved) {
             throw new CannotBuyCredit(__('Only an approved pro can buy credit.'));
@@ -42,8 +43,10 @@ final readonly class StartCreditPurchase
             Money::ofMinor($packCents, 'ZAR'),
             $purchase->public_id,
             'GetSorted introduction credit',
-            route('pros.credit'),
+            $returnUrl ?? route('pros.credit'),
             'credit-purchase:'.$purchase->id,
+            $user->first_name,
+            $user->email,
         ));
 
         activity()->causedBy($user)->performedOn($pro)->withProperties(['purchase' => $purchase->public_id, 'amount_cents' => $packCents])->log('credit_purchase_started');

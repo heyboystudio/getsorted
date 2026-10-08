@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Livewire\Pros\Jobs;
 
 use App\Domain\Assistant\Support\Redactor;
+use App\Domain\Introductions\Actions\StartCreditPurchase;
+use App\Domain\Introductions\Exceptions\CannotBuyCredit;
+use App\Domain\Introductions\Support\ProCredit;
 use App\Domain\Matching\Actions\AcceptInvite;
 use App\Domain\Matching\Actions\DeclineInvite;
 use App\Domain\Matching\Actions\OpenInvite;
@@ -21,6 +24,7 @@ use App\Domain\Quotes\Data\QuoteTotals;
 use App\Domain\Quotes\Enums\LineKind;
 use App\Domain\Quotes\Enums\QuoteStatus;
 use App\Domain\Quotes\Exceptions\CannotQuote;
+use App\Domain\Quotes\Exceptions\NeedsCredit;
 use App\Domain\Quotes\Support\ContactMasker;
 use App\Domain\Quotes\Support\QuoteCalculator;
 use App\Domain\Quotes\Support\QuoteFlow;
@@ -38,6 +42,7 @@ use App\Models\Quote;
 use App\Models\Review;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobInvite;
+use App\Settings\IntroductionSettings;
 use App\Settings\QuoteSettings;
 use App\Support\LocalTime;
 use App\Support\Rand;
@@ -148,10 +153,17 @@ final class Show extends Component
         }
     }
 
-    public function startQuote(QuoteSettings $settings): void
+    public function startQuote(QuoteSettings $settings, ProCredit $credit): void
     {
         $this->resetErrorBag();
         abort_unless($this->invite()->status === InviteStatus::Accepted, 403);
+
+        // No credit left for another introduction: offer the top-up here instead of an error later (spec 023).
+        if (! $credit->canQuote($this->invite()->pro)) {
+            $this->topUp = true;
+
+            return;
+        }
         $this->lines = [['kind' => LineKind::Labour->value, 'description' => '', 'quantity' => '1', 'unitPrice' => '']];
         $this->depositPercent = 0;
         $this->earliestStartDate = ($this->invite()->serviceJob->isUrgent() ? LocalTime::today() : LocalTime::today()->addDay())->toDateString();
@@ -228,6 +240,10 @@ final class Show extends Component
             $this->remap(fn () => $existing instanceof Quote
                 ? $reviseQuote->handle($this->currentUser(), $existing, $draft)
                 : $submitQuote->handle($this->currentUser(), $this->invite(), $draft));
+        } catch (NeedsCredit) {
+            $this->topUp = true;
+
+            return;
         } catch (CannotQuote $exception) {
             throw ValidationException::withMessages(['quote' => $exception->getMessage()]);
         }
@@ -250,6 +266,26 @@ final class Show extends Component
         }
 
         $this->redirectRoute('pros.jobs');
+    }
+
+    // ── Topping up introduction credit (spec 023) ──
+
+    public bool $topUp = false;
+
+    public function closeTopUp(): void
+    {
+        $this->topUp = false;
+    }
+
+    public function buyCredit(int $packCents, StartCreditPurchase $startCreditPurchase): void
+    {
+        try {
+            $url = $startCreditPurchase->handle($this->currentUser(), $this->currentPro(), $packCents, route('pros.jobs.show', $this->invite()));
+        } catch (CannotBuyCredit $exception) {
+            throw ValidationException::withMessages(['pack' => $exception->getMessage()]);
+        }
+
+        $this->redirect($url);
     }
 
     // ── After the introduction (spec 024) ──
@@ -358,6 +394,11 @@ final class Show extends Component
             'reasons' => DeclineReason::cases(),
             'canQuote' => $canQuote,
             'jobAccepted' => $invite->status === InviteStatus::Accepted,
+            'credit' => $this->topUp ? [
+                'balanceCents' => app(ProCredit::class)->balanceCents($invite->pro),
+                'feeCents' => app(IntroductionSettings::class)->fee_cents,
+                'packs' => app(IntroductionSettings::class)->credit_pack_cents,
+            ] : null,
             'review' => $accepted ? Review::query()->visible()->where('service_job_id', $job->id)->where('pro_id', $invite->pro_id)->first() : null,
             'quote' => $quote,
             'accepted' => $accepted,
