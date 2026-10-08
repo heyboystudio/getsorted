@@ -36,8 +36,11 @@ it('marks the current tab for assistive technology (spec 021, AC1)', function ()
 
     $html = $this->actingAs($customer)->get(route('account.home'))->getContent();
 
+    // Phones: one tab is marked current. Desktop: the sidebar item is marked with data-current (Flux).
     expect(substr_count($html, 'aria-current="page"'))->toBe(1);
-    expect($html)->toMatch('/aria-current="page"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<span>Home<\/span>/s');
+    expect($html)->toMatch('/aria-current="page"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*Home/s');
+    preg_match('/<a[^>]*href="[^"]*\/app"[^>]*data-current[^>]*>/', $html, $sidebar);
+    expect($sidebar)->not->toBeEmpty();
 });
 
 it('does not repeat the old per-page header on the customer home (spec 021, AC1)', function (): void {

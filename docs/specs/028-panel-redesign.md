@@ -26,5 +26,8 @@ Sidebar, header, main, breadcrumbs, card, callout, badge, button, field, label, 
 ## Out of scope
 Dark mode, a new colour brand, replacing the Siya booking thread's look (it keeps its conversational design), the admin panel.
 
+## Siya first (founder, 2026-10-08)
+On the client home the Siya box is the dominant element, at the top: a large dark card, a large text box, one "Ask Siya" button. The quick-pick chips (Blocked drain, No power and so on) and the separate "Book a pro" button on the home page are gone: describing the problem to Siya is the way to book. The only other way into booking is the trade tiles that appear inside Siya's thread when Siya is unavailable; they remain so a Gemini outage cannot stop all booking.
+
 ## Progress
-- 2026-10-08: layout and client job page built and deployed to the test site for review. Next: founder review, then the roll-out above.
+- 2026-10-08: layout and client job page built and merged. Client home (Siya first) and jobs list rebuilt. Next: pro job page, pro Today and jobs list, profile and credit pages, account settings, then retire the old shell.

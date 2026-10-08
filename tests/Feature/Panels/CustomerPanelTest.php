@@ -120,10 +120,10 @@ it('shows active jobs with the pro and photo placeholder once a quote is accepte
         ->assertDontSee('Done');
 });
 
-it('keeps the Siya prompt on Home below the needs strip (spec 021, AC7)', function (): void {
+it('puts the Siya prompt first on Home, above the needs strip, because booking starts with Siya (spec 028)', function (): void {
     panelJob($this->customer, ServiceJobStatus::Draft);
 
-    Livewire::test(Home::class)->assertSeeInOrder(['Needs you', 'What’s going on at home?']);
+    Livewire::test(Home::class)->assertSeeInOrder(['What’s going on at home?', 'Needs you'])->assertDontSee('Blocked drain');
 });
 
 it('shows only the customer\'s own allow-listed events as recent activity, newest first (spec 021, AC8)', function (): void {
@@ -263,9 +263,11 @@ it('still hides another customer\'s job page (spec 021, AC31)', function (): voi
 it('marks Jobs as the current tab on the jobs list and on a job (spec 021, AC1)', function (): void {
     $job = panelJob($this->customer);
 
-    // The jobs list still uses the old shell; a job's page uses the new Flux workspace (spec 028), which marks the item with data-current.
-    expect($this->get(route('jobs.index'))->getContent())->toMatch('/aria-current="page"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<span>Jobs<\/span>/s');
-
-    preg_match('/<a[^>]*href="[^"]*\/app\/jobs"[^>]*>/', $this->get(route('jobs.show', $job))->getContent(), $link);
-    expect($link[0] ?? '')->toContain('data-current');
+    // The Flux workspace (spec 028) marks the sidebar item with data-current and the phone tab with aria-current.
+    foreach ([route('jobs.index'), route('jobs.show', $job)] as $url) {
+        $html = $this->get($url)->getContent();
+        preg_match('/<a[^>]*href="[^"]*\/app\/jobs"[^>]*>/', $html, $link);
+        expect($link[0] ?? '')->toContain('data-current')
+            ->and($html)->toMatch('/aria-current="page"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*Jobs/s');
+    }
 });

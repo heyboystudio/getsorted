@@ -21,7 +21,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /** Customer home: what needs you, Siya, active jobs and recent activity (spec 021). */
-#[Layout('components.layouts.panel', ['panel' => 'customer'])]
+#[Layout('components.layouts.workspace', ['panel' => 'customer'])]
 #[Title('Home')]
 final class Home extends Component
 {
@@ -29,10 +29,10 @@ final class Home extends Component
 
     public string $problem = '';
 
-    /** "What's going on at home?": hands the text (or a tapped chip) to Siya's booking thread (spec 017, AC1). */
-    public function describe(?string $chip = null): void
+    /** "What's going on at home?": hands the text to Siya's booking thread (spec 017, AC1). */
+    public function describe(): void
     {
-        $text = trim($chip ?? $this->problem);
+        $text = trim($this->problem);
 
         if (mb_strlen($text) < 2 || mb_strlen($text) > 1000) {
             throw ValidationException::withMessages(['problem' => __('Tell us a little about the problem.')]);
