@@ -12,7 +12,7 @@
     $icons = ['home' => 'home', 'briefcase' => 'briefcase', 'user' => 'user', 'chat' => 'chat-bubble-left-right', 'map-pin' => 'map-pin'];
 @endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full light" style="color-scheme: light">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,6 +21,8 @@
         <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
         <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
         <meta name="theme-color" content="#ffffff">
+        {{-- Light only (spec 028): the pages use fixed light colours, so a dark system setting must not switch Flux to its dark styles. --}}
+        <meta name="color-scheme" content="light">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-title" content="GetSorted">
@@ -29,7 +31,6 @@
             <meta name="vapid-public-key" content="{{ config('webpush.vapid.public_key') }}">
         @endif
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        @fluxAppearance
         @livewireStyles
     </head>
     <body class="min-h-screen bg-zinc-50 font-sans text-zinc-900 antialiased">

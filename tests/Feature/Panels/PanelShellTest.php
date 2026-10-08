@@ -121,3 +121,12 @@ it('keeps every existing signed-in route working (spec 021, AC4)', function (): 
 it('still sends guests to sign in for panel pages (spec 021, AC4)', function (string $route): void {
     $this->get(route($route))->assertRedirect(route('login'));
 })->with(['account.home', 'properties.index', 'pros.jobs', 'pros.welcome']);
+
+it('stays light whatever the browser theme is, so Flux never switches half the page to dark (spec 028)', function (): void {
+    $customer = User::factory()->customer()->create();
+
+    $html = $this->actingAs($customer)->get(route('account.home'))->getContent();
+
+    expect($html)->toContain('<meta name="color-scheme" content="light">')->and($html)->toContain('style="color-scheme: light"')
+        ->and($html)->not->toContain('flux.appearance');
+});
