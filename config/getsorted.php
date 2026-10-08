@@ -48,6 +48,13 @@ return [
         'max_kilobytes' => 10_240,
     ],
 
+    // Spec 027: when the admin dashboard calls a job stalled.
+    'ops' => [
+        'no_estimate_hours' => 4,
+        'urgent_no_estimate_hours' => 1,
+        'finish_overdue_days' => 3,
+    ],
+
     // Spec 018: chat between customers and pros.
     'chat' => [
         'max_length' => 1000,
