@@ -1,28 +1,21 @@
-<main class="flex items-start justify-center px-5 py-8">
-    <section class="w-full max-w-xl">
-        <a wire:navigate.hover href="{{ route('account.settings') }}" class="mb-6 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Account') }}</a>
-        <h1 class="text-2xl font-semibold tracking-tight">{{ __('Notifications') }}</h1>
-        <p class="mt-2 text-sm text-zinc-600">{{ __('We tell you about your jobs by email and by pop-up. Choose what you want to hear about. Security messages always arrive.') }}</p>
+<x-workspace.account-shell current="account.notifications">
+    <flux:heading size="xl" level="1">{{ __('Notifications') }}</flux:heading>
+    <p class="mt-2 text-sm text-zinc-600">{{ __('We tell you about your jobs by email and by pop-up. Choose what you want to hear about. Security messages always arrive.') }}</p>
 
-        <x-push-switch class="mt-6" />
+    <x-push-switch class="mt-6" />
 
-        <form wire:submit="save" class="mt-6 space-y-6">
-            <fieldset>
-                <legend class="font-semibold">{{ __('What to send') }}</legend>
-                <div class="mt-3 space-y-3">
-                    @foreach ($labels as $key => $label)
-                        <label class="flex items-start gap-3 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
-                            <input type="checkbox" wire:model="groups.{{ $key }}" class="mt-0.5 size-5 rounded border-zinc-300 text-emerald-700 focus:ring-emerald-700">
-                            <span>{{ $label }}</span>
-                        </label>
-                    @endforeach
-                </div>
-            </fieldset>
-
-            <div>
-                <button type="submit" class="rounded-lg bg-emerald-700 px-4 py-2.5 font-medium text-white hover:bg-emerald-800">{{ __('Save') }}</button>
-                @if ($saved) <span class="ml-3 text-sm text-emerald-800" role="status">{{ __('Saved.') }}</span> @endif
+    <form wire:submit="save" class="mt-6">
+        <flux:card>
+            <flux:heading size="lg">{{ __('What to send') }}</flux:heading>
+            <div class="mt-4 space-y-4">
+                @foreach ($labels as $key => $label)
+                    <flux:checkbox wire:model="groups.{{ $key }}" :label="$label" />
+                @endforeach
             </div>
-        </form>
-    </section>
-</main>
+            <div class="mt-6 flex items-center gap-3">
+                <flux:button type="submit" variant="primary">{{ __('Save') }}</flux:button>
+                @if ($saved) <span class="text-sm text-green-700" role="status">{{ __('Saved.') }}</span> @endif
+            </div>
+        </flux:card>
+    </form>
+</x-workspace.account-shell>

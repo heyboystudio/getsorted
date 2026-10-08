@@ -23,6 +23,6 @@ final class Messages extends Component
         // The same inbox for both roles; it sits in whichever panel the person is acting as (spec 021).
         return view('livewire.account.messages', [
             'rows' => JobChat::inboxFor($user),
-        ])->layout('components.layouts.panel', ['panel' => $user->hasRole(Role::Pro->value) ? 'pro' : 'customer']);
+        ])->layout('components.layouts.workspace', ['panel' => $user->hasRole(Role::Pro->value) ? 'pro' : 'customer']);
     }
 }

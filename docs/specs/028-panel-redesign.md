@@ -30,4 +30,5 @@ Dark mode, a new colour brand, replacing the Siya booking thread's look (it keep
 On the client home the Siya box is the dominant element, at the top: a large dark card, a large text box, one "Ask Siya" button. The quick-pick chips (Blocked drain, No power and so on) and the separate "Book a pro" button on the home page are gone: describing the problem to Siya is the way to book. The only other way into booking is the trade tiles that appear inside Siya's thread when Siya is unavailable; they remain so a Gemini outage cannot stop all booking.
 
 ## Progress
+- 2026-10-08: Messages, the notifications inbox, the whole Account area (overview, profile, properties, notifications, privacy) and the customer's view of a pro profile moved to the workspace; Account pages share a side menu (`x-workspace.account-shell`). The old line about confirming a mobile number "with a code" was removed from the profile page (no codes, decision 062).
 - 2026-10-08: layout and client job page built and merged. Client home (Siya first) and jobs list rebuilt. Next: pro job page, pro Today and jobs list, profile and credit pages, account settings, then retire the old shell.

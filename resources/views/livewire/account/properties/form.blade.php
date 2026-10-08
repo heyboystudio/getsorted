@@ -1,46 +1,50 @@
-<main class="flex items-start justify-center px-5 py-8">
-    <section class="w-full max-w-sm">
-        <a wire:navigate.hover href="{{ route('properties.index') }}" class="mb-6 inline-block text-sm text-zinc-600 underline underline-offset-4">← {{ __('Saved properties') }}</a>
-        <h1 class="text-2xl font-semibold tracking-tight">{{ $publicId === null ? __('Add property') : __('Edit property') }}</h1>
-        <p class="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{{ __('We only share your street address with the pro you choose.') }}</p>
+<x-workspace.account-shell current="properties.index">
+    <flux:breadcrumbs class="mb-3">
+        <flux:breadcrumbs.item :href="route('properties.index')" wire:navigate>{{ __('Saved properties') }}</flux:breadcrumbs.item>
+        <flux:breadcrumbs.item>{{ $publicId === null ? __('Add property') : __('Edit property') }}</flux:breadcrumbs.item>
+    </flux:breadcrumbs>
+    <flux:heading size="xl" level="1">{{ $publicId === null ? __('Add property') : __('Edit property') }}</flux:heading>
+    <flux:callout icon="lock-closed" class="mt-4"><flux:callout.text>{{ __('We only share your street address with the pro you choose.') }}</flux:callout.text></flux:callout>
 
-        <form wire:submit="save" class="mt-6 space-y-4" novalidate>
+    <form wire:submit="save" class="mt-6 space-y-4" novalidate>
+        <flux:card class="space-y-4">
             <div>
                 <label for="label" class="block text-sm font-medium">{{ __('Name') }}</label>
                 <input id="label" type="text" wire:model="label" placeholder="{{ __('Home') }}" maxlength="50"
-                    @class(['mt-1 block w-full rounded-lg border bg-white px-3 py-3 outline-none focus:ring-2 focus:ring-emerald-600', 'border-red-500' => $errors->has('label'), 'border-zinc-300' => ! $errors->has('label')])
+                    @class(['mt-1 block w-full rounded-lg border bg-white px-3 py-3 outline-none focus:ring-2 focus:ring-zinc-400', 'border-red-500' => $errors->has('label'), 'border-zinc-300' => ! $errors->has('label')])
                     aria-describedby="label-error" @error('label') aria-invalid="true" @enderror>
                 @error('label') <p id="label-error" class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
             </div>
 
             @include('livewire.partials.address-search')
-            @error('addressQuery') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+            @error('addressQuery') <p class="text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
 
             @if ($streetAddress !== '')
-                <div class="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">
-                    <p class="font-medium">{{ $streetAddress }}@if ($areaLabel), {{ $areaLabel }}@endif</p>
-                    <p class="mt-1">{{ $pickedPlaceId !== null ? __('Address confirmed.') : __('Saved address. Search above to change it.') }}</p>
-                </div>
+                <flux:callout variant="success" icon="map-pin" role="status">
+                    <flux:callout.heading>{{ $streetAddress }}@if ($areaLabel), {{ $areaLabel }}@endif</flux:callout.heading>
+                    <flux:callout.text>{{ $pickedPlaceId !== null ? __('Address confirmed.') : __('Saved address. Search above to change it.') }}</flux:callout.text>
+                </flux:callout>
             @endif
+        </flux:card>
 
+        <flux:card>
             <fieldset>
                 <legend class="block text-sm font-medium">{{ __('Type of property') }}</legend>
-                <div class="mt-2 grid grid-cols-1 gap-2">
+                <div class="mt-2 grid gap-2 sm:grid-cols-2">
                     @foreach ($types as $type)
-                        <label class="flex items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-3 has-[:checked]:border-emerald-700 has-[:checked]:bg-emerald-50">
-                            <input type="radio" wire:model="propertyType" value="{{ $type->value }}" class="size-4 text-emerald-700">
+                        <label class="flex items-center gap-3 rounded-lg border border-zinc-300 bg-white px-3 py-3 has-[:checked]:border-zinc-900 has-[:checked]:bg-zinc-100">
+                            <input type="radio" wire:model="propertyType" value="{{ $type->value }}" class="size-4 accent-zinc-900">
                             {{ $type->label() }}
                         </label>
                     @endforeach
                 </div>
                 @error('propertyType') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
             </fieldset>
+        </flux:card>
 
-            <button type="submit" wire:loading.attr="disabled" wire:target="save"
-                class="flex w-full items-center justify-center rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800 disabled:opacity-60">
-                <span wire:loading.remove wire:target="save">{{ __('Save property') }}</span>
-                <span wire:loading wire:target="save">{{ __('Saving…') }}</span>
-            </button>
-        </form>
-    </section>
-</main>
+        <flux:button type="submit" variant="primary" class="w-full" wire:loading.attr="disabled" wire:target="save">
+            <span wire:loading.remove wire:target="save">{{ __('Save property') }}</span>
+            <span wire:loading wire:target="save">{{ __('Saving…') }}</span>
+        </flux:button>
+    </form>
+</x-workspace.account-shell>

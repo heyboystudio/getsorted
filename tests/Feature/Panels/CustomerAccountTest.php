@@ -75,7 +75,9 @@ it('leaves out other customers\' chats and shows an empty state (spec 021, AC12,
 it('keeps the inbox inside the customer shell with the Messages tab marked (spec 021, AC1, AC12)', function (): void {
     $html = $this->get(route('messages'))->getContent();
 
-    expect($html)->toContain('aria-label="Main"')->toMatch('/aria-current="page"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<span>Messages/s');
+    expect($html)->toContain('aria-label="Main"')->toMatch('/aria-current="page"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*Messages/s');
+    preg_match('/<a[^>]*href="[^"]*\/messages"[^>]*>/', $html, $link);
+    expect($link[0] ?? '')->toContain('data-current');
 });
 
 // --- Account list and profile (AC13, AC14) -----------------------------------------------
