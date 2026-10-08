@@ -351,13 +351,13 @@ it('accepts a quote without a deposit: job scheduled, others declined, invites c
     expect(noticeCount($loser->user, 'quote_not_chosen'))->toBe(1);
 });
 
-it('moves the job to awaiting deposit when the accepted quote has a deposit (AC8, decision 1)', function (): void {
+it('books the job straight away even when the quote mentions a deposit, because deposits are paid directly (decision 058)', function (): void {
     [$pro] = quotingPros(1);
     $job = postedJob();
 
     app(AcceptQuote::class)->handle($job->customer, submitFor($job, $pro, draftQuote(depositPercent: 20)));
 
-    expect($job->fresh()->status)->toBe(ServiceJobStatus::AwaitingDeposit);
+    expect($job->fresh()->status)->toBe(ServiceJobStatus::Scheduled);
 });
 
 it('refuses to accept the wrong quote, twice, or for someone else (AC10)', function (string $case): void {
@@ -399,7 +399,7 @@ it('refuses to accept the wrong quote, twice, or for someone else (AC10)', funct
     }
     // Nothing else changed: the job stays open (or keeps only the first acceptance) and no extra allocation is written.
     expect(Quote::query()->where('status', QuoteStatus::Accepted)->count())->toBe($case === 'twice' ? 1 : 0)
-        ->and($job->fresh()->status)->toBe($case === 'twice' ? ServiceJobStatus::AwaitingDeposit : ServiceJobStatus::Open)
+        ->and($job->fresh()->status)->toBe($case === 'twice' ? ServiceJobStatus::Scheduled : ServiceJobStatus::Open)
         ->and(DB::table('pro_job_allocations')->count())->toBe($case === 'twice' ? 1 : 0)
         ->and($job->events()->where('event_type', 'quote_accepted')->count())->toBe($case === 'twice' ? 1 : 0);
 

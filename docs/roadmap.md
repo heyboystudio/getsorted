@@ -43,7 +43,7 @@ Goal: what exists is correct, honest and documented before anything new is built
 
 Goal: real customers get real quotes from real pros in a few Durban suburbs, and every job can finish.
 
-1. **Close the loop without money.** Customer or pro marks the job done (`Scheduled` → `Completed` through the state machine); the customer can cancel after acceptance with a reason; jobs never sit in "Awaiting deposit" forever. Needs a spec.
+1. **Close the loop without money (spec 024, built 2026-10-08).** Customer or pro marks the job done (`Scheduled` → `Completed` through the state machine); the customer can cancel after acceptance with a reason; jobs never sit in "Awaiting deposit" forever. Needs a spec.
 2. **Reviews.** After "done", the customer rates the pro (1–5 + comment), the pro can reply once; ratings show on quotes. Needs a spec.
 3. **Supply.** Registration fields on the pro application (PIRB number, electrical registration) so "verified" can be shown; recruit 5–10 approved pros per trade in 2–3 launch suburbs; then set `GETSORTED_REQUIRE_PROS=true` so nobody is promised quotes that cannot come.
 4. **Operations.** Admin list of stalled jobs (no quote after N hours, urgent with no reply); the PRD's success measures on the admin dashboard (time to first quote, jobs with ≥ 2 quotes, quote → accept).

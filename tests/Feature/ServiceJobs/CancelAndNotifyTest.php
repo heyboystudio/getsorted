@@ -56,7 +56,7 @@ it('offers no cancel once a quote is accepted, and refuses it server-side', func
 
     $this->actingAs($this->customer);
     Livewire::test(CustomerJob::class, ['job' => $this->job])
-        ->assertDontSee('Cancel this job')->assertSee('contact support')
+        ->assertDontSee('Cancel this job')->assertSee('Cancel this booking')->assertSee('Mark as done')
         ->call('cancelJob')->assertHasErrors('cancel');
 
     expect($this->job->fresh()->status)->toBe(ServiceJobStatus::Scheduled);

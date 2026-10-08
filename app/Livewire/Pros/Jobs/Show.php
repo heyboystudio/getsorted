@@ -25,7 +25,11 @@ use App\Domain\Quotes\Support\ContactMasker;
 use App\Domain\Quotes\Support\QuoteCalculator;
 use App\Domain\Quotes\Support\QuoteFlow;
 use App\Domain\Quotes\Support\QuoteRules;
+use App\Domain\ServiceJobs\Actions\CancelBookedJob;
+use App\Domain\ServiceJobs\Actions\MarkJobDone;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
+use App\Domain\ServiceJobs\Exceptions\CannotCancelJob;
+use App\Domain\ServiceJobs\Exceptions\CannotFinishJob;
 use App\Domain\ServiceJobs\Support\JobChat;
 use App\Livewire\Pros\Jobs\Concerns\EnsuresApprovedPro;
 use App\Models\Quote;
@@ -245,6 +249,62 @@ final class Show extends Component
         $this->redirectRoute('pros.jobs');
     }
 
+    // ── After the introduction (spec 024) ──
+
+    public bool $confirmingDone = false;
+
+    public bool $confirmingBookedCancel = false;
+
+    public string $bookedCancelReason = '';
+
+    public function confirmDone(): void
+    {
+        $this->resetErrorBag();
+        $this->confirmingDone = true;
+        $this->confirmingBookedCancel = false;
+    }
+
+    public function confirmBookedCancel(): void
+    {
+        $this->resetErrorBag();
+        $this->confirmingBookedCancel = true;
+        $this->confirmingDone = false;
+    }
+
+    public function keepBooking(): void
+    {
+        $this->confirmingDone = false;
+        $this->confirmingBookedCancel = false;
+    }
+
+    public function markDone(MarkJobDone $markJobDone): void
+    {
+        try {
+            $markJobDone->handle($this->currentUser(), $this->bookedJob());
+        } catch (CannotFinishJob $exception) {
+            throw ValidationException::withMessages(['finish' => $exception->getMessage()]);
+        } finally {
+            $this->confirmingDone = false;
+        }
+    }
+
+    public function cancelBooked(CancelBookedJob $cancelBookedJob): void
+    {
+        try {
+            $cancelBookedJob->handle($this->currentUser(), $this->bookedJob(), $this->bookedCancelReason);
+        } catch (CannotCancelJob $exception) {
+            throw ValidationException::withMessages(['bookedCancelReason' => $exception->getMessage()]);
+        }
+
+        $this->confirmingBookedCancel = false;
+        $this->bookedCancelReason = '';
+    }
+
+    private function bookedJob(): ServiceJob
+    {
+        return ServiceJob::query()->findOrFail($this->invite()->service_job_id);
+    }
+
     public function render(QuoteCalculator $calculator): View
     {
         $invite = $this->invite();
@@ -367,7 +427,7 @@ final class Show extends Component
         if ($errors !== []) {
             // Also report line problems the domain would find, so every field is marked at once.
             try {
-                app(QuoteRules::class)->check(new QuoteDraft($lines, $this->depositPercent, $start ?: LocalTime::today(), $this->validityDays, $this->notes, $high), app(QuoteCalculator::class)->calculate(new QuoteDraft($lines, 0, LocalTime::today(), 7, null), false));
+                app(QuoteRules::class)->check(new QuoteDraft($lines, 0, $start ?: LocalTime::today(), $this->validityDays, $this->notes, $high), app(QuoteCalculator::class)->calculate(new QuoteDraft($lines, 0, LocalTime::today(), 7, null), false));
             } catch (ValidationException $exception) {
                 foreach ($exception->errors() as $key => $messages) {
                     $errors[$this->field($key)] ??= $messages[0];
@@ -377,7 +437,7 @@ final class Show extends Component
             throw ValidationException::withMessages($errors);
         }
 
-        return new QuoteDraft($lines, $this->depositPercent, $start->startOfDay(), $this->validityDays, $this->notes === '' ? null : $this->notes, $high);
+        return new QuoteDraft($lines, 0, $start->startOfDay(), $this->validityDays, $this->notes === '' ? null : $this->notes, $high);
     }
 
     /** Runs a domain call and renames its error keys to the builder's fields. */

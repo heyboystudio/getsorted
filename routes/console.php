@@ -30,4 +30,5 @@ Schedule::command('getsorted:prune-vetting-records')->daily();
 Schedule::command('getsorted:run-matching')->everyFiveMinutes()->withoutOverlapping();
 
 // Spec 010: quote validity and the job quote window.
+Schedule::command('getsorted:nudge-finished-jobs')->dailyAt('08:00');
 Schedule::command('getsorted:expire-quotes')->everyFiveMinutes()->withoutOverlapping();

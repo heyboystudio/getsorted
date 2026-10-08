@@ -211,7 +211,7 @@ it('maps each job status to its progress steps (spec 021, AC10)', function (Serv
     'awaiting deposit' => [ServiceJobStatus::AwaitingDeposit, 'Booked'],
     'scheduled' => [ServiceJobStatus::Scheduled, 'Booked'],
     'in progress' => [ServiceJobStatus::InProgress, 'Work'],
-    'final payment' => [ServiceJobStatus::AwaitingFinalPayment, 'Paid'],
+    'final payment' => [ServiceJobStatus::AwaitingFinalPayment, 'Done'],
     'completed' => [ServiceJobStatus::Completed, 'all done'],
     'disputed has none' => [ServiceJobStatus::Disputed, null],
     'cancelled has none' => [ServiceJobStatus::Cancelled, null],

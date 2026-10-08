@@ -4,7 +4,7 @@
 
 The job state machine is the heart of GetSorted. **All status changes go through one class (`App\Domain\ServiceJobs\ServiceJobStateMachine`) and one action per transition.** Nothing else may write `service_jobs.status`. Every transition writes a row to `service_job_events` (the timeline and audit trail).
 
-> **Built so far (2026-10-08):** `draft` → `open` → `awaiting_deposit` or `scheduled`, plus cancel and expire. No Action yet moves a job to `in_progress`, `awaiting_final_payment`, `completed` or `closed`, and nothing pays a deposit: at launch (model B, decision 058) the deposit is paid to the pro directly. Phase L adds "mark done"; Phase M adds payments.
+> **Built so far (2026-10-08):** `draft` → `open` → `scheduled` (accepting an estimate always books; `awaiting_deposit` is not used in model B, decision 058), then `scheduled` → `completed` when the client or the chosen pro marks it done, or → `cancelled` with a reason (spec 024). No Action moves a job to `in_progress`, `awaiting_final_payment` or `closed`. Phase M adds payments.
 
 ## States
 
@@ -29,6 +29,7 @@ stateDiagram-v2
     draft --> cancelled: customer abandons
     open --> awaiting_deposit: customer accepts quote (deposit > 0)
     open --> scheduled: customer accepts quote (no deposit)
+    scheduled --> completed: client or pro marks it done (model B, spec 024)
     open --> expired: job window ends
     open --> cancelled: customer cancels
     awaiting_deposit --> scheduled: deposit payment succeeded

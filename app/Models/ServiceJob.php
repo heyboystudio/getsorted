@@ -51,6 +51,10 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property string|null $matching_stopped_reason
  * @property CarbonImmutable|null $quote_window_ends_at
  * @property CarbonImmutable|null $cancelled_at
+ * @property CarbonImmutable|null $completed_at
+ * @property string|null $completed_by
+ * @property string|null $cancelled_by
+ * @property CarbonImmutable|null $finish_nudged_at
  * @property string|null $cancel_reason
  * @property CarbonImmutable $updated_at
  */
@@ -172,6 +176,8 @@ final class ServiceJob extends Model implements HasMedia
             'matching_stopped_at' => 'immutable_datetime',
             'quote_window_ends_at' => 'immutable_datetime',
             'cancelled_at' => 'immutable_datetime',
+            'completed_at' => 'immutable_datetime',
+            'finish_nudged_at' => 'immutable_datetime',
         ];
     }
 }

@@ -9,7 +9,7 @@
         <h2 class="font-semibold text-emerald-900">{{ __('Booked with :pro', ['pro' => $acceptedQuote->pro->business_name]) }}</h2>
         <p class="mt-2 text-sm">{{ __('Mobile') }}: <a href="tel:{{ $acceptedQuote->pro->user->phone_e164 }}" class="font-medium underline">{{ $acceptedQuote->pro->user->phone_e164 }}</a></p>
         <p class="mt-1 text-sm">{{ __('Starting') }}: {{ $job->scheduled_for?->translatedFormat('D j M Y') }} · {{ __('Total') }} {{ $R::format($acceptedQuote->total_cents) }}</p>
-        @if ($job->status === $S::AwaitingDeposit)
+        @if ($acceptedQuote->deposit_cents > 0)
             <p class="mt-3 rounded-lg bg-white p-3 text-sm">{{ __('Deposit due: :amount, paid directly to your pro. Agree with them how and when to pay.', ['amount' => $R::format($acceptedQuote->deposit_cents)]) }}</p>
         @endif
         <p class="mt-3 text-sm text-emerald-900">{{ __('GetSorted does not handle payments yet: you pay your pro directly. Ask for a receipt.') }}</p>

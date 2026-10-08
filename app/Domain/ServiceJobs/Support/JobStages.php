@@ -12,7 +12,7 @@ final class JobStages
     /** @return list<string> */
     public static function labels(): array
     {
-        return [__('Posted'), __('Quotes'), __('Booked'), __('Work'), __('Paid')];
+        return [__('Posted'), __('Quotes'), __('Booked'), __('Work'), __('Done')];
     }
 
     /**

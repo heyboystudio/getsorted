@@ -41,6 +41,10 @@
 
         @error('cancel') <p class="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
 
+        @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Completed)
+            <div class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950" role="status">{{ __('This job is done. Thanks for using GetSorted!') }}</div>
+        @endif
+
         @if ($job->status === \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Cancelled)
             <div class="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm" role="status">{{ __('This job was cancelled. You can post a new one any time.') }}</div>
         @endif
@@ -137,8 +141,35 @@
                     <button type="button" wire:click="confirmCancel" class="text-sm text-red-700 underline underline-offset-4">{{ __('Cancel this job') }}</button>
                 @endif
             </section>
-        @elseif (in_array($job->status, [\App\Domain\ServiceJobs\Enums\ServiceJobStatus::AwaitingDeposit, \App\Domain\ServiceJobs\Enums\ServiceJobStatus::Scheduled, \App\Domain\ServiceJobs\Enums\ServiceJobStatus::InProgress], true))
-            <p class="mt-10 border-t border-zinc-200 pt-6 text-sm text-zinc-600">{{ __('A pro has been chosen for this job. To cancel or change it, please contact support.') }}</p>
+        @elseif (\App\Domain\ServiceJobs\Support\BookedJob::isOpen($job))
+            <section class="mt-10 border-t border-zinc-200 pt-6" aria-label="{{ __('Finish or cancel this booking') }}">
+                @error('finish') <p class="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
+                @if ($confirmingDone)
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4" role="alertdialog" aria-labelledby="done-title">
+                        <p id="done-title" class="font-semibold text-emerald-950">{{ __('Is the work finished?') }}</p>
+                        <p class="mt-1 text-sm text-emerald-950">{{ __('Your pro will be told. Make sure you are happy with the work and have a receipt.') }}</p>
+                        <div class="mt-4 flex gap-3">
+                            <button type="button" wire:click="markDone" wire:loading.attr="disabled" class="rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Yes, it is done') }}</button>
+                            <button type="button" wire:click="keepBooking" class="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium">{{ __('Not yet') }}</button>
+                        </div>
+                    </div>
+                @elseif ($confirmingBookedCancel)
+                    <div class="rounded-xl border border-red-200 bg-red-50 p-4" role="alertdialog" aria-labelledby="booked-cancel-title">
+                        <p id="booked-cancel-title" class="font-semibold text-red-900">{{ __('Cancel this booking?') }}</p>
+                        <p class="mt-1 text-sm text-red-900">{{ __('Your pro will be told. You can post the job again and choose someone else.') }}</p>
+                        <label for="bookedCancelReason" class="mt-3 block text-sm text-red-900">{{ __('Why are you cancelling?') }}</label>
+                        <input id="bookedCancelReason" type="text" wire:model="bookedCancelReason" maxlength="300" class="mt-1 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-base">
+                        @error('bookedCancelReason') <p class="mt-1 text-sm text-red-800" role="alert">{{ $message }}</p> @enderror
+                        <div class="mt-4 flex gap-3">
+                            <button type="button" wire:click="cancelBooked" wire:loading.attr="disabled" class="rounded-lg bg-red-700 px-4 py-3 font-medium text-white hover:bg-red-800">{{ __('Yes, cancel booking') }}</button>
+                            <button type="button" wire:click="keepBooking" class="rounded-lg border border-zinc-300 bg-white px-4 py-3 font-medium">{{ __('Keep booking') }}</button>
+                        </div>
+                    </div>
+                @else
+                    <button type="button" wire:click="confirmDone" class="w-full rounded-lg bg-emerald-700 px-4 py-3 font-medium text-white hover:bg-emerald-800">{{ __('Mark as done') }}</button>
+                    <button type="button" wire:click="confirmBookedCancel" class="mt-4 text-sm text-red-700 underline underline-offset-4">{{ __('Cancel this booking') }}</button>
+                @endif
+            </section>
         @endcan
     </section>
 </main>
