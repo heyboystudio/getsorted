@@ -15,7 +15,7 @@
 
         @switch($pro->status)
             @case($S::Submitted)
-                <p class="mt-4 text-zinc-700">{{ __('Our vetting team is checking your details and will phone your references. We will WhatsApp you when we decide.') }}</p>
+                <p class="mt-4 text-zinc-700">{{ __('Our vetting team is checking your details and will phone your references. We will email you when we decide.') }}</p>
                 @break
             @case($S::Approved)
                 <p class="mt-4 text-zinc-700">{{ __("You're approved. You will receive jobs for your trades within your travel radius.") }}</p>

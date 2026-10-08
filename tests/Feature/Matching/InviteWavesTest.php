@@ -70,7 +70,7 @@ function matchingAdmin(Role $role = Role::AdminSupport): User
 
 // --- Invites (spec 020) ---------------------------------------------------------------
 
-it('invites up to ten eligible pros at once after posting, each with a WhatsApp message', function (): void {
+it('invites up to ten eligible pros at once after posting, each with an in-app notice', function (): void {
     eligiblePros(12);
 
     $job = postLeakJob();

@@ -591,7 +591,7 @@ final class Thread extends Component
         $this->messages[] = ['role' => 'customer', 'kind' => 'answer', 'text' => __('Confirm booking')];
         $this->stage = 'posted';
         $parked = $this->parked !== [] ? ' '.__('Once this one is sorted, we can book “:job” too.', ['job' => $this->parked[0]]) : '';
-        $this->say(__('Your job is booked. I’m sharing it with vetted pros near you now, and up to 5 of them can send you quotes to compare. We’ll WhatsApp you as they come in.').$parked);
+        $this->say(__('Your job is booked. I’m sharing it with vetted pros near you now, and up to 5 of them can send you quotes to compare. We’ll email you as they come in.').$parked);
     }
 
     /** After a job is posted: carry on with the next job the customer mentioned, starting a fresh conversation for it. */

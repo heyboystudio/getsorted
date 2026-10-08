@@ -6,7 +6,7 @@ Phases are done when their **exit criteria** pass, not when a date arrives. Rewr
 
 | Area | State |
 |---|---|
-| Accounts | Email or Google sign-up, verified email and SA mobile (decision 039). Admin on its own host, MFA optional (047). |
+| Accounts | Email or Google sign-up, verified email and an SA mobile number saved without a code (decisions 039, 062). Admin on its own host, MFA optional (047). |
 | Booking | Siya, one thread: trade, facts in the customer's own words, Google Places address, time, photos, summary, confirm (specs 017, 019, 020). Works by taps when the AI is off. Signed-in users only (056). |
 | Matching | Up to 10 approved pros of the trade, nearest first, within each pro's radius; first 5 quotes; urgent invites expire after 4 hours (settings). |
 | Pros | Application, documents, references, admin vetting with a real approval guard, profile and change requests, pause. |
@@ -20,7 +20,7 @@ Roughly: the old Phases 1–3 are built (redesigned), Phase 4 is moved to M, Pha
 
 ---
 
-## Phase S · Stabilise (feature freeze) — in progress
+## Phase S · Stabilise (feature freeze) — done (2026-10-08)
 
 Goal: what exists is correct, honest and documented before anything new is built.
 
@@ -33,8 +33,9 @@ Goal: what exists is correct, honest and documented before anything new is built
 | S5 | Honest copy for model B, real contact details | Done (#65) |
 | S6 | Docs match the product: PRD v2, roadmap, decisions index, specs index, agent instructions | Done (#66) |
 | S7 | Tidy GitHub: close superseded PRs, archive old branches | Done: PRs #49, #52, #53, #55, #60 closed; old branches kept as `archive/*` tags; open branches are `main`, `feat/018-final-amount`, `docs/spec-013-deposit-payments` |
+| S8 | Remove Twilio; email only (decision 062) and a full click-through on the test site | Done (#74, 2026-10-08). Click-through passed on usesorted.co.za: customer booked, pro quoted, customer accepted. WhatsApp wording replaced with email. |
 
-**Exit criteria:** `composer check` green; docs describe the app as it is; one `main`; test server renamed and deployed from `main`; a full click-through (customer books → pro quotes → customer accepts) passes on the test site.
+**Exit criteria:** `composer check` green; docs describe the app as it is; one `main`; test server renamed and deployed from `main`; a full click-through (customer books → pro quotes → customer accepts) passes on the test site (passed 2026-10-08).
 
 ---
 

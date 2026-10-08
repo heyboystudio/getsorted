@@ -5,7 +5,7 @@
         @if ($justPosted)
             <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900" role="status">
                 <p class="text-lg font-semibold">{{ __('Your job is posted') }} ✓</p>
-                <p class="mt-1 text-sm">{{ __("We're finding vetted pros near you. We'll WhatsApp you as quotes come in.") }}</p>
+                <p class="mt-1 text-sm">{{ __("We're finding vetted pros near you. We'll email you as quotes come in.") }}</p>
             </div>
         @endif
 
@@ -33,7 +33,7 @@
                     @elseif ($invitedCount > 0)
                         {{ trans_choice(':count pro invited so far. Quotes will appear here.|:count pros invited so far. Quotes will appear here.', $invitedCount, ['count' => $invitedCount]) }}
                     @else
-                        {{ __("We're still looking for a pro who can take this job. We'll WhatsApp you as soon as quotes come in.") }}
+                        {{ __("We're still looking for a pro who can take this job. We'll email you as soon as quotes come in.") }}
                     @endif
                 </p>
             </div>

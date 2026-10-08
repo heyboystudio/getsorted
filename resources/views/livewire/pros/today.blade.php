@@ -95,7 +95,7 @@
         @endif
 
         @if ($invites->isEmpty() && $booked->isEmpty() && $quoted->isEmpty())
-            <p class="mt-8 rounded-xl border border-dashed border-zinc-300 p-6 text-center text-zinc-600">{{ $paused ? __('Nothing needs you. Resume when you want new invites.') : __("No new jobs right now. We'll WhatsApp you when one fits.") }}</p>
+            <p class="mt-8 rounded-xl border border-dashed border-zinc-300 p-6 text-center text-zinc-600">{{ $paused ? __('Nothing needs you. Resume when you want new invites.') : __("No new jobs right now. We'll email you when one fits.") }}</p>
         @endif
 
         <a wire:navigate.hover href="{{ route('pros.jobs') }}" class="mt-8 inline-block w-full rounded-lg bg-emerald-700 px-4 py-3 text-center text-lg font-medium text-white hover:bg-emerald-800">{{ __('Your jobs') }}</a>

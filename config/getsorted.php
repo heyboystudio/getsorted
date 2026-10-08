@@ -54,7 +54,7 @@ return [
         'photos_per_message' => 5,
         'photos_per_day' => 20,
         'messages_per_hour' => 30,
-        // At most one "new message" WhatsApp per conversation and person in this time.
+        // At most one "new message" notice per conversation and person in this time.
         'notify_every_minutes' => 15,
         // Someone who looked at the chat this recently is treated as "on the page": no notification.
         'online_seconds' => 30,

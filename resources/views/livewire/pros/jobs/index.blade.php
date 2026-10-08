@@ -39,7 +39,7 @@
             @empty
                 <li class="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-zinc-600">
                     @switch ($current)
-                        @case('invites') {{ __("No new jobs right now. We'll WhatsApp you when one fits.") }} @break
+                        @case('invites') {{ __("No new jobs right now. We'll email you when one fits.") }} @break
                         @case('quoted') {{ __('Quotes you have sent wait here until the customer chooses.') }} @break
                         @case('booked') {{ __('Jobs you win will appear here with the address and contact details.') }} @break
                         @default {{ __('No past jobs yet.') }}
