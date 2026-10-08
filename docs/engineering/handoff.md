@@ -8,7 +8,7 @@ Read this, then `docs/roadmap.md` → "Where we are". Older handoff notes (spec 
 
 - **One folder, one line of work:** `~/Documents/getsorted/getsorted`, branch `main`. The old `sortd*` worktrees are gone. Parked work: `feat/018-final-amount` (spec 018 part 2, built on the pre-spec-020 model; port in Phase M), PR #37 (spec 013 payments draft).
 - **Phase S (feature freeze, decision 058):** S1–S7 done (PRs #61–#67). Old branches are kept as `archive/*` tags. No new features until the roadmap's Phase S exit criteria pass.
-- **Name:** GetSorted everywhere (decision 057). Old names remain only in historical decisions/specs and on the test server until `docs/engineering/rename-server-checklist.md` is run.
+- **Name:** GetSorted everywhere (decision 057), including the test server (renamed and deployed 2026-10-08). Old names remain only in historical decisions/specs, the unused `PREVIEW_USER` env key and the `sortd-preview-bedrock` AWS role.
 - **Model B:** no payments; copy says customers pay pros directly (PR #65). Do not add payment, payout, commission or guarantee promises.
 
 ## Local machine
@@ -21,5 +21,4 @@ Read this, then `docs/roadmap.md` → "Where we are". Older handoff notes (spec 
 ## Blockers for the founder
 
 - GitHub CI: the account has a billing lock; fixing it is on hold by founder choice (2026-10-08), so run `composer check` locally before every merge.
-- Test server: run the rename checklist before deploying `main`.
 - Open questions before launch: Q14 (how model B earns money; founder proposes a PayFast fee on quote acceptance), Q13 (support hours: proposal awaiting OK), Q10 (production host). Q11, Q15, Q16 decided 2026-10-08.

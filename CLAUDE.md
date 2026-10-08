@@ -16,7 +16,6 @@
 ## Current phase: S — Stabilise (feature freeze), then L — Launch on model B
 Read `docs/roadmap.md` → "Where we are" first. Until Phase S is done, build no new features: only fixes, honest copy and docs (decision 058). The MVP takes no payments: customers pay pros directly; payments are Phase M.
 - Product scope: `docs/product/prd.md` (v2). Decisions: `docs/architecture/decisions.md` (latest 061).
-- The test server must be renamed (`docs/engineering/rename-server-checklist.md`) before the next deploy.
 - Verify every package version against Laravel 13 / Filament 5 / Livewire 4 before installing (Boost's `search-docs` helps).
 
 ## Commands

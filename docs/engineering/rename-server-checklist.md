@@ -1,5 +1,7 @@
 # Rename on the test server: Sortd → GetSorted
 
+> **Done 2026-10-08** (by Claude, with the founder's go-ahead). Backups on the server: `~/backup-sortd-before-rename-20261008.sql.gz` and `~/env-before-rename-20261008`; delete them after a week if all is well. Still open from step 6: retire `sortd.heyboy.co.za` in Cloudflare and delete the unused AWS role `sortd-preview-bedrock`.
+
 Decision 057. The code and the local Mac are already renamed. These steps rename the **test server** (`ssh aws`, currently `~/sortd`). Run them in order, **before** deploying any code from `chore/rename-getsorted` or later. The server holds fake data only, but these steps keep it anyway.
 
 Time: about 15 minutes. Downtime: about 5 minutes.

@@ -27,7 +27,7 @@ Goal: what exists is correct, honest and documented before anything new is built
 | # | Task | State |
 |---|---|---|
 | S1 | One repo folder, one branch line, rescue uncommitted work | Done (PRs #61, #62; spec 018 part 2 parked on `feat/018-final-amount`) |
-| S2 | Rename everything to GetSorted (decision 057) | Done in code and local machine. **Test server: run `docs/engineering/rename-server-checklist.md` before the next deploy.** |
+| S2 | Rename everything to GetSorted (decision 057) | Done: code, local machine and test server (2026-10-08; `~/getsorted`, database `getsorted`, `main` deployed) |
 | S3 | Safety net: separate dev and test databases, `composer check` passing locally | Done (#63). CI stays manual: GitHub billing fix on hold (founder, 2026-10-08). |
 | S4 | Fix the audit bugs | Done (#64) |
 | S5 | Honest copy for model B, real contact details | Done (#65) |
