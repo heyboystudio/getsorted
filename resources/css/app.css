@@ -124,3 +124,4 @@ select:focus[data-flux-control] {
 .contact-details small{color:#b9d3bb;font-size:14px;line-height:1.5;max-width:330px}
 @media(max-width:650px){.contact-details{min-width:0;margin-top:25px}.contact-details a,.contact-details strong{font-size:17px}}
 .legal-content ul{margin:12px 0 0;padding-left:22px;color:#596d5d;font-size:16px;line-height:1.8}.legal-content li{margin:8px 0}.legal-content p+p,.legal-content ul+p,.legal-content p+ul{margin-top:14px}.legal-content strong{color:#173b2d}.legal-content .legal-note{padding:14px 16px;border-radius:10px;background:#f5dda6;color:#5a4012}
+.reviewed-badge{display:inline-block;margin-top:25px;padding:8px 13px;border-radius:30px;background:#d8eaa8;color:#29513c;font-size:12px;font-weight:750}

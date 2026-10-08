@@ -1,6 +1,6 @@
 # Legal drafts: how they were written and what a lawyer must check
 
-Written 2026-10-08 for the terms (`/terms`), privacy notice (`/privacy`) and pro agreement (`/pros/agreement`). **Claude is not a lawyer.** These are complete working drafts based on public sources and on how comparable South African marketplaces do it. A South African attorney with POPIA and consumer-law experience must review them before the service goes live. The pages carry a "Draft for lawyer review" badge until then.
+Written 2026-10-08 for the terms (`/terms`), privacy notice (`/privacy`) and pro agreement (`/pros/agreement`) by Claude (not a lawyer), from public sources and from how comparable South African marketplaces do it. **A South African attorney reviewed all three on 2026-10-08 and asked for no changes (founder).** The pages show "Reviewed by a South African attorney on 8 October 2026" and the version is `2026-10-08`. The attorney's name and any written advice should be filed with the company papers. Any later change to the text or to the product claims the text makes needs a new version and a fresh review.
 
 ## Sources used
 - **Kandua (kandua.com/terms-and-conditions), read in full on 2026-10-08.** The closest comparison: customers and pros contract directly, the platform is an intermediary and does not guarantee work, limited vetting with a verification badge, pros are POPIA operators for customer data, no sale of data, AFSA arbitration after good-faith negotiation, South African law, retention schedule (5 years customer and pro records, 7 years financial), breach notification to the Information Regulator, rights and complaint handling times.
@@ -20,7 +20,8 @@ Sources we could not read: Snupit and Bark South Africa terms pages (blocked), S
 - **Disputes:** South African law; for pros, AFSA arbitration after good-faith talks (as Kandua).
 - **Retention:** chat 24 months, waiting list 12 months, rejected or abandoned vetting documents 12 months (all built); financial records at least 5 years (accountant to confirm).
 
-## Things the lawyer must check or supply
+## Things the lawyer was asked to check (reviewed: no changes) and what is still open
+Still open after the review: items 1 (company details, once registered) and 6 (PAIA manual, if needed) below, and the product work in the next section.
 1. Company name, registration number and street address (open question Q11). They are read from `GETSORTED_COMPANY_NAME`, `GETSORTED_COMPANY_REGISTRATION` and `GETSORTED_PHYSICAL_ADDRESS`, and the Information Officer from `GETSORTED_INFORMATION_OFFICER`. Fill them in on the server when the company exists.
 2. Whether marketplace intermediary rules and the Consumer Protection Act treat GetSorted as a "supplier" to clients, and whether the clauses on liability, indemnity and the platform's role are enforceable as written.
 3. Whether the arrangement with pros could be argued to be employment (the agreement and the product keep control with the pro, and no hours or exclusivity are imposed).

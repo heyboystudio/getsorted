@@ -117,10 +117,10 @@ return [
     ],
 
     'legal' => [
-        // Full drafts written 2026-10-08, still to be reviewed by a South African lawyer before launch.
-        'terms_version' => '2026-10-08-draft',
-        'privacy_version' => '2026-10-08-draft',
-        'pro_agreement_version' => '2026-10-08-draft',
+        // Written 2026-10-08 and reviewed by a South African attorney the same day, with no changes (founder).
+        'terms_version' => '2026-10-08',
+        'privacy_version' => '2026-10-08',
+        'pro_agreement_version' => '2026-10-08',
 
         // Shown in the legal pages. Fill these in when the company is registered (open question Q11) and the Information Officer is appointed.
         'company_name' => env('GETSORTED_COMPANY_NAME', 'GetSorted (company to be registered)'),

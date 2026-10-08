@@ -75,7 +75,7 @@ it('signs up a new pro with the pro role and three consents (AC3, AC4, AC6)', fu
     expect($user->hasRole(Role::Pro->value))->toBeTrue()
         ->and($user->hasRole(Role::Customer->value))->toBeFalse()
         ->and(consentTypes($user))->toBe(['privacy', 'pro_agreement', 'terms'])
-        ->and(Consent::query()->where('type', ConsentType::ProAgreement)->sole()->version)->toBe('2026-10-08-draft')
+        ->and(Consent::query()->where('type', ConsentType::ProAgreement)->sole()->version)->toBe('2026-10-08')
         ->and(Consent::query()->where('type', ConsentType::ProAgreement)->sole()->ip)->toBe('127.0.0.1')
         ->and(Consent::query()->where('type', ConsentType::ProAgreement)->sole()->user_agent)->toBe('Symfony')
         ->and(Activity::query()->where('description', 'account created')->exists())->toBeTrue()
@@ -139,7 +139,7 @@ it('refuses admin accounts on the pro sign-in like any wrong password (AC10)', f
 });
 
 it('serves the draft pro agreement (AC11)', function (): void {
-    $this->get('/pros/agreement')->assertOk()->assertSee('Draft for lawyer review')->assertSee('2026-10-08-draft');
+    $this->get('/pros/agreement')->assertOk()->assertSee('Reviewed by a South African attorney')->assertSee('Version 2026-10-08');
 });
 
 it('lands a pro who is also a customer on the pro welcome page (AC6)', function (): void {

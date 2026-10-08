@@ -61,8 +61,8 @@ Keep the test server running and its DNS record ready for the first week. If pro
 - No NAT gateway or load balancer at launch unless needed; they add a fixed monthly charge.
 - Turn off or downsize staging when not in use.
 
-## Open decisions for the founder
-1. Option A, B or C (and whether AWS Cape Town meets decision 014).
+## Decisions
+1. **Decided 2026-10-08: option A, AWS Cape Town (decision 065).** The founder confirmed that it satisfies decision 014.
 2. Which legal entity owns the account and pays.
 3. Maintenance window and who is on call for the first week.
 4. Whether to put Cloudflare's proxy in front (free tier gives DDoS protection and a firewall).

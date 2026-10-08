@@ -68,6 +68,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 062 | No WhatsApp or SMS in the MVP: Twilio removed, email through Resend only | Accepted (founder) | 2026-10-08 |
 | 063 | PayFast for pros' introduction credit | Accepted (founder) | 2026-10-08 |
 | 064 | Backups, parallel tests and a browser test of the core path | Accepted (founder) | 2026-10-08 |
+| 065 | Production host: AWS Cape Town (EC2 + RDS) | Accepted (founder) | 2026-10-08 |
 
 ---
 
@@ -681,3 +682,13 @@ Before the introduction there is a paywall: chat is allowed but contact details 
 **Why:** Founder request. Backups protect the only copy of client and vetting data; the browser test catches layout and flow breaks the unit tests cannot.
 
 **Consequences:** Backups on the same disk do not protect against losing the server: a bucket for `BACKUP_S3_URI` is still needed, and production uses RDS snapshots (`docs/engineering/production-move.md`). The `.env` is deliberately not backed up. The browser test stops with a clear message when the introduction fee is on and the test pro has no credit.
+
+## 065 · Production host: AWS Cape Town (EC2 + RDS)
+
+**Date:** 2026-10-08 · **Status:** Accepted (founder confirmed option A in `docs/engineering/production-move.md`)
+
+**Decision:** The live service runs on AWS in **af-south-1 (Cape Town)**: the existing Docker image on EC2, PostgreSQL with PostGIS on RDS (automated backups, point-in-time recovery, encryption, not public), media in a private S3 bucket in the same region, secrets outside git. Staging is a copy of production. This satisfies decision 014's "hosted in South Africa" (data stays in the country); it is a hyperscaler rather than a local hosting company, which the founder accepted. A local VPS (option B) stays possible later because the app is container-based.
+
+**Why:** Least new work and risk: same cloud, region and deploy script as the test site (decision 046), managed database instead of a self-run one, about 35 ms from Durban.
+
+**Consequences:** Needs an AWS account owned by the company once registered (Q11), a production `.env` with real providers, `league/flysystem-aws-s3-v3` for S3 media (a dependency, to be logged when added), the legal details filled in, and a rehearsed cutover and rollback. Costs must be taken from the AWS Pricing Calculator before the build; the AWS free credit on the test account ends about 4 November 2026.
