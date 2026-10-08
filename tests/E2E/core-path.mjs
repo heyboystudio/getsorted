@@ -59,6 +59,13 @@ try {
   const c = customer.page;
   const p = pro.page;
 
+  const inviteLinks = async () => {
+    await p.goto(`${base}/pros/jobs`);
+    await p.waitForLoadState('networkidle');
+    return p.locator('a[href*="/pros/jobs/"]').evaluateAll((links) => links.map((link) => link.getAttribute('href')));
+  };
+  const invitesBefore = new Set(await inviteLinks());
+
   await step('client describes the problem to Siya', async () => {
     await c.goto(`${base}/book`);
     await c.waitForLoadState('networkidle');
@@ -95,9 +102,15 @@ try {
   });
 
   await step('pro accepts the new invite', async () => {
-    await p.goto(`${base}/pros/jobs`);
-    await p.waitForLoadState('networkidle');
-    await p.locator('a[href*="/pros/jobs/"]').first().click();
+    // The invite is created by the queue a few seconds after the booking. Earlier runs leave their own open
+    // invites behind, so wait for a link that was not there before the booking.
+    let fresh;
+    for (let attempt = 0; attempt < 12 && !fresh; attempt++) {
+      fresh = (await inviteLinks()).find((href) => !invitesBefore.has(href));
+      if (!fresh) await p.waitForTimeout(5_000);
+    }
+    if (!fresh) throw new Error('the pro was not invited to the new job within a minute');
+    await p.goto(new URL(fresh, base).toString());
     await p.getByRole('button', { name: 'Accept job' }).click();
     await p.getByRole('button', { name: 'Send an estimate' }).waitFor();
   });

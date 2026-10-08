@@ -3,9 +3,9 @@
 <section class="page-hero legal-hero">
 <div class="site-container">
 <p class="section-kicker">LEGAL INFORMATION</p>
-<span class="draft-badge">Draft for lawyer review. Not yet in force.</span>
+<span class="reviewed-badge">Reviewed by a South African attorney on 8 October 2026</span>
 <h1>Terms of service.</h1>
-<p>Version {{ config('getsorted.legal.terms_version') }}. These terms cover clients who use GetSorted to find and book tradespeople. A South African lawyer must review this draft before the service goes live.</p>
+<p>Version {{ config('getsorted.legal.terms_version') }}. These terms cover clients who use GetSorted to find and book tradespeople.</p>
 </div>
 </section>
 <section class="section">
