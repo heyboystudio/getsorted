@@ -41,7 +41,7 @@ final class Inbox extends Component
         return view('livewire.account.inbox', [
             'notifications' => $this->user()->notifications()->limit(50)->get(),
             'unread' => $this->user()->unreadNotifications()->count(),
-        ])->layout('components.layouts.panel', ['panel' => $this->user()->hasRole(Role::Pro->value) ? 'pro' : 'customer']);
+        ])->layout('components.layouts.workspace', ['panel' => $this->user()->hasRole(Role::Pro->value) ? 'pro' : 'customer']);
     }
 
     private function user(): User

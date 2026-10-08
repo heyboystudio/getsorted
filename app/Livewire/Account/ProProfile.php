@@ -19,7 +19,7 @@ use Livewire\Component;
  * A quoting pro's profile for the customer comparing quotes (spec 021, AC17–AC19). Reached
  * through the quote, so it exists only while that pro has a live quote on the customer's job.
  */
-#[Layout('components.layouts.panel', ['panel' => 'customer'])]
+#[Layout('components.layouts.workspace', ['panel' => 'customer'])]
 #[Title('Pro profile')]
 final class ProProfile extends Component
 {

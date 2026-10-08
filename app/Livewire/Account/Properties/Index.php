@@ -13,7 +13,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /** A customer's saved properties (spec 004). */
-#[Layout('components.layouts.panel', ['panel' => 'customer'])]
+#[Layout('components.layouts.workspace', ['panel' => 'customer'])]
 #[Title('Saved properties')]
 final class Index extends Component
 {

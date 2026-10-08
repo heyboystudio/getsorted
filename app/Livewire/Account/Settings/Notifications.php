@@ -12,7 +12,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /** Which notices a customer gets (spec 021, AC15). */
-#[Layout('components.layouts.panel', ['panel' => 'customer'])]
+#[Layout('components.layouts.workspace', ['panel' => 'customer'])]
 #[Title('Notifications')]
 final class Notifications extends Component
 {

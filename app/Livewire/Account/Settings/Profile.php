@@ -19,7 +19,7 @@ use Livewire\Component;
  * mobile goes through the existing code flow, which keeps the old number until the new one
  * is verified.
  */
-#[Layout('components.layouts.panel', ['panel' => 'customer'])]
+#[Layout('components.layouts.workspace', ['panel' => 'customer'])]
 #[Title('Profile')]
 final class Profile extends Component
 {

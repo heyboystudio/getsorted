@@ -21,7 +21,7 @@ use Livewire\Component;
  * Privacy and data (spec 021, AC16): waitlist removal, and requests to download or delete
  * personal data. A request only records the ask; an admin fulfils it (POPIA, retention rules).
  */
-#[Layout('components.layouts.panel', ['panel' => 'customer'])]
+#[Layout('components.layouts.workspace', ['panel' => 'customer'])]
 #[Title('Privacy and data')]
 final class Privacy extends Component
 {
