@@ -70,6 +70,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 064 | Backups, parallel tests and a browser test of the core path | Accepted (founder) | 2026-10-08 |
 | 065 | Production host: AWS Cape Town (EC2 + RDS) | Accepted (founder) | 2026-10-08 |
 | 066 | Finished jobs: personal content deleted after 24 months | Accepted (founder) | 2026-10-08 |
+| 067 | Flux UI (free) for the client and pro workspaces | Accepted (founder) | 2026-10-08 |
 
 ---
 
@@ -707,3 +708,13 @@ Before the introduction there is a paywall: chat is allowed but contact details 
 **Also added:** `getsorted:purge-test-data` (test sites only; refuses in production) and `getsorted:check-for-test-data` (run on a new production database before go-live).
 
 **Consequences:** The privacy notice wording on retention was updated to match (version 2026-10-08.2) and needs the attorney to see that paragraph. A 5-year hard delete of the bare records is a later task (around 2031).
+
+## 067 · Flux UI (free components) for the client and pro workspaces
+
+**Date:** 2026-10-08 · **Status:** Accepted (founder: "use Flux, stay on the free plan")
+
+**Decision:** The signed-in client and pro screens move to a neutral, desktop-first workspace (spec 028) built on the free components of `livewire/flux` (already installed, v2.20.1). No paid Flux Pro licence. Components that are Pro-only (tabs, date picker, calendar, autocomplete, file upload, charts) are not used; small replacements are built in the project when needed. shadcn/ui was rejected (React). Mary UI, TallStackUI and WireUI were rejected as written for Livewire 3 with unconfirmed Livewire 4 support. Admin stays on Filament.
+
+**Why:** Official kit for our stack and versions, neutral by default, and no cost. The marketing site's styling no longer applies to working screens.
+
+**Consequences:** The old shell (`layouts/panel`, `home/panel.css`) stays until every page has moved. `@fluxAppearance` and `@fluxScripts` load only in the workspace layout. If a paid component becomes clearly worth it, ask the founder first (about $149 once, per project).

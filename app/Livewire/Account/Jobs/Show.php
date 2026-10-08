@@ -18,6 +18,7 @@ use App\Domain\ServiceJobs\Exceptions\CannotFinishJob;
 use App\Domain\ServiceJobs\Support\JobChat;
 use App\Domain\ServiceJobs\Support\JobStages;
 use App\Domain\ServiceJobs\Support\JobTimeline;
+use App\Livewire\Concerns\ShowsFeedback;
 use App\Models\JobConversation;
 use App\Models\Pro;
 use App\Models\Quote;
@@ -32,9 +33,11 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /** A customer's own job: details, estimates to compare (spec 010) and chats with pros (spec 018). */
-#[Layout('components.layouts.panel', ['panel' => 'customer'])]
+#[Layout('components.layouts.workspace', ['panel' => 'customer'])]
 final class Show extends Component
 {
+    use ShowsFeedback;
+
     #[Locked]
     public string $publicId;
 
@@ -84,6 +87,7 @@ final class Show extends Component
             /** @var User $user */
             $user = auth()->user();
             $acceptQuote->handle($user, $quote);
+            $this->feedback(__('Your pro has been told, and your contact details were shared with them.'), __('Pro chosen'), 'estimates');
         } catch (CannotQuote $exception) {
             throw ValidationException::withMessages(['accept' => $exception->getMessage()]);
         } finally {
@@ -124,6 +128,7 @@ final class Show extends Component
 
         $this->confirmingCancel = false;
         $this->cancelReason = '';
+        $this->feedback(__('The pros who were sent the job have been told.'), __('Job cancelled'), 'job-status');
     }
 
     // ── After booking (spec 024) ──
@@ -158,6 +163,7 @@ final class Show extends Component
     {
         try {
             $markJobDone->handle($this->customer(), $this->ownJob());
+            $this->feedback(__('Your pro has been told.'), __('Marked as done'), 'review-card');
         } catch (CannotFinishJob $exception) {
             throw ValidationException::withMessages(['finish' => $exception->getMessage()]);
         } finally {
@@ -175,6 +181,7 @@ final class Show extends Component
 
         $this->confirmingBookedCancel = false;
         $this->bookedCancelReason = '';
+        $this->feedback(__('Your pro has been told. You can post the job again and choose someone else.'), __('Booking cancelled'), 'job-status');
     }
 
     // ── Reviewing the pro (spec 025) ──
@@ -200,6 +207,7 @@ final class Show extends Component
 
         $this->rating = 0;
         $this->reviewComment = '';
+        $this->feedback(__('Your review is now on your pro\'s profile.'), __('Thanks for your review'), 'review-card');
     }
 
     private function customer(): User
