@@ -111,13 +111,13 @@ it('shows active jobs with the pro and photo placeholder once a quote is accepte
     $open = panelJob($this->customer);
     $booked = panelJob($this->customer);
     panelBook($booked, 'Naidoo Electrical');
-    panelJob($this->customer, ServiceJobStatus::Completed);
+    $done = panelJob($this->customer, ServiceJobStatus::Completed);
 
     Livewire::test(Home::class)
         ->assertSee('Active jobs')
         ->assertSee($open->trade->name)
         ->assertSee('Booked')->assertSee('Naidoo Electrical')
-        ->assertDontSee('Done');
+        ->assertDontSee(route('jobs.show', $done), false);
 });
 
 it('puts the Siya prompt first on Home, above the needs strip, because booking starts with Siya (spec 028)', function (): void {
