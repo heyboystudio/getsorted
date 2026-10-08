@@ -20,12 +20,15 @@ use App\Domain\Quotes\Support\QuoteCalculator;
 use App\Domain\Quotes\Support\QuoteRules;
 use App\Filament\Admin\Pages\IntroductionSettingsPage;
 use App\Livewire\Pros\Credit;
+use App\Livewire\Pros\Jobs\Show;
+use App\Livewire\Pros\Welcome;
 use App\Models\CreditPurchase;
 use App\Models\Introduction;
 use App\Models\Pro;
 use App\Models\ProCreditEntry;
 use App\Models\Quote;
 use App\Models\ServiceJob;
+use App\Models\ServiceJobInvite;
 use App\Models\User;
 use App\Settings\IntroductionSettings;
 use Brick\Money\Money;
@@ -269,4 +272,43 @@ it('lets only super admins switch the fee on and change the amount, allowance an
     Livewire::test(IntroductionSettingsPage::class)
         ->fillForm(['fee_rand' => 0, 'free_introductions' => -1])
         ->call('save')->assertHasFormErrors(['fee_rand', 'free_introductions']);
+});
+
+// --- Topping up from where the pro is stuck ---------------------------------------------------------
+
+it('opens a top-up popup instead of an error when a pro has no credit to send an estimate', function (): void {
+    introSettings(true, 0);
+    $pro = Pro::factory()->approved()->create();
+    $job = ServiceJob::factory()->open()->create();
+    $invite = ServiceJobInvite::factory()->create(['service_job_id' => $job->id, 'pro_id' => $pro->id, 'status' => 'accepted']);
+    $this->actingAs($pro->user);
+
+    Livewire::test(Show::class, ['invite' => $invite])
+        ->call('startQuote')->assertSet('topUp', true)->assertSet('building', false)
+        ->assertSee('Add credit to send this estimate')->assertSee('R 297')->assertSee('R 990')
+        ->call('buyCredit', 29_700)->assertRedirectContains('https://payments.fake.test/checkout/')
+        ->call('closeTopUp')->assertSet('topUp', false);
+
+    expect(CreditPurchase::query()->sole()->amount_cents)->toBe(29_700);
+});
+
+it('lets a pro with credit start an estimate as normal', function (): void {
+    introSettings(true, 0);
+    $pro = creditPro(9_900);
+    $job = ServiceJob::factory()->open()->create();
+    $invite = ServiceJobInvite::factory()->create(['service_job_id' => $job->id, 'pro_id' => $pro->id, 'status' => 'accepted']);
+    $this->actingAs($pro->user);
+
+    Livewire::test(Show::class, ['invite' => $invite])->call('startQuote')->assertSet('topUp', false)->assertSet('building', true);
+});
+
+it('shows the credit balance with an add button on the pro\'s Today screen only while the fee is on', function (): void {
+    $pro = creditPro(5_000);
+    $this->actingAs($pro->user);
+
+    introSettings(false, 0);
+    Livewire::test(Welcome::class)->assertDontSee('Add credit');
+
+    introSettings(true, 0);
+    Livewire::test(Welcome::class)->assertSee('R 50.00')->assertSee('Add credit');
 });

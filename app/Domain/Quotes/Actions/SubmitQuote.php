@@ -9,6 +9,7 @@ use App\Domain\Matching\Enums\InviteStatus;
 use App\Domain\Pros\Enums\ProStatus;
 use App\Domain\Quotes\Data\QuoteDraft;
 use App\Domain\Quotes\Exceptions\CannotQuote;
+use App\Domain\Quotes\Exceptions\NeedsCredit;
 use App\Domain\Quotes\Support\QuoteCalculator;
 use App\Domain\Quotes\Support\QuoteFlow;
 use App\Domain\Quotes\Support\QuoteRules;
@@ -56,7 +57,7 @@ final readonly class SubmitQuote
             }
 
             if (! $this->credit->canQuote($pro)) {
-                throw new CannotQuote(__('Top up your introduction credit to send another estimate.'));
+                throw new NeedsCredit(__('Top up your introduction credit to send another estimate.'));
             }
 
             if ($locked->status !== InviteStatus::Accepted) {

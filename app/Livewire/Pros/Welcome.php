@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Pros;
 
 use App\Domain\Accounts\Enums\Role;
+use App\Domain\Introductions\Support\ProCredit;
 use App\Domain\Matching\Support\ProPipeline;
 use App\Domain\Pros\Actions\SetProAvailability;
 use App\Domain\Pros\Enums\ProStatus;
@@ -73,6 +74,7 @@ final class Welcome extends Component
 
         return [
             'firstName' => $this->user()->first_name,
+            'creditBalanceCents' => app(ProCredit::class)->feeEnabled() ? app(ProCredit::class)->balanceCents($pro) : null,
             'paused' => $pro->isPaused(),
             'missingBio' => blank($pro->bio),
             'expiring' => $pro->registrationsNeedingAttention(),

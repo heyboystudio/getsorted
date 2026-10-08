@@ -267,4 +267,24 @@
             @endif
         @endif
     </section>
+
+    @if ($topUp && $credit)
+        <div class="fixed inset-0 z-20 flex items-end justify-center bg-black/40 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="topup-title">
+            <div class="w-full max-w-md rounded-xl bg-white p-5">
+                <h2 id="topup-title" class="text-lg font-semibold">{{ __('Add credit to send this estimate') }}</h2>
+                <p class="mt-2 text-sm text-zinc-600">{{ __('Each time a client chooses you, R :fee comes off your credit. You have R :balance. Add credit and come straight back to send your estimate.', ['fee' => number_format($credit['feeCents'] / 100, 0, '.', ' '), 'balance' => number_format($credit['balanceCents'] / 100, 2, '.', ' ')]) }}</p>
+                @error('pack') <p class="mt-2 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                <div class="mt-4 grid gap-3">
+                    @foreach ($credit['packs'] as $pack)
+                        <button type="button" wire:click="buyCredit({{ $pack }})" wire:loading.attr="disabled" class="flex items-center justify-between rounded-xl border border-zinc-300 bg-white p-4 text-left hover:border-emerald-700">
+                            <span class="font-medium">R {{ number_format($pack / 100, 0, '.', ' ') }}</span>
+                            <span class="text-sm text-zinc-600">{{ trans_choice(':count introduction|:count introductions', intdiv($pack, max(1, $credit['feeCents']))) }}</span>
+                        </button>
+                    @endforeach
+                </div>
+                <p class="mt-3 text-xs text-zinc-500">{{ __('You pay on PayFast with card, Instant EFT, Zapper and more. Your credit appears within a minute.') }}</p>
+                <button type="button" wire:click="closeTopUp" class="mt-4 w-full rounded-lg border border-zinc-300 px-4 py-3 font-medium">{{ __('Not now') }}</button>
+            </div>
+        </div>
+    @endif
 </main>

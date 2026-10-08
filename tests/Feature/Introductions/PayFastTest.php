@@ -137,3 +137,13 @@ it('answers 400 and adds nothing for a forged notification', function (): void {
 
     expect(app(ProCredit::class)->balanceCents($purchase->pro))->toBe(0)->and($purchase->refresh()->status)->toBe(CreditPurchaseStatus::Pending);
 });
+
+it('puts the buyer\'s name and email on the PayFast link so they are not asked again', function (): void {
+    $link = payfast()->createCheckout(new CheckoutRequest(Money::ofMinor(29_700, 'ZAR'), 'REF1', 'Credit', 'https://example.test/back', 'k1', 'Pat', 'pat@example.test'))->redirectUrl;
+    parse_str((string) parse_url($link, PHP_URL_QUERY), $query);
+
+    expect($query['name_first'])->toBe('Pat')->and($query['email_address'])->toBe('pat@example.test')->and($query['return_url'])->toBe('https://example.test/back');
+
+    $without = payfast()->createCheckout(new CheckoutRequest(Money::ofMinor(29_700, 'ZAR'), 'REF1', 'Credit', 'https://example.test/back', 'k1'))->redirectUrl;
+    expect($without)->not->toContain('email_address');
+});
