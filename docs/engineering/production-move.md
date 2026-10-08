@@ -38,11 +38,11 @@ Prices in rand are not in this document on purpose. Take current figures from th
 ## Steps
 1. **Decide** option A or B, and who owns the cloud account (the company, once registered; open question Q11).
 2. **Build staging first**, identical to production, and deploy `main` to it. Run the full click-through (`npm run e2e` against staging) and a backup-and-restore drill (`deploy/backup`).
-3. **Prepare production** the same way, with real secrets, an empty database and the seeded catalogue (trades), and super-admin created with `php artisan getsorted:create-super-admin`.
+3. **Prepare production** the same way, with real secrets, an **empty database** and the seeded catalogue (trades), and super-admin created with `php artisan getsorted:create-super-admin`. **Never restore a test dump into production.** Before go-live run `php artisan getsorted:check-for-test-data`; it fails if it finds test accounts, fake payments or any jobs.
 4. **Fill the legal details** in the environment: company name, registration, address, Information Officer. Register the Information Officer with the Information Regulator. Have the lawyer sign off the three legal pages.
 5. **Rehearse the cutover** on staging: freeze writes, take a backup, restore it to a fresh database, point the app at it, check, then roll back.
 6. **Cut over** at a quiet hour: put the test site in maintenance mode, final backup of the test database (if it holds anything to keep: normally nothing, since the test data is fake), switch DNS to the production IP (lower the TTL to 300 seconds a day before), smoke-test, watch logs.
-7. **Switch off the test box** after a week and delete the old backups listed in the roadmap.
+7. **Keep the test environment.** It stays as the development and staging site (founder, 2026-10-08), with fake data and its own keys. Only the test server's AWS credit end date (about 4 November 2026) needs a decision: move it to the company account or a smaller instance. Delete the old rename backups on the server (`~/backup-sortd-before-rename-*`, `~/env-before-rename-*`) once nothing needs them.
 
 ## Rollback
 Keep the test server running and its DNS record ready for the first week. If production fails the smoke test, point DNS back (the 300-second TTL makes that take minutes). Production data created in the meantime would be lost on rollback, so only roll back before real jobs are posted; after that, fix forward from the last backup.

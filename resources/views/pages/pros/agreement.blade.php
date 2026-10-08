@@ -3,7 +3,6 @@
 <section class="page-hero legal-hero">
 <div class="site-container">
 <p class="section-kicker">LEGAL INFORMATION FOR PROS</p>
-<span class="reviewed-badge">Reviewed by a South African attorney on 8 October 2026</span>
 <h1>Pro agreement.</h1>
 <p>Version {{ config('getsorted.legal.pro_agreement_version') }}. This agreement covers tradespeople and businesses that receive jobs through GetSorted.</p>
 </div>

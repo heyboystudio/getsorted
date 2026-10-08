@@ -69,6 +69,7 @@ Short architecture decision records. **Add an entry for every significant choice
 | 063 | PayFast for pros' introduction credit | Accepted (founder) | 2026-10-08 |
 | 064 | Backups, parallel tests and a browser test of the core path | Accepted (founder) | 2026-10-08 |
 | 065 | Production host: AWS Cape Town (EC2 + RDS) | Accepted (founder) | 2026-10-08 |
+| 066 | Finished jobs: personal content deleted after 24 months | Accepted (founder) | 2026-10-08 |
 
 ---
 
@@ -692,3 +693,17 @@ Before the introduction there is a paywall: chat is allowed but contact details 
 **Why:** Least new work and risk: same cloud, region and deploy script as the test site (decision 046), managed database instead of a self-run one, about 35 ms from Durban.
 
 **Consequences:** Needs an AWS account owned by the company once registered (Q11), a production `.env` with real providers, `league/flysystem-aws-s3-v3` for S3 media (a dependency, to be logged when added), the legal details filled in, and a rehearsed cutover and rollback. Costs must be taken from the AWS Pricing Calculator before the build; the AWS free credit on the test account ends about 4 November 2026.
+
+## 066 · Finished jobs: personal content deleted after 24 months
+
+**Date:** 2026-10-08 · **Status:** Accepted (founder: "delete job photos and old closed jobs after 24 months")
+
+**Decision:** A daily job (`getsorted:prune-old-jobs`, 03:30) finds jobs that ended more than 24 months ago (`getsorted.jobs.retention_months`): completed, closed, cancelled or expired.
+- A job that **never led to an introduction** is deleted completely (photos, estimates, invites, chats, events).
+- A job that **did** keeps a bare record, because tax and accounting law needs the introduction and credit entries for at least 5 years: its photos are deleted and the client's notes, the AI summary, the facts, the map point, estimate notes and line descriptions, decline notes, free text in the event log and any cancel reason are removed; amounts, dates, trade, suburb and status stay. `service_jobs.scrubbed_at` records when.
+- Reviews stay on the pro's profile while the pro is active. Chat is pruned on its own 24-month rule (spec 018).
+- Chosen with the same period as chat so a job disappears in one step.
+
+**Also added:** `getsorted:purge-test-data` (test sites only; refuses in production) and `getsorted:check-for-test-data` (run on a new production database before go-live).
+
+**Consequences:** The privacy notice wording on retention was updated to match (version 2026-10-08.2) and needs the attorney to see that paragraph. A 5-year hard delete of the bare records is a later task (around 2031).

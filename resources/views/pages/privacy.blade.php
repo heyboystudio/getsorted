@@ -3,7 +3,6 @@
 <section class="page-hero legal-hero">
 <div class="site-container">
 <p class="section-kicker">LEGAL INFORMATION</p>
-<span class="reviewed-badge">Reviewed by a South African attorney on 8 October 2026</span>
 <h1>Privacy notice.</h1>
 <p>Version {{ config('getsorted.legal.privacy_version') }}. This notice explains how we handle personal information under POPIA.</p>
 </div>
@@ -52,7 +51,7 @@
 </section>
 <section id="keep">
 <h2>How long we keep it</h2>
-<ul><li><strong>Account details:</strong> while your account is open, then deleted or anonymised after you close it, except records we must keep.</li><li><strong>Jobs, estimates, introductions, credit and payment records:</strong> at least 5 years, because tax and accounting law requires it.</li><li><strong>Chat messages and chat photos:</strong> 24 months after the job ends, then deleted. Job photos stay with the job record, which we keep as described above.</li><li><strong>What you tell Siya</strong> is kept only with your job, as part of the job record.</li><li><strong>Waiting-list sign-ups:</strong> 12 months.</li><li><strong>Pro vetting documents</strong> (ID, proof of address, photo, registrations) and reference details: while the pro's application is open or the pro is active. For an application that is rejected or abandoned, they are deleted after 12 months.</li></ul>
+<ul><li><strong>Account details:</strong> while your account is open, then deleted or anonymised after you close it, except records we must keep.</li><li><strong>Job photos, and everything written about a job</strong> (your description and notes, estimate notes, the map point of the address): deleted 24 months after the job ends. A job that never led to an introduction is then deleted completely.</li><li><strong>Introduction, credit and payment records, and the bare job record behind them</strong> (trade, suburb, dates and amounts): at least 5 years, because tax and accounting law requires it. Nothing in that record says what was wrong or who you are beyond your account.</li><li><strong>Chat messages and chat photos:</strong> 24 months after the job ends, then deleted.</li><li><strong>Reviews:</strong> stay on the pro's profile while the pro's account is open, shown with the reviewer's first name.</li><li><strong>What you tell Siya</strong> is kept only with your job and goes with it at 24 months.</li><li><strong>Waiting-list sign-ups:</strong> 12 months.</li><li><strong>Pro vetting documents</strong> (ID, proof of address, photo, registrations) and reference details: while the pro's application is open or the pro is active. For an application that is rejected or abandoned, they are deleted after 12 months.</li></ul>
 <p>We may keep a record longer if we need it to deal with a complaint, a legal claim or a legal duty.</p>
 </section>
 <section id="security">

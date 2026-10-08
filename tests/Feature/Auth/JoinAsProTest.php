@@ -139,7 +139,7 @@ it('refuses admin accounts on the pro sign-in like any wrong password (AC10)', f
 });
 
 it('serves the draft pro agreement (AC11)', function (): void {
-    $this->get('/pros/agreement')->assertOk()->assertSee('Reviewed by a South African attorney')->assertSee('Version 2026-10-08');
+    $this->get('/pros/agreement')->assertOk()->assertSee('Pro agreement')->assertSee('Version 2026-10-08');
 });
 
 it('lands a pro who is also a customer on the pro welcome page (AC6)', function (): void {

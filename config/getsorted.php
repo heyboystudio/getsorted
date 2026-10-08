@@ -35,6 +35,8 @@ return [
     ],
 
     'jobs' => [
+        // Photos and personal content of a finished job are deleted this long after it ends (privacy notice).
+        'retention_months' => 24,
         // Abuse protection for the booking flow (spec 005).
         'max_drafts' => 5,
         'posts_per_day' => 10,
@@ -117,9 +119,10 @@ return [
     ],
 
     'legal' => [
-        // Written 2026-10-08 and reviewed by a South African attorney the same day, with no changes (founder).
+        // Written 2026-10-08; the attorney reviewed the terms, privacy notice and pro agreement that day with no changes (founder).
+        // The privacy notice's retention wording was changed afterwards (24-month deletion of jobs), hence its own version.
         'terms_version' => '2026-10-08',
-        'privacy_version' => '2026-10-08',
+        'privacy_version' => '2026-10-08.2',
         'pro_agreement_version' => '2026-10-08',
 
         // Shown in the legal pages. Fill these in when the company is registered (open question Q11) and the Information Officer is appointed.
