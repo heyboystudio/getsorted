@@ -3,11 +3,9 @@
 declare(strict_types=1);
 
 use App\Contracts\Geocoder;
-use App\Contracts\MessagingChannel;
 use App\Contracts\PaymentGateway;
 use App\Contracts\ScopingAssistant;
 use App\Integrations\Fakes\FakeGeocoder;
-use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Integrations\Fakes\FakePaymentGateway;
 use App\Integrations\Fakes\FakeScopingAssistant;
 use App\Integrations\Google\GooglePlacesGeocoder;
@@ -26,9 +24,9 @@ function inEnvironment(string $environment, Closure $check): void
     }
 }
 
-it('uses fake WhatsApp, payments, AI and maps on the preview site', function (): void {
+it('uses fake payments, AI and maps on the preview site', function (): void {
     inEnvironment('preview', function (): void {
-        foreach ([MessagingChannel::class, PaymentGateway::class, ScopingAssistant::class, Geocoder::class] as $contract) {
+        foreach ([PaymentGateway::class, ScopingAssistant::class, Geocoder::class] as $contract) {
             app()->forgetInstance($contract);
             app()->offsetUnset($contract);
         }
@@ -36,8 +34,7 @@ it('uses fake WhatsApp, payments, AI and maps on the preview site', function ():
         config()->set('services.google_places.key', null);
         (new IntegrationServiceProvider(app()))->register();
 
-        expect(app(MessagingChannel::class))->toBeInstanceOf(FakeMessagingChannel::class)
-            ->and(app(PaymentGateway::class))->toBeInstanceOf(FakePaymentGateway::class)
+        expect(app(PaymentGateway::class))->toBeInstanceOf(FakePaymentGateway::class)
             ->and(app(ScopingAssistant::class))->toBeInstanceOf(FakeScopingAssistant::class)
             ->and(app(Geocoder::class))->toBeInstanceOf(FakeGeocoder::class);
     });

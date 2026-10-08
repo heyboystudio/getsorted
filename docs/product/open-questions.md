@@ -26,7 +26,7 @@ Updated 2026-10-08 for decision 058 (model B now, payments in Phase M). "Phase" 
 
 | # | Question | Answer |
 |---|---|---|
-| Q5 | WhatsApp provider | Twilio for WhatsApp and SMS (decision 040, 2026-10-05) |
+| Q5 | WhatsApp provider | None in the MVP: emails only through Resend (decision 062, 2026-10-08) |
 | Q9 | Launch area | Requests from all of Durban/eThekwini (decision 044); recruit pros first in Berea/central and North (spec 004) |
 | Q12 | Do pros pay to join? | Free (spec 011, 2026-10-04) |
 | — | Payments at launch? | No: model B, payments in Phase M (decision 058, 2026-10-08) |

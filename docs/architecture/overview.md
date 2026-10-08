@@ -26,7 +26,6 @@ flowchart LR
     S --> Q
     D --> FS
     D -. adapters .-> PAY[Payment gateway]
-    D -. adapters .-> WA[WhatsApp / SMS]
     D -. adapters .-> AI[AI model]
     D -. adapters .-> MAP[Maps / geocoding]
     PAY -. signed webhooks .-> D
@@ -71,7 +70,7 @@ app/
   Jobs/                   # queued jobs (thin: call an Action)
   Models/                 # Eloquent models (no business logic beyond relations, casts, scopes)
   Policies/               # one policy per model; every Filament resource and Livewire action authorises
-  Notifications/          # WhatsApp/email/database notifications
+  Notifications/          # email, push and database notifications
 ```
 
 ### Rules of the layout
@@ -85,7 +84,7 @@ app/
 ## Background work
 
 - Queue driver: `database` (Postgres) in v1 — one less moving part. Move to Redis + Horizon when queue volume justifies it (decision log).
-- Queues: `default`, `notifications`, `payments` (payments isolated so a WhatsApp backlog never delays money).
+- Queues: `default`, `notifications`, `payments` (payments isolated so a notification backlog never delays money).
 - Scheduler (every minute): expire invites, send next invite wave, expire jobs, auto-confirm completion, schedule payouts, nightly reconciliation, document-expiry reminders.
 - Every queued job and scheduled task is **idempotent**: it re-reads state and exits if there is nothing to do.
 
@@ -104,7 +103,6 @@ Production data is never copied to local or staging.
 | Contract | Purpose | v1 implementation |
 |---|---|---|
 | `PaymentGateway` | Checkout, webhooks, refunds, payouts | Decided in Phase 4 (shortlist in money-flow.md); `FakePaymentGateway` until then |
-| `MessagingChannel` | WhatsApp templates, SMS fallback, OTP delivery | Decided in Phase 1; `FakeMessagingChannel` in dev/tests (writes messages, incl. OTP codes, to the log locally) |
 | `ScopingAssistant` | Free text → trade/service + summary | Laravel AI SDK with an Anthropic model; `FakeScopingAssistant` in tests |
 | `Geocoder` | Address autocomplete, coordinates | Google Places; `FakeGeocoder` in tests |
 | Mail | Receipts, statements | Laravel mail (provider via config) |

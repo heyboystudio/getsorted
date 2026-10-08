@@ -65,5 +65,5 @@ npm audit --audit-level=high
 ### Notes
 - `.env.example` sets `DB_PASSWORD=getsorted_local`, which only works for the local Docker database. Never put real secrets in `.env.example`.
 - Tests use a separate `getsorted_testing` database, created automatically the first time the database container starts.
-- Outside services (payments, WhatsApp/SMS, AI, address lookup) are fakes locally; nothing is sent or charged.
+- Outside services (payments, AI, address lookup) are fakes locally; nothing is sent or charged.
 - If port 5432 or 8000 is taken, set `DB_PORT` in `.env` or run `php artisan serve --port=8001`.

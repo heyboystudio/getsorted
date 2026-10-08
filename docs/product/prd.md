@@ -40,7 +40,7 @@ One account can be a customer or a pro (decision 027); v1 is one login per pro b
 6. **Quotes:** itemised lines (labour, materials, call-out), optional deposit, earliest start, validity; revise or withdraw; the customer compares and accepts one. Registrations are shown as verified or not; they are never a gate (051).
 7. **After acceptance (model B):** both sides see each other's contact details; any deposit is paid directly to the pro; the copy says GetSorted does not handle payments yet.
 8. **Chat:** customer ↔ each quoting pro in the job, with photos; contact details are masked before acceptance (spec 018 part 1).
-9. **Notifications:** in-app inbox, browser/phone push (spec 022), WhatsApp/SMS through Twilio (040), email through Resend (038).
+9. **Notifications:** in-app inbox, browser/phone push (spec 022), email through Resend (038). No WhatsApp or SMS in the MVP (062).
 10. **Pro onboarding and vetting:** application (business, trades, base address, radius, ID, proof of address, photo, two references); admin verifies documents and records reference calls before approval is allowed; profile, change requests, pause.
 11. **Admin:** vetting queue, jobs, manual invites, trades, matching and AI settings, AI usage, waitlist demand, data requests.
 
@@ -51,7 +51,7 @@ One account can be a customer or a pro (decision 027); v1 is one login per pro b
 13. **Reviews:** customer rates the pro after "done"; the pro can reply once; ratings show on quotes.
 14. **Registration capture:** PIRB / electrical registration numbers on the application so pros can be shown as verified.
 15. **Operations:** stalled-job list; success measures on the admin dashboard.
-16. **Launch readiness:** lawyer-reviewed legal pages, POPIA checklist, monitoring, backups, production host, WhatsApp templates.
+16. **Launch readiness:** lawyer-reviewed legal pages, POPIA checklist, monitoring, backups, production host, approved email wording.
 
 ### Phase M (after launch)
 
@@ -74,7 +74,7 @@ Native mobile apps · pro team members · subscriptions (unless chosen for Q14) 
 
 ## 6. Non-functional requirements
 
-- **Security and privacy:** `docs/security/`. POPIA compliant from day one; the privacy notice must name Google (Places, Gemini), Twilio and Resend before launch.
+- **Security and privacy:** `docs/security/`. POPIA compliant from day one; the privacy notice must name Google (Places, Gemini) and Resend before launch.
 - **Performance:** pages interactive in < 2 s on a mid-range Android phone on 4G.
 - **Availability:** 99.5% monthly for booking.
 - **Accessibility:** WCAG 2.2 AA for customer-facing pages; animations respect reduced motion.

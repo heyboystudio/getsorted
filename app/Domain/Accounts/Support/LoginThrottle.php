@@ -8,31 +8,10 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
 
 /**
- * OTP and sign-up rate limits (security baseline §1; values in config/getsorted.php).
- * Phone keys use the normalised number, so formatting tricks don't bypass them,
- * and are HMAC'd with the app key so the cache table never holds a reversible number.
+ * Sign-up rate limits (security baseline §1; values in config/getsorted.php).
  */
 final class LoginThrottle
 {
-    /** @return list<Limit> */
-    public static function sendLimits(string $phoneE164, ?string $ip): array
-    {
-        $phoneKey = hash_hmac('sha256', $phoneE164, (string) config('app.key'));
-
-        $dailyCap = ! app()->environment('local') || (bool) config('getsorted.otp.daily_cap_in_local');
-
-        return array_values(array_filter([
-            self::limit('send_per_phone', 'otp-send:phone:'.$phoneKey),
-            $dailyCap ? self::limit('send_per_phone_daily', 'otp-send-daily:phone:'.$phoneKey) : null,
-            self::limit('send_per_ip', 'otp-send:ip:'.$ip),
-        ]));
-    }
-
-    public static function verifyLimit(?string $ip): Limit
-    {
-        return self::limit('verify_per_ip', 'otp-verify:ip:'.$ip);
-    }
-
     public static function registerLimit(?string $ip): Limit
     {
         return self::limit('register_per_ip', 'register:ip:'.$ip);
@@ -63,7 +42,7 @@ final class LoginThrottle
     private static function limit(string $name, string $key): Limit
     {
         /** @var array{max: int, minutes: int} $config */
-        $config = config('getsorted.otp.'.$name);
+        $config = config('getsorted.auth.'.$name);
 
         return Limit::perMinutes($config['minutes'], $config['max'])->by($key);
     }

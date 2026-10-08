@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Contracts\MessagingChannel;
 use App\Domain\Matching\Actions\RunMatchingSchedule;
 use App\Domain\Matching\Enums\InviteStatus;
 use App\Domain\Quotes\Actions\AcceptQuote;
@@ -22,7 +21,6 @@ use App\Domain\ServiceJobs\Actions\SaveBookingDraft;
 use App\Domain\ServiceJobs\Data\BookingData;
 use App\Domain\ServiceJobs\Enums\ServiceJobStatus;
 use App\Domain\ServiceJobs\Enums\TimeWindow;
-use App\Integrations\Fakes\FakeMessagingChannel;
 use App\Models\Pro;
 use App\Models\Property;
 use App\Models\Quote;
@@ -49,11 +47,6 @@ beforeEach(function (): void {
     $settings->invite_count = 6;
     $settings->save();
 });
-
-function quoteMessages(): FakeMessagingChannel
-{
-    return app(MessagingChannel::class);
-}
 
 function quotingPros(int $count, ?string $vat = null): array
 {
@@ -180,7 +173,7 @@ it('submits a quote: version 1, invite quoted, customer told, count up (AC3)', f
         ->and($quote->valid_until->toDateString())->toBe(now('Africa/Johannesburg')->addDays(7)->toDateString())
         ->and(inviteFor($job, $pro)->status)->toBe(InviteStatus::Quoted)
         ->and($job->fresh()->quotes_count)->toBe(1);
-    quoteMessages()->assertSent('quote_received', fn ($message): bool => $message->phoneE164 === $job->customer->phone_e164);
+    expect(noticeCount($job->customer, 'quote_received'))->toBe(1);
 
     expect(fn () => submitFor($job, $pro))->toThrow(CannotQuote::class);
     expect(Quote::query()->count())->toBe(1);
@@ -304,7 +297,7 @@ it('revises a quote as a new version without using another slot (AC5)', function
         ->and($second->version)->toBe(2)->and($second->supersedes_quote_id)->toBe($first->id)
         ->and($second->deposit_cents)->toBe(0)
         ->and($job->fresh()->quotes_count)->toBe(1);
-    quoteMessages()->assertSent('quote_revised');
+    expect(allNoticeCount('quote_revised'))->toBe(1);
 
     expect(fn () => app(ReviseQuote::class)->handle($pro->user, $first->fresh(), draftQuote()))->toThrow(CannotQuote::class);
 });
@@ -320,7 +313,7 @@ it('withdraws a quote with a reason, freeing the slot (AC5)', function (): void 
     expect($quote->fresh()->status)->toBe(QuoteStatus::Withdrawn)
         ->and($quote->fresh()->withdraw_reason)->toBe('Double-booked that week.')
         ->and($job->fresh()->quotes_count)->toBe(0);
-    quoteMessages()->assertSent('quote_withdrawn');
+    expect(allNoticeCount('quote_withdrawn'))->toBe(1);
     $entry = Activity::query()->where('description', 'quote_withdrawn')->sole();
     expect($entry->causer_id)->toBe($pro->user_id)->and($entry->subject_id)->toBe($job->id)
         ->and($entry->properties['reason'])->toBe('Double-booked that week.');
@@ -354,8 +347,8 @@ it('accepts a quote without a deposit: job scheduled, others declined, invites c
         ->and(DB::table('pro_job_allocations')->where('pro_id', $winner->id)->where('service_job_id', $job->id)->count())->toBe(1)
         ->and($job->events()->pluck('event_type')->last())->toBe('quote_accepted');
 
-    quoteMessages()->assertSent('quote_accepted', fn ($message): bool => $message->phoneE164 === $winner->user->phone_e164);
-    quoteMessages()->assertSent('quote_not_chosen', fn ($message): bool => $message->phoneE164 === $loser->user->phone_e164);
+    expect(noticeCount($winner->user, 'quote_accepted'))->toBe(1);
+    expect(noticeCount($loser->user, 'quote_not_chosen'))->toBe(1);
 });
 
 it('moves the job to awaiting deposit when the accepted quote has a deposit (AC8, decision 1)', function (): void {
@@ -431,7 +424,7 @@ it('expires a job with no accepted quote after the quote window, safely twice (A
         ->and(inviteFor($job, $waiting)->status)->toBe(InviteStatus::Closed)
         ->and($job->events()->where('event_type', 'job_expired')->count())->toBe(1)
         ->and(Activity::query()->where('description', 'job_expired')->where('subject_id', $job->id)->count())->toBe(1);
-    quoteMessages()->assertSent('job_expired', times: 1);
+    expect(allNoticeCount('job_expired'))->toBe(1);
 });
 
 it('expires a quote after its validity, then lets the pro send a fresh version (AC12)', function (): void {

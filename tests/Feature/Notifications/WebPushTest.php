@@ -79,7 +79,7 @@ it('keeps emailing as before and adds the pop-up on top (spec 022, AC3)', functi
 it('honours a customer who switched a group off, for that group only (spec 022, AC4)', function (): void {
     pushEnabled();
     $customer = subscribed(User::factory()->customer()->create());
-    $customer->forceFill(['notification_preferences' => ['groups' => ['quotes' => false, 'job_updates' => true, 'messages' => true], 'channel' => 'sms']])->save();
+    $customer->forceFill(['notification_preferences' => ['groups' => ['quotes' => false, 'job_updates' => true, 'messages' => true]]])->save();
 
     expect(channelsFor($customer, new UserNotice('quote_received', 'T', 'B', url('/app'), group: 'quotes')))->toBe(['database']);
     expect(channelsFor($customer, new UserNotice('chat_message', 'T', 'B', url('/app'), group: 'messages')))->toContain(SafeWebPushChannel::class);
@@ -89,7 +89,7 @@ it('honours a customer who switched a group off, for that group only (spec 022, 
 it('never lets a customer\'s choices silence a notice that has no group, such as a new job for a pro (spec 022, AC4)', function (): void {
     pushEnabled();
     $pro = subscribed(User::factory()->pro()->create());
-    $pro->forceFill(['notification_preferences' => ['groups' => ['quotes' => false, 'job_updates' => false, 'messages' => false], 'channel' => 'sms']])->save();
+    $pro->forceFill(['notification_preferences' => ['groups' => ['quotes' => false, 'job_updates' => false, 'messages' => false]]])->save();
 
     expect(channelsFor($pro, new UserNotice('job_invite', 'New job', 'Body', url('/pros/jobs'))))->toContain(SafeWebPushChannel::class);
 });

@@ -33,14 +33,6 @@ return [
         'timeout' => 3,
     ],
 
-    // WhatsApp and SMS (decision 040). Sandbox WhatsApp number on the test site.
-    'twilio' => [
-        'account_sid' => env('TWILIO_ACCOUNT_SID'),
-        'auth_token' => env('TWILIO_AUTH_TOKEN'),
-        'sms_from' => env('TWILIO_SMS_FROM'),
-        'whatsapp_from' => env('TWILIO_WHATSAPP_FROM'),
-    ],
-
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

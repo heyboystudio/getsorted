@@ -2,19 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Contracts\Data\MessageChannel;
-use App\Contracts\MessagingChannel;
 use App\Domain\Accounts\Actions\CompleteDataRequest;
 use App\Domain\Accounts\Actions\RequestEmailChange;
 use App\Domain\Accounts\Enums\DataRequestStatus;
 use App\Domain\Accounts\Enums\DataRequestType;
 use App\Domain\Accounts\Enums\Role;
-use App\Domain\ServiceJobs\Enums\MessageSender;
 use App\Filament\Admin\Resources\DataRequests\Pages\ListDataRequests;
-use App\Jobs\SendChatNotification;
-use App\Jobs\SendJobExpiredMessage;
-use App\Jobs\SendJobPostedMessage;
-use App\Jobs\SendQuoteMessage;
 use App\Livewire\Account\Settings\Notifications;
 use App\Livewire\Account\Settings\Privacy;
 use App\Livewire\Account\Settings\Profile;
@@ -23,7 +16,6 @@ use App\Models\DataRequest;
 use App\Models\JobConversation;
 use App\Models\JobMessage;
 use App\Models\Pro;
-use App\Models\Quote;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobInvite;
 use App\Models\User;
@@ -167,52 +159,13 @@ it('lets the customer cancel a waiting email change and rate limits repeated tri
 
 // --- Notifications (AC15) ----------------------------------------------------------------
 
-it('defaults every message on and saves choices (spec 021, AC15)', function (): void {
-    Livewire::test(Notifications::class)->assertSet('groups.quotes', true)->assertSet('groups.messages', true)->assertSet('channel', 'whatsapp')
-        ->set('groups.quotes', false)->set('channel', 'sms')->call('save')->assertSee('Saved.');
+it('defaults every notice on and saves choices (spec 021, AC15)', function (): void {
+    Livewire::test(Notifications::class)->assertSet('groups.quotes', true)->assertSet('groups.messages', true)
+        ->set('groups.quotes', false)->call('save')->assertSee('Saved.');
 
     $this->customer->refresh();
-    expect($this->customer->notification_preferences)->toEqual(['groups' => ['quotes' => false, 'job_updates' => true, 'messages' => true], 'channel' => 'sms']);
-    Livewire::test(Notifications::class)->assertSet('groups.quotes', false)->assertSet('channel', 'sms');
-});
-
-it('rejects an unknown channel (spec 021, AC15)', function (): void {
-    Livewire::test(Notifications::class)->set('channel', 'carrier-pigeon')->call('save')->assertHasErrors('channel');
-});
-
-it('skips the messages a customer switched off and uses their channel for the rest (spec 021, AC15)', function (): void {
-    $job = ServiceJob::factory()->open()->create(['customer_id' => $this->customer->id]);
-    $quote = Quote::factory()->create(['service_job_id' => $job->id]);
-    $this->customer->forceFill(['notification_preferences' => ['groups' => ['quotes' => false, 'job_updates' => true, 'messages' => false], 'channel' => 'sms']])->save();
-    $messaging = app(MessagingChannel::class);
-
-    (new SendQuoteMessage($quote->id, 'quote_received'))->handle($messaging);
-    $messaging->assertSent('quote_received', times: 0);
-
-    (new SendJobPostedMessage($job->id))->handle($messaging);
-    $messaging->assertSent('job_posted', fn ($message): bool => $message->channel === MessageChannel::Sms);
-
-    (new SendJobExpiredMessage($job->id))->handle($messaging);
-    $messaging->assertSent('job_expired', fn ($message): bool => $message->channel === MessageChannel::Sms);
-
-    $conversation = accountChat($job);
-    (new SendChatNotification($conversation->id, MessageSender::Customer))->handle($messaging);
-    $messaging->assertSent('chat_message', times: 0);
-
-    $this->customer->forceFill(['notification_preferences' => null])->save();
-    (new SendQuoteMessage($quote->id, 'quote_received'))->handle($messaging);
-    $messaging->assertSent('quote_received', fn ($message): bool => $message->channel === MessageChannel::WhatsApp);
-});
-
-it('never lets a customer\'s choices stop a pro hearing they were chosen (spec 021, AC15)', function (): void {
-    $job = ServiceJob::factory()->open()->create(['customer_id' => $this->customer->id]);
-    $quote = Quote::factory()->create(['service_job_id' => $job->id]);
-    $this->customer->forceFill(['notification_preferences' => ['groups' => ['quotes' => false, 'job_updates' => false, 'messages' => false], 'channel' => 'sms']])->save();
-    $messaging = app(MessagingChannel::class);
-
-    (new SendQuoteMessage($quote->id, 'quote_accepted'))->handle($messaging);
-
-    $messaging->assertSent('quote_accepted', fn ($message): bool => $message->phoneE164 === $quote->pro->user->phone_e164 && $message->channel === MessageChannel::WhatsApp);
+    expect($this->customer->notification_preferences)->toEqual(['groups' => ['quotes' => false, 'job_updates' => true, 'messages' => true]]);
+    Livewire::test(Notifications::class)->assertSet('groups.quotes', false);
 });
 
 // --- Privacy and data (AC16) -------------------------------------------------------------

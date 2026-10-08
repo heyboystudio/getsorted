@@ -64,10 +64,8 @@ it('defines the webhook rate limit', function (): void {
     expect(RateLimiter::limiter('webhooks')($request)->maxAttempts)->toBe(120);
 });
 
-it('defines the OTP verify and sign-up limits from the security baseline', function (): void {
-    expect(LoginThrottle::verifyLimit('10.0.0.1')->maxAttempts)->toBe(10)
-        ->and(LoginThrottle::verifyLimit('10.0.0.1')->decaySeconds)->toBe(15 * 60)
-        ->and(LoginThrottle::registerLimit('10.0.0.1')->maxAttempts)->toBe(5);
+it('defines the sign-up limit from the security baseline', function (): void {
+    expect(LoginThrottle::registerLimit('10.0.0.1')->maxAttempts)->toBe(5);
 });
 
 it('only lets the admin panel use sessions started on its own login page', function (): void {

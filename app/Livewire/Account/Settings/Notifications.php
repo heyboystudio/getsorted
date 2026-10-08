@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Livewire\Account\Settings;
 
-use App\Contracts\Data\MessageChannel;
 use App\Domain\Accounts\Support\NotificationPreferences;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
@@ -12,15 +11,13 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-/** Which text messages a customer gets and where (spec 021, AC15). Login codes are not optional. */
+/** Which notices a customer gets (spec 021, AC15). */
 #[Layout('components.layouts.panel', ['panel' => 'customer'])]
 #[Title('Notifications')]
 final class Notifications extends Component
 {
     /** @var array<string, bool> */
     public array $groups = [];
-
-    public string $channel = 'whatsapp';
 
     public bool $saved = false;
 
@@ -31,19 +28,16 @@ final class Notifications extends Component
         foreach (array_keys(NotificationPreferences::groups()) as $group) {
             $this->groups[$group] = NotificationPreferences::allows($user, $group);
         }
-
-        $this->channel = NotificationPreferences::channel($user)->value;
     }
 
     public function save(): void
     {
         $this->validate([
-            'channel' => ['required', 'in:'.implode(',', array_column(MessageChannel::cases(), 'value'))],
             'groups' => ['array'],
             'groups.*' => ['boolean'],
         ]);
 
-        NotificationPreferences::save($this->user(), $this->groups, MessageChannel::from($this->channel));
+        NotificationPreferences::save($this->user(), $this->groups);
         $this->saved = true;
     }
 
