@@ -70,6 +70,7 @@ final class Home extends Component
 
         return view('livewire.account.home', [
             'firstName' => $user->first_name,
+            'stats' => $this->stats($user),
             'hasWaitlistRequests' => $user->phone_e164 !== null && WaitlistEntry::query()->where('phone_e164', $user->phone_e164)->exists(),
             'attention' => CustomerAttention::for($user),
             'activeJobs' => ServiceJob::query()->where('customer_id', $user->id)
@@ -80,5 +81,19 @@ final class Home extends Component
                 ->get(),
             'activity' => JobTimeline::recentFor($user, 5),
         ]);
+    }
+
+    /** @return array{active: int, open: int, booked: int, done: int} */
+    private function stats(User $user): array
+    {
+        $counts = ServiceJob::query()->where('customer_id', $user->id)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $count = fn (ServiceJobStatus ...$statuses): int => (int) collect($statuses)->sum(fn (ServiceJobStatus $status): int => (int) ($counts[$status->value] ?? 0));
+
+        return [
+            'active' => $count(...ServiceJobStatus::underway()),
+            'open' => $count(ServiceJobStatus::Open),
+            'booked' => $count(ServiceJobStatus::Scheduled, ServiceJobStatus::InProgress),
+            'done' => $count(...ServiceJobStatus::finished()),
+        ];
     }
 }
