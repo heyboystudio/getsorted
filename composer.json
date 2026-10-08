@@ -101,6 +101,10 @@
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ],
+        "test:parallel": [
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/pest --parallel --processes=4"
         ]
     },
     "extra": {
@@ -115,7 +119,8 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
-        }
+        },
+        "process-timeout": 0
     },
     "minimum-stability": "stable",
     "prefer-stable": true

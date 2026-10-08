@@ -45,6 +45,11 @@ arch('strict types')->expect('App')->toUseStrictTypes();
 - `composer test` — Pest only. Arch tests live in `tests/Arch/`.
 - `composer lint` — fix formatting. `composer rector:check` / `composer rector` — preview/apply automated refactors.
 
+### Faster runs and the browser test (decision 064)
+- `composer test:parallel` runs the same tests in 4 processes (a little faster on a 4-core machine).
+- `npm run e2e` drives a real browser through the core path on a running site (see `tests/E2E/README.md`); run it against the test site after a deploy, never production.
+- Backups and the weekly restore check live in `deploy/backup/`.
+
 ## Conventions
 
 - Test-first for Actions: write the failing test from the spec's acceptance criteria, then implement.

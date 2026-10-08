@@ -7,12 +7,14 @@
     },
     "scripts": {
         "build": "vite build",
-        "dev": "vite --host 127.0.0.1"
+        "dev": "vite --host 127.0.0.1",
+        "e2e": "node tests/E2E/core-path.mjs"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.1.11",
         "concurrently": "^10.0.3",
         "laravel-vite-plugin": "^3.1",
+        "playwright-core": "^1.49.0",
         "tailwindcss": "^4.1.11",
         "vite": "^8.0.0"
     },
