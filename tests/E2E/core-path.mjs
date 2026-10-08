@@ -69,6 +69,12 @@ try {
   await step('client describes the problem to Siya', async () => {
     await c.goto(`${base}/book`);
     await c.waitForLoadState('networkidle');
+    // An earlier run may have left a half-finished conversation: always start from a clean one.
+    const restart = c.getByRole('button', { name: 'Restart' });
+    if (await restart.isVisible().catch(() => false)) {
+      await restart.click();
+      await c.waitForTimeout(1_500);
+    }
     await c.fill('#siya-message', 'My kitchen tap drips constantly even when fully closed. Sometime this week is fine.');
     await c.keyboard.press('Enter');
     await c.getByText(/Add your address|Add another property/).first().waitFor({ timeout: 60_000 });
