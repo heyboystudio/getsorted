@@ -83,8 +83,6 @@
                                 class="rounded-xl border border-zinc-200 bg-white px-4 py-4 text-left font-medium hover:border-emerald-700">{{ $tradeOption->name }} <span class="float-right text-zinc-400" aria-hidden="true">›</span></button>
                         @endforeach
                     </div>
-                @elseif (! $trade)
-                    <button type="button" wire:click="showTrades" wire:loading.attr="disabled" class="text-sm text-emerald-800 underline">{{ __('Choose a trade instead') }}</button>
                 @endif
                 @if ($ready)
                     <button type="button" wire:click="startBooking" wire:loading.attr="disabled" x-on:click="pending = @js(__('Continue to book'))" class="mt-3 {{ $primary }}">{{ __('Continue to book') }}</button>
