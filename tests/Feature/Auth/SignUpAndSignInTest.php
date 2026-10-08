@@ -386,5 +386,5 @@ it('rejects a wrong reset token (AC9)', function (): void {
 });
 
 it('serves draft terms and privacy pages', function (string $path): void {
-    $this->get($path)->assertOk()->assertSee('Draft — not yet in force');
+    $this->get($path)->assertOk()->assertSee('Draft for lawyer review');
 })->with(['/terms', '/privacy']);

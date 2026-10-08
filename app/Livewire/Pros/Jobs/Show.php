@@ -397,7 +397,7 @@ final class Show extends Component
             'credit' => $this->topUp ? [
                 'balanceCents' => app(ProCredit::class)->balanceCents($invite->pro),
                 'feeCents' => app(IntroductionSettings::class)->fee_cents,
-                'packs' => app(IntroductionSettings::class)->credit_pack_cents,
+                'packs' => array_values(array_filter(app(IntroductionSettings::class)->credit_pack_cents, fn (int $pack): bool => $pack >= IntroductionSettings::MIN_PACK_CENTS)),
             ] : null,
             'review' => $accepted ? Review::query()->visible()->where('service_job_id', $job->id)->where('pro_id', $invite->pro_id)->first() : null,
             'quote' => $quote,

@@ -52,7 +52,7 @@ final class Credit extends Component
             'balanceCents' => $credit->balanceCents($pro),
             'freeLeft' => $credit->freeLeft($pro),
             'feeCents' => $settings->fee_cents,
-            'packs' => $settings->credit_pack_cents,
+            'packs' => array_values(array_filter($settings->credit_pack_cents, fn (int $pack): bool => $pack >= IntroductionSettings::MIN_PACK_CENTS)),
             'entries' => ProCreditEntry::query()->where('pro_id', $pro->id)->orderByDesc('id')->limit(20)->get(),
         ]);
     }
