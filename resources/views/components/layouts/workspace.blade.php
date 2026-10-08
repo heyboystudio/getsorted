@@ -62,11 +62,11 @@
             </flux:sidebar>
         @endif
 
-        <flux:header class="border-b border-zinc-200 bg-white {{ $showNav ? 'lg:hidden' : '' }}">
+        <flux:header class="border-b border-zinc-200 bg-white">
             @if ($showNav)
                 <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" :label="__('Menu')" />
             @endif
-            <a wire:navigate href="{{ route($homeRoute) }}" class="ms-2 flex items-center" aria-label="{{ __('GetSorted') }}">
+            <a wire:navigate href="{{ route($homeRoute) }}" @class(['ms-2 flex items-center', 'lg:hidden' => $showNav]) aria-label="{{ __('GetSorted') }}">
                 <img src="{{ asset('home/logo/getsorted-logo.svg') }}" alt="" class="h-6 w-auto">
             </a>
             <flux:spacer />
@@ -75,14 +75,6 @@
         </flux:header>
 
         <flux:main class="!p-0">
-            {{-- Desktop top bar: the bell sits where people look for it. --}}
-            @if ($showNav)
-                <div class="hidden items-center justify-end gap-3 border-b border-zinc-200 bg-white px-8 py-3 lg:flex">
-                    <span x-data="pushControl({ mode: 'silent' })" class="hidden" aria-hidden="true"></span>
-                    <livewire:notification-bell />
-                </div>
-            @endif
-
             <div @class(['pb-24 lg:pb-8' => $showNav, 'pb-8' => ! $showNav])>
                 {{ $slot }}
             </div>
@@ -96,7 +88,7 @@
                     <a wire:navigate href="{{ route($item['route']) }}" @class(['relative flex flex-1 flex-col items-center gap-0.5 py-2 text-xs', 'font-semibold text-zinc-900' => $current, 'text-zinc-500' => ! $current]) @if ($current) aria-current="page" @endif>
                         <flux:icon :name="$icons[$item['icon']] ?? 'squares-2x2'" variant="{{ $current ? 'solid' : 'outline' }}" class="size-5" />
                         {{ $item['label'] }}
-                        @if ($item['badge'] > 0)<span class="absolute right-1/4 top-1 rounded-full bg-zinc-900 px-1.5 text-[10px] text-white">{{ $item['badge'] }}</span>@endif
+                        @if ($item['badge'] > 0)<span class="absolute right-1/4 top-1 rounded-full bg-zinc-900 px-1.5 text-[10px] text-white"><span class="sr-only">{{ __('Unread:') }} </span>{{ $item['badge'] }}</span>@endif
                     </a>
                 @endforeach
             </nav>

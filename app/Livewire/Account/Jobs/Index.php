@@ -14,7 +14,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /** The customer's jobs, grouped Active / Done / Cancelled (spec 021, AC9). */
-#[Layout('components.layouts.panel', ['panel' => 'customer'])]
+#[Layout('components.layouts.workspace', ['panel' => 'customer'])]
 #[Title('Your jobs')]
 final class Index extends Component
 {

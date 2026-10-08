@@ -11,23 +11,22 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-it('links Book a pro on the account home to the booking thread (spec 017, AC1)', function (): void {
+it('makes the Siya box the way to book on the account home (spec 017 AC1, spec 028)', function (): void {
     $this->seed(CatalogueSeeder::class);
     $customer = User::factory()->customer()->create();
 
-    $this->actingAs($customer)->get(route('account.home'))->assertSee(route('book'), false)->assertSee('What’s going on at home?');
+    $this->actingAs($customer)->get(route('account.home'))->assertSee('What’s going on at home?')->assertSee('Ask Siya')->assertDontSee('Book a pro');
     $this->actingAs($customer)->get(route('account.book'))->assertRedirect('/book');
 });
 
-it('hands the "What’s going on at home?" text or a chip to Siya as the first message (spec 017, AC1)', function (): void {
+it('hands the "What’s going on at home?" text to Siya as the first message (spec 017, AC1)', function (): void {
     $this->actingAs(User::factory()->customer()->create());
 
     Livewire::test(Home::class)->set('problem', 'x')->call('describe')->assertHasErrors('problem');
     Livewire::test(Home::class)->set('problem', 'My DB board keeps tripping')->call('describe')->assertRedirect(route('book'));
     expect(session(Thread::START_KEY))->toBe('My DB board keeps tripping');
 
-    Livewire::test(Home::class)->call('describe', 'No hot water')->assertRedirect(route('book'));
-    expect(session(Thread::START_KEY))->toBe('No hot water');
+    Livewire::test(Home::class)->assertDontSee('No hot water')->assertSee('Ask Siya');
 });
 
 it('sends guests to log in for the account booking page', function (): void {
