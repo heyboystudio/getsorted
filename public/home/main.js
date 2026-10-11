@@ -60,14 +60,4 @@
   /* Reviews rail: duplicate cards for a seamless loop */
   const track = document.querySelector('.rev-track');
   if (track && !reduced) track.innerHTML += track.innerHTML.replace(/<figure /g, '<figure aria-hidden="true" ');
-
-  /* Footer wordmark spans the full content width */
-  const word = document.querySelector('.foot-word');
-  const fitWord = () => {
-    word.style.fontSize = '100px';
-    const avail = word.parentElement.clientWidth - parseFloat(getComputedStyle(word.parentElement).paddingLeft) * 2;
-    word.style.fontSize = `${Math.floor(100 * avail / word.getBoundingClientRect().width)}px`;
-  };
-  (document.fonts ? document.fonts.ready : Promise.resolve()).then(fitWord);
-  window.addEventListener('resize', fitWord);
 })();

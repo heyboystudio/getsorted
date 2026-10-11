@@ -228,11 +228,6 @@
   onEnter('.contact', gsap.timeline({ paused: true }).to('.form-card', { y: 0, rotation: 0, autoAlpha: 1, duration: 1.2, ease: 'back.out(1.3)', clearProps: 'transform' }), 'top 40%');
 
   /* ---------- footer ---------- */
-  const word = $('.foot-word');
-  if (SplitText) {
-    const chars = new SplitText(word, { type: 'chars' }).chars;
-    gsap.from(chars, { yPercent: 100, ease: 'none', stagger: 0.04, scrollTrigger: { trigger: '.footer', start: 'top 70%', end: 'bottom bottom', scrub: 0.6 } });
-  }
   gsap.from('.foot-brand > *, .foot-cols > div', { y: 30, autoAlpha: 0, stagger: 0.08, duration: 0.8, scrollTrigger: { trigger: '.footer', start: 'top 80%', once: true } });
 
   /* ---------- magnetic buttons ---------- */
