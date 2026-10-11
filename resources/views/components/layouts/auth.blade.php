@@ -1,5 +1,5 @@
 {{-- Sign-in, sign-up and verification pages (home v3 look). Everything it loads is self-hosted: the security headers only allow 'self'. --}}
-@php($v = '3.3')
+@php($v = '3.4')
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>

@@ -1,5 +1,5 @@
 {{-- Public home page layout (home v3). Everything it loads is self-hosted: the security headers only allow 'self'. --}}
-@php($v = '3.2')
+@php($v = '3.4')
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
