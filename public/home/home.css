@@ -363,6 +363,8 @@ mark { background: linear-gradient(var(--lime), var(--lime)) no-repeat 0 0 / 100
 .foot-bottom nav { display: flex; gap: 32px; }
 .foot-bottom nav a { font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
 .foot-bottom nav a:hover { color: var(--lime); }
+.foot-bottom > span a { text-decoration: underline; text-underline-offset: 4px; }
+.foot-bottom > span a:hover { color: var(--lime); }
 .foot-fine { flex-basis: 100%; color: #8A8A85; font-size: 13px; }
 .foot-word { display: inline-block; margin: 30px 0 -0.24em; font-size: 15.4vw; font-weight: 900; line-height: 1; letter-spacing: -.04em; color: #1F1F1C; white-space: nowrap; user-select: none; }
 

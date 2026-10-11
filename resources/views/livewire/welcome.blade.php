@@ -306,7 +306,7 @@
     </div>
   </div>
   <div class="foot-bottom">
-    <span>© 2026 GetSorted, Durban, South Africa. All rights reserved.</span>
+    <span>© 2026 GetSorted. All rights reserved. Designed by <a href="https://heyboy.co.za" target="_blank" rel="noopener">Hey Boy Studio</a>.</span>
     <nav aria-label="Legal"><a href="{{ route('about') }}">About</a><a href="{{ route('contact') }}">Contact</a><a href="{{ route('terms') }}">Terms</a><a href="{{ route('privacy') }}">Privacy</a></nav>
     <span class="foot-fine">Photos are illustrative. Sample pros, prices and reviews are examples.</span>
   </div>
